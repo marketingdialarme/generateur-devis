@@ -1181,7 +1181,7 @@
                     doc.text('DIALARME', 50, 50);
                     
                     doc.setFontSize(14);
-                    doc.text('Solutions de sécurité professionnelles', 50, 70);
+                    doc.text('Votre sécurité, ça nous regarde', 50, 70);
                     
                     // Numéro de devis
                     const quoteNumber = `DEV-${type.toUpperCase()}-${Date.now().toString().slice(-6)}`;
@@ -1445,7 +1445,7 @@
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(10);
                     doc.setTextColor(51, 51, 51);
-                    doc.text('DIALARME - Solutions de sécurité professionnelles', 40, 800);
+                    doc.text('DIALARME - Votre sécurité, ça nous regarde', 40, 800);
 
                     doc.save(`Devis-${quoteNumber}-${clientName}.pdf`);
                     this.showNotification('PDF détaillé généré avec succès!');
