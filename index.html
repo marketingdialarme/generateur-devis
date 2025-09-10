@@ -155,10 +155,8 @@
             display: block;
         }
 
-        .catalog-toggle {
+        .catalog-toggle, .history-toggle {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
             background: var(--primary-color);
             color: var(--secondary-color);
             border: 2px solid var(--secondary-color);
@@ -171,13 +169,23 @@
             z-index: 1000;
         }
 
-        .catalog-toggle:hover {
+        .catalog-toggle {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .history-toggle {
+            bottom: 80px;
+            right: 20px;
+        }
+
+        .catalog-toggle:hover, .history-toggle:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
             background: var(--primary-dark);
         }
 
-        .catalog-modal {
+        .catalog-modal, .history-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -189,14 +197,14 @@
             overflow-y: auto;
         }
 
-        .catalog-modal.active {
+        .catalog-modal.active, .history-modal.active {
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding: 20px;
         }
 
-        .catalog-modal-content {
+        .catalog-modal-content, .history-modal-content {
             background: var(--white);
             border-radius: 15px;
             padding: 30px;
@@ -545,6 +553,16 @@
             font-weight: 600;
         }
 
+        .summary-row.monthly {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            font-weight: 700;
+            margin: 10px -15px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border: none;
+        }
+
         .actions {
             text-align: center;
             margin-top: 30px;
@@ -622,6 +640,59 @@
             pointer-events: none;
         }
 
+        .quote-number {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .history-item {
+            background: var(--gray-50);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--primary-color);
+            background: var(--white);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-number {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .history-date {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        .history-client {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .history-amount {
+            color: var(--success-color);
+            font-weight: 700;
+        }
+
         /* Responsive Design - Tablette */
         @media (max-width: 1024px) {
             .container {
@@ -655,6 +726,12 @@
 
             .catalog-toggle {
                 bottom: 15px;
+                right: 15px;
+                padding: 12px 20px;
+            }
+
+            .history-toggle {
+                bottom: 75px;
                 right: 15px;
                 padding: 12px 20px;
             }
@@ -797,6 +874,13 @@
                 font-size: 12px;
             }
 
+            .history-toggle {
+                bottom: 65px;
+                right: 10px;
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
             .actions {
                 flex-direction: column;
                 align-items: center;
@@ -877,6 +961,11 @@
 
         <!-- Onglet Système d'Alarme -->
         <div id="alarm-tab" class="tab-content active">
+            <!-- Numéro de devis -->
+            <div class="quote-number" id="alarmQuoteNumber">
+                Devis N° : A-2025-001
+            </div>
+
             <!-- Informations client -->
             <div class="client-info">
                 <div class="form-group">
@@ -923,10 +1012,10 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <div class="section-items">
+                        <div class="section-items" id="alarmMaterialItems">
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateAlarmCalculations()">
                                         <option>Centrale AX Pro</option>
                                     </select>
                                 </div>
@@ -934,12 +1023,12 @@
                                 <input type="number" value="350.00" readonly>
                                 <input type="number" value="350.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateAlarmCalculations();">Supprimer</button>
                                 </div>
                             </div>
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateAlarmCalculations()">
                                         <option>Détecteur volumétrique (radio) x3</option>
                                     </select>
                                 </div>
@@ -947,36 +1036,36 @@
                                 <input type="number" value="25.00" readonly>
                                 <input type="number" value="75.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateAlarmCalculations();">Supprimer</button>
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="add-item-btn">
+                        <button class="add-item-btn" onclick="addAlarmMaterialItem()">
                             Ajouter un article
                         </button>
                         
                         <div class="discount-section">
                             <label>Remise (%)</label>
-                            <input type="number" min="0" max="100" step="0.1" value="0">
+                            <input type="number" min="0" max="100" step="0.1" value="0" onchange="updateAlarmCalculations()">
                         </div>
                         
                         <div class="payment-options">
                             <h4>Facilités de paiement</h4>
                             <div class="payment-grid">
-                                <div class="payment-option active">
+                                <div class="payment-option active" onclick="selectPaymentOption(this, 'alarm'); updateAlarmCalculations();">
                                     <strong>Comptant</strong><br>
                                     <small>Aucun supplément</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'alarm'); updateAlarmCalculations();">
                                     <strong>24 mois</strong><br>
                                     <small>+10% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'alarm'); updateAlarmCalculations();">
                                     <strong>36 mois</strong><br>
                                     <small>+15% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'alarm'); updateAlarmCalculations();">
                                     <strong>48 mois</strong><br>
                                     <small>+20% sur la mensualité</small>
                                 </div>
@@ -993,10 +1082,10 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <div class="section-items">
+                        <div class="section-items" id="alarmInstallationItems">
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateAlarmCalculations()">
                                         <option>Installation, paramétrages, tests, mise en service & formation</option>
                                     </select>
                                 </div>
@@ -1004,18 +1093,18 @@
                                 <input type="number" value="0.00" readonly>
                                 <div style="color: #22c55e; font-weight: bold;">OFFERT</div>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateAlarmCalculations();">Supprimer</button>
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="add-item-btn">
+                        <button class="add-item-btn" onclick="addAlarmInstallationItem()">
                             Ajouter un article
                         </button>
                         
                         <div class="discount-section">
                             <label>Remise (%)</label>
-                            <input type="number" min="0" max="100" step="0.1" value="0">
+                            <input type="number" min="0" max="100" step="0.1" value="0" onchange="updateAlarmCalculations()">
                         </div>
                     </div>
                 </div>
@@ -1028,10 +1117,10 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <div class="section-items">
+                        <div class="section-items" id="alarmFeesItems">
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateAlarmCalculations()">
                                         <option>Frais de dossier</option>
                                     </select>
                                 </div>
@@ -1039,18 +1128,18 @@
                                 <input type="number" value="190.00" readonly>
                                 <input type="number" value="190.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateAlarmCalculations();">Supprimer</button>
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="add-item-btn">
+                        <button class="add-item-btn" onclick="addAlarmFeesItem()">
                             Ajouter un article
                         </button>
                         
                         <div class="discount-section">
                             <label>Remise (%)</label>
-                            <input type="number" min="0" max="100" step="0.1" value="0">
+                            <input type="number" min="0" max="100" step="0.1" value="0" onchange="updateAlarmCalculations()">
                         </div>
                     </div>
                 </div>
@@ -1059,30 +1148,34 @@
             <!-- Résumé -->
             <div class="summary">
                 <h3>Résumé du Devis Alarme</h3>
-                <div>
+                <div id="alarmSummary">
                     <div class="summary-row">
                         <span><strong>Matériel</strong></span>
-                        <span>425.00 CHF</span>
+                        <span id="alarmMaterialTotal">425.00 CHF</span>
                     </div>
                     <div class="summary-row">
                         <span><strong>Installation et matériel supplémentaire</strong></span>
-                        <span>0.00 CHF</span>
+                        <span id="alarmInstallationTotal">0.00 CHF</span>
                     </div>
                     <div class="summary-row">
                         <span><strong>Frais de dossier</strong></span>
-                        <span>190.00 CHF</span>
+                        <span id="alarmFeesTotal">190.00 CHF</span>
                     </div>
                     <div class="summary-row">
                         <span>Sous-total HT</span>
-                        <span>665.00 CHF</span>
+                        <span id="alarmSubtotal">615.00 CHF</span>
                     </div>
                     <div class="summary-row tva">
                         <span>TVA (8.1%)</span>
-                        <span>53.87 CHF</span>
+                        <span id="alarmTva">49.82 CHF</span>
                     </div>
                     <div class="summary-row total">
                         <span>TOTAL TTC</span>
-                        <span>718.87 CHF</span>
+                        <span id="alarmTotal">664.82 CHF</span>
+                    </div>
+                    <div class="summary-row monthly" id="alarmMonthlyRow" style="display: none;">
+                        <span>Mensualité</span>
+                        <span id="alarmMonthly">0.00 CHF/mois</span>
                     </div>
                 </div>
             </div>
@@ -1092,7 +1185,7 @@
                 <button class="btn btn-success" onclick="generatePDF('alarm')">
                     Générer le PDF
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="newQuote('alarm')">
                     Nouveau Devis
                 </button>
             </div>
@@ -1104,6 +1197,11 @@
 
         <!-- Onglet Caméra de Surveillance -->
         <div id="camera-tab" class="tab-content">
+            <!-- Numéro de devis -->
+            <div class="quote-number" id="cameraQuoteNumber">
+                Devis N° : C-2025-001
+            </div>
+
             <!-- Informations client -->
             <div class="client-info">
                 <div class="form-group">
@@ -1150,10 +1248,10 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <div class="section-items">
+                        <div class="section-items" id="cameraMaterialItems">
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateCameraCalculations()">
                                         <option>Kit NVR 4 canaux + 2 caméras IP</option>
                                     </select>
                                 </div>
@@ -1161,12 +1259,12 @@
                                 <input type="number" value="450.00" readonly>
                                 <input type="number" value="450.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateCameraCalculations();">Supprimer</button>
                                 </div>
                             </div>
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateCameraCalculations()">
                                         <option>Caméra IP extérieure supplémentaire</option>
                                     </select>
                                 </div>
@@ -1174,36 +1272,36 @@
                                 <input type="number" value="120.00" readonly>
                                 <input type="number" value="240.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateCameraCalculations();">Supprimer</button>
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="add-item-btn">
+                        <button class="add-item-btn" onclick="addCameraMaterialItem()">
                             Ajouter un article
                         </button>
                         
                         <div class="discount-section">
                             <label>Remise (%)</label>
-                            <input type="number" min="0" max="100" step="0.1" value="0">
+                            <input type="number" min="0" max="100" step="0.1" value="0" onchange="updateCameraCalculations()">
                         </div>
                         
                         <div class="payment-options">
                             <h4>Facilités de paiement</h4>
                             <div class="payment-grid">
-                                <div class="payment-option active">
+                                <div class="payment-option active" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>Comptant</strong><br>
                                     <small>Aucun supplément</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>24 mois</strong><br>
                                     <small>+10% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>36 mois</strong><br>
                                     <small>+15% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>48 mois</strong><br>
                                     <small>+20% sur la mensualité</small>
                                 </div>
@@ -1220,10 +1318,10 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <div class="section-items">
+                        <div class="section-items" id="cameraInstallationItems">
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateCameraCalculations()">
                                         <option>Installation système de surveillance complet</option>
                                     </select>
                                 </div>
@@ -1231,12 +1329,12 @@
                                 <input type="number" value="300.00" readonly>
                                 <input type="number" value="300.00" readonly>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateCameraCalculations();">Supprimer</button>
                                 </div>
                             </div>
                             <div class="item-row sample-item">
                                 <div class="product-selector">
-                                    <select>
+                                    <select onchange="updateCameraCalculations()">
                                         <option>Configuration et formation utilisateur</option>
                                     </select>
                                 </div>
@@ -1244,36 +1342,36 @@
                                 <input type="number" value="0.00" readonly>
                                 <div style="color: #22c55e; font-weight: bold;">OFFERT</div>
                                 <div class="item-controls">
-                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                    <button class="btn btn-danger btn-small" onclick="removeItem(this); updateCameraCalculations();">Supprimer</button>
                                 </div>
                             </div>
                         </div>
                         
-                        <button class="add-item-btn">
+                        <button class="add-item-btn" onclick="addCameraInstallationItem()">
                             Ajouter un article
                         </button>
                         
                         <div class="discount-section">
                             <label>Remise (%)</label>
-                            <input type="number" min="0" max="100" step="0.1" value="0">
+                            <input type="number" min="0" max="100" step="0.1" value="0" onchange="updateCameraCalculations()">
                         </div>
                         
                         <div class="payment-options">
                             <h4>Facilités de paiement</h4>
                             <div class="payment-grid">
-                                <div class="payment-option active">
+                                <div class="payment-option active" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>Comptant</strong><br>
                                     <small>Aucun supplément</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>24 mois</strong><br>
                                     <small>+10% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>36 mois</strong><br>
                                     <small>+15% sur la mensualité</small>
                                 </div>
-                                <div class="payment-option">
+                                <div class="payment-option" onclick="selectPaymentOption(this, 'camera'); updateCameraCalculations();">
                                     <strong>48 mois</strong><br>
                                     <small>+20% sur la mensualité</small>
                                 </div>
@@ -1364,14 +1462,14 @@
             <!-- Résumé -->
             <div class="summary">
                 <h3>Résumé du Devis Caméra</h3>
-                <div>
+                <div id="cameraSummary">
                     <div class="summary-row">
                         <span><strong>Matériel</strong></span>
-                        <span>690.00 CHF</span>
+                        <span id="cameraMaterialTotal">690.00 CHF</span>
                     </div>
                     <div class="summary-row">
                         <span><strong>Installation</strong></span>
-                        <span>300.00 CHF</span>
+                        <span id="cameraInstallationTotal">300.00 CHF</span>
                     </div>
                     <div class="summary-row" id="visionSummaryRow" style="display: none;">
                         <span><strong>Vision à distance (mensuel)</strong></span>
@@ -1393,9 +1491,9 @@
                         <span>TOTAL TTC</span>
                         <span id="cameraTotal">1070.19 CHF</span>
                     </div>
-                    <div class="summary-row" id="monthlyPaymentRow" style="display: none; background: var(--primary-color); color: var(--secondary-color); font-weight: 700; margin-top: 10px; padding: 15px; border-radius: var(--border-radius);">
+                    <div class="summary-row monthly" id="cameraMonthlyRow" style="display: none;">
                         <span>Mensualité avec vision à distance</span>
-                        <span id="monthlyAmount">0.00 CHF/mois</span>
+                        <span id="cameraMonthly">0.00 CHF/mois</span>
                     </div>
                 </div>
             </div>
@@ -1405,7 +1503,7 @@
                 <button class="btn btn-success" onclick="generatePDF('camera')">
                     Générer le PDF
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="newQuote('camera')">
                     Nouveau Devis
                 </button>
             </div>
@@ -1421,6 +1519,11 @@
         Catalogue
     </button>
 
+    <!-- Bouton flottant pour l'historique -->
+    <button class="history-toggle" onclick="toggleHistory()">
+        Historique
+    </button>
+
     <!-- Modal du catalogue -->
     <div class="catalog-modal" id="catalogModal">
         <div class="catalog-modal-content">
@@ -1428,17 +1531,18 @@
             
             <h2 style="color: var(--secondary-color); margin-bottom: 20px; font-weight: 700;">Gestion du Catalogue Produits</h2>
             
+            <!-- Catalogue Alarme -->
             <div class="catalog-section">
                 <div class="catalog-header">
                     <h3>Matériel Alarme</h3>
                     <div class="catalog-controls">
-                        <input type="text" placeholder="Nom du produit">
-                        <input type="text" placeholder="Description">
-                        <input type="number" placeholder="Prix CHF HT" step="0.01">
-                        <button class="btn btn-primary">Ajouter</button>
+                        <input type="text" id="newAlarmProductName" placeholder="Nom du produit">
+                        <input type="text" id="newAlarmProductDesc" placeholder="Description">
+                        <input type="number" id="newAlarmProductPrice" placeholder="Prix CHF HT" step="0.01">
+                        <button class="btn btn-primary" onclick="addToCatalog('alarm')">Ajouter</button>
                     </div>
                 </div>
-                <div>
+                <div id="alarmCatalogItems">
                     <div class="catalog-grid">
                         <div class="product-item">
                             <div class="product-name">Centrale AX Pro</div>
@@ -1446,7 +1550,7 @@
                         </div>
                         <div>Qté: 1</div>
                         <div><strong>350.00 CHF</strong></div>
-                        <button class="btn btn-danger btn-small">Supprimer</button>
+                        <button class="btn btn-danger btn-small" onclick="removeFromCatalog(this)">Supprimer</button>
                     </div>
                     <div class="catalog-grid">
                         <div class="product-item">
@@ -1455,168 +1559,26 @@
                         </div>
                         <div>Qté: 1</div>
                         <div><strong>25.00 CHF</strong></div>
-                        <button class="btn btn-danger btn-small">Supprimer</button>
-                    </div>
-                    <div class="catalog-grid">
-                        <div class="product-item">
-                            <div class="product-name">Installation complète</div>
-                            <div class="product-description">Installation, tests et formation</div>
-                        </div>
-                        <div>Qté: 1</div>
-                        <div><span class="free-label">OFFERT</span></div>
-                        <button class="btn btn-danger btn-small">Supprimer</button>
+                        <button class="btn btn-danger btn-small" onclick="removeFromCatalog(this)">Supprimer</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Actions Catalogue -->
-            <div class="actions">
-                <button class="btn btn-success">
-                    Exporter le Catalogue
-                </button>
-                <button class="btn btn-primary">
-                    Importer le Catalogue
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function showTab(tabName) {
-            // Masquer tous les onglets
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            // Afficher l'onglet sélectionné
-            document.getElementById(tabName + '-tab').classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        function toggleCatalog() {
-            const modal = document.getElementById('catalogModal');
-            modal.classList.toggle('active');
-        }
-
-        // Fonction pour gérer l'option Vision à distance
-        function toggleVisionOption() {
-            const checkbox = document.getElementById('visionOption');
-            const content = document.getElementById('visionContent');
-            const summaryRow = document.getElementById('visionSummaryRow');
-            const monthlyRow = document.getElementById('monthlyPaymentRow');
-            
-            if (checkbox.checked) {
-                content.style.display = 'block';
-                summaryRow.style.display = 'flex';
-                monthlyRow.style.display = 'flex';
-                
-                // Calculer et afficher la mensualité avec vision à distance
-                updateCameraCalculations();
-            } else {
-                content.style.display = 'none';
-                summaryRow.style.display = 'none';
-                monthlyRow.style.display = 'none';
-                
-                // Recalculer sans la vision à distance
-                updateCameraCalculations();
-            }
-        }
-
-        // Fonction pour mettre à jour les calculs du devis caméra
-        function updateCameraCalculations() {
-            const visionOption = document.getElementById('visionOption').checked;
-            
-            // Montants de base (peuvent être modifiés selon les articles ajoutés)
-            const materialAmount = 690.00;
-            const installationAmount = 300.00;
-            const maintenanceAmount = 0.00;
-            const visionMonthlyAmount = visionOption ? 20.00 : 0.00;
-            
-            // Calcul du sous-total (sans la vision à distance qui est mensuelle)
-            const subtotal = materialAmount + installationAmount + maintenanceAmount;
-            const tva = subtotal * 0.081;
-            const total = subtotal + tva;
-            
-            // Mise à jour de l'affichage
-            document.getElementById('cameraSubtotal').textContent = subtotal.toFixed(2) + ' CHF';
-            document.getElementById('cameraTva').textContent = tva.toFixed(2) + ' CHF';
-            document.getElementById('cameraTotal').textContent = total.toFixed(2) + ' CHF';
-            
-            // Calcul de la mensualité si vision à distance activée
-            if (visionOption) {
-                // Obtenir le mode de paiement sélectionné dans la section Matériel ou Installation
-                const activePaymentOption = document.querySelector('#camera-tab .payment-option.active');
-                let monthlyBase = 0;
-                
-                if (activePaymentOption) {
-                    const paymentText = activePaymentOption.textContent;
-                    if (paymentText.includes('24 mois')) {
-                        monthlyBase = (total * 1.10) / 24; // +10%
-                    } else if (paymentText.includes('36 mois')) {
-                        monthlyBase = (total * 1.15) / 36; // +15%
-                    } else if (paymentText.includes('48 mois')) {
-                        monthlyBase = (total * 1.20) / 48; // +20%
-                    }
-                }
-                
-                const totalMonthly = monthlyBase + visionMonthlyAmount;
-                document.getElementById('monthlyAmount').textContent = totalMonthly.toFixed(2) + ' CHF/mois';
-            }
-        }
-
-        // Simulation de la génération PDF avec sauvegarde Drive
-        function generatePDF(type) {
-            let clientName, commercial;
-            
-            if (type === 'alarm') {
-                clientName = document.getElementById('clientName').value || 'Client';
-                commercial = document.getElementById('commercial').value;
-            } else {
-                clientName = document.getElementById('cameraClientName').value || 'Client';
-                commercial = document.getElementById('cameraCommercial').value;
-            }
-            
-            if (!commercial) {
-                alert('Veuillez sélectionner un commercial avant de générer le PDF.');
-                return;
-            }
-
-            // Simulation de la génération PDF
-            alert(`PDF généré pour ${clientName} (Commercial: ${commercial})\n\nLe fichier a été sauvegardé automatiquement sur Google Drive dans le dossier partagé.`);
-            
-            // Dans la version réelle, ici on ferait:
-            // 1. Génération du PDF avec jsPDF
-            // 2. Conversion en blob
-            // 3. Upload vers Google Drive API
-            console.log('PDF généré et sauvegardé sur Drive:', {
-                type: type,
-                client: clientName,
-                commercial: commercial,
-                driveFolder: 'https://drive.google.com/drive/folders/1Rmg_Yk2jLhTnFl-Z16CcWlv7CKE_VfXm'
-            });
-        }
-
-        // Fermeture du modal en cliquant à l'extérieur
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('catalogModal');
-            if (event.target === modal) {
-                toggleCatalog();
-            }
-        });
-
-        // Gestion des touches pour fermer le modal
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modal = document.getElementById('catalogModal');
-                if (modal.classList.contains('active')) {
-                    toggleCatalog();
-                }
-            }
-        });
-
-        // Animation des options de paiement
-        document.querySelectorAll('.payment-option').forEach(option => {
-            option.addEventListener('click', function() {
+            <!-- Catalogue Caméra -->
+            <div class="catalog-section">
+                <div class="catalog-header">
+                    <h3>Matériel Caméra</h3>
+                    <div class="catalog-controls">
+                        <input type="text" id="newCameraProductName" placeholder="Nom du produit">
+                        <input type="text" id="newCameraProductDesc" placeholder="Description">
+                        <input type="number" id="newCameraProductPrice" placeholder="Prix CHF HT" step="0.01">
+                        <button class="btn btn-primary" onclick="addToCatalog('camera')">Ajouter</button>
+                    </div>
+                </div>
+                <div id="cameraCatalogItems">
+                    <div class="catalog-grid">
+                        <div class="product-item">
+                            <div class="product-name">Kit NVR 4 canaux + 2 caméras IP</div>
+                            <div class="product-description">Kit complet de surveillance IP</div>
+                        </div>
+                        <div>Qté: 1</div>
