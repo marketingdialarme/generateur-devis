@@ -1456,14 +1456,31 @@
                 }
             }
 
-            addProductsToPDF(doc, sectionId, yPosition) {
+            addTableToPDF(doc, sectionId, yPosition) {
                 const container = document.getElementById(`${sectionId}-products`);
                 if (!container) return yPosition;
                 
                 const productLines = container.querySelectorAll('.product-line');
                 let hasProducts = false;
                 
-                productLines.forEach(line => {
+                // En-têtes du tableau
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setFillColor(240, 240, 240);
+                doc.rect(40, yPosition, 515, 20, 'F');
+                doc.setTextColor(0, 0, 0);
+                doc.text('QTÉ', 50, yPosition + 13);
+                doc.text('DÉSIGNATION', 90, yPosition + 13);
+                doc.text('PRIX UNITAIRE HT', 400, yPosition + 13);
+                doc.text('TOTAL HT', 480, yPosition + 13);
+                
+                yPosition += 25;
+                
+                // Lignes du tableau
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                productLines.forEach((line, index) => {
                     const select = line.querySelector('.product-select');
                     const quantity = parseFloat(line.querySelector('.quantity-input').value) || 0;
                     const discount = parseFloat(line.querySelector('.discount-input').value) || 0;
@@ -1475,41 +1492,295 @@
                         let lineTotal = price * quantity - discount;
                         lineTotal = Math.max(0, lineTotal);
                         
-                        doc.text(`• ${productName}`, 60, yPosition);
-                        doc.text(`Qté: ${quantity}`, 300, yPosition);
-                        if (discount > 0) {
-                            doc.text(`${lineTotal.toFixed(2)} CHF HT`, 450, yPosition);
-                            yPosition += 12;
-                            doc.setTextColor(150, 150, 150);
-                            doc.text(`(Prix unitaire: ${price.toFixed(2)} CHF - Remise: ${discount.toFixed(2)} CHF)`, 80, yPosition);
-                            doc.setTextColor(0, 0, 0);
-                        } else {
-                            doc.text(`${lineTotal.toFixed(2)} CHF HT`, 450, yPosition);
+                        // Ligne alternée
+                        if (index % 2 === 0) {
+                            doc.setFillColor(248, 249, 250);
+                            doc.rect(40, yPosition - 5, 515, 20, 'F');
                         }
-                        yPosition += 15;
+                        
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(quantity.toString(), 50, yPosition + 8);
+                        
+                        // Nom du produit (avec retour à la ligne si nécessaire)
+                        const maxWidth = 300;
+                        const words = productName.split(' ');
+                        let line1 = '';
+                        let line2 = '';
+                        
+                        for (let word of words) {
+                            const testLine = line1 + (line1 ? ' ' : '') + word;
+                            const textWidth = doc.getTextWidth(testLine);
+                            if (textWidth > maxWidth && line1) {
+                                line2 = (line2 ? line2 + ' ' : '') + word;
+                            } else {
+                                line1 = testLine;
+                            }
+                        }
+                        
+                        doc.text(line1, 90, yPosition + 8);
+                        if (line2) {
+                            doc.text(line2, 90, yPosition + 18);
+                        }
+                        
+                        doc.text(`${price.toFixed(2)} CHF`, 400, yPosition + 8);
+                        doc.text(`${lineTotal.toFixed(2)} CHF`, 480, yPosition + 8);
+                        
+                        if (discount > 0) {
+                            doc.setFontSize(8);
+                            doc.setTextColor(150, 150, 150);
+                            doc.text(`(Remise: -${discount.toFixed(2)} CHF)`, 90, line2 ? yPosition + 28 : yPosition + 18);
+                            doc.setFontSize(9);
+                            doc.setTextColor(0, 0, 0);
+                            yPosition += line2 ? 35 : 25;
+                        } else {
+                            yPosition += line2 ? 25 : 20;
+                        }
                     }
                 });
                 
                 if (!hasProducts) {
                     doc.setTextColor(150, 150, 150);
-                    doc.text('• Aucun produit sélectionné', 60, yPosition);
+                    doc.text('Aucun produit sélectionné', 90, yPosition + 8);
                     doc.setTextColor(0, 0, 0);
-                    yPosition += 15;
+                    yPosition += 20;
                 }
                 
-                // Afficher la réduction globale de section si présente
+                // Bordure du tableau
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.5);
+                const tableStart = yPosition - (hasProducts ? (productLines.length * 22) : 20) - 25;
+                doc.rect(40, tableStart, 515, yPosition - tableStart);
+                
+                // Lignes verticales
+                doc.line(80, tableStart, 80, yPosition); // Après QTÉ
+                doc.line(390, tableStart, 390, yPosition); // Avant Prix unitaire
+                doc.line(470, tableStart, 470, yPosition); // Avant Total
+                
+                // Réduction de section si applicable
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
                 if (discountValue > 0 && hasProducts) {
-                    yPosition += 5;
+                    yPosition += 10;
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(9);
                     doc.setTextColor(100, 100, 100);
-                    doc.text(`Réduction section: ${discountValue}${discountType === 'percent' ? '%' : ' CHF'}`, 60, yPosition);
+                    doc.text(`Réduction section: -${discountValue}${discountType === 'percent' ? '%' : ' CHF'}`, 90, yPosition);
                     doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
                     yPosition += 15;
                 }
                 
                 return yPosition + 10;
+            }
+
+            addFixedItemsTableToPDF(doc, items, yPosition) {
+                // En-têtes du tableau
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setFillColor(240, 240, 240);
+                doc.rect(40, yPosition, 515, 20, 'F');
+                doc.setTextColor(0, 0, 0);
+                doc.text('QTÉ', 50, yPosition + 13);
+                doc.text('DÉSIGNATION', 90, yPosition + 13);
+                doc.text('PRIX UNITAIRE HT', 400, yPosition + 13);
+                doc.text('TOTAL HT', 480, yPosition + 13);
+                
+                yPosition += 25;
+                
+                // Lignes du tableau
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                items.forEach((item, index) => {
+                    // Ligne alternée
+                    if (index % 2 === 0) {
+                        doc.setFillColor(248, 249, 250);
+                        doc.rect(40, yPosition - 5, 515, 25, 'F');
+                    }
+                    
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(item.qty.toString(), 50, yPosition + 8);
+                    
+                    // Nom du produit (avec retour à la ligne si nécessaire)
+                    const maxWidth = 300;
+                    const words = item.name.split(' ');
+                    let line1 = '';
+                    let line2 = '';
+                    
+                    for (let word of words) {
+                        const testLine = line1 + (line1 ? ' ' : '') + word;
+                        const textWidth = doc.getTextWidth(testLine);
+                        if (textWidth > maxWidth && line1) {
+                            line2 = (line2 ? line2 + ' ' : '') + word;
+                        } else {
+                            line1 = testLine;
+                        }
+                    }
+                    
+                    doc.text(line1, 90, yPosition + 8);
+                    if (line2) {
+                        doc.text(line2, 90, yPosition + 18);
+                    }
+                    
+                    if (item.offered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 400, yPosition + 8);
+                        doc.text('OFFERT', 480, yPosition + 8);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(0, 0, 0);
+                    } else if (item.monthly) {
+                        doc.text(`${item.unitPrice.toFixed(2)} CHF`, 400, yPosition + 8);
+                        doc.text(`${item.total.toFixed(2)} CHF/mois`, 480, yPosition + 8);
+                    } else {
+                        doc.text(`${item.unitPrice.toFixed(2)} CHF`, 400, yPosition + 8);
+                        doc.text(`${item.total.toFixed(2)} CHF`, 480, yPosition + 8);
+                    }
+                    
+                    yPosition += line2 ? 25 : 20;
+                });
+                
+                // Bordure du tableau
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.5);
+                const tableStart = yPosition - (items.length * 22) - 25;
+                doc.rect(40, tableStart, 515, yPosition - tableStart);
+                
+                // Lignes verticales
+                doc.line(80, tableStart, 80, yPosition); // Après QTÉ
+                doc.line(390, tableStart, 390, yPosition); // Avant Prix unitaire
+                doc.line(470, tableStart, 470, yPosition); // Avant Total
+                
+                return yPosition + 10;
+            }
+
+            addPaymentSummaryTable(doc, type, yPosition, materialTotal, installationTotal, adminTotal, paymentMonths, remoteAccess = false) {
+                // Titre du tableau récapitulatif
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('RÉCAPITULATIF DES PAIEMENTS', 40, yPosition);
+                yPosition += 25;
+                
+                // En-têtes
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setFillColor(244, 230, 0); // Jaune Dialarme
+                doc.rect(40, yPosition, 250, 20, 'F');
+                doc.rect(290, yPosition, 125, 20, 'F');
+                doc.rect(415, yPosition, 140, 20, 'F');
+                
+                doc.setTextColor(51, 51, 51);
+                doc.text('MODALITÉ', 50, yPosition + 13);
+                doc.text('MONTANT', 320, yPosition + 13);
+                doc.text('ÉCHÉANCE', 450, yPosition + 13);
+                
+                yPosition += 25;
+                
+                // Lignes du tableau
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                
+                let lineIndex = 0;
+                
+                if (type === 'alarm') {
+                    // Facilités de paiement matériel + installation
+                    if (paymentMonths > 0) {
+                        const monthlyAmount = (materialTotal + installationTotal) / paymentMonths;
+                        
+                        if (lineIndex % 2 === 0) {
+                            doc.setFillColor(248, 249, 250);
+                            doc.rect(40, yPosition - 2, 515, 18, 'F');
+                        }
+                        
+                        doc.text(`Facilité de paiement (${paymentMonths} mois)`, 50, yPosition + 10);
+                        doc.text(`${monthlyAmount.toFixed(2)} CHF x ${paymentMonths}`, 300, yPosition + 10);
+                        doc.text('Mensuel', 450, yPosition + 10);
+                        yPosition += 18;
+                        lineIndex++;
+                    }
+                    
+                    // Frais de dossier
+                    if (lineIndex % 2 === 0) {
+                        doc.setFillColor(248, 249, 250);
+                        doc.rect(40, yPosition - 2, 515, 18, 'F');
+                    }
+                    
+                    doc.text('Frais de dossier', 50, yPosition + 10);
+                    doc.text(`${adminTotal.toFixed(2)} CHF`, 300, yPosition + 10);
+                    doc.text('À l\'installation', 450, yPosition + 10);
+                    yPosition += 18;
+                    lineIndex++;
+                    
+                } else if (type === 'camera') {
+                    // Facilités de paiement matériel
+                    if (paymentMonths > 0) {
+                        const monthlyAmount = materialTotal / paymentMonths;
+                        
+                        if (lineIndex % 2 === 0) {
+                            doc.setFillColor(248, 249, 250);
+                            doc.rect(40, yPosition - 2, 515, 18, 'F');
+                        }
+                        
+                        doc.text(`Facilité matériel (${paymentMonths} mois)`, 50, yPosition + 10);
+                        doc.text(`${monthlyAmount.toFixed(2)} CHF x ${paymentMonths}`, 300, yPosition + 10);
+                        doc.text('Mensuel', 450, yPosition + 10);
+                        yPosition += 18;
+                        lineIndex++;
+                    }
+                    
+                    // Installation
+                    if (lineIndex % 2 === 0) {
+                        doc.setFillColor(248, 249, 250);
+                        doc.rect(40, yPosition - 2, 515, 18, 'F');
+                    }
+                    
+                    doc.text('Installation', 50, yPosition + 10);
+                    doc.text(`${installationTotal.toFixed(2)} CHF`, 300, yPosition + 10);
+                    doc.text('À l\'installation', 450, yPosition + 10);
+                    yPosition += 18;
+                    lineIndex++;
+                    
+                    // Vision à distance si sélectionnée
+                    if (remoteAccess) {
+                        if (lineIndex % 2 === 0) {
+                            doc.setFillColor(248, 249, 250);
+                            doc.rect(40, yPosition - 2, 515, 18, 'F');
+                        }
+                        
+                        doc.text('Vision à distance', 50, yPosition + 10);
+                        doc.text('20.00 CHF', 300, yPosition + 10);
+                        doc.text('Mensuel', 450, yPosition + 10);
+                        yPosition += 18;
+                        lineIndex++;
+                    }
+                }
+                
+                // Total comptant
+                if (lineIndex % 2 === 0) {
+                    doc.setFillColor(248, 249, 250);
+                    doc.rect(40, yPosition - 2, 515, 18, 'F');
+                }
+                
+                doc.setFont('helvetica', 'bold');
+                const totalComptant = materialTotal + installationTotal + adminTotal;
+                const totalComptantTTC = totalComptant * 1.08;
+                
+                doc.text('TOTAL COMPTANT', 50, yPosition + 10);
+                doc.text(`${totalComptantTTC.toFixed(2)} CHF TTC`, 300, yPosition + 10);
+                doc.text('Immédiat', 450, yPosition + 10);
+                yPosition += 23;
+                
+                // Bordures du tableau
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.5);
+                const tableStart = yPosition - (lineIndex + 1) * 18 - 25;
+                doc.rect(40, tableStart, 515, yPosition - tableStart);
+                doc.line(290, tableStart, 290, yPosition); // Colonne montant
+                doc.line(415, tableStart, 415, yPosition); // Colonne échéance
+                
+                return yPosition + 20;
             }
 
             exportQuote() {
