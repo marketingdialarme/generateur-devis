@@ -1107,24 +1107,24 @@
             <!-- Informations client -->
             <div class="client-info">
                 <div class="form-group">
-                    <label>Nom du client *</label>
-                    <input type="text" placeholder="Nom complet">
+                    <label for="cameraClientName">Nom du client *</label>
+                    <input type="text" id="cameraClientName" placeholder="Nom complet" value="Marie Martin">
                 </div>
                 <div class="form-group">
-                    <label>Adresse</label>
-                    <input type="text" placeholder="Adresse complète">
+                    <label for="cameraClientAddress">Adresse</label>
+                    <input type="text" id="cameraClientAddress" placeholder="Adresse complète" value="Avenue des Alpes 45, 1820 Montreux">
                 </div>
                 <div class="form-group">
-                    <label>Téléphone</label>
-                    <input type="tel" placeholder="Numéro de téléphone">
+                    <label for="cameraClientPhone">Téléphone</label>
+                    <input type="tel" id="cameraClientPhone" placeholder="Numéro de téléphone" value="+41 21 987 65 43">
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" placeholder="Adresse email">
+                    <label for="cameraClientEmail">Email</label>
+                    <input type="email" id="cameraClientEmail" placeholder="Adresse email" value="marie.martin@email.ch">
                 </div>
                 <div class="form-group">
-                    <label>Commercial *</label>
-                    <select required>
+                    <label for="cameraCommercial">Commercial *</label>
+                    <select id="cameraCommercial" required>
                         <option value="">Sélectionner un commercial</option>
                         <option value="Arnaud Bloch">Arnaud Bloch</option>
                         <option value="Benali Kodad">Benali Kodad</option>
@@ -1134,30 +1134,273 @@
                         <option value="Mohamed Tartik">Mohamed Tartik</option>
                         <option value="Nassim Jaza">Nassim Jaza</option>
                         <option value="Heythem Ziaya">Heythem Ziaya</option>
-                        <option value="Thomas Garcia">Thomas Garcia</option>
+                        <option value="Thomas Garcia" selected>Thomas Garcia</option>
                         <option value="Samir Ouhameni">Samir Ouhameni</option>
                     </select>
                 </div>
             </div>
 
-            <div class="summary">
-                <h3>Résumé du Devis Caméra</h3>
-                <div>
-                    <div class="summary-row">
-                        <span>Sous-total HT</span>
-                        <span>0.00 CHF</span>
+            <!-- Sections du devis caméra -->
+            <div class="sections-container">
+                <!-- Section Matériel -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            Matériel
+                        </div>
                     </div>
-                    <div class="summary-row tva">
-                        <span>TVA (8.1%)</span>
-                        <span>0.00 CHF</span>
+                    <div class="section-content">
+                        <div class="section-items">
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <select>
+                                        <option>Kit NVR 4 canaux + 2 caméras IP</option>
+                                    </select>
+                                </div>
+                                <input type="number" value="1" readonly>
+                                <input type="number" value="450.00" readonly>
+                                <input type="number" value="450.00" readonly>
+                                <div class="item-controls">
+                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                </div>
+                            </div>
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <select>
+                                        <option>Caméra IP extérieure supplémentaire</option>
+                                    </select>
+                                </div>
+                                <input type="number" value="2" readonly>
+                                <input type="number" value="120.00" readonly>
+                                <input type="number" value="240.00" readonly>
+                                <div class="item-controls">
+                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="add-item-btn">
+                            Ajouter un article
+                        </button>
+                        
+                        <div class="discount-section">
+                            <label>Remise (%)</label>
+                            <input type="number" min="0" max="100" step="0.1" value="0">
+                        </div>
+                        
+                        <div class="payment-options">
+                            <h4>Facilités de paiement</h4>
+                            <div class="payment-grid">
+                                <div class="payment-option active">
+                                    <strong>Comptant</strong><br>
+                                    <small>Aucun supplément</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>24 mois</strong><br>
+                                    <small>+10% sur la mensualité</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>36 mois</strong><br>
+                                    <small>+15% sur la mensualité</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>48 mois</strong><br>
+                                    <small>+20% sur la mensualité</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="summary-row total">
-                        <span>TOTAL TTC</span>
-                        <span>0.00 CHF</span>
+                </div>
+
+                <!-- Section Installation -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            Installation
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        <div class="section-items">
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <select>
+                                        <option>Installation système de surveillance complet</option>
+                                    </select>
+                                </div>
+                                <input type="number" value="1" readonly>
+                                <input type="number" value="300.00" readonly>
+                                <input type="number" value="300.00" readonly>
+                                <div class="item-controls">
+                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                </div>
+                            </div>
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <select>
+                                        <option>Configuration et formation utilisateur</option>
+                                    </select>
+                                </div>
+                                <input type="number" value="1" readonly>
+                                <input type="number" value="0.00" readonly>
+                                <div style="color: #22c55e; font-weight: bold;">OFFERT</div>
+                                <div class="item-controls">
+                                    <button class="btn btn-danger btn-small">Supprimer</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="add-item-btn">
+                            Ajouter un article
+                        </button>
+                        
+                        <div class="discount-section">
+                            <label>Remise (%)</label>
+                            <input type="number" min="0" max="100" step="0.1" value="0">
+                        </div>
+                        
+                        <div class="payment-options">
+                            <h4>Facilités de paiement</h4>
+                            <div class="payment-grid">
+                                <div class="payment-option active">
+                                    <strong>Comptant</strong><br>
+                                    <small>Aucun supplément</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>24 mois</strong><br>
+                                    <small>+10% sur la mensualité</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>36 mois</strong><br>
+                                    <small>+15% sur la mensualité</small>
+                                </div>
+                                <div class="payment-option">
+                                    <strong>48 mois</strong><br>
+                                    <small>+20% sur la mensualité</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Vision à distance (Option) -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            Vision à distance (Option)
+                        </div>
+                        <div class="section-controls">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="visionOption" onchange="toggleVisionOption()">
+                                <label for="visionOption">Inclure cette option</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-content" id="visionContent" style="display: none;">
+                        <div class="section-items">
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <span style="font-weight: 600;">Service de vision à distance</span>
+                                    <div style="font-size: 0.9rem; color: var(--gray-600);">Accès sécurisé aux caméras via application mobile et web</div>
+                                </div>
+                                <input type="number" value="1" readonly>
+                                <input type="number" value="20.00" readonly>
+                                <div style="font-weight: 600; color: var(--secondary-color);">20.00 CHF/mois</div>
+                                <div class="item-controls">
+                                    <!-- Pas de bouton supprimer pour cette option -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: var(--gray-50); padding: 15px; border-radius: var(--border-radius); margin-top: 15px; border: 1px solid var(--gray-300);">
+                            <h5 style="color: var(--secondary-color); margin-bottom: 10px;">Fonctionnalités incluses :</h5>
+                            <ul style="color: var(--gray-600); margin-left: 20px;">
+                                <li>Visualisation en temps réel</li>
+                                <li>Enregistrement cloud sécurisé</li>
+                                <li>Notifications d'alerte</li>
+                                <li>Application mobile iOS/Android</li>
+                                <li>Interface web</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Maintenance et garantie -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            Maintenance et garantie
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        <div class="section-items">
+                            <div class="item-row sample-item">
+                                <div class="product-selector">
+                                    <span style="font-weight: 600;">Pack maintenance complet</span>
+                                    <div style="font-size: 0.9rem; color: var(--gray-600);">Assistance, déplacements, pièces et support inclus</div>
+                                </div>
+                                <input type="number" value="1" readonly>
+                                <input type="number" value="0.00" readonly>
+                                <div style="color: #22c55e; font-weight: bold;">OFFERT</div>
+                                <div class="item-controls">
+                                    <!-- Pas de bouton supprimer pour cette section -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: var(--gray-50); padding: 15px; border-radius: var(--border-radius); margin-top: 15px; border: 1px solid var(--gray-300);">
+                            <h5 style="color: var(--secondary-color); margin-bottom: 10px;">Services inclus gratuitement :</h5>
+                            <ul style="color: var(--gray-600); margin-left: 20px;">
+                                <li>Assistance hotline</li>
+                                <li>Déplacement(s) sur site</li>
+                                <li>Matériels et pièces de rechange</li>
+                                <li>Main d'œuvre</li>
+                                <li>Support téléphonique</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Résumé -->
+            <div class="summary">
+                <h3>Résumé du Devis Caméra</h3>
+                <div>
+                    <div class="summary-row">
+                        <span><strong>Matériel</strong></span>
+                        <span>690.00 CHF</span>
+                    </div>
+                    <div class="summary-row">
+                        <span><strong>Installation</strong></span>
+                        <span>300.00 CHF</span>
+                    </div>
+                    <div class="summary-row" id="visionSummaryRow" style="display: none;">
+                        <span><strong>Vision à distance (mensuel)</strong></span>
+                        <span>20.00 CHF/mois</span>
+                    </div>
+                    <div class="summary-row">
+                        <span><strong>Maintenance et garantie</strong></span>
+                        <span>0.00 CHF</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Sous-total HT</span>
+                        <span id="cameraSubtotal">990.00 CHF</span>
+                    </div>
+                    <div class="summary-row tva">
+                        <span>TVA (8.1%)</span>
+                        <span id="cameraTva">80.19 CHF</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>TOTAL TTC</span>
+                        <span id="cameraTotal">1070.19 CHF</span>
+                    </div>
+                    <div class="summary-row" id="monthlyPaymentRow" style="display: none; background: var(--primary-color); color: var(--secondary-color); font-weight: 700; margin-top: 10px; padding: 15px; border-radius: var(--border-radius);">
+                        <span>Mensualité avec vision à distance</span>
+                        <span id="monthlyAmount">0.00 CHF/mois</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
             <div class="actions">
                 <button class="btn btn-success" onclick="generatePDF('camera')">
                     Générer le PDF
@@ -1258,10 +1501,83 @@
             modal.classList.toggle('active');
         }
 
+        // Fonction pour gérer l'option Vision à distance
+        function toggleVisionOption() {
+            const checkbox = document.getElementById('visionOption');
+            const content = document.getElementById('visionContent');
+            const summaryRow = document.getElementById('visionSummaryRow');
+            const monthlyRow = document.getElementById('monthlyPaymentRow');
+            
+            if (checkbox.checked) {
+                content.style.display = 'block';
+                summaryRow.style.display = 'flex';
+                monthlyRow.style.display = 'flex';
+                
+                // Calculer et afficher la mensualité avec vision à distance
+                updateCameraCalculations();
+            } else {
+                content.style.display = 'none';
+                summaryRow.style.display = 'none';
+                monthlyRow.style.display = 'none';
+                
+                // Recalculer sans la vision à distance
+                updateCameraCalculations();
+            }
+        }
+
+        // Fonction pour mettre à jour les calculs du devis caméra
+        function updateCameraCalculations() {
+            const visionOption = document.getElementById('visionOption').checked;
+            
+            // Montants de base (peuvent être modifiés selon les articles ajoutés)
+            const materialAmount = 690.00;
+            const installationAmount = 300.00;
+            const maintenanceAmount = 0.00;
+            const visionMonthlyAmount = visionOption ? 20.00 : 0.00;
+            
+            // Calcul du sous-total (sans la vision à distance qui est mensuelle)
+            const subtotal = materialAmount + installationAmount + maintenanceAmount;
+            const tva = subtotal * 0.081;
+            const total = subtotal + tva;
+            
+            // Mise à jour de l'affichage
+            document.getElementById('cameraSubtotal').textContent = subtotal.toFixed(2) + ' CHF';
+            document.getElementById('cameraTva').textContent = tva.toFixed(2) + ' CHF';
+            document.getElementById('cameraTotal').textContent = total.toFixed(2) + ' CHF';
+            
+            // Calcul de la mensualité si vision à distance activée
+            if (visionOption) {
+                // Obtenir le mode de paiement sélectionné dans la section Matériel ou Installation
+                const activePaymentOption = document.querySelector('#camera-tab .payment-option.active');
+                let monthlyBase = 0;
+                
+                if (activePaymentOption) {
+                    const paymentText = activePaymentOption.textContent;
+                    if (paymentText.includes('24 mois')) {
+                        monthlyBase = (total * 1.10) / 24; // +10%
+                    } else if (paymentText.includes('36 mois')) {
+                        monthlyBase = (total * 1.15) / 36; // +15%
+                    } else if (paymentText.includes('48 mois')) {
+                        monthlyBase = (total * 1.20) / 48; // +20%
+                    }
+                }
+                
+                const totalMonthly = monthlyBase + visionMonthlyAmount;
+                document.getElementById('monthlyAmount').textContent = totalMonthly.toFixed(2) + ' CHF/mois';
+            }
+        }
+
         // Simulation de la génération PDF avec sauvegarde Drive
         function generatePDF(type) {
-            const clientName = document.getElementById('clientName').value || 'Client';
-            const commercial = document.getElementById('commercial').value;
+            let clientName, commercial;
+            
+            if (type === 'alarm') {
+                clientName = document.getElementById('clientName').value || 'Client';
+                commercial = document.getElementById('commercial').value;
+            } else {
+                clientName = document.getElementById('cameraClientName').value || 'Client';
+                commercial = document.getElementById('cameraCommercial').value;
+            }
             
             if (!commercial) {
                 alert('Veuillez sélectionner un commercial avant de générer le PDF.');
@@ -1304,21 +1620,3 @@
         // Animation des options de paiement
         document.querySelectorAll('.payment-option').forEach(option => {
             option.addEventListener('click', function() {
-                // Retirer la classe active de toutes les options du même groupe
-                const siblings = this.parentElement.querySelectorAll('.payment-option');
-                siblings.forEach(sibling => sibling.classList.remove('active'));
-                // Ajouter la classe active à l'option cliquée
-                this.classList.add('active');
-            });
-        });
-
-        console.log('Générateur de devis Dialarme chargé avec succès !');
-        console.log('✓ Design blanc/jaune Dialarme');
-        console.log('✓ Logo intégré');
-        console.log('✓ Liste des commerciaux');
-        console.log('✓ TVA suisse 8.1%');
-        console.log('✓ Interface sans emojis');
-        console.log('✓ Sauvegarde Drive configurée');
-    </script>
-</body>
-</html>
