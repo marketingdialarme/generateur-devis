@@ -1,13 +1,4 @@
-.discount-input {
-            padding: 8px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 15px;
-            font-weight: 400;
-            width: 120px;
-            text-align: center;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -1471,7 +1462,6 @@
                 
                 const productLines = container.querySelectorAll('.product-line');
                 let hasProducts = false;
-                let originalSubtotal = 0;
                 
                 // En-têtes du tableau
                 doc.setFont('helvetica', 'bold');
@@ -1501,7 +1491,6 @@
                         const price = parseFloat(select.selectedOptions[0].getAttribute('data-price')) || 0;
                         let lineTotal = price * quantity - discount;
                         lineTotal = Math.max(0, lineTotal);
-                        originalSubtotal += lineTotal;
                         
                         // Ligne alternée
                         if (index % 2 === 0) {
@@ -1571,44 +1560,15 @@
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
-                if (discountValue > 0 && hasProducts && originalSubtotal > 0) {
+                if (discountValue > 0 && hasProducts) {
                     yPosition += 10;
-                    
-                    // Calcul de la réduction
-                    let discountAmount = 0;
-                    if (discountType === 'percent') {
-                        discountAmount = originalSubtotal * (discountValue / 100);
-                    } else {
-                        discountAmount = Math.min(discountValue, originalSubtotal);
-                    }
-                    
-                    const finalTotal = Math.max(0, originalSubtotal - discountAmount);
-                    
-                    // Affichage de la réduction avec fond coloré
-                    doc.setFillColor(255, 243, 205); // Fond jaune clair
-                    doc.rect(40, yPosition - 5, 515, 40, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(10);
-                    doc.setTextColor(133, 100, 4); // Couleur texte marron
-                    doc.text('RÉDUCTION APPLIQUÉE', 50, yPosition + 8);
-                    
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFont('helvetica', 'italic');
                     doc.setFontSize(9);
-                    doc.text(`Sous-total: ${originalSubtotal.toFixed(2)} CHF`, 50, yPosition + 22);
-                    doc.text(`Réduction: -${discountAmount.toFixed(2)} CHF (${discountType === 'percent' ? discountValue + '%' : discountValue + ' CHF'})`, 200, yPosition + 22);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total après réduction: ${finalTotal.toFixed(2)} CHF`, 400, yPosition + 8);
-                    
-                    // Bordure de la zone de réduction
-                    doc.setDrawColor(255, 193, 7);
-                    doc.setLineWidth(1);
-                    doc.rect(40, yPosition - 5, 515, 40);
-                    
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Réduction section: -${discountValue}${discountType === 'percent' ? '%' : ' CHF'}`, 90, yPosition);
                     doc.setTextColor(0, 0, 0);
                     doc.setFont('helvetica', 'normal');
-                    yPosition += 45;
+                    yPosition += 15;
                 }
                 
                 return yPosition + 10;
