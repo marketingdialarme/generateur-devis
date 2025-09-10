@@ -1,144 +1,302 @@
-<script>
-  // --------- CATALOGUE PRODUITS (corrigé) ----------
-  const catalog = {};
+/**
+ * Générateur de Devis Dialarme
+ * Système de génération de devis pour alarmes et caméras
+ * 
+ * @version 1.0.0
+ * @author Dialarme
+ */
 
-  // Alarme - Matériel
-  catalog['alarm-material'] = [
-    { id: 1,  name: "Bouton panique/Montre d’urgence (radio)", price: 35.00 },
-    { id: 2,  name: "Barrière extérieure 2x12 mètres (radio)", price: 35.00 },
-    { id: 3,  name: "Badge x 4", price: 25.00 },
-    { id: 4,  name: "Centrale AX Pro", price: 6900.00 },
-    { id: 5,  name: "Centrale Jablotron", price: 990.00 },
-    { id: 6,  name: "Centrale Titane", price: 690.00 },
-    { id: 7,  name: "Clavier (radio)", price: 45.00 },
-    { id: 8,  name: "Détecteur volumétrique (radio)", price: 25.00 },
-    { id: 9,  name: "Détecteur volumétrique caméra (radio)", price: 25.00 },
-    { id: 10, name: "Détecteur d’ouverture (radio)", price: 25.00 },
-    { id: 11, name: "Détecteur de choc (radio)", price: 25.00 },
-    { id: 12, name: "Détecteur de bris de verre (radio)", price: 25.00 },
-    { id: 13, name: "Détecteur de fumée (radio)", price: 120.00 },
-    { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 25.00 },
-    { id: 15, name: "Détecteur de rideau intérieur (radio)", price: 25.00 },
-    { id: 16, name: "Interphonie (radio sur secteur)", price: 120.00 },
-    { id: 17, name: "Sonde innondation (radio)", price: 25.00 },
-    { id: 18, name: "Sirène déportée (radio)", price: 35.00 },
-    { id: 19, name: "Télécommande (radio)", price: 120.00 }
-  ];
-
-  // Alarme - Installation (OFFERT pris en charge)
-  catalog['alarm-installation'] = [
-    { id: 20, name: "Installation, paramétrages, tests, mise en service & formation des utilisateurs", price: 0.00, offered: true }
-  ];
-
-  // Alarme - Administratif
-  catalog['alarm-admin'] = [
-    { id: 21, name: "Carte SIM + activation", price: 50.00 },
-    { id: 22, name: "Frais de dossier", price: 190.00 }
-  ];
-
-  // Caméra - Matériel
-  catalog['camera-material'] = [
-    { id: 23, name: "Bullet Mini", price: 390.00 },
-    { id: 24, name: "Bullet XL Varifocale Night", price: 640.00 },
-    { id: 25, name: "Bullet Zone Alarme", price: 740.00 },
-    { id: 26, name: "Bullet Zoom x23", price: 990.00 },
-    { id: 27, name: "Caméra de comptage", price: 860.00 },
-    { id: 28, name: "Coffret NVR 4P", price: 240.00 },
-    { id: 29, name: "Coffret NVR 8P", price: 360.00 },
-    { id: 30, name: "Disque dur 4 To", price: 270.00 },
-    { id: 31, name: "Dôme Antivandale", price: 390.00 },
-    { id: 32, name: "Dôme Mini Antivandale", price: 390.00 },
-    { id: 33, name: "Dôme Night", price: 540.00 },
-    { id: 34, name: "Dôme Plat Motorisé", price: 390.00 },
-    { id: 35, name: "Dôme XL Varifocale", price: 590.00 },
-    { id: 36, name: "Dôme Zone Alarme", price: 740.00 },
-    { id: 37, name: "HDMI Ext.", price: 190.00 },
-    { id: 38, name: "Modem 4G", price: 290.00 },
-    { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00 },
-    { id: 40, name: "Moniteur Vidéo 28\" 4K", price: 460.00 },
-    { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00 },
-    { id: 42, name: "Onduleur 1000 - 60min", price: 360.00 },
-    { id: 43, name: "Onduleur 1500 - 90min", price: 600.00 },
-    { id: 44, name: "Onduleur 2200 - 120min", price: 830.00 },
-    { id: 45, name: "Onduleur 700 - 30min", price: 240.00 },
-    { id: 46, name: "Reo 4G + P.Solaire", price: 490.00 },
-    { id: 47, name: "Reo 4G motorisé + P.solaire", price: 640.00 },
-    { id: 48, name: "Support Mural Articulé", price: 100.00 },
-    { id: 49, name: "Switch POE", price: 270.00 }
-  ];
-
-  // Caméra - Installation
-  catalog['camera-installation'] = [
-    { id: 50, name: "Installation, paramétrages, tests, mise en service & formation des utilisateurs", description: "pour 1/2 journée", price: 690.00 }
-  ];
-
-  catalog['camera-remote'] = [
-    { id: 51, name: "Accès à distance sécurisé sur Modem indépendant", price: 20.00 }
-  ];
-
-  catalog['camera-maintenance'] = [
-    { id: 52, name: "Assistance hotline, déplacement(s), matériels pièce(s), main d'œuvre et support téléphonique", price: 0.00, offered: true }
-  ];
-
-  // ---------- UI: Tabs ----------
-  function showTab(tabName, el) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    const tab = document.getElementById(`${tabName}-tab`);
-    if (tab) tab.classList.add('active');
-    if (el) el.classList.add('active');
+class QuoteGenerator {
+  constructor() {
+    this.catalog = this.initializeCatalog();
+    this.selectedItems = new Map();
+    this.init();
   }
 
-  // ---------- Catalog Modal ----------
-  function toggleCatalog() {
-    document.getElementById('catalogModal').classList.toggle('active');
+  /**
+   * Initialise le catalogue produits
+   * @returns {Object} Catalogue organisé par catégories
+   */
+  initializeCatalog() {
+    return {
+      // Alarme - Matériel
+      'alarm-material': [
+        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 35.00 },
+        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 35.00 },
+        { id: 3, name: "Badge x 4", price: 25.00 },
+        { id: 4, name: "Centrale AX Pro", price: 6900.00 },
+        { id: 5, name: "Centrale Jablotron", price: 990.00 },
+        { id: 6, name: "Centrale Titane", price: 690.00 },
+        { id: 7, name: "Clavier (radio)", price: 45.00 },
+        { id: 8, name: "Détecteur volumétrique (radio)", price: 25.00 },
+        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 25.00 },
+        { id: 10, name: "Détecteur d'ouverture (radio)", price: 25.00 },
+        { id: 11, name: "Détecteur de choc (radio)", price: 25.00 },
+        { id: 12, name: "Détecteur de bris de verre (radio)", price: 25.00 },
+        { id: 13, name: "Détecteur de fumée (radio)", price: 120.00 },
+        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 25.00 },
+        { id: 15, name: "Détecteur de rideau intérieur (radio)", price: 25.00 },
+        { id: 16, name: "Interphonie (radio sur secteur)", price: 120.00 },
+        { id: 17, name: "Sonde innondation (radio)", price: 25.00 },
+        { id: 18, name: "Sirène déportée (radio)", price: 35.00 },
+        { id: 19, name: "Télécommande (radio)", price: 120.00 }
+      ],
+
+      // Alarme - Installation
+      'alarm-installation': [
+        { 
+          id: 20, 
+          name: "Installation, paramétrages, tests, mise en service & formation des utilisateurs", 
+          price: 0.00, 
+          offered: true 
+        }
+      ],
+
+      // Alarme - Administratif
+      'alarm-admin': [
+        { id: 21, name: "Carte SIM + activation", price: 50.00 },
+        { id: 22, name: "Frais de dossier", price: 190.00 }
+      ],
+
+      // Caméra - Matériel
+      'camera-material': [
+        { id: 23, name: "Bullet Mini", price: 390.00 },
+        { id: 24, name: "Bullet XL Varifocale Night", price: 640.00 },
+        { id: 25, name: "Bullet Zone Alarme", price: 740.00 },
+        { id: 26, name: "Bullet Zoom x23", price: 990.00 },
+        { id: 27, name: "Caméra de comptage", price: 860.00 },
+        { id: 28, name: "Coffret NVR 4P", price: 240.00 },
+        { id: 29, name: "Coffret NVR 8P", price: 360.00 },
+        { id: 30, name: "Disque dur 4 To", price: 270.00 },
+        { id: 31, name: "Dôme Antivandale", price: 390.00 },
+        { id: 32, name: "Dôme Mini Antivandale", price: 390.00 },
+        { id: 33, name: "Dôme Night", price: 540.00 },
+        { id: 34, name: "Dôme Plat Motorisé", price: 390.00 },
+        { id: 35, name: "Dôme XL Varifocale", price: 590.00 },
+        { id: 36, name: "Dôme Zone Alarme", price: 740.00 },
+        { id: 37, name: "HDMI Ext.", price: 190.00 },
+        { id: 38, name: "Modem 4G", price: 290.00 },
+        { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00 },
+        { id: 40, name: "Moniteur Vidéo 28\" 4K", price: 460.00 },
+        { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00 },
+        { id: 42, name: "Onduleur 1000 - 60min", price: 360.00 },
+        { id: 43, name: "Onduleur 1500 - 90min", price: 600.00 },
+        { id: 44, name: "Onduleur 2200 - 120min", price: 830.00 },
+        { id: 45, name: "Onduleur 700 - 30min", price: 240.00 },
+        { id: 46, name: "Reo 4G + P.Solaire", price: 490.00 },
+        { id: 47, name: "Reo 4G motorisé + P.solaire", price: 640.00 },
+        { id: 48, name: "Support Mural Articulé", price: 100.00 },
+        { id: 49, name: "Switch POE", price: 270.00 }
+      ],
+
+      // Caméra - Installation
+      'camera-installation': [
+        { 
+          id: 50, 
+          name: "Installation, paramétrages, tests, mise en service & formation des utilisateurs", 
+          description: "pour 1/2 journée", 
+          price: 690.00 
+        }
+      ],
+
+      // Caméra - Accès distant
+      'camera-remote': [
+        { id: 51, name: "Accès à distance sécurisé sur Modem indépendant", price: 20.00 }
+      ],
+
+      // Caméra - Maintenance
+      'camera-maintenance': [
+        { 
+          id: 52, 
+          name: "Assistance hotline, déplacement(s), matériels pièce(s), main d'œuvre et support téléphonique", 
+          price: 0.00, 
+          offered: true 
+        }
+      ]
+    };
   }
 
-  // Minimal render inside the catalog modal from our arrays
-  function renderCatalogIntoModal() {
+  /**
+   * Initialise l'application
+   */
+  init() {
+    this.setupEventListeners();
+    this.wirePaymentOptions();
+    this.renderCatalogIntoModal();
+    console.log('Générateur de devis Dialarme initialisé.');
+  }
+
+  /**
+   * Configure les écouteurs d'événements
+   */
+  setupEventListeners() {
+    // Fermeture modal en cliquant à l'extérieur
+    document.addEventListener('click', (event) => {
+      const modal = document.getElementById('catalogModal');
+      if (modal && event.target === modal) {
+        this.toggleCatalog();
+      }
+    });
+
+    // Fermeture modal avec ESC
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        const modal = document.getElementById('catalogModal');
+        if (modal && modal.classList.contains('active')) {
+          this.toggleCatalog();
+        }
+      }
+    });
+  }
+
+  /**
+   * Affiche un onglet spécifique
+   * @param {string} tabName - Nom de l'onglet
+   * @param {HTMLElement} element - Élément déclencheur
+   */
+  showTab(tabName, element) {
+    // Masquer tous les onglets
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+
+    // Afficher l'onglet sélectionné
+    const targetTab = document.getElementById(`${tabName}-tab`);
+    if (targetTab) {
+      targetTab.classList.add('active');
+    }
+    
+    if (element) {
+      element.classList.add('active');
+    }
+  }
+
+  /**
+   * Bascule l'affichage du modal catalogue
+   */
+  toggleCatalog() {
+    const modal = document.getElementById('catalogModal');
+    if (modal) {
+      modal.classList.toggle('active');
+    }
+  }
+
+  /**
+   * Rend le catalogue dans le modal
+   */
+  renderCatalogIntoModal() {
     const section = document.querySelector('.catalog-section > div:last-child');
     if (!section) return;
 
-    // Build a simple list from alarm-material as an example (you can expand to all groups)
-    const items = catalog['alarm-material'];
-    section.innerHTML = items.map(p => `
+    const items = this.catalog['alarm-material'];
+    section.innerHTML = items.map(product => `
       <div class="catalog-grid">
         <div class="product-item">
-          <div class="product-name">${p.name}</div>
-          <div class="product-description">${p.description ?? ""}</div>
+          <div class="product-name">${product.name}</div>
+          <div class="product-description">${product.description || ""}</div>
         </div>
         <div>Qté: 1</div>
-        <div><strong>${p.offered ? '<span class="free-label">OFFERT</span>' : (p.price.toFixed(2) + ' CHF')}</strong></div>
-        <button class="btn btn-danger btn-small" disabled>Supprimer</button>
+        <div>
+          <strong>
+            ${product.offered 
+              ? '<span class="free-label">OFFERT</span>' 
+              : `${product.price.toFixed(2)} CHF`
+            }
+          </strong>
+        </div>
+        <button class="btn btn-danger btn-small" onclick="quoteGenerator.removeProduct(${product.id})" disabled>
+          Supprimer
+        </button>
       </div>
     `).join('');
   }
 
-  // ---------- Payment options ----------
-  function wirePaymentOptions() {
+  /**
+   * Ajoute un produit au devis
+   * @param {number} productId - ID du produit
+   * @param {number} quantity - Quantité
+   */
+  addProduct(productId, quantity = 1) {
+    // Trouver le produit dans le catalogue
+    let product = null;
+    for (const category of Object.values(this.catalog)) {
+      product = category.find(p => p.id === productId);
+      if (product) break;
+    }
+
+    if (product) {
+      this.selectedItems.set(productId, {
+        product: product,
+        quantity: quantity
+      });
+      this.updateQuoteDisplay();
+    }
+  }
+
+  /**
+   * Supprime un produit du devis
+   * @param {number} productId - ID du produit
+   */
+  removeProduct(productId) {
+    this.selectedItems.delete(productId);
+    this.updateQuoteDisplay();
+  }
+
+  /**
+   * Met à jour l'affichage du devis
+   */
+  updateQuoteDisplay() {
+    // Logique de mise à jour de l'affichage du devis
+    console.log('Mise à jour du devis:', this.selectedItems);
+  }
+
+  /**
+   * Configure les options de paiement
+   */
+  wirePaymentOptions() {
     document.querySelectorAll('.payment-grid').forEach(grid => {
-      grid.querySelectorAll('.payment-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-          grid.querySelectorAll('.payment-option').forEach(s => s.classList.remove('active'));
-          opt.classList.add('active');
+      grid.querySelectorAll('.payment-option').forEach(option => {
+        option.addEventListener('click', () => {
+          grid.querySelectorAll('.payment-option').forEach(opt => {
+            opt.classList.remove('active');
+          });
+          option.classList.add('active');
         });
       });
     });
   }
 
-  // ---------- jsPDF with Dialarme PNG logo ----------
-  async function loadImageAsDataURL(url) {
-    // Fetch image and convert to dataURL to avoid cross-origin issues in some contexts
-    const res = await fetch(url, { mode: 'cors' });
-    const blob = await res.blob();
-    return await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
-    });
+  /**
+   * Charge une image et la convertit en DataURL
+   * @param {string} url - URL de l'image
+   * @returns {Promise<string>} DataURL de l'image
+   */
+  async loadImageAsDataURL(url) {
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement de l\'image:', error);
+      throw error;
+    }
   }
 
-  async function generatePDF(type) {
+  /**
+   * Génère un PDF pour le devis
+   * @param {string} type - Type de devis ('camera' ou 'alarm')
+   */
+  async generatePDF(type) {
     const clientNameEl = document.getElementById('clientName');
     const commercialEl = document.getElementById('commercial');
 
@@ -150,72 +308,122 @@
       return;
     }
 
+    // Vérifier que jsPDF est disponible
+    if (!window.jspdf) {
+      console.error('jsPDF n\'est pas chargé');
+      alert('Erreur: Bibliothèque PDF non disponible');
+      return;
+    }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
 
-    // Add white page background
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
-
-    // Add Dialarme logo
     try {
-      const logoDataUrl = await loadImageAsDataURL("https://dialarme.ch/wp-content/uploads/2024/11/LODO-MD.png");
-      // Fit logo to ~140px width
-      doc.addImage(logoDataUrl, 'PNG', 40, 32, 140, 50);
-    } catch (e) {
-      console.warn('Logo non chargé, poursuite sans logo', e);
+      // Fond blanc
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
+
+      // Logo Dialarme
+      try {
+        const logoDataUrl = await this.loadImageAsDataURL("https://dialarme.ch/wp-content/uploads/2024/11/LODO-MD.png");
+        doc.addImage(logoDataUrl, 'PNG', 40, 32, 140, 50);
+      } catch (error) {
+        console.warn('Logo non chargé, poursuite sans logo:', error);
+      }
+
+      // En-tête
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text(`Devis ${type === 'camera' ? 'Caméra' : 'Alarme'}`, 200, 58);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(`Client : ${clientName}`, 200, 78);
+      doc.text(`Commercial : ${commercial}`, 200, 94);
+      
+      // Ligne de séparation
+      doc.setDrawColor(244, 230, 0); // Jaune Dialarme
+      doc.setLineWidth(2);
+      doc.line(40, 100, 555, 100);
+
+      // Contenu du devis
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Récapitulatif du devis :', 40, 130);
+      
+      let yPosition = 150;
+      this.selectedItems.forEach((item, productId) => {
+        const { product, quantity } = item;
+        const totalPrice = product.price * quantity;
+        
+        doc.text(`• ${product.name}`, 60, yPosition);
+        doc.text(`Qté: ${quantity}`, 400, yPosition);
+        doc.text(`${totalPrice.toFixed(2)} CHF`, 480, yPosition);
+        yPosition += 20;
+      });
+
+      // Pied de page
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Dialarme — Générateur de devis', 40, 800);
+
+      // Sauvegarde
+      doc.save(`Devis-${type}-${clientName}-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      alert('Erreur lors de la génération du PDF');
     }
-
-    // Header text
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text(`Devis ${type === 'camera' ? 'Caméra' : 'Alarme'}`, 200, 58);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.text(`Client : ${clientName}`, 200, 78);
-    doc.text(`Commercial : ${commercial}`, 200, 94);
-    doc.setDrawColor(244, 230, 0); // jaune Dialarme
-    doc.setLineWidth(2);
-    doc.line(40, 100, 555, 100);
-
-    // (Démo) corps de PDF – à étendre selon vos sections/ totaux:
-    doc.setFontSize(12);
-    doc.text('Récapitulatif (démo) :', 40, 130);
-    doc.text('- Contenu dynamique du devis à insérer ici', 60, 150);
-    doc.text('- Sections : Matériel, Installation, Frais de dossier', 60, 170);
-    doc.text('- Facilités de paiement : Comptant / 24 / 36 / 48 mois', 60, 190);
-
-    // Footer
-    doc.setFontSize(9);
-    doc.setTextColor(120);
-    doc.text('Dialarme — Générateur de devis', 40, 800);
-
-    doc.save(`Devis-${type}-${clientName}.pdf`);
   }
 
-  // ---------- Modal close when clicking outside ----------
-  document.addEventListener('click', (ev) => {
-    const modal = document.getElementById('catalogModal');
-    if (modal && ev.target === modal) toggleCatalog();
-  });
+  /**
+   * Calcule le total du devis
+   * @returns {number} Total en CHF
+   */
+  calculateTotal() {
+    let total = 0;
+    this.selectedItems.forEach((item) => {
+      if (!item.product.offered) {
+        total += item.product.price * item.quantity;
+      }
+    });
+    return total;
+  }
 
-  // ---------- ESC to close modal ----------
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') {
-      const modal = document.getElementById('catalogModal');
-      if (modal && modal.classList.contains('active')) toggleCatalog();
-    }
-  });
+  /**
+   * Exporte le devis en JSON
+   * @returns {string} Devis au format JSON
+   */
+  exportQuote() {
+    const quote = {
+      timestamp: new Date().toISOString(),
+      items: Array.from(this.selectedItems.entries()).map(([id, item]) => ({
+        id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        offered: item.product.offered || false
+      })),
+      total: this.calculateTotal()
+    };
+    
+    return JSON.stringify(quote, null, 2);
+  }
+}
 
-  // ---------- On Ready ----------
-  document.addEventListener('DOMContentLoaded', () => {
-    wirePaymentOptions();
-    renderCatalogIntoModal();
-    console.log('Générateur de devis Dialarme chargé.');
-  });
+// Initialisation globale
+let quoteGenerator;
 
-  // expose for HTML onclick
-  window.showTab = showTab;
-  window.toggleCatalog = toggleCatalog;
-  window.generatePDF = generatePDF;
-</script>
+document.addEventListener('DOMContentLoaded', () => {
+  quoteGenerator = new QuoteGenerator();
+  
+  // Exposition des méthodes pour l'HTML
+  window.showTab = (tabName, element) => quoteGenerator.showTab(tabName, element);
+  window.toggleCatalog = () => quoteGenerator.toggleCatalog();
+  window.generatePDF = (type) => quoteGenerator.generatePDF(type);
+});
+
+// Export pour utilisation en module
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = QuoteGenerator;
+}
