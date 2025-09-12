@@ -984,7 +984,7 @@
                 this.updateTotals();
             }
 
-            // FONCTION PDF FINALE - ZERO DEPENDANCES
+            // FONCTION PDF STYLE DIALARME EXACT
             generatePDF(type) {
                 const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
                 const commercialField = type === 'alarm' ? 'commercial' : 'commercialCamera';
@@ -1006,167 +1006,458 @@
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF('portrait', 'pt', 'a4');
 
-                    // Header professionnel
+                    // Header noir exact du modèle
                     doc.setFillColor(51, 51, 51);
                     doc.rect(0, 0, 595, 80, 'F');
                     
+                    // Titre principal
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(20);
+                    doc.setFontSize(18);
                     doc.setTextColor(255, 255, 255);
-                    doc.text('DIALARME - DEVIS PROFESSIONNEL', 40, 35);
+                    const title = type === 'camera' ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE' : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
+                    doc.text(title, 40, 30);
                     
+                    // Numéro de devis format exact
                     const now = new Date();
-                    const quoteNumber = `DIA-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hour = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const quoteNumber = `DIA-${year}-${month}-${day}${hour}${minutes}`;
                     
                     doc.setFontSize(12);
-                    doc.text(`Devis N° ${quoteNumber}`, 40, 55);
-                    doc.text(`Type: ${type.toUpperCase()}`, 40, 70);
+                    doc.text(quoteNumber, 40, 50);
+                    doc.text(`DIALARME | A L'ATTENTION DE ${clientName.toUpperCase()}`, 40, 65);
 
-                    // Logo jaune
+                    // Logo jaune Dialarme
                     doc.setFillColor(244, 230, 0);
-                    doc.rect(450, 15, 120, 50, 'F');
+                    doc.rect(480, 15, 80, 50, 'F');
                     doc.setTextColor(0, 0, 0);
                     doc.setFont('helvetica', 'bold');
-                    doc.text('DIALARME', 460, 35);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(10);
-                    doc.text('votre sécurité,', 460, 50);
-                    doc.text('ça nous regarde', 460, 60);
-
-                    // Informations client
-                    let y = 120;
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(14);
-                    doc.text('INFORMATIONS CLIENT', 40, y);
-                    y += 25;
-
-                    doc.setFont('helvetica', 'normal');
                     doc.setFontSize(12);
-                    doc.text(`Nom du client: ${clientName}`, 40, y); y += 20;
-                    doc.text(`Commercial: ${commercial}`, 40, y); y += 20;
-                    doc.text(`Date: ${new Date().toLocaleDateString('fr-CH')}`, 40, y); y += 30;
+                    doc.text('DIALARME', 490, 35);
 
-                    // Ligne de séparation
-                    doc.setDrawColor(244, 230, 0);
-                    doc.setLineWidth(2);
-                    doc.line(40, y, 555, y);
-                    y += 30;
+                    // Bande jaune séparatrice
+                    doc.setFillColor(244, 230, 0);
+                    doc.rect(0, 80, 595, 8, 'F');
 
-                    // Calculs et affichage
+                    let yPos = 110;
+
+                    // Infos commercial et date
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(11);
+                    doc.text(`NOM DU CONSEILLER : ${commercial}`, 40, yPos);
+                    doc.text(`DATE (Devis valable 3 mois) : ${new Date().toLocaleDateString('fr-CH')}`, 350, yPos);
+                    yPos += 30;
+
                     if (type === 'alarm') {
-                        const materialTotal = this.calculateSectionTotal('alarm-material');
-                        const installTotal = this.calculateSectionTotal('alarm-installation');
-                        const adminTotal = 240;
-                        const totalHT = materialTotal + installTotal + adminTotal;
-                        const totalTTC = totalHT * 1.08;
-
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(14);
-                        doc.text('RÉCAPITULATIF ALARME', 40, y); y += 25;
-
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(12);
-                        doc.text(`Matériel: ${materialTotal.toFixed(2)} CHF HT`, 60, y); y += 20;
-                        doc.text(`Installation: ${installTotal.toFixed(2)} CHF HT`, 60, y); y += 20;
-                        doc.text(`Frais de dossier: ${adminTotal.toFixed(2)} CHF HT`, 60, y); y += 20;
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`TOTAL HT: ${totalHT.toFixed(2)} CHF`, 60, y); y += 20;
-                        doc.text(`TVA (8%): ${(totalTTC - totalHT).toFixed(2)} CHF`, 60, y); y += 20;
-                        doc.setFontSize(14);
-                        doc.text(`TOTAL TTC: ${totalTTC.toFixed(2)} CHF`, 60, y); y += 30;
-
-                        const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                        if (materialMonths > 0 && materialTotal > 0) {
-                            const monthlyAmount = materialTotal / materialMonths;
-                            doc.setFont('helvetica', 'normal');
-                            doc.setFontSize(12);
-                            doc.text(`Facilité de paiement: ${materialMonths} mois`, 60, y); y += 15;
-                            doc.text(`Mensualité: ${monthlyAmount.toFixed(2)} CHF x ${materialMonths} mois`, 60, y); y += 15;
-                            doc.text('+ Frais de dossier: 240.00 CHF à l\'installation', 60, y); y += 20;
+                        // Section 1: Matériel (si des produits existent)
+                        if (this.hasSectionProducts('alarm-material')) {
+                            yPos = this.createDialarmeSection(doc, 'MATERIEL (KIT DE BASE)', 'alarm-material', yPos);
                         }
+
+                        // Section 2: Installation (si des produits existent)
+                        if (this.hasSectionProducts('alarm-installation')) {
+                            yPos = this.createDialarmeSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
+                        }
+
+                        // Section 3: Frais de dossier (toujours présente)
+                        yPos = this.createAdminFeesDialarme(doc, yPos);
 
                     } else if (type === 'camera') {
-                        const materialTotal = this.calculateSectionTotal('camera-material');
-                        const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                        const installTotal = 690 * installQty;
-                        const totalHT = materialTotal + installTotal;
-                        const totalTTC = totalHT * 1.08;
+                        // Section 1: Matériel
+                        if (this.hasSectionProducts('camera-material')) {
+                            yPos = this.createDialarmeSection(doc, 'MATERIEL', 'camera-material', yPos);
+                        }
+
+                        // Section 2: Installation
+                        yPos = this.createCameraInstallDialarme(doc, yPos);
+
+                        // Section 3: Vision à distance si sélectionnée
                         const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(14);
-                        doc.text('RÉCAPITULATIF VIDÉOSURVEILLANCE', 40, y); y += 25;
-
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(12);
-                        doc.text(`Matériel: ${materialTotal.toFixed(2)} CHF HT`, 60, y); y += 20;
-                        doc.text(`Installation (${installQty}x): ${installTotal.toFixed(2)} CHF HT`, 60, y); y += 20;
-                        
                         if (remoteAccess) {
-                            doc.text('Vision à distance: 20.00 CHF/mois', 60, y); y += 20;
-                        }
-                        
-                        doc.text('Maintenance: OFFERT', 60, y); y += 20;
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`TOTAL HT: ${totalHT.toFixed(2)} CHF`, 60, y); y += 20;
-                        doc.text(`TVA (8%): ${(totalTTC - totalHT).toFixed(2)} CHF`, 60, y); y += 20;
-                        doc.setFontSize(14);
-                        doc.text(`TOTAL TTC: ${totalTTC.toFixed(2)} CHF`, 60, y); y += 30;
-
-                        const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
-                        if (materialMonths > 0 && materialTotal > 0) {
-                            const monthlyAmount = materialTotal / materialMonths;
+                            yPos += 20;
                             doc.setFont('helvetica', 'normal');
-                            doc.setFontSize(12);
-                            doc.text(`Facilité de paiement matériel: ${materialMonths} mois`, 60, y); y += 15;
-                            doc.text(`Mensualité matériel: ${monthlyAmount.toFixed(2)} CHF x ${materialMonths} mois`, 60, y); y += 15;
-                            doc.text(`Installation: ${installTotal.toFixed(2)} CHF à l'installation`, 60, y); y += 15;
-                            if (remoteAccess) {
-                                doc.text('+ Vision à distance: 20.00 CHF/mois', 60, y); y += 15;
-                            }
+                            doc.setFontSize(11);
+                            doc.text('Vision à distance : 20.00 CHF/mois', 40, yPos);
+                            yPos += 25;
                         }
                     }
 
-                    // Conditions générales
-                    if (y < 650) {
-                        y = 650;
-                    }
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(12);
-                    doc.text('CONDITIONS GÉNÉRALES', 40, y); y += 20;
+                    // Section finale avec mensualités totales
+                    yPos = this.createFinalContractDialarme(doc, yPos, type);
 
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(10);
-                    doc.text('• Devis valable 30 jours à compter de sa date d\'émission', 40, y); y += 15;
-                    doc.text('• Installation sous 15 jours ouvrés après validation du devis', 40, y); y += 15;
-                    doc.text('• Garantie: 2 ans pièces et main d\'œuvre', 40, y); y += 15;
-                    doc.text('• Maintenance préventive incluse dans nos services', 40, y); y += 20;
-
-                    // Footer
-                    doc.setFillColor(51, 51, 51);
-                    doc.rect(0, 750, 595, 50, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(12);
-                    doc.setTextColor(255, 255, 255);
-                    doc.text('DIALARME - Solutions de sécurité professionnelles', 40, 775);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(10);
-                    doc.text('Contact: info@dialarme.ch | Tél: +41 XX XXX XX XX', 40, 790);
+                    // Footer noir avec signatures
+                    this.createDialarmeFooter(doc, clientName);
 
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     doc.save(filename);
-                    this.showNotification('PDF généré avec succès !');
+                    this.showNotification('PDF Dialarme généré avec succès !');
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
                     alert(`Erreur lors de la génération du PDF: ${error.message}`);
                 }
+            }
+
+            hasSectionProducts(sectionId) {
+                const container = document.getElementById(`${sectionId}-products`);
+                if (!container) return false;
+                return container.querySelectorAll('.product-line').length > 0;
+            }
+
+            createDialarmeSection(doc, title, sectionId, yPos) {
+                // Titre de section (sans numérotation)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.text(title, 40, yPos);
+                yPos += 20;
+
+                // En-tête tableau jaune Dialarme
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 20, 'F');
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 13);
+                doc.text('Désignation du matériel', 120, yPos + 13);
+                doc.text('Prix uni. HT', 400, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                // Lignes de produits (minimum 4 lignes)
+                const container = document.getElementById(`${sectionId}-products`);
+                const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
+                let sectionTotal = 0;
+                
+                for (let i = 0; i < Math.max(4, productLines.length); i++) {
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(390, yPos, 390, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+
+                    if (i < productLines.length) {
+                        const line = productLines[i];
+                        const select = line.querySelector('.product-select');
+                        const qtyInput = line.querySelector('.quantity-input');
+                        const discountInput = line.querySelector('.discount-input');
+                        const offeredCheckbox = line.querySelector('.offered-checkbox');
+                        
+                        if (select && select.value && qtyInput) {
+                            const qty = parseFloat(qtyInput.value) || 0;
+                            const discount = parseFloat(discountInput?.value) || 0;
+                            const isOffered = offeredCheckbox?.checked || false;
+                            const price = parseFloat(select.selectedOptions[0]?.getAttribute('data-price')) || 0;
+                            const productName = select.selectedOptions[0]?.text.split(' - ')[0]?.replace(' (OFFERT)', '') || '';
+                            
+                            let lineTotal = isOffered ? 0 : Math.max(0, (price * qty) - discount);
+                            sectionTotal += lineTotal;
+
+                            doc.setFont('helvetica', 'normal');
+                            doc.setFontSize(9);
+                            doc.setTextColor(0, 0, 0);
+                            doc.text(qty.toString(), 55, yPos + 12);
+                            doc.text(productName.substring(0, 35), 90, yPos + 12);
+                            
+                            if (isOffered) {
+                                doc.setFont('helvetica', 'bold');
+                                doc.setTextColor(0, 150, 0);
+                                doc.text('OFFERT', 405, yPos + 12);
+                                doc.text('OFFERT', 485, yPos + 12);
+                            } else {
+                                doc.setTextColor(0, 0, 0);
+                                doc.text(price.toFixed(2), 405, yPos + 12);
+                                doc.text(lineTotal.toFixed(2), 485, yPos + 12);
+                            }
+                            doc.setFont('helvetica', 'normal');
+                            doc.setTextColor(0, 0, 0);
+                        }
+                    }
+                    yPos += 18;
+                }
+
+                // Zone totaux grise exacte
+                const totalTTC = sectionTotal * 1.081; // TVA 8.1% exacte
+                const tva = totalTTC - sectionTotal;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 54, 'F');
+                doc.setDrawColor(0, 0, 0);
+                doc.rect(390, yPos, 165, 54);
+                doc.line(390, yPos + 18, 555, yPos + 18);
+                doc.line(390, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text(sectionTotal.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 30);
+                doc.text(tva.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 400, yPos + 48);
+                doc.text(totalTTC.toFixed(2), 485, yPos + 48);
+
+                yPos += 70;
+
+                // Note facilité de paiement
+                const paymentMonths = this.sections[sectionId]?.paymentMonths || 0;
+                if (paymentMonths > 0 && sectionTotal > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.text('Précision : Montant payable à l\'installation, une fois seulement', 40, yPos);
+                    yPos += 25;
+                }
+
+                return yPos + 20;
+            }
+
+            createAdminFeesDialarme(doc, yPos) {
+                // Titre
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
+                yPos += 20;
+
+                // En-tête tableau jaune
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 20, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 13);
+                doc.text('Déscription', 120, yPos + 13);
+                doc.text('Prix uni. HT', 400, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                // Lignes frais de dossier
+                const adminItems = [
+                    { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
+                    { qty: 1, desc: 'Frais de dossier', price: 190 }
+                ];
+
+                adminItems.forEach(item => {
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(390, yPos, 390, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.text(item.qty.toString(), 55, yPos + 12);
+                    doc.text(item.desc, 90, yPos + 12);
+                    doc.text(item.price.toFixed(2), 405, yPos + 12);
+                    doc.text(item.price.toFixed(2), 485, yPos + 12);
+                    yPos += 18;
+                });
+
+                // Ligne vide
+                doc.rect(40, yPos, 515, 18);
+                doc.line(80, yPos, 80, yPos + 18);
+                doc.line(390, yPos, 390, yPos + 18);
+                doc.line(470, yPos, 470, yPos + 18);
+                yPos += 18;
+
+                // Totaux frais de dossier
+                const adminTotalTTC = 240 * 1.081;
+                const adminTVA = adminTotalTTC - 240;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 54, 'F');
+                doc.rect(390, yPos, 165, 54);
+                doc.line(390, yPos + 18, 555, yPos + 18);
+                doc.line(390, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text('240.00', 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 30);
+                doc.text(adminTVA.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 400, yPos + 48);
+                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 48);
+
+                yPos += 70;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text('Précision : Montant payable à l\'installation, une fois seulement', 40, yPos);
+
+                return yPos + 30;
+            }
+
+            createCameraInstallDialarme(doc, yPos) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.text('INSTALLATION', 40, yPos);
+                yPos += 20;
+
+                // Tableau installation
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 20, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 13);
+                doc.text('Désignation du matériel', 120, yPos + 13);
+                doc.text('Prix uni. HT', 400, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                const installTotal = 690 * installQty;
+
+                // Ligne installation
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 18);
+                doc.line(80, yPos, 80, yPos + 18);
+                doc.line(390, yPos, 390, yPos + 18);
+                doc.line(470, yPos, 470, yPos + 18);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text(installQty.toString(), 55, yPos + 12);
+                doc.text('Installation, paramétrages, tests', 90, yPos + 12);
+                doc.text('690.00', 405, yPos + 12);
+                doc.text(installTotal.toFixed(2), 485, yPos + 12);
+                yPos += 18;
+
+                // 2 lignes vides
+                for (let i = 0; i < 2; i++) {
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(390, yPos, 390, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+                    yPos += 18;
+                }
+
+                // Totaux installation
+                const installTotalTTC = installTotal * 1.081;
+                const installTVA = installTotalTTC - installTotal;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 54, 'F');
+                doc.rect(390, yPos, 165, 54);
+                doc.line(390, yPos + 18, 555, yPos + 18);
+                doc.line(390, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text(installTotal.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 30);
+                doc.text(installTVA.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 400, yPos + 48);
+                doc.text(installTotalTTC.toFixed(2), 485, yPos + 48);
+
+                return yPos + 80;
+            }
+
+            createFinalContractDialarme(doc, yPos, type) {
+                yPos += 20;
+                
+                // Tableau final avec mensualité
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 20, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Qté', 50, yPos + 13);
+                doc.text('Désignation du matériel', 120, yPos + 13);
+                doc.text('Prix uni. HT', 400, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                // 2 lignes vides
+                for (let i = 0; i < 2; i++) {
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(390, yPos, 390, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+                    yPos += 18;
+                }
+
+                // Zone mensualité jaune
+                doc.setFillColor(244, 230, 0);
+                doc.rect(470, yPos, 85, 18, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.text('Mensualité', 475, yPos + 12);
+                yPos += 18;
+
+                // Totaux généraux
+                let totalFinalHT = 0;
+                if (type === 'alarm') {
+                    totalFinalHT = this.calculateSectionTotal('alarm-material') + 
+                                  this.calculateSectionTotal('alarm-installation') + 240;
+                } else {
+                    totalFinalHT = this.calculateSectionTotal('camera-material') + 
+                                  (690 * (parseFloat(document.getElementById('camera-installation-qty')?.value) || 1));
+                }
+
+                const finalTotalTTC = totalFinalHT * 1.081;
+                const finalTVA = finalTotalTTC - totalFinalHT;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 54, 'F');
+                doc.rect(390, yPos, 165, 54);
+                doc.line(390, yPos + 18, 555, yPos + 18);
+                doc.line(390, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text(totalFinalHT.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 30);
+                doc.text(finalTVA.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 400, yPos + 48);
+                doc.text(finalTotalTTC.toFixed(2), 485, yPos + 48);
+
+                yPos += 80;
+
+                // Texte contrat avec mensualités
+                const materialMonths = this.sections[`${type}-material`]?.paymentMonths || 0;
+                if (materialMonths > 0) {
+                    const materialTotal = this.calculateSectionTotal(`${type}-material`) * 1.081; // TTC
+                    const monthlyTTC = materialTotal / materialMonths;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${materialMonths} mois par habitation.`, 80, yPos);
+                    yPos += 15;
+                    doc.text(`La mensualité de CHF ${monthlyTTC.toFixed(2)} TTC est fixée et non indexable pendant la durée contractuelle`, 80, yPos);
+                }
+
+                return yPos + 30;
+            }
+
+            createDialarmeFooter(doc, clientName) {
+                // Footer noir Dialarme
+                doc.setFillColor(51, 51, 51);
+                doc.rect(0, 720, 595, 122, 'F');
+                
+                // Bande jaune
+                doc.setFillColor(244, 230, 0);
+                doc.rect(0, 720, 595, 8, 'F');
+
+                // Zones signatures blanches rondes
+                doc.setFillColor(255, 255, 255);
+                doc.rect(50, 750, 200, 30, 'F');
+                doc.rect(350, 750, 200, 30, 'F');
+                doc.rect(50, 790, 200, 30, 'F');
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(`NOM DU CLIENT : ${clientName}`, 60, 770);
+                doc.text('SIGNATURE DU CLIENT', 430, 770);
+                doc.text('DATE DE SIGNATURE :', 60, 810);
             }
 
             exportQuote() {
