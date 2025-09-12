@@ -1121,7 +1121,259 @@
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(0, 0, 0);
+                doc.text('Désignation du matériel', 120, yPos + 13);
+                doc.text('Prix unitaire HT', 380, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                const installTotal = 690 * installQty;
+
+                // Ligne installation
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 18);
+                doc.line(80, yPos, 80, yPos + 18);
+                doc.line(370, yPos, 370, yPos + 18);
+                doc.line(470, yPos, 470, yPos + 18);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text(installQty.toString(), 55, yPos + 12);
+                doc.text('Installation, paramétrages, tests', 90, yPos + 12);
+                doc.text('690.00', 385, yPos + 12);
+                doc.text(installTotal.toFixed(2), 485, yPos + 12);
+                yPos += 18;
+
+                // Lignes vides
+                for (let i = 0; i < 2; i++) {
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(370, yPos, 370, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+                    yPos += 18;
+                }
+
+                // Totaux
+                const totalTTC = installTotal * 1.081;
+                const tva = totalTTC - installTotal;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(370, yPos, 185, 54, 'F');
+                doc.rect(370, yPos, 185, 54);
+                doc.line(370, yPos + 18, 555, yPos + 18);
+                doc.line(370, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 380, yPos + 12);
+                doc.text(installTotal.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 380, yPos + 30);
+                doc.text(tva.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 380, yPos + 48);
+                doc.text(totalTTC.toFixed(2), 485, yPos + 48);
+
+                return yPos + 70;
+            }
+
+            createContractSection(doc, yPos, type) {
+                yPos += 20;
+                
+                // Tableau final avec mensualité
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 20, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
                 doc.text('Qté', 50, yPos + 13);
+                doc.text('Désignation du matériel', 120, yPos + 13);
+                doc.text('Prix unitaire HT', 380, yPos + 13);
+                doc.text('Total HT', 480, yPos + 13);
+                yPos += 20;
+
+                // 2 lignes vides
+                for (let i = 0; i < 2; i++) {
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 18);
+                    doc.line(80, yPos, 80, yPos + 18);
+                    doc.line(370, yPos, 370, yPos + 18);
+                    doc.line(470, yPos, 470, yPos + 18);
+                    yPos += 18;
+                }
+
+                // Zone mensualité
+                doc.setFillColor(244, 230, 0);
+                doc.rect(470, yPos, 85, 18, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.text('Mensualité', 475, yPos + 12);
+                yPos += 18;
+
+                // Totaux finaux
+                let totalFinal = 0;
+                if (type === 'alarm') {
+                    totalFinal = this.calculateSectionTotal('alarm-material') + 
+                                this.calculateSectionTotal('alarm-installation') + 240;
+                } else {
+                    totalFinal = this.calculateSectionTotal('camera-material') + 
+                                (690 * (parseFloat(document.getElementById('camera-installation-qty')?.value) || 1));
+                }
+
+                const finalTTC = totalFinal * 1.081;
+                const finalTVA = finalTTC - totalFinal;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(370, yPos, 185, 54, 'F');
+                doc.rect(370, yPos, 185, 54);
+                doc.line(370, yPos + 18, 555, yPos + 18);
+                doc.line(370, yPos + 36, 555, yPos + 36);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total H.T.', 380, yPos + 12);
+                doc.text(totalFinal.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 380, yPos + 30);
+                doc.text(finalTVA.toFixed(2), 485, yPos + 30);
+                doc.text('Total T.T.C.', 380, yPos + 48);
+                doc.text(finalTTC.toFixed(2), 485, yPos + 48);
+
+                yPos += 80;
+
+                // Texte contrat
+                const materialMonths = this.sections[`${type}-material`]?.paymentMonths || 0;
+                if (materialMonths > 0) {
+                    const materialTotal = this.calculateSectionTotal(`${type}-material`);
+                    const monthlyHT = materialTotal / materialMonths;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${materialMonths} mois par habitation.`, 80, yPos);
+                    yPos += 15;
+                    doc.text(`La mensualité de CHF ${monthlyHT.toFixed(2)} HT est fixée et non indexable pendant la durée contractuelle`, 80, yPos);
+                }
+
+                return yPos + 30;
+            }
+
+            createPDFFooter(doc, clientName) {
+                // Footer noir
+                doc.setFillColor(51, 51, 51);
+                doc.rect(0, 720, 595, 122, 'F');
+                
+                // Bande jaune
+                doc.setFillColor(244, 230, 0);
+                doc.rect(0, 720, 595, 8, 'F');
+
+                // Zones signatures blanches
+                doc.setFillColor(255, 255, 255);
+                doc.rect(50, 750, 200, 30, 'F');
+                doc.rect(350, 750, 200, 30, 'F');
+                doc.rect(50, 790, 200, 30, 'F');
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(`NOM DU CLIENT : ${clientName}`, 60, 770);
+                doc.text('SIGNATURE DU CLIENT', 430, 770);
+                doc.text('DATE DE SIGNATURE :', 60, 810);
+            }
+
+            exportQuote() {
+                const quote = {
+                    timestamp: new Date().toISOString(),
+                    type: this.currentTab,
+                    sections: this.sections,
+                    totals: this.currentTab === 'alarm' ? {
+                        material: this.calculateSectionTotal('alarm-material'),
+                        installation: this.calculateSectionTotal('alarm-installation'),
+                        admin: 240,
+                        totalHT: this.calculateSectionTotal('alarm-material') + this.calculateSectionTotal('alarm-installation') + 240
+                    } : {
+                        material: this.calculateSectionTotal('camera-material'),
+                        installation: 690 * (parseFloat(document.getElementById('camera-installation-qty').value) || 1),
+                        remote: document.getElementById('camera-remote-access').checked ? 20 : 0,
+                        totalHT: this.calculateSectionTotal('camera-material') + 690 * (parseFloat(document.getElementById('camera-installation-qty').value) || 1)
+                    }
+                };
+                
+                const dataStr = JSON.stringify(quote, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `devis-${this.currentTab}-${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                this.showNotification('Devis exporté avec succès!');
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #28a745;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Instance globale
+        let quoteGenerator;
+
+        // Fonctions globales
+        function showTab(tabName, element) {
+            quoteGenerator.showTab(tabName, element);
+        }
+
+        function generatePDF(type) {
+            quoteGenerator.generatePDF(type);
+        }
+
+        function exportQuote() {
+            quoteGenerator.exportQuote();
+        }
+
+        function selectPayment(element, sectionId) {
+            quoteGenerator.selectPayment(element, sectionId);
+        }
+
+        function addProductLine(sectionId) {
+            quoteGenerator.addProductLine(sectionId);
+        }
+
+        function updateTotals() {
+            quoteGenerator.updateTotals();
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            quoteGenerator = new DialarmeQuoteGenerator();
+        });
+
+        // Animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
                 doc.text('Désignation du matériel', 120, yPos + 13);
                 doc.text('Prix unitaire HT', 380, yPos + 13);
                 doc.text('Total HT', 480, yPos + 13);
