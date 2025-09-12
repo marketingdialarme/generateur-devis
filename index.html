@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff; /* Fond blanc */
             min-height: 100vh;
             padding: 20px;
         }
@@ -26,6 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
+            border: 1px solid #e0e0e0;
         }
 
         .header {
@@ -306,8 +307,9 @@
             height: 18px;
         }
 
+        /* Récapitulatif sur fond noir */
         .quote-summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000; /* Fond noir */
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -317,6 +319,7 @@
         .quote-summary h3 {
             margin-bottom: 20px;
             font-size: 22px;
+            color: white;
         }
 
         .summary-item {
@@ -478,7 +481,7 @@
         .product-price {
             font-size: 18px;
             font-weight: bold;
-            color: #667eea;
+            color: #333;
             margin: 10px 0;
         }
 
@@ -1162,14 +1165,20 @@
                     return;
                 }
 
-                if (!window.jspdf) {
-                    alert('Erreur: Bibliothèque PDF non disponible');
+                // Vérification de la bibliothèque jsPDF
+                if (typeof window.jspdf === 'undefined') {
+                    console.error('jsPDF library not found');
+                    alert('Erreur: Bibliothèque PDF non disponible. Vérifiez que jsPDF est chargé.');
                     return;
                 }
 
                 try {
                     const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+                    const doc = new jsPDF({ 
+                        unit: 'pt', 
+                        format: 'a4',
+                        orientation: 'portrait'
+                    });
 
                     // Header avec logo placeholder
                     doc.setFillColor(244, 230, 0);
@@ -1452,11 +1461,11 @@
                     
                 } catch (error) {
                     console.error('Erreur lors de la génération du PDF:', error);
-                    alert('Erreur lors de la génération du PDF');
+                    alert('Erreur lors de la génération du PDF: ' + error.message);
                 }
             }
 
-            addTableToPDF(doc, sectionId, yPosition) {
+            addProductsToPDF(doc, sectionId, yPosition) {
                 const container = document.getElementById(`${sectionId}-products`);
                 if (!container) return yPosition;
                 
@@ -1572,215 +1581,6 @@
                 }
                 
                 return yPosition + 10;
-            }
-
-            addFixedItemsTableToPDF(doc, items, yPosition) {
-                // En-têtes du tableau
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
-                doc.setFillColor(240, 240, 240);
-                doc.rect(40, yPosition, 515, 20, 'F');
-                doc.setTextColor(0, 0, 0);
-                doc.text('QTÉ', 50, yPosition + 13);
-                doc.text('DÉSIGNATION', 90, yPosition + 13);
-                doc.text('PRIX UNITAIRE HT', 400, yPosition + 13);
-                doc.text('TOTAL HT', 480, yPosition + 13);
-                
-                yPosition += 25;
-                
-                // Lignes du tableau
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                
-                items.forEach((item, index) => {
-                    // Ligne alternée
-                    if (index % 2 === 0) {
-                        doc.setFillColor(248, 249, 250);
-                        doc.rect(40, yPosition - 5, 515, 25, 'F');
-                    }
-                    
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(item.qty.toString(), 50, yPosition + 8);
-                    
-                    // Nom du produit (avec retour à la ligne si nécessaire)
-                    const maxWidth = 300;
-                    const words = item.name.split(' ');
-                    let line1 = '';
-                    let line2 = '';
-                    
-                    for (let word of words) {
-                        const testLine = line1 + (line1 ? ' ' : '') + word;
-                        const textWidth = doc.getTextWidth(testLine);
-                        if (textWidth > maxWidth && line1) {
-                            line2 = (line2 ? line2 + ' ' : '') + word;
-                        } else {
-                            line1 = testLine;
-                        }
-                    }
-                    
-                    doc.text(line1, 90, yPosition + 8);
-                    if (line2) {
-                        doc.text(line2, 90, yPosition + 18);
-                    }
-                    
-                    if (item.offered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 400, yPosition + 8);
-                        doc.text('OFFERT', 480, yPosition + 8);
-                        doc.setFont('helvetica', 'normal');
-                        doc.setTextColor(0, 0, 0);
-                    } else if (item.monthly) {
-                        doc.text(`${item.unitPrice.toFixed(2)} CHF`, 400, yPosition + 8);
-                        doc.text(`${item.total.toFixed(2)} CHF/mois`, 480, yPosition + 8);
-                    } else {
-                        doc.text(`${item.unitPrice.toFixed(2)} CHF`, 400, yPosition + 8);
-                        doc.text(`${item.total.toFixed(2)} CHF`, 480, yPosition + 8);
-                    }
-                    
-                    yPosition += line2 ? 25 : 20;
-                });
-                
-                // Bordure du tableau
-                doc.setDrawColor(200, 200, 200);
-                doc.setLineWidth(0.5);
-                const tableStart = yPosition - (items.length * 22) - 25;
-                doc.rect(40, tableStart, 515, yPosition - tableStart);
-                
-                // Lignes verticales
-                doc.line(80, tableStart, 80, yPosition); // Après QTÉ
-                doc.line(390, tableStart, 390, yPosition); // Avant Prix unitaire
-                doc.line(470, tableStart, 470, yPosition); // Avant Total
-                
-                return yPosition + 10;
-            }
-
-            addPaymentSummaryTable(doc, type, yPosition, materialTotal, installationTotal, adminTotal, paymentMonths, remoteAccess = false) {
-                // Titre du tableau récapitulatif
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('RÉCAPITULATIF DES PAIEMENTS', 40, yPosition);
-                yPosition += 25;
-                
-                // En-têtes
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.setFillColor(244, 230, 0); // Jaune Dialarme
-                doc.rect(40, yPosition, 250, 20, 'F');
-                doc.rect(290, yPosition, 125, 20, 'F');
-                doc.rect(415, yPosition, 140, 20, 'F');
-                
-                doc.setTextColor(51, 51, 51);
-                doc.text('MODALITÉ', 50, yPosition + 13);
-                doc.text('MONTANT', 320, yPosition + 13);
-                doc.text('ÉCHÉANCE', 450, yPosition + 13);
-                
-                yPosition += 25;
-                
-                // Lignes du tableau
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(0, 0, 0);
-                
-                let lineIndex = 0;
-                
-                if (type === 'alarm') {
-                    // Facilités de paiement matériel + installation
-                    if (paymentMonths > 0) {
-                        const monthlyAmount = (materialTotal + installationTotal) / paymentMonths;
-                        
-                        if (lineIndex % 2 === 0) {
-                            doc.setFillColor(248, 249, 250);
-                            doc.rect(40, yPosition - 2, 515, 18, 'F');
-                        }
-                        
-                        doc.text(`Facilité de paiement (${paymentMonths} mois)`, 50, yPosition + 10);
-                        doc.text(`${monthlyAmount.toFixed(2)} CHF x ${paymentMonths}`, 300, yPosition + 10);
-                        doc.text('Mensuel', 450, yPosition + 10);
-                        yPosition += 18;
-                        lineIndex++;
-                    }
-                    
-                    // Frais de dossier
-                    if (lineIndex % 2 === 0) {
-                        doc.setFillColor(248, 249, 250);
-                        doc.rect(40, yPosition - 2, 515, 18, 'F');
-                    }
-                    
-                    doc.text('Frais de dossier', 50, yPosition + 10);
-                    doc.text(`${adminTotal.toFixed(2)} CHF`, 300, yPosition + 10);
-                    doc.text('À l\'installation', 450, yPosition + 10);
-                    yPosition += 18;
-                    lineIndex++;
-                    
-                } else if (type === 'camera') {
-                    // Facilités de paiement matériel
-                    if (paymentMonths > 0) {
-                        const monthlyAmount = materialTotal / paymentMonths;
-                        
-                        if (lineIndex % 2 === 0) {
-                            doc.setFillColor(248, 249, 250);
-                            doc.rect(40, yPosition - 2, 515, 18, 'F');
-                        }
-                        
-                        doc.text(`Facilité matériel (${paymentMonths} mois)`, 50, yPosition + 10);
-                        doc.text(`${monthlyAmount.toFixed(2)} CHF x ${paymentMonths}`, 300, yPosition + 10);
-                        doc.text('Mensuel', 450, yPosition + 10);
-                        yPosition += 18;
-                        lineIndex++;
-                    }
-                    
-                    // Installation
-                    if (lineIndex % 2 === 0) {
-                        doc.setFillColor(248, 249, 250);
-                        doc.rect(40, yPosition - 2, 515, 18, 'F');
-                    }
-                    
-                    doc.text('Installation', 50, yPosition + 10);
-                    doc.text(`${installationTotal.toFixed(2)} CHF`, 300, yPosition + 10);
-                    doc.text('À l\'installation', 450, yPosition + 10);
-                    yPosition += 18;
-                    lineIndex++;
-                    
-                    // Vision à distance si sélectionnée
-                    if (remoteAccess) {
-                        if (lineIndex % 2 === 0) {
-                            doc.setFillColor(248, 249, 250);
-                            doc.rect(40, yPosition - 2, 515, 18, 'F');
-                        }
-                        
-                        doc.text('Vision à distance', 50, yPosition + 10);
-                        doc.text('20.00 CHF', 300, yPosition + 10);
-                        doc.text('Mensuel', 450, yPosition + 10);
-                        yPosition += 18;
-                        lineIndex++;
-                    }
-                }
-                
-                // Total comptant
-                if (lineIndex % 2 === 0) {
-                    doc.setFillColor(248, 249, 250);
-                    doc.rect(40, yPosition - 2, 515, 18, 'F');
-                }
-                
-                doc.setFont('helvetica', 'bold');
-                const totalComptant = materialTotal + installationTotal + adminTotal;
-                const totalComptantTTC = totalComptant * 1.08;
-                
-                doc.text('TOTAL COMPTANT', 50, yPosition + 10);
-                doc.text(`${totalComptantTTC.toFixed(2)} CHF TTC`, 300, yPosition + 10);
-                doc.text('Immédiat', 450, yPosition + 10);
-                yPosition += 23;
-                
-                // Bordures du tableau
-                doc.setDrawColor(200, 200, 200);
-                doc.setLineWidth(0.5);
-                const tableStart = yPosition - (lineIndex + 1) * 18 - 25;
-                doc.rect(40, tableStart, 515, yPosition - tableStart);
-                doc.line(290, tableStart, 290, yPosition); // Colonne montant
-                doc.line(415, tableStart, 415, yPosition); // Colonne échéance
-                
-                return yPosition + 20;
             }
 
             exportQuote() {
