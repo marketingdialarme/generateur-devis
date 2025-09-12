@@ -1377,6 +1377,10 @@
                 if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     const installTotal = this.calculateSectionTotal('alarm-installation');
+                    const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || 0;
+                    const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked;
+                    const testCycliqueTotal = testCycliqueOffered ? 0 : testCycliquePrice;
+                    
                     const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
                     const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
                     
@@ -1390,8 +1394,8 @@
                         monthsCount = Math.max(monthsCount, installMonths);
                     }
                     
-                    // Montant à l'installation (frais de dossier + matériel/install si comptant)
-                    totalInstallation = 240 * 1.081; // Frais de dossier TTC
+                    // Montant à l'installation (frais de dossier + test cyclique + matériel/install si comptant)
+                    totalInstallation = (240 + testCycliqueTotal) * 1.081; // Frais de dossier + test cyclique TTC
                     if (materialMonths === 0) totalInstallation += materialTotal * 1.081;
                     if (installMonths === 0) totalInstallation += installTotal * 1.081;
                     
