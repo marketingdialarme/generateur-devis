@@ -1470,3 +1470,102 @@
                 doc.text('SIGNATURE DU CLIENT', 430, 760);
                 doc.text('DATE DE SIGNATURE :', 60, 795);
             }
+
+            exportQuote() {
+                const quote = {
+                    timestamp: new Date().toISOString(),
+                    type: this.currentTab,
+                    sections: this.sections,
+                    totals: this.currentTab === 'alarm' ? {
+                        material: this.calculateSectionTotal('alarm-material'),
+                        installation: this.calculateSectionTotal('alarm-installation'),
+                        admin: 240,
+                        totalHT: this.calculateSectionTotal('alarm-material') + this.calculateSectionTotal('alarm-installation') + 240
+                    } : {
+                        material: this.calculateSectionTotal('camera-material'),
+                        installation: 690 * (parseFloat(document.getElementById('camera-installation-qty').value) || 1),
+                        remote: document.getElementById('camera-remote-access').checked ? 20 : 0,
+                        totalHT: this.calculateSectionTotal('camera-material') + 690 * (parseFloat(document.getElementById('camera-installation-qty').value) || 1)
+                    }
+                };
+                
+                const dataStr = JSON.stringify(quote, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `devis-${this.currentTab}-${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                this.showNotification('Devis exporté avec succès!');
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #28a745;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Instance globale
+        let generator;
+
+        // Fonctions globales
+        function showTab(tabName, element) {
+            generator.showTab(tabName, element);
+        }
+
+        function generatePDF(type) {
+            generator.generatePDF(type);
+        }
+
+        function exportQuote() {
+            generator.exportQuote();
+        }
+
+        function selectPayment(element, sectionId) {
+            generator.selectPayment(element, sectionId);
+        }
+
+        function addProductLine(sectionId) {
+            generator.addProductLine(sectionId);
+        }
+
+        function updateTotals() {
+            generator.updateTotals();
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            generator = new DialarmeFinalGenerator();
+        });
+
+        // Animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
