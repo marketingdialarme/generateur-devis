@@ -395,6 +395,19 @@
             font-weight: bold;
         }
 
+        .rental-option {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .rental-option label {
+            font-weight: bold;
+            color: #856404;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -453,6 +466,13 @@
 
         <!-- Tab Alarm -->
         <div id="alarm-tab" class="tab-content active">
+            <div class="rental-option">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="alarm-rental-mode" onchange="toggleRentalMode('alarm')">
+                    <label for="alarm-rental-mode">🏢 Mode Location (pas de mensualités de paiement)</label>
+                </div>
+            </div>
+
             <div class="form-section">
                 <h3>📋 Informations Client</h3>
                 <div class="form-grid">
@@ -501,7 +521,7 @@
                     </select>
                     <input type="number" id="alarm-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
                 </div>
-                <div class="payment-options">
+                <div class="payment-options" id="alarm-material-payment">
                     <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-material')">Comptant</div>
                     <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-material')">24 mois</div>
                     <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-material')">36 mois</div>
@@ -523,7 +543,7 @@
                     </select>
                     <input type="number" id="alarm-installation-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
                 </div>
-                <div class="payment-options">
+                <div class="payment-options" id="alarm-installation-payment">
                     <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-installation')">Comptant</div>
                     <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-installation')">24 mois</div>
                     <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-installation')">36 mois</div>
@@ -590,6 +610,13 @@
 
         <!-- Tab Camera -->
         <div id="camera-tab" class="tab-content">
+            <div class="rental-option">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="camera-rental-mode" onchange="toggleRentalMode('camera')">
+                    <label for="camera-rental-mode">🏢 Mode Location (pas de mensualités, vision à distance et maintenance non disponibles)</label>
+                </div>
+            </div>
+
             <div class="form-section">
                 <h3>📋 Informations Client</h3>
                 <div class="form-grid">
@@ -638,7 +665,7 @@
                     </select>
                     <input type="number" id="camera-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
                 </div>
-                <div class="payment-options">
+                <div class="payment-options" id="camera-material-payment">
                     <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'camera-material')">Comptant</div>
                     <div class="payment-option" data-months="24" onclick="selectPayment(this, 'camera-material')">24 mois</div>
                     <div class="payment-option" data-months="36" onclick="selectPayment(this, 'camera-material')">36 mois</div>
@@ -662,7 +689,7 @@
             </div>
 
             <!-- Section 3: Vision à distance -->
-            <div class="quote-section">
+            <div class="quote-section" id="camera-remote-section">
                 <h3>🌐 3. Vision à distance</h3>
                 <div class="checkbox-option">
                     <input type="checkbox" id="camera-remote-access" onchange="updateTotals()">
@@ -671,7 +698,7 @@
             </div>
 
             <!-- Section 4: Maintenance et garantie -->
-            <div class="quote-section">
+            <div class="quote-section" id="camera-maintenance-section">
                 <h3>🔧 4. Maintenance et garantie</h3>
                 <div class="product-line">
                     <div>Assistance hotline, déplacement(s), matériels pièce(s), main d'œuvre et support téléphonique</div>
@@ -692,11 +719,11 @@
                     <span>Installation</span>
                     <span id="camera-installation-total">690.00 CHF</span>
                 </div>
-                <div class="summary-item">
+                <div class="summary-item" id="camera-remote-summary">
                     <span>Vision à distance</span>
                     <span id="camera-remote-total">0.00 CHF/mois</span>
                 </div>
-                <div class="summary-item">
+                <div class="summary-item" id="camera-maintenance-summary">
                     <span>Maintenance</span>
                     <span>OFFERT</span>
                 </div>
@@ -728,7 +755,7 @@
     </div>
 
     <script>
-        // Générateur de devis Dialarme
+        // Générateur de devis Dialarme avec mode Location
         class DialarmeFinalGenerator {
             constructor() {
                 this.catalog = {
@@ -802,13 +829,18 @@
                     'camera-material': { paymentMonths: 0 }
                 };
 
+                this.rentalMode = {
+                    'alarm': false,
+                    'camera': false
+                };
+
                 this.init();
             }
 
             init() {
                 this.updateCurrentDate();
                 this.updateTotals();
-                console.log('Générateur Dialarme initialisé');
+                console.log('Générateur Dialarme avec Location initialisé');
             }
 
             updateCurrentDate() {
@@ -841,6 +873,39 @@
                 if (element) {
                     element.classList.add('active');
                 }
+
+                this.updateTotals();
+            }
+
+            toggleRentalMode(type) {
+                this.rentalMode[type] = document.getElementById(`${type}-rental-mode`).checked;
+                
+                if (type === 'alarm') {
+                    // Masquer/afficher les options de paiement
+                    document.getElementById('alarm-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('alarm-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    
+                    // Réinitialiser les paiements si location
+                    if (this.rentalMode[type]) {
+                        this.sections['alarm-material'].paymentMonths = 0;
+                        this.sections['alarm-installation'].paymentMonths = 0;
+                    }
+                } else if (type === 'camera') {
+                    // Masquer/afficher les sections spécifiques
+                    document.getElementById('camera-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('camera-remote-section').style.display = this.rentalMode[type] ? 'none' : 'block';
+                    document.getElementById('camera-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
+                    document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
+                    document.getElementById('camera-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
+                    
+                    // Réinitialiser si location
+                    if (this.rentalMode[type]) {
+                        this.sections['camera-material'].paymentMonths = 0;
+                        document.getElementById('camera-remote-access').checked = false;
+                    }
+                }
+                
+                this.updateTotals();
             }
 
             addProductLine(sectionId) {
@@ -918,14 +983,19 @@
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                    this.updateMonthlyPayments('alarm', materialTotal + installationTotal);
+                    // Gérer les mensualités uniquement si pas en mode location
+                    if (!this.rentalMode['alarm']) {
+                        this.updateMonthlyPayments('alarm', materialTotal + installationTotal);
+                    } else {
+                        document.getElementById('alarm-monthly-payment').style.display = 'none';
+                    }
                     
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     const installationQty = parseFloat(document.getElementById('camera-installation-qty').value) || 1;
                     const installationOffered = document.getElementById('camera-installation-offered').checked;
                     const installationTotal = installationOffered ? 0 : (690 * installationQty);
-                    const remoteAccess = document.getElementById('camera-remote-access').checked;
+                    const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
                     
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = totalHT * 1.08;
@@ -933,14 +1003,22 @@
                     document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
+                    
+                    if (!this.rentalMode['camera']) {
+                        document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
+                    }
+                    
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                    this.updateMonthlyPayments('camera', materialTotal);
-                    
-                    const remoteMonthly = document.getElementById('camera-remote-monthly');
-                    remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                    // Gérer les mensualités uniquement si pas en mode location
+                    if (!this.rentalMode['camera']) {
+                        this.updateMonthlyPayments('camera', materialTotal);
+                        const remoteMonthly = document.getElementById('camera-remote-monthly');
+                        remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                    } else {
+                        document.getElementById('camera-monthly-payment').style.display = 'none';
+                    }
                 }
             }
 
@@ -959,7 +1037,7 @@
                     maxMonths = this.sections['camera-material']?.paymentMonths || 0;
                 }
                 
-                if (maxMonths > 0 && amount > 0) {
+                if (maxMonths > 0 && amount > 0 && !this.rentalMode[type]) {
                     const monthlyAmount = amount / maxMonths;
                     amountSpan.textContent = monthlyAmount.toFixed(2);
                     countSpan.textContent = maxMonths;
@@ -970,6 +1048,10 @@
             }
 
             selectPayment(element, sectionId) {
+                // Ne pas permettre de sélection de paiement en mode location
+                const tabType = sectionId.startsWith('alarm') ? 'alarm' : 'camera';
+                if (this.rentalMode[tabType]) return;
+                
                 const parent = element.closest('.payment-options');
                 parent.querySelectorAll('.payment-option').forEach(opt => {
                     opt.classList.remove('active');
@@ -983,6 +1065,7 @@
             }
 
             generatePDF(type) {
+                const isRental = this.rentalMode[type];
                 const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
                 const commercialField = type === 'alarm' ? 'commercial' : 'commercialCamera';
                 
@@ -1003,25 +1086,24 @@
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF('portrait', 'pt', 'a4');
 
-                    // Header noir
+                    // Header
                     doc.setFillColor(51, 51, 51);
                     doc.rect(0, 0, 595, 70, 'F');
                     
-                    // Titre principal
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(14);
                     doc.setTextColor(255, 255, 255);
-                    const title = type === 'camera' ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE' : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
+                    
+                    let title = '';
+                    if (isRental) {
+                        title = type === 'camera' ? 'OFFRE LOCATION VIDÉO SURVEILLANCE' : 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
+                    } else {
+                        title = type === 'camera' ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE' : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
+                    }
                     doc.text(title, 40, 25);
                     
-                    // Numéro de devis
                     const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hour = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    const quoteNumber = `DIA-${year}-${month}-${day}${hour}${minutes}`;
+                    const quoteNumber = `DIA-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
                     
                     doc.setFontSize(10);
                     doc.text(quoteNumber, 40, 42);
@@ -1031,7 +1113,17 @@
                     doc.setFillColor(244, 230, 0);
                     doc.rect(0, 70, 595, 6, 'F');
 
-                    // Suite du PDF...
+                    // Contenu simplifié...
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.text(`NOM DU CONSEILLER : ${commercial}`, 40, 90);
+                    doc.text(`DATE (Devis valable 30 jours) : ${new Date().toLocaleDateString('fr-CH')}`, 350, 90);
+                    
+                    if (isRental) {
+                        doc.text('MODE LOCATION - Pas de mensualités de paiement', 40, 110);
+                    }
+
                     this.showNotification('PDF généré avec succès!');
                     
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
@@ -1047,13 +1139,14 @@
                 const quote = {
                     timestamp: new Date().toISOString(),
                     type: this.currentTab,
+                    isRental: this.rentalMode[this.currentTab],
                     sections: this.sections
                 };
                 
                 const dataStr = JSON.stringify(quote, null, 2);
                 const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
                 
-                const exportFileDefaultName = `devis-${this.currentTab}-${new Date().toISOString().split('T')[0]}.json`;
+                const exportFileDefaultName = `devis-${this.currentTab}-${this.rentalMode[this.currentTab] ? 'location' : 'vente'}-${new Date().toISOString().split('T')[0]}.json`;
                 
                 const linkElement = document.createElement('a');
                 linkElement.setAttribute('href', dataUri);
@@ -1091,6 +1184,10 @@
         // Fonctions globales
         function showTab(tabName, element) {
             generator.showTab(tabName, element);
+        }
+
+        function toggleRentalMode(type) {
+            generator.toggleRentalMode(type);
         }
 
         function generatePDF(type) {
