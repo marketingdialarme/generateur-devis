@@ -652,7 +652,10 @@
                 <div class="product-line">
                     <div>Installation, paramétrages, tests, mise en service & formation des utilisateurs (1/2 journée)</div>
                     <input type="number" id="camera-installation-qty" value="1" class="quantity-input" oninput="updateTotals()">
-                    <div></div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="camera-installation-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
                     <div class="price-display" id="camera-installation-price">690.00 CHF</div>
                     <div></div>
                 </div>
@@ -751,7 +754,7 @@
                         { id: 19, name: "Télécommande (radio)", price: 120.00 }
                     ],
                     'alarm-installation': [
-                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 0.00, offered: true },
+                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
                         { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 35.00 },
                         { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 35.00 },
                         { id: 3, name: "Badge x 4", price: 25.00 },
@@ -920,7 +923,8 @@
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     const installationQty = parseFloat(document.getElementById('camera-installation-qty').value) || 1;
-                    const installationTotal = 690 * installationQty;
+                    const installationOffered = document.getElementById('camera-installation-offered').checked;
+                    const installationTotal = installationOffered ? 0 : (690 * installationQty);
                     const remoteAccess = document.getElementById('camera-remote-access').checked;
                     
                     const totalHT = materialTotal + installationTotal;
@@ -928,7 +932,7 @@
                     
                     document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-price').textContent = `${installationTotal.toFixed(2)} CHF`;
+                    document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
