@@ -408,6 +408,61 @@
             color: #856404;
         }
 
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #f4e600;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .rental-toggle-container {
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -466,11 +521,13 @@
 
         <!-- Tab Alarm -->
         <div id="alarm-tab" class="tab-content active">
-            <div class="rental-option">
-                <div class="checkbox-option">
+            <div class="rental-toggle-container">
+                <span>Mode vente</span>
+                <label class="toggle-switch">
                     <input type="checkbox" id="alarm-rental-mode" onchange="toggleRentalMode('alarm')">
-                    <label for="alarm-rental-mode">🏢 Mode Location</label>
-                </div>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Location</span>
             </div>
 
             <div class="form-section">
@@ -571,6 +628,37 @@
                 <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">* Les frais de dossier se payent à l'installation</p>
             </div>
 
+            <!-- Section 4: Services -->
+            <div class="quote-section">
+                <h3>🔧 4. Services</h3>
+                <div class="product-line">
+                    <div>Test Cyclique</div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="test-cyclique-selected" checked onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">Inclure</label>
+                    </div>
+                    <input type="number" id="test-cyclique-price" value="0" class="discount-input" placeholder="Prix" oninput="updateTotals()">
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="test-cyclique-offered" class="offered-checkbox" checked onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="test-cyclique-total">OFFERT</div>
+                </div>
+                <div class="product-line">
+                    <div>Télésurveillance</div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="telesurveillance-selected" onchange="toggleTelesurveillance()">
+                        <label style="margin: 0; font-size: 12px;">Inclure</label>
+                    </div>
+                    <input type="number" id="telesurveillance-price" value="0" class="discount-input" placeholder="Prix/mois" oninput="updateTotals()" disabled>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="telesurveillance-offered" class="offered-checkbox" onchange="updateTotals()" disabled>
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="telesurveillance-total">0.00 CHF/mois</div>
+                </div>
+            </div>
+
             <div class="quote-summary">
                 <h3>📊 Récapitulatif du devis</h3>
                 <div class="summary-item">
@@ -610,11 +698,13 @@
 
         <!-- Tab Camera -->
         <div id="camera-tab" class="tab-content">
-            <div class="rental-option">
-                <div class="checkbox-option">
+            <div class="rental-toggle-container">
+                <span>Mode vente</span>
+                <label class="toggle-switch">
                     <input type="checkbox" id="camera-rental-mode" onchange="toggleRentalMode('camera')">
-                    <label for="camera-rental-mode">🏢 Mode Location</label>
-                </div>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Location</span>
             </div>
 
             <div class="form-section">
@@ -1277,13 +1367,38 @@
                 return total;
             }
 
+            toggleTelesurveillance() {
+                const selected = document.getElementById('telesurveillance-selected').checked;
+                document.getElementById('telesurveillance-price').disabled = !selected;
+                document.getElementById('telesurveillance-offered').disabled = !selected;
+                this.updateTotals();
+            }
+
             updateTotals() {
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     const installationTotal = this.calculateSectionTotal('alarm-installation');
                     const adminTotal = 240;
                     
-                    const totalHT = materialTotal + installationTotal + adminTotal;
+                    // Test Cyclique
+                    const testCycliqueSelected = document.getElementById('test-cyclique-selected').checked;
+                    const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price').value) || 0;
+                    const testCycliqueOffered = document.getElementById('test-cyclique-offered').checked;
+                    const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
+                    
+                    // Télésurveillance
+                    const telesurveillanceSelected = document.getElementById('telesurveillance-selected').checked;
+                    const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price').value) || 0;
+                    const telesurveillanceOffered = document.getElementById('telesurveillance-offered').checked;
+                    const telesurveillanceTotal = telesurveillanceSelected ? (telesurveillanceOffered ? 0 : telesurveillancePrice) : 0;
+                    
+                    // Mise à jour affichage
+                    document.getElementById('test-cyclique-total').textContent = testCycliqueSelected ? 
+                        (testCycliqueOffered ? 'OFFERT' : `${testCycliqueTotal.toFixed(2)} CHF`) : '0.00 CHF';
+                    document.getElementById('telesurveillance-total').textContent = telesurveillanceSelected ? 
+                        (telesurveillanceOffered ? 'OFFERT' : `${telesurveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
+                    
+                    const totalHT = materialTotal + installationTotal + adminTotal + testCycliqueTotal;
                     const totalTTC = totalHT * 1.08;
                     
                     document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
@@ -1450,6 +1565,9 @@
 
                         // Section 3: Frais de dossier
                         yPos = this.createAdminFeesPDF(doc, yPos);
+                        
+                        // Section 4: Services
+                        yPos = this.createServicesPDF(doc, yPos);
 
                     } else if (type === 'camera') {
                         // Section 1: Matériel
@@ -1505,28 +1623,29 @@
             createPDFSection(doc, title, sectionId, yPos) {
                 // Titre de section
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
+                doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
                 doc.text(title, 40, yPos);
-                yPos += 15;
+                yPos += 12;
 
-                // En-tête tableau jaune
+                // En-tête tableau jaune SANS BORDURE
                 doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
+                doc.rect(40, yPos, 515, 14, 'F');
                 
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
+                doc.setFontSize(7);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation du matériel', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
+                doc.text('Qté', 50, yPos + 9);
+                doc.text('Désignation du matériel', 120, yPos + 9);
+                doc.text('Prix uni. HT', 400, yPos + 9);
+                doc.text('Total HT', 480, yPos + 9);
+                yPos += 14;
 
                 // Lignes de produits
                 const container = document.getElementById(`${sectionId}-products`);
                 const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
                 let sectionTotal = 0;
+                let lineCount = 0;
                 
                 productLines.forEach(line => {
                     const select = line.querySelector('.product-select');
@@ -1534,12 +1653,12 @@
                     const offeredCheckbox = line.querySelector('.offered-checkbox');
                     
                     if (select && select.value && qtyInput) {
-                        doc.setDrawColor(0, 0, 0);
-                        doc.setLineWidth(0.5);
-                        doc.rect(40, yPos, 515, 14);
-                        doc.line(80, yPos, 80, yPos + 14);
-                        doc.line(390, yPos, 390, yPos + 14);
-                        doc.line(470, yPos, 470, yPos + 14);
+                        lineCount++;
+                        // Lignes sans bordures, juste fond alterné
+                        if (lineCount % 2 === 0) {
+                            doc.setFillColor(245, 245, 245);
+                            doc.rect(40, yPos, 515, 12, 'F');
+                        }
 
                         const qty = parseFloat(qtyInput.value) || 0;
                         const isOffered = offeredCheckbox?.checked || false;
@@ -1551,30 +1670,30 @@
                         sectionTotal += lineTotal;
 
                         doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
+                        doc.setFontSize(6);
                         doc.setTextColor(0, 0, 0);
-                        doc.text(qty.toString(), 55, yPos + 9);
+                        doc.text(qty.toString(), 55, yPos + 8);
                         
                         // Tronquer le nom si trop long
-                        const maxNameLength = 50;
+                        const maxNameLength = 45;
                         const displayName = productName.length > maxNameLength 
                             ? productName.substring(0, maxNameLength - 3) + '...' 
                             : productName;
-                        doc.text(displayName, 90, yPos + 9);
+                        doc.text(displayName, 90, yPos + 8);
                         
                         if (isOffered) {
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0, 150, 0);
-                            doc.text('OFFERT', 405, yPos + 9);
-                            doc.text('OFFERT', 485, yPos + 9);
+                            doc.text('OFFERT', 405, yPos + 8);
+                            doc.text('OFFERT', 485, yPos + 8);
                         } else {
                             doc.setTextColor(0, 0, 0);
-                            doc.text(price.toFixed(2), 405, yPos + 9);
-                            doc.text(lineTotal.toFixed(2), 485, yPos + 9);
+                            doc.text(price.toFixed(2), 405, yPos + 8);
+                            doc.text(lineTotal.toFixed(2), 485, yPos + 8);
                         }
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(0, 0, 0);
-                        yPos += 14;
+                        yPos += 12;
                     }
                 });
 
@@ -1590,42 +1709,38 @@
                     }
                 }
 
-                // Zone totaux grise
+                // Zone totaux grise SANS BORDURE
                 const totalTTC = sectionTotal * 1.081;
                 const tva = totalTTC - sectionTotal;
 
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.setDrawColor(0, 0, 0);
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
+                doc.setFillColor(230, 230, 230);
+                doc.rect(390, yPos, 165, 36, 'F');
 
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(tva.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 37);
+                doc.setFontSize(7);
+                doc.text('Total H.T.', 400, yPos + 8);
+                doc.text(sectionTotal.toFixed(2), 485, yPos + 8);
+                doc.text('TVA 8.1%', 400, yPos + 20);
+                doc.text(tva.toFixed(2), 485, yPos + 20);
+                doc.text('Total T.T.C.', 400, yPos + 32);
+                doc.text(totalTTC.toFixed(2), 485, yPos + 32);
 
-                yPos += 50;
+                yPos += 40;
 
                 // Mensualités TTC si applicable et pas en location
                 if (!this.rentalMode[this.currentTab]) {
                     const paymentMonths = this.sections[sectionId]?.paymentMonths || 0;
                     if (paymentMonths > 0 && sectionTotal > 0) {
                         const monthlyTTC = totalTTC / paymentMonths;
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(8);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7);
                         doc.setTextColor(0, 0, 0);
                         doc.text(`Mensualités: ${monthlyTTC.toFixed(2)} CHF TTC x ${paymentMonths} mois`, 40, yPos);
-                        yPos += 15;
+                        yPos += 10;
                     }
                 }
 
-                return yPos + 10;
+                return yPos + 5;
             }
 
             createAdminFeesPDF(doc, yPos) {
@@ -2001,6 +2116,10 @@
 
         function toggleRentalMode(type) {
             generator.toggleRentalMode(type);
+        }
+
+        function toggleTelesurveillance() {
+            generator.toggleTelesurveillance();
         }
 
         function generatePDF(type) {
