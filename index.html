@@ -780,7 +780,23 @@
                         { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true }
                     ],
                     'alarm-installation': [
-                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 }
+                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
+                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true }
                     ],
                     'camera-material': [
                         { id: 23, name: "Bullet Mini", price: 390.00 },
@@ -910,7 +926,7 @@
                 
                 // Filtrer les produits selon la centrale sélectionnée
                 let availableProducts = this.catalog[sectionId];
-                if (sectionId === 'alarm-material') {
+                if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
                     availableProducts = this.getFilteredProducts(sectionId);
                 }
                 
@@ -937,17 +953,36 @@
             getFilteredProducts(sectionId) {
                 const products = this.catalog[sectionId];
                 
-                // Si aucune centrale sélectionnée, montrer seulement les centrales et produits sans restrictions
+                // Pour la section installation, toujours filtrer selon la centrale sélectionnée
+                // même si c'est dans installation et non material
+                const isInstallationSection = sectionId === 'alarm-installation';
+                
+                // Si aucune centrale sélectionnée
                 if (!this.selectedCentral) {
+                    // Pour material: montrer tout sauf les produits Jablotron-only
+                    // Pour installation: montrer tout sauf les centrales et produits Jablotron-only
+                    if (isInstallationSection) {
+                        return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                    }
                     return products.filter(p => !p.requiresJablotron);
                 }
                 
-                // Si Jablotron sélectionnée, tout montrer
+                // Si Jablotron sélectionnée
                 if (this.selectedCentral === 'jablotron') {
+                    // Pour installation: tout sauf les centrales
+                    if (isInstallationSection) {
+                        return products.filter(p => p.id !== 5 && p.id !== 6);
+                    }
+                    // Pour material: tout montrer
                     return products;
                 }
                 
-                // Si Titane sélectionnée, ne pas montrer les produits Jablotron-only
+                // Si Titane sélectionnée
+                // Pour installation: tout sauf les centrales et produits Jablotron-only
+                if (isInstallationSection) {
+                    return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                }
+                // Pour material: ne pas montrer les produits Jablotron-only
                 return products.filter(p => !p.requiresJablotron);
             }
 
@@ -997,15 +1032,28 @@
             }
 
             updateAllProductSelects() {
-                const container = document.getElementById('alarm-material-products');
-                if (!container) return;
+                // Mettre à jour les selects de la section material
+                const materialContainer = document.getElementById('alarm-material-products');
+                if (materialContainer) {
+                    this.updateSelectsInContainer(materialContainer, 'alarm-material');
+                }
                 
+                // Mettre à jour aussi les selects de la section installation
+                const installContainer = document.getElementById('alarm-installation-products');
+                if (installContainer) {
+                    this.updateSelectsInContainer(installContainer, 'alarm-installation');
+                }
+                
+                this.updateTotals();
+            }
+            
+            updateSelectsInContainer(container, sectionId) {
                 const productLines = container.querySelectorAll('.product-line');
                 productLines.forEach(line => {
                     const select = line.querySelector('.product-select');
                     if (select) {
                         const currentValue = select.value;
-                        const availableProducts = this.getFilteredProducts('alarm-material');
+                        const availableProducts = this.getFilteredProducts(sectionId);
                         
                         // Reconstruire les options
                         select.innerHTML = `
@@ -1026,8 +1074,6 @@
                         }
                     }
                 });
-                
-                this.updateTotals();
             }
 
             handleProductSelection(selectElement) {
@@ -1732,26 +1778,151 @@
                 doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
                 yPos += 16;
 
-                // Calcul des totaux...
-                // (code de calcul simplifié pour la brièveté)
-
-                // Zone grise finale
-                doc.setFillColor(200, 200, 200);
-                doc.rect(40, yPos, 515, 60, 'F');
-                doc.setDrawColor(0, 0, 0);
-                doc.rect(40, yPos, 515, 60);
+                // Calcul des totaux
+                let totalMensualitesHT = 0;
+                let totalComptantHT = 0;
+                let monthsCount = 0;
                 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
-                doc.setTextColor(0, 0, 0);
-                
-                if (!isRental) {
-                    doc.text('Voir détails des mensualités ci-dessus si applicable', 55, yPos + 30);
-                } else {
-                    doc.text('Location - Paiement comptant uniquement', 55, yPos + 30);
+                if (type === 'alarm') {
+                    const materialTotal = this.calculateSectionTotal('alarm-material');
+                    const installationTotal = this.calculateSectionTotal('alarm-installation');
+                    const adminTotal = 240;
+                    
+                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
+                    const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                    
+                    // Calcul des mensualités HT
+                    if (materialMonths > 0) {
+                        totalMensualitesHT += materialTotal;
+                        monthsCount = Math.max(monthsCount, materialMonths);
+                    } else {
+                        totalComptantHT += materialTotal;
+                    }
+                    
+                    if (installMonths > 0) {
+                        totalMensualitesHT += installationTotal;
+                        monthsCount = Math.max(monthsCount, installMonths);
+                    } else {
+                        totalComptantHT += installationTotal;
+                    }
+                    
+                    // Frais de dossier toujours comptant
+                    totalComptantHT += adminTotal;
+                    
+                } else { // camera
+                    const materialTotal = this.calculateSectionTotal('camera-material');
+                    const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : (690 * installQty);
+                    const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
+                    
+                    if (materialMonths > 0) {
+                        totalMensualitesHT += materialTotal;
+                        monthsCount = materialMonths;
+                    } else {
+                        totalComptantHT += materialTotal;
+                    }
+                    
+                    // Installation toujours comptant pour caméra
+                    totalComptantHT += installTotal;
                 }
 
-                return yPos + 70;
+                // Zone grise finale avec détails
+                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
+                    // Calculs
+                    const mensualiteHT = totalMensualitesHT / monthsCount;
+                    const mensualiteTVA = mensualiteHT * 0.081;
+                    const mensualiteTTC = mensualiteHT * 1.081;
+                    const totalMensualitesTTC = totalMensualitesHT * 1.081;
+                    
+                    const comptantTVA = totalComptantHT * 0.081;
+                    const comptantTTC = totalComptantHT * 1.081;
+
+                    // Zone mensualités
+                    doc.setFillColor(200, 200, 200);
+                    doc.rect(40, yPos, 515, 70, 'F');
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(40, yPos, 515, 70);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('MENSUALITÉS (' + monthsCount + ' mois)', 50, yPos + 15);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.text(`Mensualité HT: ${mensualiteHT.toFixed(2)} CHF`, 50, yPos + 30);
+                    doc.text(`TVA 8.1%: ${mensualiteTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                    doc.text(`Mensualité TTC: ${mensualiteTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Total mensualités: ${mensualiteTTC.toFixed(2)} CHF x ${monthsCount} = ${totalMensualitesTTC.toFixed(2)} CHF TTC`, 50, yPos + 50);
+                    
+                    yPos += 75;
+                    
+                    // Zone comptant
+                    doc.setFillColor(200, 200, 200);
+                    doc.rect(40, yPos, 515, 55, 'F');
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(40, yPos, 515, 55);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                    doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                    
+                    yPos += 60;
+                    
+                } else {
+                    // Pas de mensualités ou mode location
+                    const totalTVA = totalComptantHT * 0.081;
+                    const totalTTC = totalComptantHT * 1.081;
+                    
+                    doc.setFillColor(200, 200, 200);
+                    doc.rect(40, yPos, 515, 55, 'F');
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(40, yPos, 515, 55);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    
+                    if (isRental) {
+                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 15);
+                    } else {
+                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 15);
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                    doc.text(`TVA 8.1%: ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Total TTC: ${totalTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                    
+                    yPos += 60;
+                }
+
+                // Texte contrat si mensualités
+                if (!isRental && monthsCount > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
+                    yPos += 12;
+                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
+                    yPos += 15;
+                }
+
+                return yPos;
             }
 
             createPDFFooter(doc, clientName) {
