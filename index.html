@@ -1743,6 +1743,77 @@
                 return yPos + 5;
             }
 
+            createServicesPDF(doc, yPos) {
+                // Titre
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('SERVICES', 40, yPos);
+                yPos += 12;
+
+                // En-tête tableau jaune sans bordure
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 14, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Service', 120, yPos + 9);
+                doc.text('Prix', 400, yPos + 9);
+                doc.text('Total', 480, yPos + 9);
+                yPos += 14;
+
+                // Test Cyclique
+                const testCycliqueSelected = document.getElementById('test-cyclique-selected')?.checked || false;
+                const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || 0;
+                const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked || false;
+                
+                if (testCycliqueSelected) {
+                    doc.setFillColor(245, 245, 245);
+                    doc.rect(40, yPos, 515, 12, 'F');
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.text('Test Cyclique', 90, yPos + 8);
+                    
+                    if (testCycliqueOffered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 8);
+                        doc.text('OFFERT', 485, yPos + 8);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(testCycliquePrice.toFixed(2), 405, yPos + 8);
+                        doc.text(testCycliquePrice.toFixed(2), 485, yPos + 8);
+                    }
+                    yPos += 12;
+                }
+                
+                // Télésurveillance
+                const telesurveillanceSelected = document.getElementById('telesurveillance-selected')?.checked || false;
+                const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price')?.value) || 0;
+                const telesurveillanceOffered = document.getElementById('telesurveillance-offered')?.checked || false;
+                
+                if (telesurveillanceSelected) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Télésurveillance', 90, yPos + 8);
+                    
+                    if (telesurveillanceOffered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 8);
+                        doc.text('OFFERT', 485, yPos + 8);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
+                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
+                    }
+                    yPos += 12;
+                }
+
+                return yPos + 5;
+            }
+
             createAdminFeesPDF(doc, yPos) {
                 // Titre
                 doc.setFont('helvetica', 'bold');
