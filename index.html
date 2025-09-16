@@ -469,7 +469,7 @@
             <div class="rental-option">
                 <div class="checkbox-option">
                     <input type="checkbox" id="alarm-rental-mode" onchange="toggleRentalMode('alarm')">
-                    <label for="alarm-rental-mode">🏢 Mode Location</label>
+                    <label for="alarm-rental-mode">🏢 Mode Location (pas de mensualités de paiement)</label>
                 </div>
             </div>
 
@@ -613,7 +613,7 @@
             <div class="rental-option">
                 <div class="checkbox-option">
                     <input type="checkbox" id="camera-rental-mode" onchange="toggleRentalMode('camera')">
-                    <label for="camera-rental-mode">🏢 Mode Location </label>
+                    <label for="camera-rental-mode">🏢 Mode Location (pas de mensualités, vision à distance et maintenance non disponibles)</label>
                 </div>
             </div>
 
@@ -914,7 +914,7 @@
                 const productLine = document.createElement('div');
                 productLine.className = 'product-line';
                 productLine.innerHTML = `
-                    <select class="product-select" onchange="updateTotals()" data-section="${sectionId}">
+                    <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
                         <option value="">Sélectionner un produit</option>
                         ${this.catalog[sectionId].map(product => `
                             <option value="${product.id}" data-price="${product.price}">${product.name} ${product.offered ? '(OFFERT)' : `- ${product.price.toFixed(2)} CHF`}</option>
@@ -930,6 +930,149 @@
                 `;
                 
                 container.appendChild(productLine);
+            }
+
+            handleProductSelection(selectElement) {
+                const productId = parseInt(selectElement.value);
+                const sectionId = selectElement.getAttribute('data-section');
+                
+                // Vérifier si c'est une centrale Titane ou Jablotron dans la section matériel
+                if (sectionId === 'alarm-material' && (productId === 6 || productId === 5)) {
+                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
+                    
+                    // Créer un modal pour proposer les kits
+                    this.showKitProposal(centraleName, sectionId);
+                }
+                
+                this.updateTotals();
+            }
+
+            showKitProposal(centraleName, sectionId) {
+                // Créer l'overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                // Créer le modal
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    background: white;
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 600px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                `;
+                
+                modal.innerHTML = `
+                    <h2 style="margin-bottom: 20px; color: #333;">🎁 Kit recommandé pour Centrale ${centraleName}</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Voulez-vous ajouter un kit d'accessoires recommandé ?</p>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
+                         onmouseover="this.style.borderColor='#f4e600'" 
+                         onmouseout="this.style.borderColor='transparent'"
+                         onclick="selectKit('kit1', '${centraleName}', '${sectionId}')">
+                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #666;">
+                            <li>2x Détecteur volumétrique</li>
+                            <li>1x Détecteur d'ouverture</li>
+                            <li>1x Clavier</li>
+                            <li>1x Sirène déportée</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 160.00 CHF</p>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
+                         onmouseover="this.style.borderColor='#f4e600'" 
+                         onmouseout="this.style.borderColor='transparent'"
+                         onclick="selectKit('kit2', '${centraleName}', '${sectionId}')">
+                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #666;">
+                            <li>1x Détecteur volumétrique</li>
+                            <li>3x Détecteur d'ouverture</li>
+                            <li>1x Clavier</li>
+                            <li>1x Sirène déportée</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 160.00 CHF</p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button onclick="closeKitModal()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            Non merci
+                        </button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                
+                // Fonction pour fermer le modal
+                window.closeKitModal = () => {
+                    document.body.removeChild(overlay);
+                };
+                
+                // Fonction pour sélectionner un kit
+                window.selectKit = (kitType, centraleName, sectionId) => {
+                    this.addKit(kitType, sectionId);
+                    document.body.removeChild(overlay);
+                    this.showNotification(`Kit ${kitType === 'kit1' ? 'Standard' : 'Périmétrique'} ajouté pour ${centraleName}`);
+                };
+            }
+
+            addKit(kitType, sectionId) {
+                const container = document.getElementById(`${sectionId}-products`);
+                
+                const kitProducts = kitType === 'kit1' ? [
+                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 2 },
+                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 1 },
+                    { id: 7, name: "Clavier (radio)", quantity: 1 },
+                    { id: 18, name: "Sirène déportée (radio)", quantity: 1 }
+                ] : [
+                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 1 },
+                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 3 },
+                    { id: 7, name: "Clavier (radio)", quantity: 1 },
+                    { id: 18, name: "Sirène déportée (radio)", quantity: 1 }
+                ];
+                
+                // Ajouter chaque produit du kit
+                kitProducts.forEach(product => {
+                    const productData = this.catalog[sectionId].find(p => p.id === product.id);
+                    if (productData) {
+                        const productLine = document.createElement('div');
+                        productLine.className = 'product-line';
+                        productLine.style.background = '#fffbf0';
+                        productLine.innerHTML = `
+                            <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                                <option value="">Sélectionner un produit</option>
+                                ${this.catalog[sectionId].map(p => `
+                                    <option value="${p.id}" data-price="${p.price}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${p.price.toFixed(2)} CHF</option>
+                                `).join('')}
+                            </select>
+                            <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+                            <div class="checkbox-option" style="margin: 0;">
+                                <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                                <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                            </div>
+                            <div class="price-display">0.00 CHF</div>
+                            <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
+                        `;
+                        container.appendChild(productLine);
+                    }
+                });
+                
+                this.updateTotals();
             }
 
             calculateSectionTotal(sectionId) {
@@ -1204,6 +1347,10 @@
 
         function addProductLine(sectionId) {
             generator.addProductLine(sectionId);
+        }
+
+        function handleProductSelection(selectElement) {
+            generator.handleProductSelection(selectElement);
         }
 
         function updateTotals() {
