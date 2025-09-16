@@ -760,36 +760,27 @@
             constructor() {
                 this.catalog = {
                     'alarm-material': [
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 35.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 35.00 },
-                        { id: 3, name: "Badge x 4", price: 25.00 },
-                        { id: 4, name: "Centrale AX Pro", price: 6900.00 },
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
                         { id: 6, name: "Centrale Titane", price: 690.00 },
-                        { id: 7, name: "Clavier (radio)", price: 45.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 25.00 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 25.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 25.00 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 25.00 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 25.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 120.00 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 25.00 },
-                        { id: 15, name: "Détecteur de rideau intérieur (radio)", price: 25.00 },
-                        { id: 16, name: "Interphonie (radio sur secteur)", price: 120.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 25.00 },
-                        { id: 18, name: "Sirène déportée (radio)", price: 35.00 },
-                        { id: 19, name: "Télécommande (radio)", price: 120.00 }
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
+                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true }
                     ],
                     'alarm-installation': [
-                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 35.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 35.00 },
-                        { id: 3, name: "Badge x 4", price: 25.00 },
-                        { id: 7, name: "Clavier (radio)", price: 45.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 25.00 },
-                        { id: 16, name: "Interphonie (radio sur secteur)", price: 120.00 },
-                        { id: 18, name: "Sirène déportée (radio)", price: 35.00 },
-                        { id: 19, name: "Télécommande (radio)", price: 120.00 }
+                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 }
                     ],
                     'camera-material': [
                         { id: 23, name: "Bullet Mini", price: 390.00 },
@@ -833,6 +824,9 @@
                     'alarm': false,
                     'camera': false
                 };
+
+                // Pour suivre quelle centrale est sélectionnée
+                this.selectedCentral = null;
 
                 this.init();
             }
@@ -913,12 +907,20 @@
                 
                 const productLine = document.createElement('div');
                 productLine.className = 'product-line';
+                
+                // Filtrer les produits selon la centrale sélectionnée
+                let availableProducts = this.catalog[sectionId];
+                if (sectionId === 'alarm-material') {
+                    availableProducts = this.getFilteredProducts(sectionId);
+                }
+                
                 productLine.innerHTML = `
                     <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
                         <option value="">Sélectionner un produit</option>
-                        ${this.catalog[sectionId].map(product => `
-                            <option value="${product.id}" data-price="${product.price}">${product.name} ${product.offered ? '(OFFERT)' : `- ${product.price.toFixed(2)} CHF`}</option>
-                        `).join('')}
+                        ${availableProducts.map(product => {
+                            const price = this.getProductPrice(product);
+                            return `<option value="${product.id}" data-price="${price}">${product.name} - ${price.toFixed(2)} CHF</option>`;
+                        }).join('')}
                     </select>
                     <input type="number" value="1" min="1" class="quantity-input" oninput="updateTotals()">
                     <div class="checkbox-option" style="margin: 0;">
@@ -932,16 +934,116 @@
                 container.appendChild(productLine);
             }
 
+            getFilteredProducts(sectionId) {
+                const products = this.catalog[sectionId];
+                
+                // Si aucune centrale sélectionnée, montrer seulement les centrales et produits sans restrictions
+                if (!this.selectedCentral) {
+                    return products.filter(p => !p.requiresJablotron);
+                }
+                
+                // Si Jablotron sélectionnée, tout montrer
+                if (this.selectedCentral === 'jablotron') {
+                    return products;
+                }
+                
+                // Si Titane sélectionnée, ne pas montrer les produits Jablotron-only
+                return products.filter(p => !p.requiresJablotron);
+            }
+
+            getProductPrice(product) {
+                if (!this.selectedCentral) {
+                    return product.price;
+                }
+                
+                if (this.selectedCentral === 'titane' && product.priceTitane) {
+                    return product.priceTitane;
+                }
+                
+                if (this.selectedCentral === 'jablotron' && product.priceJablotron) {
+                    return product.priceJablotron;
+                }
+                
+                return product.price;
+            }
+
+            detectSelectedCentral() {
+                const container = document.getElementById('alarm-material-products');
+                if (!container) return;
+                
+                const productLines = container.querySelectorAll('.product-line');
+                let hasJablotron = false;
+                let hasTitane = false;
+                
+                productLines.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    if (select && select.value) {
+                        const productId = parseInt(select.value);
+                        if (productId === 5) hasJablotron = true;
+                        if (productId === 6) hasTitane = true;
+                    }
+                });
+                
+                if (hasJablotron) {
+                    this.selectedCentral = 'jablotron';
+                } else if (hasTitane) {
+                    this.selectedCentral = 'titane';
+                } else {
+                    this.selectedCentral = null;
+                }
+                
+                // Mettre à jour tous les selects existants
+                this.updateAllProductSelects();
+            }
+
+            updateAllProductSelects() {
+                const container = document.getElementById('alarm-material-products');
+                if (!container) return;
+                
+                const productLines = container.querySelectorAll('.product-line');
+                productLines.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    if (select) {
+                        const currentValue = select.value;
+                        const availableProducts = this.getFilteredProducts('alarm-material');
+                        
+                        // Reconstruire les options
+                        select.innerHTML = `
+                            <option value="">Sélectionner un produit</option>
+                            ${availableProducts.map(product => {
+                                const price = this.getProductPrice(product);
+                                return `<option value="${product.id}" data-price="${price}" ${product.id == currentValue ? 'selected' : ''}>${product.name} - ${price.toFixed(2)} CHF</option>`;
+                            }).join('')}
+                        `;
+                        
+                        // Mettre à jour le prix si le produit est toujours sélectionné
+                        if (currentValue) {
+                            const selectedOption = select.querySelector(`option[value="${currentValue}"]`);
+                            if (selectedOption) {
+                                const newPrice = parseFloat(selectedOption.getAttribute('data-price'));
+                                selectedOption.setAttribute('data-price', newPrice);
+                            }
+                        }
+                    }
+                });
+                
+                this.updateTotals();
+            }
+
             handleProductSelection(selectElement) {
                 const productId = parseInt(selectElement.value);
                 const sectionId = selectElement.getAttribute('data-section');
                 
-                // Vérifier si c'est une centrale Titane ou Jablotron dans la section matériel
-                if (sectionId === 'alarm-material' && (productId === 6 || productId === 5)) {
-                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
+                // Détecter si une centrale a été sélectionnée/désélectionnée
+                if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
+                    this.detectSelectedCentral();
                     
-                    // Créer un modal pour proposer les kits
+                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
+                    // Proposer le kit
                     this.showKitProposal(centraleName, sectionId);
+                } else if (sectionId === 'alarm-material') {
+                    // Vérifier si une centrale a été désélectionnée
+                    this.detectSelectedCentral();
                 }
                 
                 this.updateTotals();
@@ -962,6 +1064,16 @@
                     align-items: center;
                     justify-content: center;
                 `;
+                
+                // Calculer les prix selon la centrale
+                const isTitane = centraleName === 'Titane';
+                const detecteurVolPrice = isTitane ? 240 : 290;
+                const detecteurOuvPrice = isTitane ? 190 : 240;
+                const clavierPrice = isTitane ? 390 : 490;
+                const sirenePrice = 390; // Petite sirène par défaut
+                
+                const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
+                const kit2Total = detecteurVolPrice + (detecteurOuvPrice * 3) + clavierPrice + sirenePrice;
                 
                 // Créer le modal
                 const modal = document.createElement('div');
@@ -986,12 +1098,12 @@
                          onclick="selectKit('kit1', '${centraleName}', '${sectionId}')">
                         <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
                         <ul style="margin: 0; padding-left: 20px; color: #666;">
-                            <li>2x Détecteur volumétrique</li>
-                            <li>1x Détecteur d'ouverture</li>
-                            <li>1x Clavier</li>
-                            <li>1x Sirène déportée</li>
+                            <li>2x Détecteur volumétrique (${detecteurVolPrice} CHF/u)</li>
+                            <li>1x Détecteur d'ouverture (${detecteurOuvPrice} CHF)</li>
+                            <li>1x Clavier (${clavierPrice} CHF)</li>
+                            <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
                         </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 160.00 CHF</p>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: ${kit1Total.toFixed(2)} CHF</p>
                     </div>
                     
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
@@ -1000,12 +1112,12 @@
                          onclick="selectKit('kit2', '${centraleName}', '${sectionId}')">
                         <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
                         <ul style="margin: 0; padding-left: 20px; color: #666;">
-                            <li>1x Détecteur volumétrique</li>
-                            <li>3x Détecteur d'ouverture</li>
-                            <li>1x Clavier</li>
-                            <li>1x Sirène déportée</li>
+                            <li>1x Détecteur volumétrique (${detecteurVolPrice} CHF)</li>
+                            <li>3x Détecteur d'ouverture (${detecteurOuvPrice} CHF/u)</li>
+                            <li>1x Clavier (${clavierPrice} CHF)</li>
+                            <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
                         </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 160.00 CHF</p>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: ${kit2Total.toFixed(2)} CHF</p>
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -1038,27 +1150,31 @@
                     { id: 8, name: "Détecteur volumétrique (radio)", quantity: 2 },
                     { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 1 },
                     { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée (radio)", quantity: 1 }
+                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
                 ] : [
                     { id: 8, name: "Détecteur volumétrique (radio)", quantity: 1 },
                     { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 3 },
                     { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée (radio)", quantity: 1 }
+                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
                 ];
                 
                 // Ajouter chaque produit du kit
                 kitProducts.forEach(product => {
                     const productData = this.catalog[sectionId].find(p => p.id === product.id);
                     if (productData) {
+                        const availableProducts = this.getFilteredProducts(sectionId);
+                        const price = this.getProductPrice(productData);
+                        
                         const productLine = document.createElement('div');
                         productLine.className = 'product-line';
                         productLine.style.background = '#fffbf0';
                         productLine.innerHTML = `
                             <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
                                 <option value="">Sélectionner un produit</option>
-                                ${this.catalog[sectionId].map(p => `
-                                    <option value="${p.id}" data-price="${p.price}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${p.price.toFixed(2)} CHF</option>
-                                `).join('')}
+                                ${availableProducts.map(p => {
+                                    const pPrice = this.getProductPrice(p);
+                                    return `<option value="${p.id}" data-price="${pPrice}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                                }).join('')}
                             </select>
                             <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
                             <div class="checkbox-option" style="margin: 0;">
@@ -1088,7 +1204,10 @@
                     const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
                     
                     if (select && select.value) {
-                        const price = parseFloat(select.selectedOptions[0].getAttribute('data-price')) || 0;
+                        // Utiliser le prix stocké dans l'attribut data-price de l'option sélectionnée
+                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                        const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
+                        
                         let lineTotal = isOffered ? 0 : (price * quantity);
                         lineTotal = Math.max(0, lineTotal);
                         
