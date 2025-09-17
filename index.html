@@ -1674,6 +1674,10 @@
                 // URL de votre Google Apps Script
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9eaJV-q7R64jJZTAmkOj65N1q1T71mFJ7z9qrALkJm3zcy9z6_OLulTwWyz55GKl4WQ/exec';
                 
+                // Détecter si on est sur iOS/Safari
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                
                 // Convertir le blob en base64
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -1681,28 +1685,139 @@
                         const base64 = reader.result.split(',')[1];
                         
                         try {
-                            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                                method: 'POST',
-                                mode: 'no-cors', // Important pour Google Apps Script
-                                headers: {
-                                    'Content-Type': 'text/plain',
-                                },
-                                body: JSON.stringify({
+                            if (isIOS || isSafari) {
+                                // Solution pour Safari/iOS : utiliser une iframe cachée
+                                const formData = new FormData();
+                                formData.append('data', JSON.stringify({
                                     pdfBase64: base64,
                                     filename: filename,
                                     commercial: commercial
-                                })
-                            });
-                            
-                            console.log('PDF envoyé à Google Drive');
-                            resolve(true);
+                                }));
+                                
+                                // Créer un formulaire caché
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = GOOGLE_SCRIPT_URL;
+                                form.target = 'hidden_iframe';
+                                form.style.display = 'none';
+                                
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'data';
+                                input.value = JSON.stringify({
+                                    pdfBase64: base64,
+                                    filename: filename,
+                                    commercial: commercial
+                                });
+                                
+                                form.appendChild(input);
+                                document.body.appendChild(form);
+                                
+                                // Créer une iframe cachée
+                                let iframe = document.getElementById('hidden_iframe');
+                                if (!iframe) {
+                                    iframe = document.createElement('iframe');
+                                    iframe.id = 'hidden_iframe';
+                                    iframe.name = 'hidden_iframe';
+                                    iframe.style.display = 'none';
+                                    document.body.appendChild(iframe);
+                                }
+                                
+                                // Soumettre le formulaire
+                                form.submit();
+                                
+                                // Nettoyer après 2 secondes
+                                setTimeout(() => {
+                                    document.body.removeChild(form);
+                                }, 2000);
+                                
+                                console.log('PDF envoyé à Google Drive (iOS/Safari)');
+                                resolve(true);
+                                
+                            } else {
+                                // Solution standard pour Chrome/Firefox
+                                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: {
+                                        'Content-Type': 'text/plain',
+                                    },
+                                    body: JSON.stringify({
+                                        pdfBase64: base64,
+                                        filename: filename,
+                                        commercial: commercial
+                                    })
+                                });
+                                
+                                console.log('PDF envoyé à Google Drive');
+                                resolve(true);
+                            }
                         } catch (error) {
                             console.error('Erreur lors de l\'envoi à Google Drive:', error);
+                            
+                            // Fallback : ouvrir Google Apps Script dans un nouvel onglet
+                            if (isIOS || isSafari) {
+                                const params = encodeURIComponent(JSON.stringify({
+                                    pdfBase64: base64.substring(0, 100) + '...', // Tronquer pour le debug
+                                    filename: filename,
+                                    commercial: commercial,
+                                    error: 'Upload depuis iOS'
+                                }));
+                                
+                                // Afficher un bouton pour upload manuel si échec
+                                this.showIOSUploadButton(pdfBlob, filename, commercial);
+                            }
                             reject(error);
                         }
                     };
                     reader.readAsDataURL(pdfBlob);
                 });
+            }
+            
+            showIOSUploadButton(pdfBlob, filename, commercial) {
+                // Créer un bouton d'upload manuel pour iOS
+                const existingBtn = document.getElementById('ios-upload-btn');
+                if (existingBtn) existingBtn.remove();
+                
+                const uploadBtn = document.createElement('button');
+                uploadBtn.id = 'ios-upload-btn';
+                uploadBtn.className = 'btn btn-primary';
+                uploadBtn.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    padding: 15px 30px;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 50px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+                `;
+                uploadBtn.innerHTML = '☁️ Réessayer l\'upload vers Drive';
+                
+                uploadBtn.onclick = () => {
+                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+                        .then(() => {
+                            this.showNotification('Upload réussi !');
+                            uploadBtn.remove();
+                        })
+                        .catch(() => {
+                            this.showNotification('Échec - Téléchargez manuellement');
+                        });
+                };
+                
+                document.body.appendChild(uploadBtn);
+                
+                // Auto-remove après 30 secondes
+                setTimeout(() => {
+                    if (document.getElementById('ios-upload-btn')) {
+                        uploadBtn.remove();
+                    }
+                }, 30000);
             }
 
             generatePDF(type) {
