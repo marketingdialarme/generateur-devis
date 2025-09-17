@@ -589,6 +589,19 @@
             <!-- Section 2: Installation et matériel supplémentaire -->
             <div class="quote-section">
                 <h3>🔧 2. Installation et matériel supplémentaire <button class="add-product-btn" onclick="addProductLine('alarm-installation')">+</button></h3>
+                <div class="product-line" style="background: #f0f8ff;">
+                    <div>Installation, paramétrages, tests, mise en service & formation</div>
+                    <div>
+                        <label style="margin-right: 5px; font-size: 12px;">Nombre:</label>
+                        <input type="number" id="alarm-installation-qty" value="1" min="1" max="10" class="quantity-input" oninput="updateAlarmInstallationPrice()">
+                    </div>
+                    <input type="number" id="alarm-installation-price" value="690" class="discount-input" placeholder="Prix" readonly style="background: #f0f0f0;">
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="alarm-installation-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="alarm-installation-display">690.00 CHF</div>
+                </div>
                 <div id="alarm-installation-products">
                     <!-- Products will be added here -->
                 </div>
@@ -667,7 +680,7 @@
                 </div>
                 <div class="summary-item">
                     <span>Installation</span>
-                    <span id="alarm-installation-total">0.00 CHF</span>
+                    <span id="alarm-installation-total">690.00 CHF</span>
                 </div>
                 <div class="summary-item">
                     <span>Frais de dossier</span>
@@ -675,11 +688,11 @@
                 </div>
                 <div class="summary-item">
                     <span>TOTAL HT</span>
-                    <span id="alarm-total-ht">240.00 CHF</span>
+                    <span id="alarm-total-ht">930.00 CHF</span>
                 </div>
                 <div class="summary-item">
                     <span>TOTAL TTC</span>
-                    <span id="alarm-total-ttc">259.20 CHF</span>
+                    <span id="alarm-total-ttc">1004.40 CHF</span>
                 </div>
                 <div class="monthly-payment" id="alarm-monthly-payment" style="display: none;">
                     <strong>Mensualités: <span id="alarm-monthly-amount">0 CHF</span> x <span id="alarm-monthly-count">0</span> mois</strong>
@@ -767,8 +780,11 @@
             <div class="quote-section">
                 <h3>🔧 2. Installation</h3>
                 <div class="product-line">
-                    <div>Installation, paramétrages, tests, mise en service & formation des utilisateurs (1/2 journée)</div>
-                    <input type="number" id="camera-installation-qty" value="1" class="quantity-input" oninput="updateTotals()">
+                    <div>Installation, paramétrages, tests, mise en service & formation des utilisateurs</div>
+                    <div>
+                        <label style="margin-right: 5px;">Nombre:</label>
+                        <input type="number" id="camera-installation-qty" value="1" min="1" max="10" class="quantity-input" oninput="updateCameraInstallationPrice()">
+                    </div>
                     <div class="checkbox-option" style="margin: 0;">
                         <input type="checkbox" id="camera-installation-offered" class="offered-checkbox" onchange="updateTotals()">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
@@ -845,7 +861,7 @@
     </div>
 
     <script>
-        // Générateur de devis Dialarme avec mode Location
+        // Générateur de devis Dialarme avec mode Location et fonctionnalités étendues
         class DialarmeFinalGenerator {
             constructor() {
                 this.catalog = {
@@ -867,7 +883,8 @@
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
                         { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true }
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ],
                     'alarm-installation': [
                         { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
@@ -886,7 +903,8 @@
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
                         { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true }
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ],
                     'camera-material': [
                         { id: 23, name: "Bullet Mini", price: 390.00 },
@@ -915,7 +933,8 @@
                         { id: 46, name: "Reo 4G + P.Solaire", price: 490.00 },
                         { id: 47, name: "Reo 4G motorisé + P.solaire", price: 640.00 },
                         { id: 48, name: "Support Mural Articulé", price: 100.00 },
-                        { id: 49, name: "Switch POE", price: 270.00 }
+                        { id: 49, name: "Switch POE", price: 270.00 },
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ]
                 };
 
@@ -1008,6 +1027,54 @@
                 this.updateTotals();
             }
 
+            calculateInstallationPrice(qty) {
+                // Prix d'installation selon la quantité
+                // 0.5 jour = 690 CHF, 1 jour = 1290 CHF
+                const prices = {
+                    1: 690,   // 0.5 jour
+                    2: 1290,  // 1 jour  
+                    3: 1980,  // 1.5 jours (1290 + 690)
+                    4: 2580,  // 2 jours (1290 * 2)
+                    5: 3270,  // 2.5 jours (1290 * 2 + 690)
+                    6: 3870   // 3 jours (1290 * 3)
+                };
+                
+                // Si la quantité est supérieure à 6, calculer selon la logique jour/demi-jour
+                if (qty > 6) {
+                    const fullDays = Math.floor(qty / 2);
+                    const halfDay = qty % 2;
+                    return (fullDays * 1290) + (halfDay * 690);
+                }
+                
+                return prices[qty] || 690;
+            }
+
+            updateAlarmInstallationPrice() {
+                const qtyInput = document.getElementById('alarm-installation-qty');
+                const priceInput = document.getElementById('alarm-installation-price');
+                const qty = parseInt(qtyInput.value) || 1;
+                const price = this.calculateInstallationPrice(qty);
+                priceInput.value = price;
+                
+                this.updateTotals();
+            }
+
+            updateCameraInstallationPrice() {
+                const qtyInput = document.getElementById('camera-installation-qty');
+                const qty = parseInt(qtyInput.value) || 1;
+                const price = this.calculateInstallationPrice(qty);
+                
+                // Mettre à jour l'affichage dans la section caméra
+                const priceDisplay = document.getElementById('camera-installation-price');
+                const offeredCheckbox = document.getElementById('camera-installation-offered');
+                
+                if (!offeredCheckbox.checked) {
+                    priceDisplay.textContent = `${price.toFixed(2)} CHF`;
+                }
+                
+                this.updateTotals();
+            }
+
             addProductLine(sectionId) {
                 const container = document.getElementById(`${sectionId}-products`);
                 
@@ -1020,15 +1087,21 @@
                     availableProducts = this.getFilteredProducts(sectionId);
                 }
                 
+                const lineId = 'line-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                
                 productLine.innerHTML = `
-                    <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
-                        <option value="">Sélectionner un produit</option>
-                        ${availableProducts.map(product => {
-                            const price = this.getProductPrice(product);
-                            return `<option value="${product.id}" data-price="${price}">${product.name} - ${price.toFixed(2)} CHF</option>`;
-                        }).join('')}
-                    </select>
+                    <div class="product-select-container" style="width: 100%;">
+                        <select class="product-select" id="select-${lineId}" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                            <option value="">Sélectionner un produit</option>
+                            ${availableProducts.map(product => {
+                                const price = this.getProductPrice(product);
+                                return `<option value="${product.id}" data-price="${price}" data-custom="${product.isCustom ? 'true' : 'false'}">${product.name} - ${price.toFixed(2)} CHF</option>`;
+                            }).join('')}
+                        </select>
+                        <input type="text" class="product-name-input" id="name-${lineId}" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                    </div>
                     <input type="number" value="1" min="1" class="quantity-input" oninput="updateTotals()">
+                    <input type="number" value="0" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
                     <div class="checkbox-option" style="margin: 0;">
                         <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
@@ -1038,6 +1111,78 @@
                 `;
                 
                 container.appendChild(productLine);
+            }
+
+            handleProductSelection(selectElement) {
+                const productId = parseInt(selectElement.value);
+                const sectionId = selectElement.getAttribute('data-section');
+                const selectedOption = selectElement.querySelector(`option[value="${selectElement.value}"]`);
+                const isCustom = selectedOption?.getAttribute('data-custom') === 'true';
+                const productLine = selectElement.closest('.product-line');
+                const priceInput = productLine.querySelector('.price-input');
+                const nameInput = productLine.querySelector('.product-name-input');
+                const selectContainer = productLine.querySelector('.product-select-container');
+                
+                // Si "Autre" est sélectionné (id 99)
+                if (isCustom && productId === 99) {
+                    // Masquer le select et afficher l'input texte pour le nom
+                    selectElement.style.display = 'none';
+                    nameInput.style.display = 'block';
+                    nameInput.focus();
+                    
+                    // Afficher le champ prix pour modification
+                    if (priceInput) {
+                        priceInput.style.display = 'block';
+                        priceInput.value = 0;
+                    }
+                    
+                    // Ajouter un bouton pour revenir au select si nécessaire
+                    if (!selectContainer.querySelector('.back-to-select-btn')) {
+                        const backBtn = document.createElement('button');
+                        backBtn.className = 'back-to-select-btn';
+                        backBtn.innerHTML = '↩';
+                        backBtn.style.cssText = 'position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: #6c757d; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 12px;';
+                        backBtn.onclick = () => {
+                            selectElement.style.display = 'block';
+                            nameInput.style.display = 'none';
+                            priceInput.style.display = 'none';
+                            selectElement.value = '';
+                            nameInput.value = '';
+                            priceInput.value = 0;
+                            backBtn.remove();
+                            this.updateTotals();
+                        };
+                        selectContainer.style.position = 'relative';
+                        selectContainer.appendChild(backBtn);
+                    }
+                } else {
+                    // Pour les produits standards, masquer les champs personnalisés
+                    if (nameInput) {
+                        nameInput.style.display = 'none';
+                    }
+                    if (priceInput) {
+                        priceInput.style.display = 'none';
+                        const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
+                        priceInput.value = price;
+                    }
+                    // Supprimer le bouton retour s'il existe
+                    const backBtn = selectContainer.querySelector('.back-to-select-btn');
+                    if (backBtn) backBtn.remove();
+                }
+                
+                // Détecter si une centrale a été sélectionnée/désélectionnée
+                if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
+                    this.detectSelectedCentral();
+                    
+                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
+                    // Proposer le kit
+                    this.showKitProposal(centraleName, sectionId);
+                } else if (sectionId === 'alarm-material') {
+                    // Vérifier si une centrale a été désélectionnée
+                    this.detectSelectedCentral();
+                }
+                
+                this.updateTotals();
             }
 
             getFilteredProducts(sectionId) {
@@ -1166,25 +1311,6 @@
                 });
             }
 
-            handleProductSelection(selectElement) {
-                const productId = parseInt(selectElement.value);
-                const sectionId = selectElement.getAttribute('data-section');
-                
-                // Détecter si une centrale a été sélectionnée/désélectionnée
-                if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
-                    this.detectSelectedCentral();
-                    
-                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
-                    // Proposer le kit
-                    this.showKitProposal(centraleName, sectionId);
-                } else if (sectionId === 'alarm-material') {
-                    // Vérifier si une centrale a été désélectionnée
-                    this.detectSelectedCentral();
-                }
-                
-                this.updateTotals();
-            }
-
             showKitProposal(centraleName, sectionId) {
                 // Créer l'overlay
                 const overlay = document.createElement('div');
@@ -1304,15 +1430,22 @@
                         const productLine = document.createElement('div');
                         productLine.className = 'product-line';
                         productLine.style.background = '#fffbf0';
+                        
+                        const lineId = 'kit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                        
                         productLine.innerHTML = `
-                            <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
-                                <option value="">Sélectionner un produit</option>
-                                ${availableProducts.map(p => {
-                                    const pPrice = this.getProductPrice(p);
-                                    return `<option value="${p.id}" data-price="${pPrice}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
-                                }).join('')}
-                            </select>
+                            <div class="product-select-container" style="width: 100%;">
+                                <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                                    <option value="">Sélectionner un produit</option>
+                                    ${availableProducts.map(p => {
+                                        const pPrice = this.getProductPrice(p);
+                                        return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                                    }).join('')}
+                                </select>
+                                <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                            </div>
                             <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+                            <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
                             <div class="checkbox-option" style="margin: 0;">
                                 <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
                                 <label style="margin: 0; font-size: 12px;">OFFERT</label>
@@ -1335,21 +1468,34 @@
                 const productLines = container.querySelectorAll('.product-line');
                 
                 productLines.forEach(line => {
+                    const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
+                    const priceInput = line.querySelector('.price-input');
                     const select = line.querySelector('.product-select');
-                    const quantity = parseFloat(line.querySelector('.quantity-input').value) || 0;
+                    const nameInput = line.querySelector('.product-name-input');
+                    const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
                     const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
                     
-                    if (select && select.value) {
-                        // Utiliser le prix stocké dans l'attribut data-price de l'option sélectionnée
-                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                        const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
-                        
-                        let lineTotal = isOffered ? 0 : (price * quantity);
-                        lineTotal = Math.max(0, lineTotal);
-                        
-                        line.querySelector('.price-display').textContent = isOffered ? 'OFFERT' : `${lineTotal.toFixed(2)} CHF`;
-                        total += lineTotal;
+                    let price = 0;
+                    
+                    // Si c'est un produit personnalisé (input nom visible)
+                    if (nameInput && nameInput.style.display !== 'none') {
+                        price = parseFloat(priceInput?.value) || 0;
+                    } else if (priceInput && priceInput.style.display !== 'none') {
+                        // Si le champ prix est visible (produit "Autre" ancien style)
+                        price = parseFloat(priceInput.value) || 0;
+                    } else if (selectedOption) {
+                        // Sinon, utiliser le prix de l'option sélectionnée
+                        price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                     }
+                    
+                    let lineTotal = isOffered ? 0 : (price * quantity);
+                    lineTotal = Math.max(0, lineTotal);
+                    
+                    const priceDisplay = line.querySelector('.price-display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = isOffered ? 'OFFERT' : `${lineTotal.toFixed(2)} CHF`;
+                    }
+                    total += lineTotal;
                 });
                 
                 // Apply section discount
@@ -1377,7 +1523,21 @@
             updateTotals() {
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
-                    const installationTotal = this.calculateSectionTotal('alarm-installation');
+                    
+                    // Calculer l'installation (toujours incluse)
+                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                    const installPrice = parseFloat(document.getElementById('alarm-installation-price')?.value) || 690;
+                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    
+                    // Mettre à jour l'affichage de l'installation
+                    document.getElementById('alarm-installation-display').textContent = 
+                        installOffered ? 'OFFERT' : `${installTotal.toFixed(2)} CHF`;
+                    
+                    // Calculer le reste de la section installation
+                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                    const totalInstallation = installTotal + otherInstallationTotal;
+                    
                     const adminTotal = 240;
                     
                     // Test Cyclique
@@ -1398,17 +1558,17 @@
                     document.getElementById('telesurveillance-total').textContent = telesurveillanceSelected ? 
                         (telesurveillanceOffered ? 'OFFERT' : `${telesurveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
                     
-                    const totalHT = materialTotal + installationTotal + adminTotal + testCycliqueTotal;
+                    const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
                     const totalTTC = totalHT * 1.08;
                     
                     document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('alarm-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
+                    document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
                     // Gérer les mensualités uniquement si pas en mode location
                     if (!this.rentalMode['alarm']) {
-                        this.updateMonthlyPayments('alarm', materialTotal + installationTotal);
+                        this.updateMonthlyPayments('alarm', materialTotal + totalInstallation);
                     } else {
                         document.getElementById('alarm-monthly-payment').style.display = 'none';
                     }
@@ -1416,8 +1576,9 @@
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     const installationQty = parseFloat(document.getElementById('camera-installation-qty').value) || 1;
+                    const installationPrice = this.calculateInstallationPrice(installationQty);
                     const installationOffered = document.getElementById('camera-installation-offered').checked;
-                    const installationTotal = installationOffered ? 0 : (690 * installationQty);
+                    const installationTotal = installationOffered ? 0 : installationPrice;
                     const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
                     
                     const totalHT = materialTotal + installationTotal;
@@ -1438,7 +1599,9 @@
                     if (!this.rentalMode['camera']) {
                         this.updateMonthlyPayments('camera', materialTotal);
                         const remoteMonthly = document.getElementById('camera-remote-monthly');
-                        remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                        if (remoteMonthly) {
+                            remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                        }
                     } else {
                         document.getElementById('camera-monthly-payment').style.display = 'none';
                     }
@@ -1559,9 +1722,8 @@
                         }
 
                         // Section 2: Installation
-                        if (this.hasSectionProducts('alarm-installation')) {
-                            yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
-                        }
+                        // Toujours affichée car l'installation est obligatoire
+                        yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
 
                         // Section 3: Frais de dossier
                         yPos = this.createAdminFeesPDF(doc, yPos);
@@ -1651,6 +1813,7 @@
                     const select = line.querySelector('.product-select');
                     const qtyInput = line.querySelector('.quantity-input');
                     const offeredCheckbox = line.querySelector('.offered-checkbox');
+                    const priceInput = line.querySelector('.price-input');
                     
                     if (select && select.value && qtyInput) {
                         lineCount++;
@@ -1663,8 +1826,26 @@
                         const qty = parseFloat(qtyInput.value) || 0;
                         const isOffered = offeredCheckbox?.checked || false;
                         const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                        const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
-                        const productName = selectedOption?.text.split(' - ')[0] || '';
+                        
+                        // Récupérer le prix et le nom selon le type de produit
+                        let price = 0;
+                        let productName = '';
+                        
+                        const nameInput = line.querySelector('.product-name-input');
+                        
+                        if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
+                            // Produit personnalisé avec nom libre
+                            productName = nameInput.value;
+                            price = parseFloat(priceInput?.value) || 0;
+                        } else if (priceInput && priceInput.style.display !== 'none') {
+                            // Produit "Autre" avec prix personnalisé (ancien style)
+                            price = parseFloat(priceInput.value) || 0;
+                            productName = selectedOption?.getAttribute('data-original-name') || selectedOption?.text || 'Produit personnalisé';
+                        } else if (selectedOption) {
+                            // Produit standard
+                            price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                            productName = selectedOption.text.split(' - ')[0] || '';
+                        }
                         
                         let lineTotal = isOffered ? 0 : (price * qty);
                         sectionTotal += lineTotal;
@@ -1696,6 +1877,54 @@
                         yPos += 12;
                     }
                 });
+
+                // Section installation pour alarme
+                if (sectionId === 'alarm-installation') {
+                    // L'installation est toujours incluse (plus de checkbox)
+                    lineCount++;
+                    if (lineCount % 2 === 0) {
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(40, yPos, 515, 12, 'F');
+                    }
+                    
+                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                    const installPrice = this.calculateInstallationPrice(installQty);
+                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    
+                    // Calculer le nombre de jours
+                    let daysText = '';
+                    if (installQty === 1) daysText = ' (1/2 journée)';
+                    else if (installQty === 2) daysText = ' (1 jour)';
+                    else if (installQty === 3) daysText = ' (1.5 jours)';
+                    else if (installQty === 4) daysText = ' (2 jours)';
+                    else if (installQty === 5) daysText = ' (2.5 jours)';
+                    else if (installQty === 6) daysText = ' (3 jours)';
+                    else {
+                        const fullDays = Math.floor(installQty / 2);
+                        const halfDay = installQty % 2;
+                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.text(installQty.toString(), 55, yPos + 8);
+                    doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 8);
+                    
+                    if (installOffered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 8);
+                        doc.text('OFFERT', 485, yPos + 8);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(installPrice.toFixed(2), 405, yPos + 8);
+                        doc.text(installTotal.toFixed(2), 485, yPos + 8);
+                    }
+                    
+                    sectionTotal += installTotal;
+                    yPos += 12;
+                }
 
                 // Appliquer la réduction de section
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
@@ -1903,7 +2132,22 @@
 
                 const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                 const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                const installTotal = installOffered ? 0 : (690 * installQty);
+                const installPrice = this.calculateInstallationPrice(installQty);
+                const installTotal = installOffered ? 0 : installPrice;
+
+                // Calculer le nombre de jours
+                let daysText = '';
+                if (installQty === 1) daysText = ' (1/2 journée)';
+                else if (installQty === 2) daysText = ' (1 jour)';
+                else if (installQty === 3) daysText = ' (1.5 jours)';
+                else if (installQty === 4) daysText = ' (2 jours)';
+                else if (installQty === 5) daysText = ' (2.5 jours)';
+                else if (installQty === 6) daysText = ' (3 jours)';
+                else {
+                    const fullDays = Math.floor(installQty / 2);
+                    const halfDay = installQty % 2;
+                    daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
+                }
 
                 // Ligne installation
                 doc.setDrawColor(0, 0, 0);
@@ -1916,7 +2160,7 @@
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7);
                 doc.text(installQty.toString(), 55, yPos + 9);
-                doc.text('Installation, paramétrages, tests, mise en service & formation (1/2 journée)', 90, yPos + 9);
+                doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 9);
                 
                 if (installOffered) {
                     doc.setFont('helvetica', 'bold');
@@ -1925,7 +2169,7 @@
                     doc.text('OFFERT', 485, yPos + 9);
                 } else {
                     doc.setTextColor(0, 0, 0);
-                    doc.text('690.00', 405, yPos + 9);
+                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
                     doc.text(installTotal.toFixed(2), 485, yPos + 9);
                 }
                 yPos += 14;
@@ -1971,7 +2215,15 @@
                 
                 if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
-                    const installationTotal = this.calculateSectionTotal('alarm-installation');
+                    
+                    // Installation (toujours incluse)
+                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                    const installPrice = this.calculateInstallationPrice(installQty);
+                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                    const totalInstallation = installTotal + otherInstallationTotal;
+                    
                     const adminTotal = 240;
                     
                     const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
@@ -1986,10 +2238,10 @@
                     }
                     
                     if (installMonths > 0) {
-                        totalMensualitesHT += installationTotal;
+                        totalMensualitesHT += totalInstallation;
                         monthsCount = Math.max(monthsCount, installMonths);
                     } else {
-                        totalComptantHT += installationTotal;
+                        totalComptantHT += totalInstallation;
                     }
                     
                     // Frais de dossier toujours comptant
@@ -1999,7 +2251,8 @@
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                     const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : (690 * installQty);
+                    const installPrice = this.calculateInstallationPrice(installQty);
+                    const installTotal = installOffered ? 0 : installPrice;
                     const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
                     
                     if (materialMonths > 0) {
@@ -2189,6 +2442,18 @@
             generator.toggleRentalMode(type);
         }
 
+        function updateAlarmInstallationPrice() {
+            generator.updateAlarmInstallationPrice();
+        }
+
+        function updateCameraInstallationPrice() {
+            generator.updateCameraInstallationPrice();
+        }
+
+        function toggleCameraInstallation() {
+            generator.toggleCameraInstallation();
+        }
+
         function toggleTelesurveillance() {
             generator.toggleTelesurveillance();
         }
@@ -2230,7 +2495,6 @@
                 to { transform: translateX(0); opacity: 1; }
             }
         `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
