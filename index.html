@@ -539,19 +539,29 @@
                     </div>
                     <div class="form-group">
                         <label for="commercial">Commercial</label>
-                        <select id="commercial">
-                            <option value="">Sélectionner un commercial</option>
-                            <option value="Arnaud Bloch">Arnaud Bloch</option>
-                            <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                            <option value="Benali Kodad">Benali Kodad</option>
-                            <option value="Heythem Ziaya">Heythem Ziaya</option>
-                            <option value="Matys Goiot">Matys Goiot</option>
-                            <option value="Mohamed Tartik">Mohamed Tartik</option>
-                            <option value="Nassim Jaza">Nassim Jaza</option>
-                            <option value="Samir Ouhameni">Samir Ouhameni</option>
-                            <option value="Thomas Garcia">Thomas Garcia</option>
-                            <option value="Wassim Tahiri">Wassim Tahiri</option>
-                        </select>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <select id="commercial" onchange="handleCommercialSelection(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                                <option value="">Sélectionner un commercial</option>
+                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
+                                <option value="Arnaud Bloch">Arnaud Bloch</option>
+                                <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Cédric Boldron">Cédric Boldron</option>
+                                <option value="Emin Comert">Emin Comert</option>
+                                <option value="Gérald Clausen">Gérald Clausen</option>
+                                <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Matys Goiot">Matys Goiot</option>
+                                <option value="Mohamed Tartik">Mohamed Tartik</option>
+                                <option value="Nassim Jaza">Nassim Jaza</option>
+                                <option value="Nora Sassi">Nora Sassi</option>
+                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
+                                <option value="Sabine Balducci">Sabine Balducci</option>
+                                <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thomas Garcia">Thomas Garcia</option>
+                                <option value="Wassim Tahiri">Wassim Tahiri</option>
+                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
+                            </select>
+                            <input type="text" id="commercial-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="clientPhone">Téléphone</label>
@@ -729,19 +739,29 @@
                     </div>
                     <div class="form-group">
                         <label for="commercialCamera">Commercial</label>
-                        <select id="commercialCamera">
-                            <option value="">Sélectionner un commercial</option>
-                            <option value="Arnaud Bloch">Arnaud Bloch</option>
-                            <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                            <option value="Benali Kodad">Benali Kodad</option>
-                            <option value="Heythem Ziaya">Heythem Ziaya</option>
-                            <option value="Matys Goiot">Matys Goiot</option>
-                            <option value="Mohamed Tartik">Mohamed Tartik</option>
-                            <option value="Nassim Jaza">Nassim Jaza</option>
-                            <option value="Samir Ouhameni">Samir Ouhameni</option>
-                            <option value="Thomas Garcia">Thomas Garcia</option>
-                            <option value="Wassim Tahiri">Wassim Tahiri</option>
-                        </select>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <select id="commercialCamera" onchange="handleCommercialSelectionCamera(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                                <option value="">Sélectionner un commercial</option>
+                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
+                                <option value="Arnaud Bloch">Arnaud Bloch</option>
+                                <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Cédric Boldron">Cédric Boldron</option>
+                                <option value="Emin Comert">Emin Comert</option>
+                                <option value="Gérald Clausen">Gérald Clausen</option>
+                                <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Matys Goiot">Matys Goiot</option>
+                                <option value="Mohamed Tartik">Mohamed Tartik</option>
+                                <option value="Nassim Jaza">Nassim Jaza</option>
+                                <option value="Nora Sassi">Nora Sassi</option>
+                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
+                                <option value="Sabine Balducci">Sabine Balducci</option>
+                                <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thomas Garcia">Thomas Garcia</option>
+                                <option value="Wassim Tahiri">Wassim Tahiri</option>
+                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
+                            </select>
+                            <input type="text" id="commercialCamera-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="clientPhoneCamera">Téléphone</label>
@@ -1654,9 +1674,18 @@
                 const isRental = this.rentalMode[type];
                 const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
                 const commercialField = type === 'alarm' ? 'commercial' : 'commercialCamera';
+                const commercialCustomField = type === 'alarm' ? 'commercial-custom' : 'commercialCamera-custom';
                 
                 const clientName = document.getElementById(clientNameField)?.value || 'Client';
-                const commercial = document.getElementById(commercialField)?.value;
+                const commercialSelect = document.getElementById(commercialField)?.value;
+                let commercial = '';
+                
+                // Vérifier si "autre" est sélectionné et récupérer le nom personnalisé
+                if (commercialSelect === 'autre') {
+                    commercial = document.getElementById(commercialCustomField)?.value || '';
+                } else {
+                    commercial = commercialSelect;
+                }
 
                 if (!commercial) {
                     alert('Veuillez sélectionner un commercial avant de générer le PDF.');
@@ -2480,6 +2509,28 @@
 
         function updateTotals() {
             generator.updateTotals();
+        }
+
+        function handleCommercialSelection(selectElement) {
+            const customInput = document.getElementById('commercial-custom');
+            if (selectElement.value === 'autre') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
+        }
+
+        function handleCommercialSelectionCamera(selectElement) {
+            const customInput = document.getElementById('commercialCamera-custom');
+            if (selectElement.value === 'autre') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
         }
 
         // Initialisation
