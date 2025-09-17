@@ -1670,6 +1670,41 @@
                 this.updateTotals();
             }
 
+            async saveToGoogleDrive(pdfBlob, filename, commercial) {
+                // URL de votre Google Apps Script
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9eaJV-q7R64jJZTAmkOj65N1q1T71mFJ7z9qrALkJm3zcy9z6_OLulTwWyz55GKl4WQ/exec';
+                
+                // Convertir le blob en base64
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = async function() {
+                        const base64 = reader.result.split(',')[1];
+                        
+                        try {
+                            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                                method: 'POST',
+                                mode: 'no-cors', // Important pour Google Apps Script
+                                headers: {
+                                    'Content-Type': 'text/plain',
+                                },
+                                body: JSON.stringify({
+                                    pdfBase64: base64,
+                                    filename: filename,
+                                    commercial: commercial
+                                })
+                            });
+                            
+                            console.log('PDF envoyé à Google Drive');
+                            resolve(true);
+                        } catch (error) {
+                            console.error('Erreur lors de l\'envoi à Google Drive:', error);
+                            reject(error);
+                        }
+                    };
+                    reader.readAsDataURL(pdfBlob);
+                });
+            }
+
             generatePDF(type) {
                 const isRental = this.rentalMode[type];
                 const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
@@ -1791,6 +1826,21 @@
                     this.showNotification('PDF généré avec succès!');
                     
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                    
+                    // Générer le blob du PDF
+                    const pdfBlob = doc.output('blob');
+                    
+                    // Sauvegarder sur Google Drive
+                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+                        .then(() => {
+                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
+                        })
+                        .catch(error => {
+                            console.error('Erreur Google Drive:', error);
+                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
+                        });
+                    
+                    // Télécharger localement aussi
                     doc.save(filename);
                     
                 } catch (error) {
