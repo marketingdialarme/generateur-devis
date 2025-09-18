@@ -1705,7 +1705,7 @@
             }
 
             async sendPDFByEmail(pdfBlob, filename, commercial) {
-                emailjs.init("VOTRE_PUBLIC_KEY_ICI");
+                emailjs.init("Ls2wKBXwkp9DmXjl7");
                 
                 const reader = new FileReader();
                 
@@ -1713,10 +1713,10 @@
                     reader.onload = async () => {
                         try {
                             await emailjs.send(
-                                "VOTRE_SERVICE_ID",
-                                "VOTRE_TEMPLATE_ID",
+                                "service_f43nl2e",
+                                "template_9yb8gic",
                                 {
-                                    to_email: "votre-email@gmail.com",
+                                    to_email: "dialarme.marketing@gmail.com",
                                     filename: filename,
                                     commercial: commercial,
                                     client_name: document.getElementById('clientName')?.value || 'Client',
