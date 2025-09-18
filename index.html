@@ -1945,18 +1945,36 @@
                     // Générer le blob du PDF
                     const pdfBlob = doc.output('blob');
                     
-                    // Sauvegarder sur Google Drive
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-                        .then(() => {
-                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
-                        })
-                        .catch(error => {
-                            console.error('Erreur Google Drive:', error);
-                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
-                        });
-                    
-                    // Télécharger localement aussi
-                    doc.save(filename);
+                    // Détecter si on est sur iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+if (isIOS) {
+    // Sur iOS : UPLOAD D'ABORD, PDF APRÈS
+    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+        .then(() => {
+            this.showNotification('Sauvegardé sur Google Drive!');
+            // PUIS télécharger le PDF
+            doc.save(filename);
+        })
+        .catch(error => {
+            console.error('Erreur Google Drive:', error);
+            this.showNotification('Échec sauvegarde - PDF téléchargé');
+            // Télécharger quand même le PDF
+            doc.save(filename);
+        });
+} else {
+    // Sur PC : télécharger immédiatement + upload en parallèle
+    doc.save(filename);
+    
+    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+        .then(() => {
+            this.showNotification('PDF sauvegardé sur Google Drive!');
+        })
+        .catch(error => {
+            console.error('Erreur Google Drive:', error);
+            this.showNotification('PDF généré (sauvegarde Drive échouée)');
+        });
+}
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
