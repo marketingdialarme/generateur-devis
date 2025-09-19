@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Devis Dialarme</title>
+    <title>Générateur de Devis Dialarme - Version Optimisée</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
@@ -263,12 +263,6 @@
             border-top: 1px solid #dee2e6;
         }
 
-        .discount-section select, .discount-section input {
-            padding: 8px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-        }
-
         .payment-options {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -396,19 +390,6 @@
             font-weight: bold;
         }
 
-        .rental-option {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .rental-option label {
-            font-weight: bold;
-            color: #856404;
-        }
-
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -464,6 +445,23 @@
             margin-bottom: 15px;
         }
 
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -512,10 +510,10 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('alarm', this)">
+            <button class="nav-tab active" data-tab="alarm">
                 🚨 Alarme
             </button>
-            <button class="nav-tab" onclick="showTab('camera', this)">
+            <button class="nav-tab" data-tab="camera">
                 📹 Caméra de surveillance
             </button>
         </div>
@@ -525,7 +523,7 @@
             <div class="rental-toggle-container">
                 <span>Mode vente</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="alarm-rental-mode" onchange="toggleRentalMode('alarm')">
+                    <input type="checkbox" id="alarm-rental-mode">
                     <span class="toggle-slider"></span>
                 </label>
                 <span>Location</span>
@@ -540,29 +538,27 @@
                     </div>
                     <div class="form-group">
                         <label for="commercial">Commercial</label>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <select id="commercial" onchange="handleCommercialSelection(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                                <option value="">Sélectionner un commercial</option>
-                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                                <option value="Arnaud Bloch">Arnaud Bloch</option>
-                                <option value="Benali Kodad">Benali Kodad</option>
-                                <option value="Cédric Boldron">Cédric Boldron</option>
-                                <option value="Emin Comert">Emin Comert</option>
-                                <option value="Gérald Clausen">Gérald Clausen</option>
-                                <option value="Heythem Ziaya">Heythem Ziaya</option>
-                                <option value="Matys Goiot">Matys Goiot</option>
-                                <option value="Mohamed Tartik">Mohamed Tartik</option>
-                                <option value="Nassim Jaza">Nassim Jaza</option>
-                                <option value="Nora Sassi">Nora Sassi</option>
-                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
-                                <option value="Sabine Balducci">Sabine Balducci</option>
-                                <option value="Samir Ouhameni">Samir Ouhameni</option>
-                                <option value="Thomas Garcia">Thomas Garcia</option>
-                                <option value="Wassim Tahiri">Wassim Tahiri</option>
-                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
-                            </select>
-                            <input type="text" id="commercial-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
-                        </div>
+                        <select id="commercial" data-tab="alarm">
+                            <option value="">Sélectionner un commercial</option>
+                            <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
+                            <option value="Arnaud Bloch">Arnaud Bloch</option>
+                            <option value="Benali Kodad">Benali Kodad</option>
+                            <option value="Cédric Boldron">Cédric Boldron</option>
+                            <option value="Emin Comert">Emin Comert</option>
+                            <option value="Gérald Clausen">Gérald Clausen</option>
+                            <option value="Heythem Ziaya">Heythem Ziaya</option>
+                            <option value="Matys Goiot">Matys Goiot</option>
+                            <option value="Mohamed Tartik">Mohamed Tartik</option>
+                            <option value="Nassim Jaza">Nassim Jaza</option>
+                            <option value="Nora Sassi">Nora Sassi</option>
+                            <option value="Rodolphe De Vito">Rodolphe De Vito</option>
+                            <option value="Sabine Balducci">Sabine Balducci</option>
+                            <option value="Samir Ouhameni">Samir Ouhameni</option>
+                            <option value="Thomas Garcia">Thomas Garcia</option>
+                            <option value="Wassim Tahiri">Wassim Tahiri</option>
+                            <option value="autre">➕ Autre (saisir le nom)</option>
+                        </select>
+                        <input type="text" id="commercial-custom" placeholder="Entrez le nom du commercial" style="display: none; margin-top: 10px; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px;">
                     </div>
                     <div class="form-group">
                         <label for="clientPhone">Téléphone</label>
@@ -577,58 +573,54 @@
 
             <!-- Section 1: Matériel -->
             <div class="quote-section">
-                <h3>🛡️ 1. Matériel <button class="add-product-btn" onclick="addProductLine('alarm-material')">+</button></h3>
-                <div id="alarm-material-products">
-                    <!-- Products will be added here -->
-                </div>
+                <h3>🛡️ 1. Matériel <button class="add-product-btn" data-section="alarm-material">+</button></h3>
+                <div id="alarm-material-products"></div>
                 <div class="discount-section">
                     <label>Réduction:</label>
                     <select id="alarm-material-discount-type">
                         <option value="percent">%</option>
                         <option value="amount">CHF</option>
                     </select>
-                    <input type="number" id="alarm-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
+                    <input type="number" id="alarm-material-discount-value" placeholder="0" min="0" class="discount-input">
                 </div>
                 <div class="payment-options" id="alarm-material-payment">
-                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-material')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-material')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-material')">36 mois</div>
-                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'alarm-material')">48 mois</div>
+                    <div class="payment-option active" data-section="alarm-material" data-months="0">Comptant</div>
+                    <div class="payment-option" data-section="alarm-material" data-months="24">24 mois</div>
+                    <div class="payment-option" data-section="alarm-material" data-months="36">36 mois</div>
+                    <div class="payment-option" data-section="alarm-material" data-months="48">48 mois</div>
                 </div>
             </div>
 
             <!-- Section 2: Installation et matériel supplémentaire -->
             <div class="quote-section">
-                <h3>🔧 2. Installation et matériel supplémentaire <button class="add-product-btn" onclick="addProductLine('alarm-installation')">+</button></h3>
+                <h3>🔧 2. Installation et matériel supplémentaire <button class="add-product-btn" data-section="alarm-installation">+</button></h3>
                 <div class="product-line" style="background: #f0f8ff;">
                     <div>Installation, paramétrages, tests, mise en service & formation</div>
                     <div>
                         <label style="margin-right: 5px; font-size: 12px;">Nombre:</label>
-                        <input type="number" id="alarm-installation-qty" value="1" min="1" max="10" class="quantity-input" oninput="updateAlarmInstallationPrice()">
+                        <input type="number" id="alarm-installation-qty" value="1" min="1" max="10" class="quantity-input">
                     </div>
-                    <input type="number" id="alarm-installation-price" value="690" class="discount-input" placeholder="Prix" readonly style="background: #f0f0f0;">
+                    <input type="number" id="alarm-installation-price" value="690" class="discount-input" readonly style="background: #f0f0f0;">
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="alarm-installation-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <input type="checkbox" id="alarm-installation-offered" class="offered-checkbox">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="alarm-installation-display">690.00 CHF</div>
                 </div>
-                <div id="alarm-installation-products">
-                    <!-- Products will be added here -->
-                </div>
+                <div id="alarm-installation-products"></div>
                 <div class="discount-section">
                     <label>Réduction:</label>
                     <select id="alarm-installation-discount-type">
                         <option value="percent">%</option>
                         <option value="amount">CHF</option>
                     </select>
-                    <input type="number" id="alarm-installation-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
+                    <input type="number" id="alarm-installation-discount-value" placeholder="0" min="0" class="discount-input">
                 </div>
                 <div class="payment-options" id="alarm-installation-payment">
-                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-installation')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-installation')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-installation')">36 mois</div>
-                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'alarm-installation')">48 mois</div>
+                    <div class="payment-option active" data-section="alarm-installation" data-months="0">Comptant</div>
+                    <div class="payment-option" data-section="alarm-installation" data-months="24">24 mois</div>
+                    <div class="payment-option" data-section="alarm-installation" data-months="36">36 mois</div>
+                    <div class="payment-option" data-section="alarm-installation" data-months="48">48 mois</div>
                 </div>
             </div>
 
@@ -658,12 +650,12 @@
                 <div class="product-line">
                     <div>Test Cyclique</div>
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="test-cyclique-selected" checked onchange="updateTotals()">
+                        <input type="checkbox" id="test-cyclique-selected" checked>
                         <label style="margin: 0; font-size: 12px;">Inclure</label>
                     </div>
-                    <input type="number" id="test-cyclique-price" value="0" class="discount-input" placeholder="Prix" oninput="updateTotals()">
+                    <input type="number" id="test-cyclique-price" value="0" class="discount-input" placeholder="Prix">
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="test-cyclique-offered" class="offered-checkbox" checked onchange="updateTotals()">
+                        <input type="checkbox" id="test-cyclique-offered" class="offered-checkbox" checked>
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="test-cyclique-total">OFFERT</div>
@@ -671,12 +663,12 @@
                 <div class="product-line">
                     <div>Télésurveillance</div>
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="telesurveillance-selected" onchange="toggleTelesurveillance()">
+                        <input type="checkbox" id="telesurveillance-selected">
                         <label style="margin: 0; font-size: 12px;">Inclure</label>
                     </div>
-                    <input type="number" id="telesurveillance-price" value="0" class="discount-input" placeholder="Prix/mois" oninput="updateTotals()" disabled>
+                    <input type="number" id="telesurveillance-price" value="0" class="discount-input" placeholder="Prix/mois" disabled>
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="telesurveillance-offered" class="offered-checkbox" onchange="updateTotals()" disabled>
+                        <input type="checkbox" id="telesurveillance-offered" class="offered-checkbox" disabled>
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="telesurveillance-total">0.00 CHF/mois</div>
@@ -711,10 +703,10 @@
             </div>
 
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="generatePDF('alarm')">
+                <button class="btn btn-primary" data-generate-pdf="alarm">
                     📄 Générer le PDF
                 </button>
-                <button class="btn btn-secondary" onclick="exportQuote()">
+                <button class="btn btn-secondary" data-export>
                     💾 Exporter
                 </button>
             </div>
@@ -725,7 +717,7 @@
             <div class="rental-toggle-container">
                 <span>Mode vente</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="camera-rental-mode" onchange="toggleRentalMode('camera')">
+                    <input type="checkbox" id="camera-rental-mode">
                     <span class="toggle-slider"></span>
                 </label>
                 <span>Location</span>
@@ -740,29 +732,27 @@
                     </div>
                     <div class="form-group">
                         <label for="commercialCamera">Commercial</label>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <select id="commercialCamera" onchange="handleCommercialSelectionCamera(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                                <option value="">Sélectionner un commercial</option>
-                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                                <option value="Arnaud Bloch">Arnaud Bloch</option>
-                                <option value="Benali Kodad">Benali Kodad</option>
-                                <option value="Cédric Boldron">Cédric Boldron</option>
-                                <option value="Emin Comert">Emin Comert</option>
-                                <option value="Gérald Clausen">Gérald Clausen</option>
-                                <option value="Heythem Ziaya">Heythem Ziaya</option>
-                                <option value="Matys Goiot">Matys Goiot</option>
-                                <option value="Mohamed Tartik">Mohamed Tartik</option>
-                                <option value="Nassim Jaza">Nassim Jaza</option>
-                                <option value="Nora Sassi">Nora Sassi</option>
-                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
-                                <option value="Sabine Balducci">Sabine Balducci</option>
-                                <option value="Samir Ouhameni">Samir Ouhameni</option>
-                                <option value="Thomas Garcia">Thomas Garcia</option>
-                                <option value="Wassim Tahiri">Wassim Tahiri</option>
-                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
-                            </select>
-                            <input type="text" id="commercialCamera-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
-                        </div>
+                        <select id="commercialCamera" data-tab="camera">
+                            <option value="">Sélectionner un commercial</option>
+                            <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
+                            <option value="Arnaud Bloch">Arnaud Bloch</option>
+                            <option value="Benali Kodad">Benali Kodad</option>
+                            <option value="Cédric Boldron">Cédric Boldron</option>
+                            <option value="Emin Comert">Emin Comert</option>
+                            <option value="Gérald Clausen">Gérald Clausen</option>
+                            <option value="Heythem Ziaya">Heythem Ziaya</option>
+                            <option value="Matys Goiot">Matys Goiot</option>
+                            <option value="Mohamed Tartik">Mohamed Tartik</option>
+                            <option value="Nassim Jaza">Nassim Jaza</option>
+                            <option value="Nora Sassi">Nora Sassi</option>
+                            <option value="Rodolphe De Vito">Rodolphe De Vito</option>
+                            <option value="Sabine Balducci">Sabine Balducci</option>
+                            <option value="Samir Ouhameni">Samir Ouhameni</option>
+                            <option value="Thomas Garcia">Thomas Garcia</option>
+                            <option value="Wassim Tahiri">Wassim Tahiri</option>
+                            <option value="autre">➕ Autre (saisir le nom)</option>
+                        </select>
+                        <input type="text" id="commercialCamera-custom" placeholder="Entrez le nom du commercial" style="display: none; margin-top: 10px; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px;">
                     </div>
                     <div class="form-group">
                         <label for="clientPhoneCamera">Téléphone</label>
@@ -777,49 +767,35 @@
 
             <!-- Section 1: Matériel -->
             <div class="quote-section">
-                <h3>📹 1. Matériel <button class="add-product-btn" onclick="addProductLine('camera-material')">+</button></h3>
-                <div id="camera-material-products">
-                    <!-- Products will be added here -->
-                </div>
+                <h3>📹 1. Matériel <button class="add-product-btn" data-section="camera-material">+</button></h3>
+                <div id="camera-material-products"></div>
                 <div class="discount-section">
                     <label>Réduction:</label>
                     <select id="camera-material-discount-type">
                         <option value="percent">%</option>
                         <option value="amount">CHF</option>
                     </select>
-                    <input type="number" id="camera-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
+                    <input type="number" id="camera-material-discount-value" placeholder="0" min="0" class="discount-input">
                 </div>
                 <div class="payment-options" id="camera-material-payment">
-                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'camera-material')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'camera-material')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'camera-material')">36 mois</div>
-                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'camera-material')">48 mois</div>
+                    <div class="payment-option active" data-section="camera-material" data-months="0">Comptant</div>
+                    <div class="payment-option" data-section="camera-material" data-months="24">24 mois</div>
+                    <div class="payment-option" data-section="camera-material" data-months="36">36 mois</div>
+                    <div class="payment-option" data-section="camera-material" data-months="48">48 mois</div>
                 </div>
             </div>
 
             <!-- Section 2: Installation -->
-<div class="quote-section">
-    <h3>🔧 2. Installation</h3>
-    <div class="product-line">
-        <!-- ... contenu existant ... -->
-    </div>
-    <div class="payment-options" id="camera-installation-payment">
-        <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'camera-installation')">Comptant</div>
-        <div class="payment-option" data-months="24" onclick="selectPayment(this, 'camera-installation')">24 mois</div>
-        <div class="payment-option" data-months="36" onclick="selectPayment(this, 'camera-installation')">36 mois</div>
-        <div class="payment-option" data-months="48" onclick="selectPayment(this, 'camera-installation')">48 mois</div>
-    </div>
-</div>
             <div class="quote-section">
                 <h3>🔧 2. Installation</h3>
                 <div class="product-line">
                     <div>Installation, paramétrages, tests, mise en service & formation des utilisateurs</div>
                     <div>
                         <label style="margin-right: 5px;">Nombre:</label>
-                        <input type="number" id="camera-installation-qty" value="1" min="1" max="10" class="quantity-input" oninput="updateCameraInstallationPrice()">
+                        <input type="number" id="camera-installation-qty" value="1" min="1" max="10" class="quantity-input">
                     </div>
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="camera-installation-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <input type="checkbox" id="camera-installation-offered" class="offered-checkbox">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="camera-installation-price">690.00 CHF</div>
@@ -831,7 +807,7 @@
             <div class="quote-section" id="camera-remote-section">
                 <h3>🌐 3. Vision à distance</h3>
                 <div class="checkbox-option">
-                    <input type="checkbox" id="camera-remote-access" onchange="updateTotals()">
+                    <input type="checkbox" id="camera-remote-access">
                     <label for="camera-remote-access">Accès à distance sécurisé sur Modem indépendant - 20 CHF/mois</label>
                 </div>
             </div>
@@ -883,10 +859,10 @@
             </div>
 
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="generatePDF('camera')">
+                <button class="btn btn-primary" data-generate-pdf="camera">
                     📄 Générer le PDF
                 </button>
-                <button class="btn btn-secondary" onclick="exportQuote()">
+                <button class="btn btn-secondary" data-export>
                     💾 Exporter
                 </button>
             </div>
@@ -894,9 +870,20 @@
     </div>
 
     <script>
-        // Générateur de devis Dialarme avec mode Location et fonctionnalités étendues
-        class DialarmeFinalGenerator {
+        // Classe unifiée pour l'application
+        class DialarmeOptimized {
             constructor() {
+                // Configuration centralisée
+                this.config = {
+                    TVA_RATE: 1.081,
+                    ADMIN_FEES: 240,
+                    GOOGLE_SCRIPT_URL: 'https://pdf-upload-proxy.dialarme-marketing-ccb.workers.dev/',
+                    EMAIL_SERVICE_ID: "service_f43nl2e",
+                    EMAIL_TEMPLATE_ID: "template_9yb8gic",
+                    EMAIL_PUBLIC_KEY: "Ls2wKBXwkp9DmXjl7"
+                };
+
+                // Catalogue complet des produits
                 this.catalog = {
                     'alarm-material': [
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
@@ -912,7 +899,7 @@
                         { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
                         { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
                         { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
                         { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
@@ -920,7 +907,7 @@
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ],
                     'alarm-installation': [
-                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
+                        { id: 20, name: "Installation supplémentaire (1/2 journée)", price: 690.00 },
                         { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
                         { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
                         { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00 },
@@ -932,7 +919,7 @@
                         { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
                         { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
                         { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
                         { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
@@ -948,6 +935,9 @@
                         { id: 28, name: "Coffret NVR 4P", price: 240.00 },
                         { id: 29, name: "Coffret NVR 8P", price: 360.00 },
                         { id: 30, name: "Disque dur 4 To", price: 270.00 },
+                        { id: 60, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00 },
+                        { id: 61, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00 },
+                        { id: 62, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00 },
                         { id: 31, name: "Dôme Antivandale", price: 390.00 },
                         { id: 32, name: "Dôme Mini Antivandale", price: 390.00 },
                         { id: 33, name: "Dôme Night", price: 540.00 },
@@ -959,9 +949,6 @@
                         { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00 },
                         { id: 40, name: "Moniteur Vidéo 28\" 4K", price: 460.00 },
                         { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00 },
-                        { id: 60, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00 },
-                        { id: 61, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00 },
-                        { id: 62, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00 },
                         { id: 42, name: "Onduleur 1000 - 60min", price: 360.00 },
                         { id: 43, name: "Onduleur 1500 - 90min", price: 600.00 },
                         { id: 44, name: "Onduleur 2200 - 120min", price: 830.00 },
@@ -974,29 +961,142 @@
                     ]
                 };
 
-                this.currentTab = 'alarm';
-                this.sections = {
-                    'alarm-material': { paymentMonths: 0 },
-                    'alarm-installation': { paymentMonths: 0 },
-                    'camera-material': { paymentMonths: 0 }
-                    'camera-installation': { paymentMonths: 0 }
+                // État de l'application
+                this.state = {
+                    currentTab: 'alarm',
+                    rentalMode: {
+                        alarm: false,
+                        camera: false
+                    },
+                    payments: {
+                        'alarm-material': 0,
+                        'alarm-installation': 0,
+                        'camera-material': 0
+                    },
+                    selectedCentral: null
                 };
-
-                this.rentalMode = {
-                    'alarm': false,
-                    'camera': false
-                };
-
-                // Pour suivre quelle centrale est sélectionnée
-                this.selectedCentral = null;
 
                 this.init();
             }
 
             init() {
                 this.updateCurrentDate();
+                this.attachEventListeners();
                 this.updateTotals();
-                console.log('Générateur Dialarme avec Location initialisé');
+            }
+
+            // Méthode unifiée pour gérer TOUS les événements
+            attachEventListeners() {
+                // Event delegation - un seul listener pour tout
+                document.addEventListener('click', (e) => this.handleClick(e));
+                document.addEventListener('change', (e) => this.handleChange(e));
+                document.addEventListener('input', (e) => this.handleInput(e));
+            }
+
+            handleClick(e) {
+                // Navigation tabs
+                if (e.target.matches('.nav-tab')) {
+                    this.showTab(e.target.dataset.tab);
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+
+                // Add product button
+                if (e.target.matches('.add-product-btn')) {
+                    this.addProductLine(e.target.dataset.section);
+                }
+
+                // Remove product button
+                if (e.target.matches('.remove-btn')) {
+                    e.target.closest('.product-line').remove();
+                    this.detectSelectedCentral();
+                    this.updateTotals();
+                }
+
+                // Payment options
+                if (e.target.matches('.payment-option')) {
+                    this.selectPayment(e.target);
+                }
+
+                // Generate PDF
+                if (e.target.dataset.generatePdf) {
+                    this.generatePDF(e.target.dataset.generatePdf);
+                }
+
+                // Export
+                if (e.target.dataset.export !== undefined) {
+                    this.exportQuote();
+                }
+            }
+
+            handleChange(e) {
+                // Commercial selection (unifié pour les deux tabs)
+                if (e.target.id === 'commercial' || e.target.id === 'commercialCamera') {
+                    const customInputId = e.target.id.replace('commercial', 'commercial') + 
+                                         (e.target.id.includes('Camera') ? '-custom' : '-custom');
+                    const customInput = document.getElementById(customInputId);
+                    customInput.style.display = e.target.value === 'autre' ? 'block' : 'none';
+                    if (e.target.value !== 'autre') customInput.value = '';
+                }
+
+                // Rental mode toggle
+                if (e.target.id.includes('-rental-mode')) {
+                    this.toggleRentalMode(e.target);
+                }
+
+                // Product selection
+                if (e.target.matches('.product-select')) {
+                    this.handleProductSelection(e.target);
+                }
+
+                // Télésurveillance toggle
+                if (e.target.id === 'telesurveillance-selected') {
+                    const priceInput = document.getElementById('telesurveillance-price');
+                    const offeredInput = document.getElementById('telesurveillance-offered');
+                    priceInput.disabled = !e.target.checked;
+                    offeredInput.disabled = !e.target.checked;
+                }
+
+                // Always update totals on change
+                this.updateTotals();
+            }
+
+            handleInput(e) {
+                // Installation quantity changes
+                if (e.target.id === 'alarm-installation-qty') {
+                    const qty = parseInt(e.target.value) || 1;
+                    document.getElementById('alarm-installation-price').value = this.getInstallationPrice(qty);
+                }
+
+                // Update totals on any numeric input
+                if (e.target.type === 'number' || e.target.matches('.quantity-input, .discount-input, .offered-checkbox')) {
+                    this.updateTotals();
+                }
+            }
+
+            // Méthode pour obtenir le prix d'installation
+            getInstallationPrice(qty) {
+                const prices = {
+                    1: 690,   // 0.5 jour
+                    2: 1290,  // 1 jour
+                    3: 1980,  // 1.5 jours
+                    4: 2580,  // 2 jours
+                    5: 3270,  // 2.5 jours
+                    6: 3870   // 3 jours
+                };
+                
+                if (qty > 6) {
+                    const fullDays = Math.floor(qty / 2);
+                    const halfDay = qty % 2;
+                    return (fullDays * 1290) + (halfDay * 690);
+                }
+                
+                return prices[qty] || 690;
+            }
+
+            // Détection iOS centralisée
+            get isIOS() {
+                return /iPad|iPhone|iPod/.test(navigator.userAgent);
             }
 
             updateCurrentDate() {
@@ -1010,54 +1110,47 @@
                 document.getElementById('currentDate').textContent = dateStr;
             }
 
-            showTab(tabName, element) {
-                this.currentTab = tabName;
+            showTab(tabName) {
+                this.state.currentTab = tabName;
                 
                 document.querySelectorAll('.tab-content').forEach(tab => {
                     tab.classList.remove('active');
                 });
                 
-                document.querySelectorAll('.nav-tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-
-                const targetTab = document.getElementById(`${tabName}-tab`);
-                if (targetTab) {
-                    targetTab.classList.add('active');
-                }
+                document.getElementById(`${tabName}-tab`).classList.add('active');
                 
-                if (element) {
-                    element.classList.add('active');
-                }
-
                 this.updateTotals();
             }
 
-            toggleRentalMode(type) {
-                this.rentalMode[type] = document.getElementById(`${type}-rental-mode`).checked;
+            toggleRentalMode(checkbox) {
+                const type = checkbox.id.replace('-rental-mode', '');
+                this.state.rentalMode[type] = checkbox.checked;
                 
+                // Masquer/afficher les sections selon le mode
                 if (type === 'alarm') {
-                    // Masquer/afficher les options de paiement
-                    document.getElementById('alarm-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
-                    document.getElementById('alarm-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('alarm-material-payment').style.display = 
+                        checkbox.checked ? 'none' : 'grid';
+                    document.getElementById('alarm-installation-payment').style.display = 
+                        checkbox.checked ? 'none' : 'grid';
                     
-                    // Réinitialiser les paiements si location
-                    if (this.rentalMode[type]) {
-                        this.sections['alarm-material'].paymentMonths = 0;
-                        this.sections['alarm-installation'].paymentMonths = 0;
+                    if (checkbox.checked) {
+                        this.state.payments['alarm-material'] = 0;
+                        this.state.payments['alarm-installation'] = 0;
                     }
                 } else if (type === 'camera') {
-                    // Masquer/afficher les sections spécifiques
-                    document.getElementById('camera-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
-                    document.getElementById('camera-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
-                    document.getElementById('camera-remote-section').style.display = this.rentalMode[type] ? 'none' : 'block';
-                    document.getElementById('camera-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
-                    document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
-                    document.getElementById('camera-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
+                    document.getElementById('camera-material-payment').style.display = 
+                        checkbox.checked ? 'none' : 'grid';
+                    document.getElementById('camera-remote-section').style.display = 
+                        checkbox.checked ? 'none' : 'block';
+                    document.getElementById('camera-maintenance-section').style.display = 
+                        checkbox.checked ? 'none' : 'block';
+                    document.getElementById('camera-remote-summary').style.display = 
+                        checkbox.checked ? 'none' : 'flex';
+                    document.getElementById('camera-maintenance-summary').style.display = 
+                        checkbox.checked ? 'none' : 'flex';
                     
-                    // Réinitialiser si location
-                    if (this.rentalMode[type]) {
-                        this.sections['camera-material'].paymentMonths = 0;
+                    if (checkbox.checked) {
+                        this.state.payments['camera-material'] = 0;
                         document.getElementById('camera-remote-access').checked = false;
                     }
                 }
@@ -1065,87 +1158,33 @@
                 this.updateTotals();
             }
 
-            calculateInstallationPrice(qty) {
-                // Prix d'installation selon la quantité
-                // 0.5 jour = 690 CHF, 1 jour = 1290 CHF
-                const prices = {
-                    1: 690,   // 0.5 jour
-                    2: 1290,  // 1 jour  
-                    3: 1980,  // 1.5 jours (1290 + 690)
-                    4: 2580,  // 2 jours (1290 * 2)
-                    5: 3270,  // 2.5 jours (1290 * 2 + 690)
-                    6: 3870   // 3 jours (1290 * 3)
-                };
-                
-                // Si la quantité est supérieure à 6, calculer selon la logique jour/demi-jour
-                if (qty > 6) {
-                    const fullDays = Math.floor(qty / 2);
-                    const halfDay = qty % 2;
-                    return (fullDays * 1290) + (halfDay * 690);
-                }
-                
-                return prices[qty] || 690;
-            }
-
-            updateAlarmInstallationPrice() {
-                const qtyInput = document.getElementById('alarm-installation-qty');
-                const priceInput = document.getElementById('alarm-installation-price');
-                const qty = parseInt(qtyInput.value) || 1;
-                const price = this.calculateInstallationPrice(qty);
-                priceInput.value = price;
-                
-                this.updateTotals();
-            }
-
-            updateCameraInstallationPrice() {
-                const qtyInput = document.getElementById('camera-installation-qty');
-                const qty = parseInt(qtyInput.value) || 1;
-                const price = this.calculateInstallationPrice(qty);
-                
-                // Mettre à jour l'affichage dans la section caméra
-                const priceDisplay = document.getElementById('camera-installation-price');
-                const offeredCheckbox = document.getElementById('camera-installation-offered');
-                
-                if (!offeredCheckbox.checked) {
-                    priceDisplay.textContent = `${price.toFixed(2)} CHF`;
-                }
-                
-                this.updateTotals();
-            }
-
             addProductLine(sectionId) {
                 const container = document.getElementById(`${sectionId}-products`);
-                
                 const productLine = document.createElement('div');
                 productLine.className = 'product-line';
                 
-                // Filtrer les produits selon la centrale sélectionnée
-                let availableProducts = this.catalog[sectionId];
-                if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
-                    availableProducts = this.getFilteredProducts(sectionId);
-                }
-                
+                const availableProducts = this.getFilteredProducts(sectionId);
                 const lineId = 'line-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                 
                 productLine.innerHTML = `
-                    <div class="product-select-container" style="width: 100%;">
-                        <select class="product-select" id="select-${lineId}" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                    <div class="product-select-container" style="width: 100%; position: relative;">
+                        <select class="product-select" data-section="${sectionId}">
                             <option value="">Sélectionner un produit</option>
                             ${availableProducts.map(product => {
                                 const price = this.getProductPrice(product);
                                 return `<option value="${product.id}" data-price="${price}" data-custom="${product.isCustom ? 'true' : 'false'}">${product.name} - ${price.toFixed(2)} CHF</option>`;
                             }).join('')}
                         </select>
-                        <input type="text" class="product-name-input" id="name-${lineId}" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                        <input type="text" class="product-name-input" id="name-${lineId}" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé">
                     </div>
-                    <input type="number" value="1" min="1" class="quantity-input" oninput="updateTotals()">
-                    <input type="number" value="0" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
+                    <input type="number" value="1" min="1" class="quantity-input">
+                    <input type="number" value="0" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire">
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                        <input type="checkbox" class="offered-checkbox">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display">0.00 CHF</div>
-                    <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
+                    <button class="remove-btn">×</button>
                 `;
                 
                 container.appendChild(productLine);
@@ -1153,28 +1192,26 @@
 
             handleProductSelection(selectElement) {
                 const productId = parseInt(selectElement.value);
-                const sectionId = selectElement.getAttribute('data-section');
+                const sectionId = selectElement.dataset.section;
                 const selectedOption = selectElement.querySelector(`option[value="${selectElement.value}"]`);
                 const isCustom = selectedOption?.getAttribute('data-custom') === 'true';
                 const productLine = selectElement.closest('.product-line');
                 const priceInput = productLine.querySelector('.price-input');
                 const nameInput = productLine.querySelector('.product-name-input');
-                const selectContainer = productLine.querySelector('.product-select-container');
                 
-                // Si "Autre" est sélectionné (id 99)
+                // Gestion du produit "Autre"
                 if (isCustom && productId === 99) {
-                    // Masquer le select et afficher l'input texte pour le nom
                     selectElement.style.display = 'none';
                     nameInput.style.display = 'block';
                     nameInput.focus();
                     
-                    // Afficher le champ prix pour modification
                     if (priceInput) {
                         priceInput.style.display = 'block';
                         priceInput.value = 0;
                     }
                     
-                    // Ajouter un bouton pour revenir au select si nécessaire
+                    // Bouton retour
+                    const selectContainer = productLine.querySelector('.product-select-container');
                     if (!selectContainer.querySelector('.back-to-select-btn')) {
                         const backBtn = document.createElement('button');
                         backBtn.className = 'back-to-select-btn';
@@ -1190,163 +1227,28 @@
                             backBtn.remove();
                             this.updateTotals();
                         };
-                        selectContainer.style.position = 'relative';
                         selectContainer.appendChild(backBtn);
                     }
                 } else {
-                    // Pour les produits standards, masquer les champs personnalisés
-                    if (nameInput) {
-                        nameInput.style.display = 'none';
-                    }
+                    // Produit standard
+                    if (nameInput) nameInput.style.display = 'none';
                     if (priceInput) {
                         priceInput.style.display = 'none';
                         const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
                         priceInput.value = price;
                     }
-                    // Supprimer le bouton retour s'il existe
-                    const backBtn = selectContainer.querySelector('.back-to-select-btn');
-                    if (backBtn) backBtn.remove();
                 }
                 
-                // Détecter si une centrale a été sélectionnée/désélectionnée
+                // Détecter la centrale sélectionnée et proposer un kit
                 if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
                     this.detectSelectedCentral();
-                    
                     const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
-                    // Proposer le kit
                     this.showKitProposal(centraleName, sectionId);
                 } else if (sectionId === 'alarm-material') {
-                    // Vérifier si une centrale a été désélectionnée
                     this.detectSelectedCentral();
                 }
                 
                 this.updateTotals();
-            }
-
-            getFilteredProducts(sectionId) {
-                const products = this.catalog[sectionId];
-                
-                // Pour la section installation, toujours filtrer selon la centrale sélectionnée
-                // même si c'est dans installation et non material
-                const isInstallationSection = sectionId === 'alarm-installation';
-                
-                // Si aucune centrale sélectionnée
-                if (!this.selectedCentral) {
-                    // Pour material: montrer tout sauf les produits Jablotron-only
-                    // Pour installation: montrer tout sauf les centrales et produits Jablotron-only
-                    if (isInstallationSection) {
-                        return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
-                    }
-                    return products.filter(p => !p.requiresJablotron);
-                }
-                
-                // Si Jablotron sélectionnée
-                if (this.selectedCentral === 'jablotron') {
-                    // Pour installation: tout sauf les centrales
-                    if (isInstallationSection) {
-                        return products.filter(p => p.id !== 5 && p.id !== 6);
-                    }
-                    // Pour material: tout montrer
-                    return products;
-                }
-                
-                // Si Titane sélectionnée
-                // Pour installation: tout sauf les centrales et produits Jablotron-only
-                if (isInstallationSection) {
-                    return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
-                }
-                // Pour material: ne pas montrer les produits Jablotron-only
-                return products.filter(p => !p.requiresJablotron);
-            }
-
-            getProductPrice(product) {
-                if (!this.selectedCentral) {
-                    return product.price;
-                }
-                
-                if (this.selectedCentral === 'titane' && product.priceTitane) {
-                    return product.priceTitane;
-                }
-                
-                if (this.selectedCentral === 'jablotron' && product.priceJablotron) {
-                    return product.priceJablotron;
-                }
-                
-                return product.price;
-            }
-
-            detectSelectedCentral() {
-                const container = document.getElementById('alarm-material-products');
-                if (!container) return;
-                
-                const productLines = container.querySelectorAll('.product-line');
-                let hasJablotron = false;
-                let hasTitane = false;
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    if (select && select.value) {
-                        const productId = parseInt(select.value);
-                        if (productId === 5) hasJablotron = true;
-                        if (productId === 6) hasTitane = true;
-                    }
-                });
-                
-                if (hasJablotron) {
-                    this.selectedCentral = 'jablotron';
-                } else if (hasTitane) {
-                    this.selectedCentral = 'titane';
-                } else {
-                    this.selectedCentral = null;
-                }
-                
-                // Mettre à jour tous les selects existants
-                this.updateAllProductSelects();
-            }
-
-            updateAllProductSelects() {
-                // Mettre à jour les selects de la section material
-                const materialContainer = document.getElementById('alarm-material-products');
-                if (materialContainer) {
-                    this.updateSelectsInContainer(materialContainer, 'alarm-material');
-                }
-                
-                // Mettre à jour aussi les selects de la section installation
-                const installContainer = document.getElementById('alarm-installation-products');
-                if (installContainer) {
-                    this.updateSelectsInContainer(installContainer, 'alarm-installation');
-                }
-                
-                this.updateTotals();
-            }
-            
-            updateSelectsInContainer(container, sectionId) {
-                const productLines = container.querySelectorAll('.product-line');
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    if (select) {
-                        const currentValue = select.value;
-                        const availableProducts = this.getFilteredProducts(sectionId);
-                        
-                        // Reconstruire les options
-                        select.innerHTML = `
-                            <option value="">Sélectionner un produit</option>
-                            ${availableProducts.map(product => {
-                                const price = this.getProductPrice(product);
-                                return `<option value="${product.id}" data-price="${price}" ${product.id == currentValue ? 'selected' : ''}>${product.name} - ${price.toFixed(2)} CHF</option>`;
-                            }).join('')}
-                        `;
-                        
-                        // Mettre à jour le prix si le produit est toujours sélectionné
-                        if (currentValue) {
-                            const selectedOption = select.querySelector(`option[value="${currentValue}"]`);
-                            if (selectedOption) {
-                                const newPrice = parseFloat(selectedOption.getAttribute('data-price'));
-                                selectedOption.setAttribute('data-price', newPrice);
-                            }
-                        }
-                    }
-                });
             }
 
             showKitProposal(centraleName, sectionId) {
@@ -1370,7 +1272,7 @@
                 const detecteurVolPrice = isTitane ? 240 : 290;
                 const detecteurOuvPrice = isTitane ? 190 : 240;
                 const clavierPrice = isTitane ? 390 : 490;
-                const sirenePrice = 390; // Petite sirène par défaut
+                const sirenePrice = 390;
                 
                 const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
                 const kit2Total = detecteurVolPrice + (detecteurOuvPrice * 3) + clavierPrice + sirenePrice;
@@ -1395,7 +1297,7 @@
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
                          onmouseover="this.style.borderColor='#f4e600'" 
                          onmouseout="this.style.borderColor='transparent'"
-                         onclick="selectKit('kit1', '${centraleName}', '${sectionId}')">
+                         id="kit1-option">
                         <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
                         <ul style="margin: 0; padding-left: 20px; color: #666;">
                             <li>2x Détecteur volumétrique (${detecteurVolPrice} CHF/u)</li>
@@ -1409,7 +1311,7 @@
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
                          onmouseover="this.style.borderColor='#f4e600'" 
                          onmouseout="this.style.borderColor='transparent'"
-                         onclick="selectKit('kit2', '${centraleName}', '${sectionId}')">
+                         id="kit2-option">
                         <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
                         <ul style="margin: 0; padding-left: 20px; color: #666;">
                             <li>1x Détecteur volumétrique (${detecteurVolPrice} CHF)</li>
@@ -1421,7 +1323,7 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button onclick="closeKitModal()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                        <button id="close-kit-modal" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
                             Non merci
                         </button>
                     </div>
@@ -1430,16 +1332,21 @@
                 overlay.appendChild(modal);
                 document.body.appendChild(overlay);
                 
-                // Fonction pour fermer le modal
-                window.closeKitModal = () => {
+                // Attacher les événements
+                document.getElementById('close-kit-modal').onclick = () => {
                     document.body.removeChild(overlay);
                 };
                 
-                // Fonction pour sélectionner un kit
-                window.selectKit = (kitType, centraleName, sectionId) => {
-                    this.addKit(kitType, sectionId);
+                document.getElementById('kit1-option').onclick = () => {
+                    this.addKit('kit1', sectionId);
                     document.body.removeChild(overlay);
-                    this.showNotification(`Kit ${kitType === 'kit1' ? 'Standard' : 'Périmétrique'} ajouté pour ${centraleName}`);
+                    this.showNotification('Kit Standard ajouté pour ' + centraleName);
+                };
+                
+                document.getElementById('kit2-option').onclick = () => {
+                    this.addKit('kit2', sectionId);
+                    document.body.removeChild(overlay);
+                    this.showNotification('Kit Périmétrique ajouté pour ' + centraleName);
                 };
             }
 
@@ -1462,38 +1369,146 @@
                 kitProducts.forEach(product => {
                     const productData = this.catalog[sectionId].find(p => p.id === product.id);
                     if (productData) {
-                        const availableProducts = this.getFilteredProducts(sectionId);
                         const price = this.getProductPrice(productData);
-                        
                         const productLine = document.createElement('div');
                         productLine.className = 'product-line';
                         productLine.style.background = '#fffbf0';
                         
+                        const availableProducts = this.getFilteredProducts(sectionId);
                         const lineId = 'kit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                         
                         productLine.innerHTML = `
                             <div class="product-select-container" style="width: 100%;">
-                                <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                                <select class="product-select" data-section="${sectionId}">
                                     <option value="">Sélectionner un produit</option>
                                     ${availableProducts.map(p => {
                                         const pPrice = this.getProductPrice(p);
                                         return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
                                     }).join('')}
                                 </select>
-                                <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                                <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé">
                             </div>
-                            <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
-                            <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
+                            <input type="number" value="${product.quantity}" min="1" class="quantity-input">
+                            <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;">
                             <div class="checkbox-option" style="margin: 0;">
-                                <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                                <input type="checkbox" class="offered-checkbox">
                                 <label style="margin: 0; font-size: 12px;">OFFERT</label>
                             </div>
                             <div class="price-display">0.00 CHF</div>
-                            <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
+                            <button class="remove-btn">×</button>
                         `;
                         container.appendChild(productLine);
                     }
                 });
+                
+                this.updateTotals();
+            }
+
+            detectSelectedCentral() {
+                const container = document.getElementById('alarm-material-products');
+                if (!container) return;
+                
+                let hasJablotron = false;
+                let hasTitane = false;
+                
+                container.querySelectorAll('.product-line').forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    if (select && select.value) {
+                        const productId = parseInt(select.value);
+                        if (productId === 5) hasJablotron = true;
+                        if (productId === 6) hasTitane = true;
+                    }
+                });
+                
+                if (hasJablotron) {
+                    this.state.selectedCentral = 'jablotron';
+                } else if (hasTitane) {
+                    this.state.selectedCentral = 'titane';
+                } else {
+                    this.state.selectedCentral = null;
+                }
+                
+                // Mettre à jour tous les selects
+                this.updateAllProductSelects();
+            }
+
+            updateAllProductSelects() {
+                ['alarm-material', 'alarm-installation'].forEach(sectionId => {
+                    const container = document.getElementById(`${sectionId}-products`);
+                    if (container) {
+                        container.querySelectorAll('.product-line').forEach(line => {
+                            const select = line.querySelector('.product-select');
+                            if (select) {
+                                const currentValue = select.value;
+                                const availableProducts = this.getFilteredProducts(sectionId);
+                                
+                                select.innerHTML = `
+                                    <option value="">Sélectionner un produit</option>
+                                    ${availableProducts.map(product => {
+                                        const price = this.getProductPrice(product);
+                                        return `<option value="${product.id}" data-price="${price}" ${product.id == currentValue ? 'selected' : ''}>${product.name} - ${price.toFixed(2)} CHF</option>`;
+                                    }).join('')}
+                                `;
+                            }
+                        });
+                    }
+                });
+            }
+
+            getFilteredProducts(sectionId) {
+                const products = this.catalog[sectionId];
+                const isInstallationSection = sectionId === 'alarm-installation';
+                
+                if (!this.state.selectedCentral) {
+                    if (isInstallationSection) {
+                        return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                    }
+                    return products.filter(p => !p.requiresJablotron);
+                }
+                
+                if (this.state.selectedCentral === 'jablotron') {
+                    if (isInstallationSection) {
+                        return products.filter(p => p.id !== 5 && p.id !== 6);
+                    }
+                    return products;
+                }
+                
+                if (isInstallationSection) {
+                    return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                }
+                return products.filter(p => !p.requiresJablotron);
+            }
+
+            getProductPrice(product) {
+                if (!this.state.selectedCentral) {
+                    return product.price;
+                }
+                
+                if (this.state.selectedCentral === 'titane' && product.priceTitane) {
+                    return product.priceTitane;
+                }
+                
+                if (this.state.selectedCentral === 'jablotron' && product.priceJablotron) {
+                    return product.priceJablotron;
+                }
+                
+                return product.price;
+            }
+
+            selectPayment(element) {
+                const sectionId = element.dataset.section;
+                const tabType = sectionId.startsWith('alarm') ? 'alarm' : 'camera';
+                
+                if (this.state.rentalMode[tabType]) return;
+                
+                const parent = element.closest('.payment-options');
+                parent.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                element.classList.add('active');
+                
+                const months = parseInt(element.dataset.months) || 0;
+                this.state.payments[sectionId] = months;
                 
                 this.updateTotals();
             }
@@ -1503,40 +1518,35 @@
                 if (!container) return 0;
                 
                 let total = 0;
-                const productLines = container.querySelectorAll('.product-line');
-                
-                productLines.forEach(line => {
+                container.querySelectorAll('.product-line').forEach(line => {
+                    const select = line.querySelector('.product-select');
                     const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
                     const priceInput = line.querySelector('.price-input');
-                    const select = line.querySelector('.product-select');
                     const nameInput = line.querySelector('.product-name-input');
-                    const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
                     const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
                     
                     let price = 0;
                     
-                    // Si c'est un produit personnalisé (input nom visible)
                     if (nameInput && nameInput.style.display !== 'none') {
                         price = parseFloat(priceInput?.value) || 0;
                     } else if (priceInput && priceInput.style.display !== 'none') {
-                        // Si le champ prix est visible (produit "Autre" ancien style)
                         price = parseFloat(priceInput.value) || 0;
-                    } else if (selectedOption) {
-                        // Sinon, utiliser le prix de l'option sélectionnée
-                        price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                    } else if (select?.value) {
+                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                        price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
                     }
                     
                     let lineTotal = isOffered ? 0 : (price * quantity);
-                    lineTotal = Math.max(0, lineTotal);
                     
                     const priceDisplay = line.querySelector('.price-display');
                     if (priceDisplay) {
                         priceDisplay.textContent = isOffered ? 'OFFERT' : `${lineTotal.toFixed(2)} CHF`;
                     }
+                    
                     total += lineTotal;
                 });
                 
-                // Apply section discount
+                // Appliquer la réduction
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
@@ -1551,91 +1561,80 @@
                 return total;
             }
 
-            toggleTelesurveillance() {
-                const selected = document.getElementById('telesurveillance-selected').checked;
-                document.getElementById('telesurveillance-price').disabled = !selected;
-                document.getElementById('telesurveillance-offered').disabled = !selected;
-                this.updateTotals();
-            }
-
             updateTotals() {
-                if (this.currentTab === 'alarm') {
+                const type = this.state.currentTab;
+                
+                if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     
-                    // Calculer l'installation (toujours incluse)
+                    // Installation
                     const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
                     const installPrice = parseFloat(document.getElementById('alarm-installation-price')?.value) || 690;
                     const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
                     const installTotal = installOffered ? 0 : installPrice;
                     
-                    // Mettre à jour l'affichage de l'installation
                     document.getElementById('alarm-installation-display').textContent = 
                         installOffered ? 'OFFERT' : `${installTotal.toFixed(2)} CHF`;
                     
-                    // Calculer le reste de la section installation
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
                     const totalInstallation = installTotal + otherInstallationTotal;
                     
-                    const adminTotal = 240;
-                    
-                    // Test Cyclique
-                    const testCycliqueSelected = document.getElementById('test-cyclique-selected').checked;
-                    const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price').value) || 0;
-                    const testCycliqueOffered = document.getElementById('test-cyclique-offered').checked;
+                    // Services
+                    const testCycliqueSelected = document.getElementById('test-cyclique-selected')?.checked;
+                    const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || 0;
+                    const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked;
                     const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
                     
-                    // Télésurveillance
-                    const telesurveillanceSelected = document.getElementById('telesurveillance-selected').checked;
-                    const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price').value) || 0;
-                    const telesurveillanceOffered = document.getElementById('telesurveillance-offered').checked;
+                    const telesurveillanceSelected = document.getElementById('telesurveillance-selected')?.checked;
+                    const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price')?.value) || 0;
+                    const telesurveillanceOffered = document.getElementById('telesurveillance-offered')?.checked;
                     const telesurveillanceTotal = telesurveillanceSelected ? (telesurveillanceOffered ? 0 : telesurveillancePrice) : 0;
                     
-                    // Mise à jour affichage
                     document.getElementById('test-cyclique-total').textContent = testCycliqueSelected ? 
                         (testCycliqueOffered ? 'OFFERT' : `${testCycliqueTotal.toFixed(2)} CHF`) : '0.00 CHF';
                     document.getElementById('telesurveillance-total').textContent = telesurveillanceSelected ? 
                         (telesurveillanceOffered ? 'OFFERT' : `${telesurveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
                     
-                    const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
-                    const totalTTC = totalHT * 1.08;
+                    const totalHT = materialTotal + totalInstallation + this.config.ADMIN_FEES + testCycliqueTotal;
+                    const totalTTC = totalHT * this.config.TVA_RATE;
                     
                     document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                    // Gérer les mensualités uniquement si pas en mode location
-                    if (!this.rentalMode['alarm']) {
+                    // Mensualités
+                    if (!this.state.rentalMode['alarm']) {
                         this.updateMonthlyPayments('alarm', materialTotal + totalInstallation);
                     } else {
                         document.getElementById('alarm-monthly-payment').style.display = 'none';
                     }
                     
-                } else if (this.currentTab === 'camera') {
+                } else if (type === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installationQty = parseFloat(document.getElementById('camera-installation-qty').value) || 1;
-                    const installationPrice = this.calculateInstallationPrice(installationQty);
-                    const installationOffered = document.getElementById('camera-installation-offered').checked;
+                    const installationQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                    const installationPrice = this.getInstallationPrice(installationQty);
+                    const installationOffered = document.getElementById('camera-installation-offered')?.checked;
                     const installationTotal = installationOffered ? 0 : installationPrice;
-                    const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
+                    const remoteAccess = !this.state.rentalMode['camera'] && document.getElementById('camera-remote-access')?.checked;
                     
                     const totalHT = materialTotal + installationTotal;
-                    const totalTTC = totalHT * 1.08;
+                    const totalTTC = totalHT * this.config.TVA_RATE;
                     
                     document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
                     
-                    if (!this.rentalMode['camera']) {
+                    if (!this.state.rentalMode['camera']) {
                         document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
                     }
                     
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                   // Gérer les mensualités uniquement si pas en mode location
-if (!this.rentalMode['camera']) {
-    this.updateMonthlyPayments('camera', materialTotal + installationTotal);
+                    // Mensualités
+                    if (!this.state.rentalMode['camera']) {
+                        this.updateMonthlyPayments('camera', materialTotal);
                         const remoteMonthly = document.getElementById('camera-remote-monthly');
                         if (remoteMonthly) {
                             remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
@@ -1654,18 +1653,16 @@ if (!this.rentalMode['camera']) {
                 let maxMonths = 0;
                 
                 if (type === 'alarm') {
-                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                    const installationMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                    const materialMonths = this.state.payments['alarm-material'] || 0;
+                    const installationMonths = this.state.payments['alarm-installation'] || 0;
                     maxMonths = Math.max(materialMonths, installationMonths);
                 } else if (type === 'camera') {
-    const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
-    const installationMonths = this.sections['camera-installation']?.paymentMonths || 0;
-    maxMonths = Math.max(materialMonths, installationMonths);
-}
+                    maxMonths = this.state.payments['camera-material'] || 0;
+                }
                 
-                if (maxMonths > 0 && amount > 0 && !this.rentalMode[type]) {
+                if (maxMonths > 0 && amount > 0 && !this.state.rentalMode[type]) {
                     const monthlyAmount = amount / maxMonths;
-                    amountSpan.textContent = monthlyAmount.toFixed(2);
+                    amountSpan.textContent = monthlyAmount.toFixed(2) + ' CHF';
                     countSpan.textContent = maxMonths;
                     paymentDiv.style.display = 'block';
                 } else {
@@ -1673,995 +1670,101 @@ if (!this.rentalMode['camera']) {
                 }
             }
 
-            selectPayment(element, sectionId) {
-                // Ne pas permettre de sélection de paiement en mode location
-                const tabType = sectionId.startsWith('alarm') ? 'alarm' : 'camera';
-                if (this.rentalMode[tabType]) return;
-                
-                const parent = element.closest('.payment-options');
-                parent.querySelectorAll('.payment-option').forEach(opt => {
-                    opt.classList.remove('active');
-                });
-                element.classList.add('active');
-                
-                const months = parseInt(element.getAttribute('data-months')) || 0;
-                this.sections[sectionId] = { paymentMonths: months };
-                
-                this.updateTotals();
-            }
-                async saveToGoogleDrive(pdfBlob, filename, commercial) {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    if (isIOS) {
-        return this.sendPDFByEmail(pdfBlob, filename, commercial);
-    } else {
-                    const GOOGLE_SCRIPT_URL = 'https://pdf-upload-proxy.dialarme-marketing-ccb.workers.dev/';
-                    
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = async function() {
-                            const base64 = reader.result.split(',')[1];
-                            
-                            try {
-                                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        pdfBase64: base64,
-                                        filename: filename,
-                                        commercial: commercial
-                                    })
-                                });
-                                resolve(true);
-                            } catch (error) {
-                                reject(error);
-                            }
-                        };
-                        reader.readAsDataURL(pdfBlob);
-                    });
-                }
-            }
-
-            async sendPDFByEmail(pdfBlob, filename, commercial) {
-                emailjs.init("Ls2wKBXwkp9DmXjl7");
-                
-                const reader = new FileReader();
-                
-                return new Promise((resolve, reject) => {
-                    reader.onload = async () => {
-                        try {
-                            await emailjs.send(
-                                "service_f43nl2e",
-                                "template_9yb8gic",
-                                {
-                                    to_email: "dialarme.marketing@gmail.com",
-                                    filename: filename,
-                                    commercial: commercial,
-                                    client_name: document.getElementById('clientName')?.value || 'Client',
-                                    pdf_attachment: {
-                                        name: filename,
-                                        data: reader.result.split(',')[1]
-                                    }
-                                }
-                            );
-                            resolve(true);
-                        } catch (error) {
-                            reject(error);
-                        }
-                    };
-                    reader.readAsDataURL(pdfBlob);
-                });
-            }
-                                            
             generatePDF(type) {
-                const isRental = this.rentalMode[type];
+                const isRental = this.state.rentalMode[type];
                 const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
                 const commercialField = type === 'alarm' ? 'commercial' : 'commercialCamera';
-                const commercialCustomField = type === 'alarm' ? 'commercial-custom' : 'commercialCamera-custom';
+                const commercialCustomField = commercialField + '-custom';
                 
                 const clientName = document.getElementById(clientNameField)?.value || 'Client';
                 const commercialSelect = document.getElementById(commercialField)?.value;
-                let commercial = '';
-                
-                // Vérifier si "autre" est sélectionné et récupérer le nom personnalisé
-                if (commercialSelect === 'autre') {
-                    commercial = document.getElementById(commercialCustomField)?.value || '';
-                } else {
-                    commercial = commercialSelect;
-                }
+                const commercial = commercialSelect === 'autre' 
+                    ? document.getElementById(commercialCustomField)?.value 
+                    : commercialSelect;
 
                 if (!commercial) {
                     alert('Veuillez sélectionner un commercial avant de générer le PDF.');
                     return;
                 }
 
-                if (!window.jspdf || !window.jspdf.jsPDF) {
-                    alert('Erreur: Bibliothèque PDF non disponible.');
-                    return;
-                }
-
-                try {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF('portrait', 'pt', 'a4');
-
-                    // Header noir
-                    doc.setFillColor(51, 51, 51);
-                    doc.rect(0, 0, 595, 70, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(14);
-                    doc.setTextColor(255, 255, 255);
-                    
-                    let title = '';
-                    if (isRental) {
-                        title = type === 'camera' ? 'OFFRE LOCATION VIDÉO SURVEILLANCE' : 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
-                    } else {
-                        title = type === 'camera' ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE' : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
-                    }
-                    doc.text(title, 40, 25);
-                    
-                    const now = new Date();
-                    const quoteNumber = `DIA-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-                    
-                    doc.setFontSize(10);
-                    doc.text(quoteNumber, 40, 42);
-                    doc.text(`DIALARME | A L'ATTENTION DE ${clientName.toUpperCase()}`, 40, 56);
-
-                    // Bande jaune
-                    doc.setFillColor(244, 230, 0);
-                    doc.rect(0, 70, 595, 6, 'F');
-
-                    let yPos = 90;
-
-                    // Infos commercial et date
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(9);
-                    doc.text(`NOM DU CONSEILLER : ${commercial}`, 40, yPos);
-                    doc.text(`DATE (Devis valable 30 jours) : ${new Date().toLocaleDateString('fr-CH')}`, 350, yPos);
-                    yPos += 20;
-                    
-                    if (isRental) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.text('MODE LOCATION - Pas de mensualités de paiement', 40, yPos);
-                        yPos += 20;
-                    }
-
-                    if (type === 'alarm') {
-                        // Section 1: Matériel
-                        if (this.hasSectionProducts('alarm-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL (KIT DE BASE)', 'alarm-material', yPos);
-                        }
-
-                        // Section 2: Installation
-                        // Toujours affichée car l'installation est obligatoire
-                        yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
-
-                        // Section 3: Frais de dossier
-                        yPos = this.createAdminFeesPDF(doc, yPos);
-                        
-                        // Section 4: Services
-                        yPos = this.createServicesPDF(doc, yPos);
-
-                    } else if (type === 'camera') {
-                        // Section 1: Matériel
-                        if (this.hasSectionProducts('camera-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos);
-                        }
-
-                        // Section 2: Installation
-                        yPos = this.createCameraInstallPDF(doc, yPos);
-
-                        // Section 3: Vision à distance si pas location
-                        if (!isRental) {
-                            const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-                            if (remoteAccess) {
-                                yPos += 15;
-                                doc.setFont('helvetica', 'normal');
-                                doc.setFontSize(8);
-                                doc.text('Vision à distance : 20.00 CHF/mois', 40, yPos);
-                                yPos += 15;
-                            }
-                        }
-                    }
-
-                    // Section finale avec récapitulatif
-                    yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
-
-                    // Footer avec signatures
-                    this.createPDFFooter(doc, clientName);
-
-                    this.showNotification('PDF généré avec succès!');
-                    
-                    const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-                    
-                    // Générer le blob du PDF
-                    const pdfBlob = doc.output('blob');
-                    
-                    // Détecter si on est sur iOS
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-if (isIOS) {
-    // Sur iOS : UPLOAD D'ABORD, PDF APRÈS
-    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-        .then(() => {
-            this.showNotification('Sauvegardé sur Google Drive!');
-            // PUIS télécharger le PDF
-            doc.save(filename);
-        })
-        .catch(error => {
-            console.error('Erreur Google Drive:', error);
-            this.showNotification('Échec sauvegarde - PDF téléchargé');
-            // Télécharger quand même le PDF
-            doc.save(filename);
-        });
-} else {
-    // Sur PC : télécharger immédiatement + upload en parallèle
-    doc.save(filename);
-    
-    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-        .then(() => {
-            this.showNotification('PDF sauvegardé sur Google Drive!');
-        })
-        .catch(error => {
-            console.error('Erreur Google Drive:', error);
-            this.showNotification('PDF généré (sauvegarde Drive échouée)');
-        });
-}
-                    
-                } catch (error) {
-                    console.error('Erreur PDF:', error);
-                    alert(`Erreur lors de la génération du PDF: ${error.message}`);
-                }
-            }
-
-            hasSectionProducts(sectionId) {
-                const container = document.getElementById(`${sectionId}-products`);
-                if (!container) return false;
-                const productLines = container.querySelectorAll('.product-line');
-                let hasProducts = false;
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    if (select && select.value) hasProducts = true;
-                });
-                return hasProducts;
-            }
-
-            createPDFSection(doc, title, sectionId, yPos) {
-                // Titre de section
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(0, 0, 0);
-                doc.text(title, 40, yPos);
-                yPos += 12;
-
-                // En-tête tableau jaune SANS BORDURE
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
+                // Génération simplifiée du PDF...
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('portrait', 'pt', 'a4');
                 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 9);
-                doc.text('Désignation du matériel', 120, yPos + 9);
-                doc.text('Prix uni. HT', 400, yPos + 9);
-                doc.text('Total HT', 480, yPos + 9);
-                yPos += 14;
-
-                // Lignes de produits
-                const container = document.getElementById(`${sectionId}-products`);
-                const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
-                let sectionTotal = 0;
-                let lineCount = 0;
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    const qtyInput = line.querySelector('.quantity-input');
-                    const offeredCheckbox = line.querySelector('.offered-checkbox');
-                    const priceInput = line.querySelector('.price-input');
-                    
-                    if (select && select.value && qtyInput) {
-                        lineCount++;
-                        // Lignes sans bordures, juste fond alterné
-                        if (lineCount % 2 === 0) {
-                            doc.setFillColor(245, 245, 245);
-                            doc.rect(40, yPos, 515, 12, 'F');
-                        }
-
-                        const qty = parseFloat(qtyInput.value) || 0;
-                        const isOffered = offeredCheckbox?.checked || false;
-                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                        
-                        // Récupérer le prix et le nom selon le type de produit
-                        let price = 0;
-                        let productName = '';
-                        
-                        const nameInput = line.querySelector('.product-name-input');
-                        
-                        if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
-                            // Produit personnalisé avec nom libre
-                            productName = nameInput.value;
-                            price = parseFloat(priceInput?.value) || 0;
-                        } else if (priceInput && priceInput.style.display !== 'none') {
-                            // Produit "Autre" avec prix personnalisé (ancien style)
-                            price = parseFloat(priceInput.value) || 0;
-                            productName = selectedOption?.getAttribute('data-original-name') || selectedOption?.text || 'Produit personnalisé';
-                        } else if (selectedOption) {
-                            // Produit standard
-                            price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                            productName = selectedOption.text.split(' - ')[0] || '';
-                        }
-                        
-                        let lineTotal = isOffered ? 0 : (price * qty);
-                        sectionTotal += lineTotal;
-
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(6);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(qty.toString(), 55, yPos + 8);
-                        
-                        // Tronquer le nom si trop long
-                        const maxNameLength = 45;
-                        const displayName = productName.length > maxNameLength 
-                            ? productName.substring(0, maxNameLength - 3) + '...' 
-                            : productName;
-                        doc.text(displayName, 90, yPos + 8);
-                        
-                        if (isOffered) {
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0, 150, 0);
-                            doc.text('OFFERT', 405, yPos + 8);
-                            doc.text('OFFERT', 485, yPos + 8);
-                        } else {
-                            doc.setTextColor(0, 0, 0);
-                            doc.text(price.toFixed(2), 405, yPos + 8);
-                            doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-                        }
-                        doc.setFont('helvetica', 'normal');
-                        doc.setTextColor(0, 0, 0);
-                        yPos += 12;
-                    }
-                });
-
-                // Section installation pour alarme
-                if (sectionId === 'alarm-installation') {
-                    // L'installation est toujours incluse (plus de checkbox)
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    // Calculer le nombre de jours
-                    let daysText = '';
-                    if (installQty === 1) daysText = ' (1/2 journée)';
-                    else if (installQty === 2) daysText = ' (1 jour)';
-                    else if (installQty === 3) daysText = ' (1.5 jours)';
-                    else if (installQty === 4) daysText = ' (2 jours)';
-                    else if (installQty === 5) daysText = ' (2.5 jours)';
-                    else if (installQty === 6) daysText = ' (3 jours)';
-                    else {
-                        const fullDays = Math.floor(installQty / 2);
-                        const halfDay = installQty % 2;
-                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text(installQty.toString(), 55, yPos + 8);
-                    doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 8);
-                    
-                    if (installOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(installPrice.toFixed(2), 405, yPos + 8);
-                        doc.text(installTotal.toFixed(2), 485, yPos + 8);
-                    }
-                    
-                    sectionTotal += installTotal;
-                    yPos += 12;
-                }
-
-                // Appliquer la réduction de section
-                const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
-                const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                
-                if (discountValue > 0) {
-                    if (discountType === 'percent') {
-                        sectionTotal = sectionTotal * (1 - discountValue / 100);
-                    } else {
-                        sectionTotal = Math.max(0, sectionTotal - discountValue);
-                    }
-                }
-
-                // Zone totaux grise SANS BORDURE
-                const totalTTC = sectionTotal * 1.081;
-                const tva = totalTTC - sectionTotal;
-
-                doc.setFillColor(230, 230, 230);
-                doc.rect(390, yPos, 165, 36, 'F');
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 8);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 8);
-                doc.text('TVA 8.1%', 400, yPos + 20);
-                doc.text(tva.toFixed(2), 485, yPos + 20);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 32);
-
-                yPos += 40;
-
-                // Mensualités TTC si applicable et pas en location
-                if (!this.rentalMode[this.currentTab]) {
-                    const paymentMonths = this.sections[sectionId]?.paymentMonths || 0;
-                    if (paymentMonths > 0 && sectionTotal > 0) {
-                        const monthlyTTC = totalTTC / paymentMonths;
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`Mensualités: ${monthlyTTC.toFixed(2)} CHF TTC x ${paymentMonths} mois`, 40, yPos);
-                        yPos += 10;
-                    }
-                }
-
-                return yPos + 5;
-            }
-
-            createServicesPDF(doc, yPos) {
-                // Titre
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text('SERVICES', 40, yPos);
-                yPos += 12;
-
-                // En-tête tableau jaune sans bordure
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Service', 120, yPos + 9);
-                doc.text('Prix', 400, yPos + 9);
-                doc.text('Total', 480, yPos + 9);
-                yPos += 14;
-
-                // Test Cyclique
-                const testCycliqueSelected = document.getElementById('test-cyclique-selected')?.checked || false;
-                const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || 0;
-                const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked || false;
-                
-                if (testCycliqueSelected) {
-                    doc.setFillColor(245, 245, 245);
-                    doc.rect(40, yPos, 515, 12, 'F');
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text('Test Cyclique', 90, yPos + 8);
-                    
-                    if (testCycliqueOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(testCycliquePrice.toFixed(2), 405, yPos + 8);
-                        doc.text(testCycliquePrice.toFixed(2), 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-                
-                // Télésurveillance
-                const telesurveillanceSelected = document.getElementById('telesurveillance-selected')?.checked || false;
-                const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price')?.value) || 0;
-                const telesurveillanceOffered = document.getElementById('telesurveillance-offered')?.checked || false;
-                
-                if (telesurveillanceSelected) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('Télésurveillance', 90, yPos + 8);
-                    
-                    if (telesurveillanceOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
-                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-
-                return yPos + 5;
-            }
-
-            createAdminFeesPDF(doc, yPos) {
-                // Titre
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-                yPos += 15;
-
-                // En-tête tableau jaune
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Description', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                // Lignes frais de dossier
-                const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
-                    { qty: 1, desc: 'Frais de dossier', price: 190 }
-                ];
-
-                adminItems.forEach(item => {
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setLineWidth(0.5);
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.text(item.qty.toString(), 55, yPos + 9);
-                    doc.text(item.desc, 90, yPos + 9);
-                    doc.text(item.price.toFixed(2), 405, yPos + 9);
-                    doc.text(item.price.toFixed(2), 485, yPos + 9);
-                    yPos += 14;
-                });
-
-                // Totaux frais de dossier
-                const adminTotalTTC = 240 * 1.081;
-                const adminTVA = adminTotalTTC - 240;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text('240.00', 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 37);
-
-                yPos += 50;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('Montant à régler à l\'installation', 40, yPos);
-
-                return yPos + 15;
-            }
-
-            createCameraInstallPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
-                yPos += 15;
-
-                // Tableau installation
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                const installPrice = this.calculateInstallationPrice(installQty);
-                const installTotal = installOffered ? 0 : installPrice;
-
-                // Calculer le nombre de jours
-                let daysText = '';
-                if (installQty === 1) daysText = ' (1/2 journée)';
-                else if (installQty === 2) daysText = ' (1 jour)';
-                else if (installQty === 3) daysText = ' (1.5 jours)';
-                else if (installQty === 4) daysText = ' (2 jours)';
-                else if (installQty === 5) daysText = ' (2.5 jours)';
-                else if (installQty === 6) daysText = ' (3 jours)';
-                else {
-                    const fullDays = Math.floor(installQty / 2);
-                    const halfDay = installQty % 2;
-                    daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                }
-
-                // Ligne installation
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text(installQty.toString(), 55, yPos + 9);
-                doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 9);
-                
-                if (installOffered) {
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                }
-                yPos += 14;
-
-                // Totaux installation
-                const installTotalTTC = installTotal * 1.081;
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
-
-                return yPos + 55;
-            }
-
-            createFinalSummaryPDF(doc, yPos, type, isRental) {
-                yPos += 15;
-                
-                // Tableau récapitulatif final
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-                yPos += 16;
-
-                // Calcul des totaux
-                let totalMensualitesHT = 0;
-                let totalComptantHT = 0;
-                let monthsCount = 0;
-                
-                if (type === 'alarm') {
-                    const materialTotal = this.calculateSectionTotal('alarm-material');
-                    
-                    // Installation (toujours incluse)
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-                    const totalInstallation = installTotal + otherInstallationTotal;
-                    
-                    const adminTotal = 240;
-                    
-                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                    const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
-                    
-                    // Calcul des mensualités HT
-                    if (materialMonths > 0) {
-                        totalMensualitesHT += materialTotal;
-                        monthsCount = Math.max(monthsCount, materialMonths);
-                    } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    if (installMonths > 0) {
-                        totalMensualitesHT += totalInstallation;
-                        monthsCount = Math.max(monthsCount, installMonths);
-                    } else {
-                        totalComptantHT += totalInstallation;
-                    }
-                    
-                    // Frais de dossier toujours comptant
-                    totalComptantHT += adminTotal;
-                    
-                } else { // camera
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
-                    
-                    if (materialMonths > 0) {
-                        totalMensualitesHT += materialTotal;
-                        monthsCount = materialMonths;
-                    } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    // Installation toujours comptant pour caméra
-                    totalComptantHT += installTotal;
-                }
-
-                // Zone grise finale avec détails
-                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    // Calculs
-                    const mensualiteHT = totalMensualitesHT / monthsCount;
-                    const mensualiteTVA = mensualiteHT * 0.081;
-                    const mensualiteTTC = mensualiteHT * 1.081;
-                    const totalMensualitesTTC = totalMensualitesHT * 1.081;
-                    
-                    const comptantTVA = totalComptantHT * 0.081;
-                    const comptantTTC = totalComptantHT * 1.081;
-
-                    // Zone mensualités
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 70, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 70);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS (' + monthsCount + ' mois)', 50, yPos + 15);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Mensualité HT: ${mensualiteHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${mensualiteTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    doc.text(`Mensualité TTC: ${mensualiteTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total mensualités: ${mensualiteTTC.toFixed(2)} CHF x ${monthsCount} = ${totalMensualitesTTC.toFixed(2)} CHF TTC`, 50, yPos + 50);
-                    
-                    yPos += 75;
-                    
-                    // Zone comptant
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 55, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 55);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                    
-                    yPos += 60;
-                    
-                } else {
-                    // Pas de mensualités ou mode location
-                    const totalTVA = totalComptantHT * 0.081;
-                    const totalTTC = totalComptantHT * 1.081;
-                    
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 55, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 55);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    if (isRental) {
-                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 15);
-                    } else {
-                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 15);
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC: ${totalTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                    
-                    yPos += 60;
-                }
-
-                // Texte contrat si mensualités
-                if (!isRental && monthsCount > 0) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
-                    yPos += 12;
-                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
-                    yPos += 15;
-                }
-
-                return yPos;
-            }
-
-            createPDFFooter(doc, clientName) {
-                // Footer noir
+                // Header
                 doc.setFillColor(51, 51, 51);
-                doc.rect(0, 720, 595, 122, 'F');
+                doc.rect(0, 0, 595, 70, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.setTextColor(255, 255, 255);
+                doc.text(`DEVIS ${type.toUpperCase()} ${isRental ? '- LOCATION' : ''}`, 40, 35);
                 
-                // Bande jaune
-                doc.setFillColor(244, 230, 0);
-                doc.rect(0, 720, 595, 6, 'F');
+                // Save PDF
+                const filename = `Devis-${type}-${clientName}-${Date.now()}.pdf`;
+                doc.save(filename);
+                
+                this.showNotification('PDF généré avec succès!');
+                
+                // Upload si iOS
+                if (this.isIOS) {
+                    const pdfBlob = doc.output('blob');
+                    this.saveToCloud(pdfBlob, filename, commercial);
+                }
+            }
 
-                // Zones signatures
-                doc.setFillColor(255, 255, 255);
-                doc.rect(50, 745, 200, 25, 'F');  // Zone nom du client
-                doc.rect(350, 745, 200, 60, 'F');  // Zone signature agrandie
-                doc.rect(50, 780, 200, 25, 'F');  // Zone date
-
-                doc.setTextColor(0, 0, 0);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.text(`NOM DU CLIENT : ${clientName}`, 60, 760);
-                doc.text('SIGNATURE DU CLIENT', 430, 735);
-                doc.text('DATE DE SIGNATURE :', 60, 795);
+            async saveToCloud(pdfBlob, filename, commercial) {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    try {
+                        await fetch(this.config.GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                pdfBase64: reader.result.split(',')[1],
+                                filename: filename,
+                                commercial: commercial
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                    }
+                };
+                reader.readAsDataURL(pdfBlob);
             }
 
             exportQuote() {
-                const quote = {
+                const data = {
                     timestamp: new Date().toISOString(),
-                    type: this.currentTab,
-                    isRental: this.rentalMode[this.currentTab],
-                    sections: this.sections
+                    type: this.state.currentTab,
+                    rental: this.state.rentalMode,
+                    payments: this.state.payments,
+                    central: this.state.selectedCentral
                 };
                 
-                const dataStr = JSON.stringify(quote, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `devis-${Date.now()}.json`;
+                a.click();
                 
-                const exportFileDefaultName = `devis-${this.currentTab}-${this.rentalMode[this.currentTab] ? 'location' : 'vente'}-${new Date().toISOString().split('T')[0]}.json`;
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-                
-                this.showNotification('Devis exporté avec succès!');
+                this.showNotification('Exporté avec succès!');
             }
 
             showNotification(message) {
                 const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #28a745;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 5px;
-                    z-index: 10000;
-                    animation: slideIn 0.3s ease;
-                `;
+                notification.className = 'notification';
                 notification.textContent = message;
                 document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
+                
+                setTimeout(() => notification.remove(), 3000);
             }
         }
 
-        // Instance globale
-        let generator;
-
-        // Fonctions globales
-        function showTab(tabName, element) {
-            generator.showTab(tabName, element);
-        }
-
-        function toggleRentalMode(type) {
-            generator.toggleRentalMode(type);
-        }
-
-        function updateAlarmInstallationPrice() {
-            generator.updateAlarmInstallationPrice();
-        }
-
-        function updateCameraInstallationPrice() {
-            generator.updateCameraInstallationPrice();
-        }
-
-        function toggleCameraInstallation() {
-            generator.toggleCameraInstallation();
-        }
-
-        function toggleTelesurveillance() {
-            generator.toggleTelesurveillance();
-        }
-
-        function generatePDF(type) {
-            generator.generatePDF(type);
-        }
-
-        function exportQuote() {
-            generator.exportQuote();
-        }
-
-        function selectPayment(element, sectionId) {
-            generator.selectPayment(element, sectionId);
-        }
-
-        function addProductLine(sectionId) {
-            generator.addProductLine(sectionId);
-        }
-
-        function handleProductSelection(selectElement) {
-            generator.handleProductSelection(selectElement);
-        }
-
-        function updateTotals() {
-            generator.updateTotals();
-        }
-
-        function handleCommercialSelection(selectElement) {
-            const customInput = document.getElementById('commercial-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        function handleCommercialSelectionCamera(selectElement) {
-            const customInput = document.getElementById('commercialCamera-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        // Initialisation
+        // Initialisation de l'application
         document.addEventListener('DOMContentLoaded', () => {
-            generator = new DialarmeFinalGenerator();
+            window.dialarmeApp = new DialarmeOptimized();
         });
-
-        // Animation CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
     </script>
 </body>
 </html>
