@@ -798,6 +798,18 @@
             </div>
 
             <!-- Section 2: Installation -->
+<div class="quote-section">
+    <h3>🔧 2. Installation</h3>
+    <div class="product-line">
+        <!-- ... contenu existant ... -->
+    </div>
+    <div class="payment-options" id="camera-installation-payment">
+        <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'camera-installation')">Comptant</div>
+        <div class="payment-option" data-months="24" onclick="selectPayment(this, 'camera-installation')">24 mois</div>
+        <div class="payment-option" data-months="36" onclick="selectPayment(this, 'camera-installation')">36 mois</div>
+        <div class="payment-option" data-months="48" onclick="selectPayment(this, 'camera-installation')">48 mois</div>
+    </div>
+</div>
             <div class="quote-section">
                 <h3>🔧 2. Installation</h3>
                 <div class="product-line">
@@ -967,6 +979,7 @@
                     'alarm-material': { paymentMonths: 0 },
                     'alarm-installation': { paymentMonths: 0 },
                     'camera-material': { paymentMonths: 0 }
+                    'camera-installation': { paymentMonths: 0 }
                 };
 
                 this.rentalMode = {
@@ -1036,6 +1049,7 @@
                 } else if (type === 'camera') {
                     // Masquer/afficher les sections spécifiques
                     document.getElementById('camera-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('camera-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
                     document.getElementById('camera-remote-section').style.display = this.rentalMode[type] ? 'none' : 'block';
                     document.getElementById('camera-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
                     document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
@@ -1619,9 +1633,9 @@
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                    // Gérer les mensualités uniquement si pas en mode location
-                    if (!this.rentalMode['camera']) {
-                        this.updateMonthlyPayments('camera', materialTotal);
+                   // Gérer les mensualités uniquement si pas en mode location
+if (!this.rentalMode['camera']) {
+    this.updateMonthlyPayments('camera', materialTotal + installationTotal);
                         const remoteMonthly = document.getElementById('camera-remote-monthly');
                         if (remoteMonthly) {
                             remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
@@ -1644,8 +1658,10 @@
                     const installationMonths = this.sections['alarm-installation']?.paymentMonths || 0;
                     maxMonths = Math.max(materialMonths, installationMonths);
                 } else if (type === 'camera') {
-                    maxMonths = this.sections['camera-material']?.paymentMonths || 0;
-                }
+    const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
+    const installationMonths = this.sections['camera-installation']?.paymentMonths || 0;
+    maxMonths = Math.max(materialMonths, installationMonths);
+}
                 
                 if (maxMonths > 0 && amount > 0 && !this.rentalMode[type]) {
                     const monthlyAmount = amount / maxMonths;
