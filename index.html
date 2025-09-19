@@ -801,6 +801,12 @@
                     <div class="price-display" id="camera-installation-price">690.00 CHF</div>
                     <div></div>
                 </div>
+                <div class="payment-options" id="camera-installation-payment">
+                    <div class="payment-option active" data-section="camera-installation" data-months="0">Comptant</div>
+                    <div class="payment-option" data-section="camera-installation" data-months="24">24 mois</div>
+                    <div class="payment-option" data-section="camera-installation" data-months="36">36 mois</div>
+                    <div class="payment-option" data-section="camera-installation" data-months="48">48 mois</div>
+                </div>
             </div>
 
             <!-- Section 3: Vision à distance -->
@@ -971,7 +977,8 @@
                     payments: {
                         'alarm-material': 0,
                         'alarm-installation': 0,
-                        'camera-material': 0
+                        'camera-material': 0,
+                        'camera-installation': 0
                     },
                     selectedCentral: null
                 };
@@ -1140,6 +1147,8 @@
                 } else if (type === 'camera') {
                     document.getElementById('camera-material-payment').style.display = 
                         checkbox.checked ? 'none' : 'grid';
+                    document.getElementById('camera-installation-payment').style.display = 
+                        checkbox.checked ? 'none' : 'grid';
                     document.getElementById('camera-remote-section').style.display = 
                         checkbox.checked ? 'none' : 'block';
                     document.getElementById('camera-maintenance-section').style.display = 
@@ -1151,6 +1160,7 @@
                     
                     if (checkbox.checked) {
                         this.state.payments['camera-material'] = 0;
+                        this.state.payments['camera-installation'] = 0;
                         document.getElementById('camera-remote-access').checked = false;
                     }
                 }
@@ -1634,7 +1644,7 @@
                     
                     // Mensualités
                     if (!this.state.rentalMode['camera']) {
-                        this.updateMonthlyPayments('camera', materialTotal);
+                        this.updateMonthlyPayments('camera', materialTotal + installationTotal);
                         const remoteMonthly = document.getElementById('camera-remote-monthly');
                         if (remoteMonthly) {
                             remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
@@ -1651,18 +1661,50 @@
                 const countSpan = document.getElementById(`${type}-monthly-count`);
                 
                 let maxMonths = 0;
+                let totalMonthlyAmount = 0;
                 
                 if (type === 'alarm') {
                     const materialMonths = this.state.payments['alarm-material'] || 0;
                     const installationMonths = this.state.payments['alarm-installation'] || 0;
                     maxMonths = Math.max(materialMonths, installationMonths);
+                    
+                    // Calculer les mensualités séparées puis additionner
+                    const materialTotal = this.calculateSectionTotal('alarm-material');
+                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                    const installPrice = parseFloat(document.getElementById('alarm-installation-price')?.value) || 690;
+                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                    const totalInstallation = installTotal + otherInstallationTotal;
+                    
+                    if (materialMonths > 0) {
+                        totalMonthlyAmount += materialTotal / materialMonths;
+                    }
+                    if (installationMonths > 0) {
+                        totalMonthlyAmount += totalInstallation / installationMonths;
+                    }
                 } else if (type === 'camera') {
-                    maxMonths = this.state.payments['camera-material'] || 0;
+                    const materialMonths = this.state.payments['camera-material'] || 0;
+                    const installationMonths = this.state.payments['camera-installation'] || 0;
+                    maxMonths = Math.max(materialMonths, installationMonths);
+                    
+                    // Calculer les mensualités séparées
+                    const materialTotal = this.calculateSectionTotal('camera-material');
+                    const installationQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                    const installationPrice = this.getInstallationPrice(installationQty);
+                    const installationOffered = document.getElementById('camera-installation-offered')?.checked;
+                    const installationTotal = installationOffered ? 0 : installationPrice;
+                    
+                    if (materialMonths > 0) {
+                        totalMonthlyAmount += materialTotal / materialMonths;
+                    }
+                    if (installationMonths > 0) {
+                        totalMonthlyAmount += installationTotal / installationMonths;
+                    }
                 }
                 
-                if (maxMonths > 0 && amount > 0 && !this.state.rentalMode[type]) {
-                    const monthlyAmount = amount / maxMonths;
-                    amountSpan.textContent = monthlyAmount.toFixed(2) + ' CHF';
+                if (maxMonths > 0 && totalMonthlyAmount > 0 && !this.state.rentalMode[type]) {
+                    amountSpan.textContent = totalMonthlyAmount.toFixed(2) + ' CHF';
                     countSpan.textContent = maxMonths;
                     paymentDiv.style.display = 'block';
                 } else {
