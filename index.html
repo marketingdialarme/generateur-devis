@@ -463,6 +463,14 @@
             margin-bottom: 15px;
         }
 
+        .service-select {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background: white;
+            width: 200px;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -668,17 +676,20 @@
                     <div class="price-display" id="test-cyclique-total">OFFERT</div>
                 </div>
                 <div class="product-line">
-                    <div>Télésurveillance</div>
-                    <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="telesurveillance-selected" onchange="toggleTelesurveillance()">
-                        <label style="margin: 0; font-size: 12px;">Inclure</label>
+                    <div>Service de surveillance</div>
+                    <div>
+                        <select id="surveillance-type" class="service-select" onchange="updateSurveillancePrice()">
+                            <option value="">Aucun</option>
+                            <option value="telesurveillance">Télésurveillance</option>
+                            <option value="autosurveillance">Autosurveillance</option>
+                        </select>
                     </div>
-                    <input type="number" id="telesurveillance-price" value="0" class="discount-input" placeholder="Prix/mois" oninput="updateTotals()" disabled>
+                    <input type="number" id="surveillance-price" value="0" class="discount-input" placeholder="Prix/mois" oninput="updateTotals()">
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="telesurveillance-offered" class="offered-checkbox" onchange="updateTotals()" disabled>
+                        <input type="checkbox" id="surveillance-offered" class="offered-checkbox" onchange="updateTotals()" disabled>
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
-                    <div class="price-display" id="telesurveillance-total">0.00 CHF/mois</div>
+                    <div class="price-display" id="surveillance-total">0.00 CHF/mois</div>
                 </div>
             </div>
 
@@ -697,15 +708,22 @@
                     <span>240.00 CHF HT</span>
                 </div>
                 <div class="summary-item">
-                    <span>TOTAL HT</span>
+                    <span>Service de surveillance</span>
+                    <span id="surveillance-summary">0.00 CHF/mois</span>
+                </div>
+                <div class="summary-item">
+                    <span>TOTAL HT (hors surveillance)</span>
                     <span id="alarm-total-ht">930.00 CHF</span>
                 </div>
                 <div class="summary-item">
-                    <span>TOTAL TTC</span>
+                    <span>TOTAL TTC (hors surveillance)</span>
                     <span id="alarm-total-ttc">1004.40 CHF</span>
                 </div>
                 <div class="monthly-payment" id="alarm-monthly-payment" style="display: none;">
-                    <strong>Mensualités: <span id="alarm-monthly-amount">0 CHF</span> x <span id="alarm-monthly-count">0</span> mois</strong>
+                    <strong>Mensualités globales: <span id="alarm-monthly-amount">0 CHF</span>/mois pendant <span id="alarm-monthly-count">0</span> mois</strong>
+                </div>
+                <div class="monthly-payment" id="alarm-cash-payment" style="display: none;">
+                    <strong>Montant comptant: <span id="alarm-cash-amount">0 CHF</span></strong>
                 </div>
             </div>
 
@@ -812,6 +830,12 @@
                     <div class="price-display" id="camera-installation-price">690.00 CHF</div>
                     <div></div>
                 </div>
+                <div class="payment-options" id="camera-installation-payment">
+                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'camera-installation')">Comptant</div>
+                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'camera-installation')">24 mois</div>
+                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'camera-installation')">36 mois</div>
+                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'camera-installation')">48 mois</div>
+                </div>
             </div>
 
             <!-- Section 3: Vision à distance -->
@@ -862,7 +886,7 @@
                     <span id="camera-total-ttc">745.20 CHF</span>
                 </div>
                 <div class="monthly-payment" id="camera-monthly-payment" style="display: none;">
-                    <strong>Mensualités matériel: <span id="camera-monthly-amount">0 CHF</span> x <span id="camera-monthly-count">0</span> mois</strong>
+                    <strong>Mensualités: <span id="camera-monthly-amount">0 CHF</span> x <span id="camera-monthly-count">0</span> mois</strong>
                     <div id="camera-remote-monthly" style="margin-top: 5px; display: none;">
                         + Vision à distance: <strong>20 CHF/mois</strong>
                     </div>
@@ -888,21 +912,22 @@
                     'alarm-material': [
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
                         { id: 6, name: "Centrale Titane", price: 690.00 },
+                        { id: 50, name: "Centrale Ax Pro", price: 1290.00 },
                         { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
                         { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
                         { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
                         { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ],
@@ -910,19 +935,19 @@
                         { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
                         { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
                         { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
                         { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
                         { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00 },
+                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
                         { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
                         { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ],
@@ -962,7 +987,8 @@
                 this.sections = {
                     'alarm-material': { paymentMonths: 0 },
                     'alarm-installation': { paymentMonths: 0 },
-                    'camera-material': { paymentMonths: 0 }
+                    'camera-material': { paymentMonths: 0 },
+                    'camera-installation': { paymentMonths: 0 }
                 };
 
                 this.rentalMode = {
@@ -972,6 +998,7 @@
 
                 // Pour suivre quelle centrale est sélectionnée
                 this.selectedCentral = null;
+                this.kitOffered = false; // Pour savoir si le kit doit être offert
 
                 this.init();
             }
@@ -1032,6 +1059,7 @@
                 } else if (type === 'camera') {
                     // Masquer/afficher les sections spécifiques
                     document.getElementById('camera-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('camera-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
                     document.getElementById('camera-remote-section').style.display = this.rentalMode[type] ? 'none' : 'block';
                     document.getElementById('camera-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
                     document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
@@ -1040,6 +1068,7 @@
                     // Réinitialiser si location
                     if (this.rentalMode[type]) {
                         this.sections['camera-material'].paymentMonths = 0;
+                        this.sections['camera-installation'].paymentMonths = 0;
                         document.getElementById('camera-remote-access').checked = false;
                     }
                 }
@@ -1090,6 +1119,24 @@
                 
                 if (!offeredCheckbox.checked) {
                     priceDisplay.textContent = `${price.toFixed(2)} CHF`;
+                }
+                
+                this.updateTotals();
+            }
+
+            updateSurveillancePrice() {
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                const priceInput = document.getElementById('surveillance-price');
+                const offeredCheckbox = document.getElementById('surveillance-offered');
+                
+                offeredCheckbox.disabled = !surveillanceType;
+                
+                if (surveillanceType === 'telesurveillance') {
+                    priceInput.value = 129;
+                } else if (surveillanceType === 'autosurveillance') {
+                    priceInput.value = 59;
+                } else {
+                    priceInput.value = 0;
                 }
                 
                 this.updateTotals();
@@ -1191,11 +1238,11 @@
                 }
                 
                 // Détecter si une centrale a été sélectionnée/désélectionnée
-                if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
+                if (sectionId === 'alarm-material' && (productId === 5 || productId === 6 || productId === 50)) {
                     this.detectSelectedCentral();
                     
-                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
-                    // Proposer le kit
+                    const centraleName = productId === 6 ? 'Titane' : (productId === 50 ? 'Ax Pro' : 'Jablotron');
+                    // Proposer le kit offert
                     this.showKitProposal(centraleName, sectionId);
                 } else if (sectionId === 'alarm-material') {
                     // Vérifier si une centrale a été désélectionnée
@@ -1217,7 +1264,7 @@
                     // Pour material: montrer tout sauf les produits Jablotron-only
                     // Pour installation: montrer tout sauf les centrales et produits Jablotron-only
                     if (isInstallationSection) {
-                        return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                        return products.filter(p => p.id !== 5 && p.id !== 6 && p.id !== 50 && !p.requiresJablotron);
                     }
                     return products.filter(p => !p.requiresJablotron);
                 }
@@ -1226,16 +1273,16 @@
                 if (this.selectedCentral === 'jablotron') {
                     // Pour installation: tout sauf les centrales
                     if (isInstallationSection) {
-                        return products.filter(p => p.id !== 5 && p.id !== 6);
+                        return products.filter(p => p.id !== 5 && p.id !== 6 && p.id !== 50);
                     }
                     // Pour material: tout montrer
                     return products;
                 }
                 
-                // Si Titane sélectionnée
+                // Si Titane ou Ax Pro sélectionnée
                 // Pour installation: tout sauf les centrales et produits Jablotron-only
                 if (isInstallationSection) {
-                    return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+                    return products.filter(p => p.id !== 5 && p.id !== 6 && p.id !== 50 && !p.requiresJablotron);
                 }
                 // Pour material: ne pas montrer les produits Jablotron-only
                 return products.filter(p => !p.requiresJablotron);
@@ -1254,6 +1301,10 @@
                     return product.priceJablotron;
                 }
                 
+                if (this.selectedCentral === 'axpro' && product.priceAxPro) {
+                    return product.priceAxPro;
+                }
+                
                 return product.price;
             }
 
@@ -1264,6 +1315,7 @@
                 const productLines = container.querySelectorAll('.product-line');
                 let hasJablotron = false;
                 let hasTitane = false;
+                let hasAxPro = false;
                 
                 productLines.forEach(line => {
                     const select = line.querySelector('.product-select');
@@ -1271,15 +1323,22 @@
                         const productId = parseInt(select.value);
                         if (productId === 5) hasJablotron = true;
                         if (productId === 6) hasTitane = true;
+                        if (productId === 50) hasAxPro = true;
                     }
                 });
                 
                 if (hasJablotron) {
                     this.selectedCentral = 'jablotron';
+                    this.kitOffered = true;
                 } else if (hasTitane) {
                     this.selectedCentral = 'titane';
+                    this.kitOffered = true;
+                } else if (hasAxPro) {
+                    this.selectedCentral = 'axpro';
+                    this.kitOffered = true;
                 } else {
                     this.selectedCentral = null;
+                    this.kitOffered = false;
                 }
                 
                 // Mettre à jour tous les selects existants
@@ -1328,6 +1387,14 @@
                             }
                         }
                     }
+                    
+                    // Si le kit doit être offert et qu'on est dans la section material
+                    if (this.kitOffered && sectionId === 'alarm-material') {
+                        const offeredCheckbox = line.querySelector('.offered-checkbox');
+                        if (offeredCheckbox && !line.classList.contains('central-line')) {
+                            offeredCheckbox.checked = true;
+                        }
+                    }
                 });
             }
 
@@ -1349,9 +1416,10 @@
                 
                 // Calculer les prix selon la centrale
                 const isTitane = centraleName === 'Titane';
-                const detecteurVolPrice = isTitane ? 240 : 290;
-                const detecteurOuvPrice = isTitane ? 190 : 240;
-                const clavierPrice = isTitane ? 390 : 490;
+                const isAxPro = centraleName === 'Ax Pro';
+                const detecteurVolPrice = isTitane ? 240 : (isAxPro ? 290 : 290);
+                const detecteurOuvPrice = isTitane ? 190 : (isAxPro ? 240 : 240);
+                const clavierPrice = isTitane ? 390 : (isAxPro ? 490 : 490);
                 const sirenePrice = 390; // Petite sirène par défaut
                 
                 const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
@@ -1371,8 +1439,8 @@
                 `;
                 
                 modal.innerHTML = `
-                    <h2 style="margin-bottom: 20px; color: #333;">🎁 Kit recommandé pour Centrale ${centraleName}</h2>
-                    <p style="margin-bottom: 20px; color: #666;">Voulez-vous ajouter un kit d'accessoires recommandé ?</p>
+                    <h2 style="margin-bottom: 20px; color: #333;">🎁 Kit OFFERT avec Centrale ${centraleName}</h2>
+                    <p style="margin-bottom: 20px; color: #28a745; font-weight: bold;">Le kit sera automatiquement marqué comme OFFERT</p>
                     
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
                          onmouseover="this.style.borderColor='#f4e600'" 
@@ -1385,7 +1453,7 @@
                             <li>1x Clavier (${clavierPrice} CHF)</li>
                             <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
                         </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: ${kit1Total.toFixed(2)} CHF</p>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Valeur du kit: ${kit1Total.toFixed(2)} CHF - OFFERT</p>
                     </div>
                     
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
@@ -1399,7 +1467,7 @@
                             <li>1x Clavier (${clavierPrice} CHF)</li>
                             <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
                         </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: ${kit2Total.toFixed(2)} CHF</p>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Valeur du kit: ${kit2Total.toFixed(2)} CHF - OFFERT</p>
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -1421,7 +1489,7 @@
                 window.selectKit = (kitType, centraleName, sectionId) => {
                     this.addKit(kitType, sectionId);
                     document.body.removeChild(overlay);
-                    this.showNotification(`Kit ${kitType === 'kit1' ? 'Standard' : 'Périmétrique'} ajouté pour ${centraleName}`);
+                    this.showNotification(`Kit ${kitType === 'kit1' ? 'Standard' : 'Périmétrique'} ajouté pour ${centraleName} - OFFERT`);
                 };
             }
 
@@ -1467,7 +1535,7 @@
                             <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
                             <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
                             <div class="checkbox-option" style="margin: 0;">
-                                <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                                <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
                                 <label style="margin: 0; font-size: 12px;">OFFERT</label>
                             </div>
                             <div class="price-display">0.00 CHF</div>
@@ -1480,11 +1548,12 @@
                 this.updateTotals();
             }
 
-            calculateSectionTotal(sectionId) {
+            calculateSectionTotal(sectionId, forPDF = false) {
                 const container = document.getElementById(`${sectionId}-products`);
                 if (!container) return 0;
                 
                 let total = 0;
+                let totalWithoutDiscount = 0;
                 const productLines = container.querySelectorAll('.product-line');
                 
                 productLines.forEach(line => {
@@ -1508,36 +1577,35 @@
                         price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                     }
                     
-                    let lineTotal = isOffered ? 0 : (price * quantity);
-                    lineTotal = Math.max(0, lineTotal);
+                    let lineTotal = price * quantity;
+                    totalWithoutDiscount += lineTotal;
+                    
+                    // Si pas offert ET pas pour PDF OU pour PDF et pas kitOffered
+                    if (!isOffered && (!forPDF || !this.kitOffered)) {
+                        total += lineTotal;
+                    }
                     
                     const priceDisplay = line.querySelector('.price-display');
-                    if (priceDisplay) {
+                    if (priceDisplay && !forPDF) {
                         priceDisplay.textContent = isOffered ? 'OFFERT' : `${lineTotal.toFixed(2)} CHF`;
                     }
-                    total += lineTotal;
                 });
                 
                 // Apply section discount
-                const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
-                const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                
-                if (discountValue > 0) {
-                    if (discountType === 'percent') {
-                        total = total * (1 - discountValue / 100);
-                    } else {
-                        total = Math.max(0, total - discountValue);
+                if (!forPDF || !this.kitOffered) {
+                    const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
+                    const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
+                    
+                    if (discountValue > 0) {
+                        if (discountType === 'percent') {
+                            total = total * (1 - discountValue / 100);
+                        } else {
+                            total = Math.max(0, total - discountValue);
+                        }
                     }
                 }
                 
-                return total;
-            }
-
-            toggleTelesurveillance() {
-                const selected = document.getElementById('telesurveillance-selected').checked;
-                document.getElementById('telesurveillance-price').disabled = !selected;
-                document.getElementById('telesurveillance-offered').disabled = !selected;
-                this.updateTotals();
+                return forPDF && this.kitOffered ? { total, totalWithoutDiscount } : total;
             }
 
             updateTotals() {
@@ -1566,17 +1634,19 @@
                     const testCycliqueOffered = document.getElementById('test-cyclique-offered').checked;
                     const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
                     
-                    // Télésurveillance
-                    const telesurveillanceSelected = document.getElementById('telesurveillance-selected').checked;
-                    const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price').value) || 0;
-                    const telesurveillanceOffered = document.getElementById('telesurveillance-offered').checked;
-                    const telesurveillanceTotal = telesurveillanceSelected ? (telesurveillanceOffered ? 0 : telesurveillancePrice) : 0;
+                    // Surveillance
+                    const surveillanceType = document.getElementById('surveillance-type').value;
+                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
+                    const surveillanceOffered = document.getElementById('surveillance-offered').checked;
+                    const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
                     
                     // Mise à jour affichage
                     document.getElementById('test-cyclique-total').textContent = testCycliqueSelected ? 
                         (testCycliqueOffered ? 'OFFERT' : `${testCycliqueTotal.toFixed(2)} CHF`) : '0.00 CHF';
-                    document.getElementById('telesurveillance-total').textContent = telesurveillanceSelected ? 
-                        (telesurveillanceOffered ? 'OFFERT' : `${telesurveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
+                    document.getElementById('surveillance-total').textContent = surveillanceType ? 
+                        (surveillanceOffered ? 'OFFERT' : `${surveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
+                    document.getElementById('surveillance-summary').textContent = surveillanceType ? 
+                        (surveillanceOffered ? 'OFFERT' : `${surveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
                     
                     const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
                     const totalTTC = totalHT * 1.08;
@@ -1586,11 +1656,55 @@
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
-                    // Gérer les mensualités uniquement si pas en mode location
+                    // Calculer les mensualités globales et montants comptants
                     if (!this.rentalMode['alarm']) {
-                        this.updateMonthlyPayments('alarm', materialTotal + totalInstallation);
+                        const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
+                        const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                        
+                        let totalMensualites = 0;
+                        let totalComptant = 0;
+                        let maxMonths = 0;
+                        
+                        // Matériel
+                        if (materialMonths > 0) {
+                            totalMensualites += materialTotal;
+                            maxMonths = Math.max(maxMonths, materialMonths);
+                        } else {
+                            totalComptant += materialTotal;
+                        }
+                        
+                        // Installation
+                        if (installMonths > 0) {
+                            totalMensualites += totalInstallation;
+                            maxMonths = Math.max(maxMonths, installMonths);
+                        } else {
+                            totalComptant += totalInstallation;
+                        }
+                        
+                        // Frais de dossier toujours comptant
+                        totalComptant += adminTotal;
+                        
+                        // Afficher les mensualités globales
+                        if (maxMonths > 0 && totalMensualites > 0) {
+                            const monthlyAmount = (totalMensualites / maxMonths) + surveillanceTotal;
+                            document.getElementById('alarm-monthly-amount').textContent = monthlyAmount.toFixed(2);
+                            document.getElementById('alarm-monthly-count').textContent = maxMonths;
+                            document.getElementById('alarm-monthly-payment').style.display = 'block';
+                        } else {
+                            document.getElementById('alarm-monthly-payment').style.display = 'none';
+                        }
+                        
+                        // Afficher le montant comptant
+                        if (totalComptant > 0) {
+                            const comptantTTC = totalComptant * 1.08;
+                            document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
+                            document.getElementById('alarm-cash-payment').style.display = 'block';
+                        } else {
+                            document.getElementById('alarm-cash-payment').style.display = 'none';
+                        }
                     } else {
                         document.getElementById('alarm-monthly-payment').style.display = 'none';
+                        document.getElementById('alarm-cash-payment').style.display = 'none';
                     }
                     
                 } else if (this.currentTab === 'camera') {
@@ -1610,46 +1724,36 @@
                     
                     if (!this.rentalMode['camera']) {
                         document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
+                        
+                        // Gérer les mensualités avec les facilités de paiement pour l'installation
+                        const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
+                        const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
+                        const maxMonths = Math.max(materialMonths, installMonths);
+                        
+                        if (maxMonths > 0) {
+                            let monthlyAmount = 0;
+                            if (materialMonths > 0) {
+                                monthlyAmount += materialTotal / materialMonths;
+                            }
+                            if (installMonths > 0) {
+                                monthlyAmount += installationTotal / installMonths;
+                            }
+                            
+                            document.getElementById('camera-monthly-amount').textContent = monthlyAmount.toFixed(2);
+                            document.getElementById('camera-monthly-count').textContent = maxMonths;
+                            document.getElementById('camera-monthly-payment').style.display = 'block';
+                            
+                            const remoteMonthly = document.getElementById('camera-remote-monthly');
+                            if (remoteMonthly) {
+                                remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                            }
+                        } else {
+                            document.getElementById('camera-monthly-payment').style.display = 'none';
+                        }
                     }
                     
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                    
-                    // Gérer les mensualités uniquement si pas en mode location
-                    if (!this.rentalMode['camera']) {
-                        this.updateMonthlyPayments('camera', materialTotal);
-                        const remoteMonthly = document.getElementById('camera-remote-monthly');
-                        if (remoteMonthly) {
-                            remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
-                        }
-                    } else {
-                        document.getElementById('camera-monthly-payment').style.display = 'none';
-                    }
-                }
-            }
-
-            updateMonthlyPayments(type, amount) {
-                const paymentDiv = document.getElementById(`${type}-monthly-payment`);
-                const amountSpan = document.getElementById(`${type}-monthly-amount`);
-                const countSpan = document.getElementById(`${type}-monthly-count`);
-                
-                let maxMonths = 0;
-                
-                if (type === 'alarm') {
-                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                    const installationMonths = this.sections['alarm-installation']?.paymentMonths || 0;
-                    maxMonths = Math.max(materialMonths, installationMonths);
-                } else if (type === 'camera') {
-                    maxMonths = this.sections['camera-material']?.paymentMonths || 0;
-                }
-                
-                if (maxMonths > 0 && amount > 0 && !this.rentalMode[type]) {
-                    const monthlyAmount = amount / maxMonths;
-                    amountSpan.textContent = monthlyAmount.toFixed(2);
-                    countSpan.textContent = maxMonths;
-                    paymentDiv.style.display = 'block';
-                } else {
-                    paymentDiv.style.display = 'none';
                 }
             }
 
@@ -2001,6 +2105,7 @@
                 const container = document.getElementById(`${sectionId}-products`);
                 const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
                 let sectionTotal = 0;
+                let sectionTotalWithOffert = 0;
                 let lineCount = 0;
                 
                 productLines.forEach(line => {
@@ -2041,8 +2146,11 @@
                             productName = selectedOption.text.split(' - ')[0] || '';
                         }
                         
-                        let lineTotal = isOffered ? 0 : (price * qty);
-                        sectionTotal += lineTotal;
+                        let lineTotal = price * qty;
+                        sectionTotalWithOffert += lineTotal; // Total avec les produits offerts pour affichage
+                        if (!isOffered) {
+                            sectionTotal += lineTotal; // Total réel sans les offerts
+                        }
 
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(6);
@@ -2056,14 +2164,15 @@
                             : productName;
                         doc.text(displayName, 90, yPos + 8);
                         
+                        // Toujours afficher le prix
+                        doc.text(price.toFixed(2), 405, yPos + 8);
+                        
                         if (isOffered) {
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0, 150, 0);
-                            doc.text('OFFERT', 405, yPos + 8);
                             doc.text('OFFERT', 485, yPos + 8);
                         } else {
                             doc.setTextColor(0, 0, 0);
-                            doc.text(price.toFixed(2), 405, yPos + 8);
                             doc.text(lineTotal.toFixed(2), 485, yPos + 8);
                         }
                         doc.setFont('helvetica', 'normal');
@@ -2210,26 +2319,28 @@
                     yPos += 12;
                 }
                 
-                // Télésurveillance
-                const telesurveillanceSelected = document.getElementById('telesurveillance-selected')?.checked || false;
-                const telesurveillancePrice = parseFloat(document.getElementById('telesurveillance-price')?.value) || 0;
-                const telesurveillanceOffered = document.getElementById('telesurveillance-offered')?.checked || false;
+                // Surveillance
+                const surveillanceType = document.getElementById('surveillance-type')?.value;
+                const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
+                const surveillanceOffered = document.getElementById('surveillance-offered')?.checked || false;
                 
-                if (telesurveillanceSelected) {
+                if (surveillanceType) {
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(6);
                     doc.setTextColor(0, 0, 0);
-                    doc.text('Télésurveillance', 90, yPos + 8);
                     
-                    if (telesurveillanceOffered) {
+                    const serviceName = surveillanceType === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance';
+                    doc.text(serviceName, 90, yPos + 8);
+                    
+                    if (surveillanceOffered) {
                         doc.setFont('helvetica', 'bold');
                         doc.setTextColor(0, 150, 0);
                         doc.text('OFFERT', 405, yPos + 8);
                         doc.text('OFFERT', 485, yPos + 8);
                     } else {
                         doc.setTextColor(0, 0, 0);
-                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
-                        doc.text(`${telesurveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
+                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
+                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
                     }
                     yPos += 12;
                 }
@@ -2406,6 +2517,7 @@
                 let totalMensualitesHT = 0;
                 let totalComptantHT = 0;
                 let monthsCount = 0;
+                let surveillanceMonthly = 0;
                 
                 if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
@@ -2422,6 +2534,12 @@
                     
                     const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
                     const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                    
+                    // Surveillance
+                    const surveillanceType = document.getElementById('surveillance-type')?.value;
+                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
+                    const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
+                    surveillanceMonthly = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
                     
                     // Calcul des mensualités HT
                     if (materialMonths > 0) {
@@ -2448,16 +2566,29 @@
                     const installPrice = this.calculateInstallationPrice(installQty);
                     const installTotal = installOffered ? 0 : installPrice;
                     const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
+                    const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
                     
                     if (materialMonths > 0) {
                         totalMensualitesHT += materialTotal;
-                        monthsCount = materialMonths;
+                        monthsCount = Math.max(monthsCount, materialMonths);
                     } else {
                         totalComptantHT += materialTotal;
                     }
                     
-                    // Installation toujours comptant pour caméra
-                    totalComptantHT += installTotal;
+                    if (installMonths > 0) {
+                        totalMensualitesHT += installTotal;
+                        monthsCount = Math.max(monthsCount, installMonths);
+                    } else {
+                        totalComptantHT += installTotal;
+                    }
+                    
+                    // Vision à distance pour caméra
+                    if (!isRental) {
+                        const remoteAccess = document.getElementById('camera-remote-access')?.checked;
+                        if (remoteAccess) {
+                            surveillanceMonthly = 20;
+                        }
+                    }
                 }
 
                 // Zone grise finale avec détails
@@ -2470,6 +2601,8 @@
                     
                     const comptantTVA = totalComptantHT * 0.081;
                     const comptantTTC = totalComptantHT * 1.081;
+                    
+                    const mensualiteGlobale = mensualiteTTC + surveillanceMonthly;
 
                     // Zone mensualités
                     doc.setFillColor(200, 200, 200);
@@ -2480,38 +2613,44 @@
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
                     doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS (' + monthsCount + ' mois)', 50, yPos + 15);
+                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 15);
                     
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
-                    doc.text(`Mensualité HT: ${mensualiteHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${mensualiteTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    doc.text(`Mensualité TTC: ${mensualiteTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                    doc.text(`Matériel + Installation: ${mensualiteTTC.toFixed(2)} CHF TTC/mois`, 50, yPos + 30);
+                    if (surveillanceMonthly > 0) {
+                        const serviceName = type === 'alarm' ? 
+                            (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance') : 
+                            'Vision à distance';
+                        doc.text(`${serviceName}: ${surveillanceMonthly.toFixed(2)} CHF/mois`, 250, yPos + 30);
+                    }
                     
                     doc.setFont('helvetica', 'bold');
-                    doc.text(`Total mensualités: ${mensualiteTTC.toFixed(2)} CHF x ${monthsCount} = ${totalMensualitesTTC.toFixed(2)} CHF TTC`, 50, yPos + 50);
+                    doc.text(`Total mensualité globale: ${mensualiteGlobale.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 50);
                     
                     yPos += 75;
                     
                     // Zone comptant
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 55, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 55);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                    
-                    yPos += 60;
+                    if (totalComptantHT > 0) {
+                        doc.setFillColor(200, 200, 200);
+                        doc.rect(40, yPos, 515, 55, 'F');
+                        doc.setDrawColor(0, 0, 0);
+                        doc.rect(40, yPos, 515, 55);
+                        
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9);
+                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8);
+                        doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                        doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                        
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                        
+                        yPos += 60;
+                    }
                     
                 } else {
                     // Pas de mensualités ou mode location
@@ -2644,12 +2783,8 @@
             generator.updateCameraInstallationPrice();
         }
 
-        function toggleCameraInstallation() {
-            generator.toggleCameraInstallation();
-        }
-
-        function toggleTelesurveillance() {
-            generator.toggleTelesurveillance();
+        function updateSurveillancePrice() {
+            generator.updateSurveillancePrice();
         }
 
         function generatePDF(type) {
@@ -2711,6 +2846,7 @@
                 to { transform: translateX(0); opacity: 1; }
             }
         `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
