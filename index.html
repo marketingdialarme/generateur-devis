@@ -1639,6 +1639,7 @@
                     const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
                     const surveillanceOffered = document.getElementById('surveillance-offered').checked;
                     const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
+                    const surveillanceTTC = surveillanceTotal * 1.081; // Ajouter TVA 8.1%
                     
                     // Mise à jour affichage
                     document.getElementById('test-cyclique-total').textContent = testCycliqueSelected ? 
@@ -1661,21 +1662,31 @@
                         const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
                         const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
                         
-                        let totalMensualites = 0;
+                        let totalMensualitesHT = 0;
                         let totalComptant = 0;
                         let maxMonths = 0;
                         
-                        // Matériel
+                        // Calcul des majorations selon durée
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10; // +10%
+                            if (months === 36) return 1.15; // +15%
+                            if (months === 48) return 1.20; // +20%
+                            return 1.0; // Pas de majoration si comptant
+                        };
+                        
+                        // Matériel avec majoration
                         if (materialMonths > 0) {
-                            totalMensualites += materialTotal;
+                            const majoration = getMajoration(materialMonths);
+                            totalMensualitesHT += materialTotal * majoration;
                             maxMonths = Math.max(maxMonths, materialMonths);
                         } else {
                             totalComptant += materialTotal;
                         }
                         
-                        // Installation
+                        // Installation avec majoration
                         if (installMonths > 0) {
-                            totalMensualites += totalInstallation;
+                            const majoration = getMajoration(installMonths);
+                            totalMensualitesHT += totalInstallation * majoration;
                             maxMonths = Math.max(maxMonths, installMonths);
                         } else {
                             totalComptant += totalInstallation;
@@ -1685,8 +1696,9 @@
                         totalComptant += adminTotal;
                         
                         // Afficher les mensualités globales
-                        if (maxMonths > 0 && totalMensualites > 0) {
-                            const monthlyAmount = (totalMensualites / maxMonths) + surveillanceTotal;
+                        if (maxMonths > 0 && totalMensualitesHT > 0) {
+                            const mensualiteTTC = (totalMensualitesHT * 1.081) / maxMonths;
+                            const monthlyAmount = mensualiteTTC + surveillanceTTC; // Surveillance en TTC
                             document.getElementById('alarm-monthly-amount').textContent = monthlyAmount.toFixed(2);
                             document.getElementById('alarm-monthly-count').textContent = maxMonths;
                             document.getElementById('alarm-monthly-payment').style.display = 'block';
