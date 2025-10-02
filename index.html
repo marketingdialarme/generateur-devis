@@ -1639,7 +1639,6 @@
                     const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
                     const surveillanceOffered = document.getElementById('surveillance-offered').checked;
                     const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
-                    const surveillanceTTC = surveillanceTotal * 1.081; // Ajouter TVA 8.1%
                     
                     // Mise à jour affichage
                     document.getElementById('test-cyclique-total').textContent = testCycliqueSelected ? 
@@ -1697,9 +1696,14 @@
                         
                         // Afficher les mensualités globales
                         if (maxMonths > 0 && totalMensualitesHT > 0) {
-                            const mensualiteTTC = (totalMensualitesHT * 1.081) / maxMonths;
-                            const monthlyAmount = mensualiteTTC + surveillanceTTC; // Surveillance en TTC
-                            document.getElementById('alarm-monthly-amount').textContent = monthlyAmount.toFixed(2);
+                            // Total HT mensuel = (matériel + installation avec majoration) + surveillance
+                            const mensualiteMatInstHT = totalMensualitesHT / maxMonths;
+                            const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
+                            // TVA sur le total
+                            const totalMensuelTVA = totalMensuelHT * 0.081;
+                            const totalMensuelTTC = totalMensuelHT + totalMensuelTVA;
+                            
+                            document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('alarm-monthly-count').textContent = maxMonths;
                             document.getElementById('alarm-monthly-payment').style.display = 'block';
                         } else {
@@ -1726,6 +1730,7 @@
                     const installationOffered = document.getElementById('camera-installation-offered').checked;
                     const installationTotal = installationOffered ? 0 : installationPrice;
                     const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
+                    const remoteAccessPrice = remoteAccess ? 20 : 0; // Prix HT
                     
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = totalHT * 1.08;
@@ -1742,22 +1747,39 @@
                         const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
                         const maxMonths = Math.max(materialMonths, installMonths);
                         
+                        // Calcul des majorations selon durée
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10; // +10%
+                            if (months === 36) return 1.15; // +15%
+                            if (months === 48) return 1.20; // +20%
+                            return 1.0; // Pas de majoration si comptant
+                        };
+                        
                         if (maxMonths > 0) {
-                            let monthlyAmount = 0;
+                            let totalMensualitesHT = 0;
+                            
                             if (materialMonths > 0) {
-                                monthlyAmount += materialTotal / materialMonths;
+                                const majoration = getMajoration(materialMonths);
+                                totalMensualitesHT += (materialTotal * majoration) / materialMonths;
                             }
                             if (installMonths > 0) {
-                                monthlyAmount += installationTotal / installMonths;
+                                const majoration = getMajoration(installMonths);
+                                totalMensualitesHT += (installationTotal * majoration) / installMonths;
                             }
                             
-                            document.getElementById('camera-monthly-amount').textContent = monthlyAmount.toFixed(2);
+                            // Ajouter vision à distance HT et calculer TVA sur le total
+                            const totalMensuelHT = totalMensualitesHT + remoteAccessPrice;
+                            const totalMensuelTVA = totalMensuelHT * 0.081;
+                            const totalMensuelTTC = totalMensuelHT + totalMensuelTVA;
+                            
+                            document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('camera-monthly-count').textContent = maxMonths;
                             document.getElementById('camera-monthly-payment').style.display = 'block';
                             
                             const remoteMonthly = document.getElementById('camera-remote-monthly');
                             if (remoteMonthly) {
                                 remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                                remoteMonthly.innerHTML = `+ Vision à distance incluse dans le total`;
                             }
                         } else {
                             document.getElementById('camera-monthly-payment').style.display = 'none';
@@ -2525,11 +2547,19 @@
                 doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
                 yPos += 16;
 
+                // Fonction pour calculer la majoration selon la durée
+                const getMajoration = (months) => {
+                    if (months === 24) return 1.10; // +10%
+                    if (months === 36) return 1.15; // +15%
+                    if (months === 48) return 1.20; // +20%
+                    return 1.0; // Pas de majoration si comptant
+                };
+
                 // Calcul des totaux
                 let totalMensualitesHT = 0;
                 let totalComptantHT = 0;
                 let monthsCount = 0;
-                let surveillanceMonthly = 0;
+                let surveillanceMonthlyHT = 0;
                 
                 if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
@@ -2547,22 +2577,24 @@
                     const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
                     const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
                     
-                    // Surveillance
+                    // Surveillance HT
                     const surveillanceType = document.getElementById('surveillance-type')?.value;
                     const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
                     const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
-                    surveillanceMonthly = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
+                    surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
                     
-                    // Calcul des mensualités HT
+                    // Calcul des mensualités HT avec majorations
                     if (materialMonths > 0) {
-                        totalMensualitesHT += materialTotal;
+                        const majoration = getMajoration(materialMonths);
+                        totalMensualitesHT += materialTotal * majoration;
                         monthsCount = Math.max(monthsCount, materialMonths);
                     } else {
                         totalComptantHT += materialTotal;
                     }
                     
                     if (installMonths > 0) {
-                        totalMensualitesHT += totalInstallation;
+                        const majoration = getMajoration(installMonths);
+                        totalMensualitesHT += totalInstallation * majoration;
                         monthsCount = Math.max(monthsCount, installMonths);
                     } else {
                         totalComptantHT += totalInstallation;
@@ -2580,47 +2612,45 @@
                     const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
                     const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
                     
+                    // Calcul avec majorations
                     if (materialMonths > 0) {
-                        totalMensualitesHT += materialTotal;
+                        const majoration = getMajoration(materialMonths);
+                        totalMensualitesHT += materialTotal * majoration;
                         monthsCount = Math.max(monthsCount, materialMonths);
                     } else {
                         totalComptantHT += materialTotal;
                     }
                     
                     if (installMonths > 0) {
-                        totalMensualitesHT += installTotal;
+                        const majoration = getMajoration(installMonths);
+                        totalMensualitesHT += installTotal * majoration;
                         monthsCount = Math.max(monthsCount, installMonths);
                     } else {
                         totalComptantHT += installTotal;
                     }
                     
-                    // Vision à distance pour caméra
+                    // Vision à distance pour caméra (HT)
                     if (!isRental) {
                         const remoteAccess = document.getElementById('camera-remote-access')?.checked;
                         if (remoteAccess) {
-                            surveillanceMonthly = 20;
+                            surveillanceMonthlyHT = 20;
                         }
                     }
                 }
 
                 // Zone grise finale avec détails
                 if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    // Calculs
-                    const mensualiteHT = totalMensualitesHT / monthsCount;
-                    const mensualiteTVA = mensualiteHT * 0.081;
-                    const mensualiteTTC = mensualiteHT * 1.081;
-                    const totalMensualitesTTC = totalMensualitesHT * 1.081;
-                    
-                    const comptantTVA = totalComptantHT * 0.081;
-                    const comptantTTC = totalComptantHT * 1.081;
-                    
-                    const mensualiteGlobale = mensualiteTTC + surveillanceMonthly;
+                    // Calculs simplifiés
+                    const mensualiteMatInstHT = totalMensualitesHT / monthsCount;
+                    const totalMensuelHT = mensualiteMatInstHT + surveillanceMonthlyHT;
+                    const totalMensuelTVA = totalMensuelHT * 0.081;
+                    const totalMensuelTTC = totalMensuelHT + totalMensuelTVA;
 
                     // Zone mensualités
                     doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 70, 'F');
+                    doc.rect(40, yPos, 515, 90, 'F');
                     doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 70);
+                    doc.rect(40, yPos, 515, 90);
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
@@ -2629,18 +2659,25 @@
                     
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
-                    doc.text(`Matériel + Installation: ${mensualiteTTC.toFixed(2)} CHF TTC/mois`, 50, yPos + 30);
-                    if (surveillanceMonthly > 0) {
+                    doc.text(`Matériel + Installation (avec majoration): ${mensualiteMatInstHT.toFixed(2)} CHF HT/mois`, 50, yPos + 30);
+                    
+                    if (surveillanceMonthlyHT > 0) {
                         const serviceName = type === 'alarm' ? 
                             (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance') : 
                             'Vision à distance';
-                        doc.text(`${serviceName}: ${surveillanceMonthly.toFixed(2)} CHF/mois`, 250, yPos + 30);
+                        doc.text(`${serviceName}: ${surveillanceMonthlyHT.toFixed(2)} CHF HT/mois`, 50, yPos + 45);
+                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 60);
+                    } else {
+                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 45);
                     }
                     
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total mensualité globale: ${mensualiteGlobale.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 50);
+                    doc.text(`TVA 8.1%: ${totalMensuelTVA.toFixed(2)} CHF`, 300, yPos + (surveillanceMonthlyHT > 0 ? 60 : 45));
                     
-                    yPos += 75;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.text(`TOTAL MENSUALITÉ TTC: ${totalMensuelTTC.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 80);
+                    
+                    yPos += 95;
                     
                     // Zone comptant
                     if (totalComptantHT > 0) {
@@ -2656,6 +2693,8 @@
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(8);
                         doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                        const comptantTVA = totalComptantHT * 0.081;
+                        const comptantTTC = totalComptantHT * 1.081;
                         doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
                         
                         doc.setFont('helvetica', 'bold');
