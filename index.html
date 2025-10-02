@@ -525,6 +525,9 @@
             <button class="nav-tab" onclick="showTab('camera', this)">
                 📹 Caméra de surveillance
             </button>
+            <button class="nav-tab" onclick="showTab('fog', this)">
+                💨 Générateur de brouillard
+            </button>
         </div>
 
         <!-- Tab Alarm -->
@@ -902,6 +905,156 @@
                 </button>
             </div>
         </div>
+
+        <!-- Tab Générateur de brouillard -->
+        <div id="fog-tab" class="tab-content">
+            <div class="rental-toggle-container">
+                <span>Mode vente</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="fog-rental-mode" onchange="toggleRentalMode('fog')">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Location</span>
+            </div>
+
+            <div class="form-section">
+                <h3>📋 Informations Client</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="clientNameFog">Nom du client</label>
+                        <input type="text" id="clientNameFog" placeholder="Nom complet du client">
+                    </div>
+                    <div class="form-group">
+                        <label for="commercialFog">Commercial</label>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <select id="commercialFog" onchange="handleCommercialSelectionFog(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                                <option value="">Sélectionner un commercial</option>
+                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
+                                <option value="Arnaud Bloch">Arnaud Bloch</option>
+                                <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Cédric Boldron">Cédric Boldron</option>
+                                <option value="Emin Comert">Emin Comert</option>
+                                <option value="Gérald Clausen">Gérald Clausen</option>
+                                <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Matys Goiot">Matys Goiot</option>
+                                <option value="Mohamed Tartik">Mohamed Tartik</option>
+                                <option value="Nassim Jaza">Nassim Jaza</option>
+                                <option value="Nora Sassi">Nora Sassi</option>
+                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
+                                <option value="Sabine Balducci">Sabine Balducci</option>
+                                <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thomas Garcia">Thomas Garcia</option>
+                                <option value="Wassim Tahiri">Wassim Tahiri</option>
+                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
+                            </select>
+                            <input type="text" id="commercialFog-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPhoneFog">Téléphone</label>
+                        <input type="tel" id="clientPhoneFog" placeholder="+41 XX XXX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientAddressFog">Adresse postale</label>
+                        <input type="text" id="clientAddressFog" placeholder="Adresse complète">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 1: Matériel -->
+            <div class="quote-section">
+                <h3>💨 1. Matériel <button class="add-product-btn" onclick="addProductLine('fog-material')">+</button></h3>
+                <div id="fog-material-products">
+                    <!-- Products will be added here -->
+                </div>
+                <div class="discount-section">
+                    <label>Réduction:</label>
+                    <select id="fog-material-discount-type">
+                        <option value="percent">%</option>
+                        <option value="amount">CHF</option>
+                    </select>
+                    <input type="number" id="fog-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
+                </div>
+                <div class="payment-options" id="fog-material-payment">
+                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'fog-material')">Comptant</div>
+                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'fog-material')">24 mois</div>
+                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'fog-material')">36 mois</div>
+                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'fog-material')">48 mois</div>
+                </div>
+            </div>
+
+            <!-- Section 2: Installation -->
+            <div class="quote-section">
+                <h3>🔧 2. Installation</h3>
+                <div class="product-line">
+                    <div>Installation, paramétrages, tests, mise en service & formation</div>
+                    <div>
+                        <label style="margin-right: 5px;">Nombre:</label>
+                        <input type="number" id="fog-installation-qty" value="1" min="1" max="10" class="quantity-input" oninput="updateFogInstallationPrice()">
+                    </div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="fog-installation-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="fog-installation-price">690.00 CHF</div>
+                    <div></div>
+                </div>
+                <div class="payment-options" id="fog-installation-payment">
+                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'fog-installation')">Comptant</div>
+                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'fog-installation')">24 mois</div>
+                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'fog-installation')">36 mois</div>
+                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'fog-installation')">48 mois</div>
+                </div>
+            </div>
+
+            <!-- Section 3: Maintenance et garantie -->
+            <div class="quote-section" id="fog-maintenance-section">
+                <h3>🔧 3. Maintenance et garantie</h3>
+                <div class="product-line">
+                    <div>Assistance hotline, déplacement(s), matériels pièce(s), main d'œuvre et support téléphonique</div>
+                    <input type="number" value="1" class="quantity-input" readonly>
+                    <div></div>
+                    <div class="price-display"><span class="free-label">OFFERT</span></div>
+                    <div></div>
+                </div>
+            </div>
+
+            <div class="quote-summary">
+                <h3>📊 Récapitulatif du devis</h3>
+                <div class="summary-item">
+                    <span>Matériel</span>
+                    <span id="fog-material-total">0.00 CHF</span>
+                </div>
+                <div class="summary-item">
+                    <span>Installation</span>
+                    <span id="fog-installation-total">690.00 CHF</span>
+                </div>
+                <div class="summary-item" id="fog-maintenance-summary">
+                    <span>Maintenance</span>
+                    <span>OFFERT</span>
+                </div>
+                <div class="summary-item">
+                    <span>TOTAL HT</span>
+                    <span id="fog-total-ht">690.00 CHF</span>
+                </div>
+                <div class="summary-item">
+                    <span>TOTAL TTC</span>
+                    <span id="fog-total-ttc">745.20 CHF</span>
+                </div>
+                <div class="monthly-payment" id="fog-monthly-payment" style="display: none;">
+                    <strong>Mensualités: <span id="fog-monthly-amount">0 CHF</span> x <span id="fog-monthly-count">0</span> mois</strong>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="generatePDF('fog')">
+                    📄 Générer le PDF
+                </button>
+                <button class="btn btn-secondary" onclick="exportQuote()">
+                    💾 Exporter
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -913,45 +1066,46 @@
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
                         { id: 6, name: "Centrale Titane", price: 690.00 },
                         { id: 50, name: "Centrale Ax Pro", price: 1290.00 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true },
                         { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00 },
                         { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
                         { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
-                        { id: 99, name: "Autre", price: 0.00, isCustom: true }
-                    ],
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 }
+                    ].sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': [
-                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00 },
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true },
                         { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00 },
                         { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
                         { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
                         { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00 },
-                        { id: 17, name: "Sonde innondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
+                        { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
                         { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
-                        { id: 99, name: "Autre", price: 0.00, isCustom: true }
-                    ],
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 }
+                    ].sort((a, b) => a.name.localeCompare(b.name)),
                     'camera-material': [
+                        { id: 99, name: "Autre", price: 0.00, isCustom: true },
                         { id: 23, name: "Bullet Mini", price: 390.00 },
                         { id: 24, name: "Bullet XL Varifocale Night", price: 640.00 },
                         { id: 25, name: "Bullet Zone Alarme", price: 740.00 },
@@ -978,7 +1132,18 @@
                         { id: 46, name: "Reo 4G + P.Solaire", price: 490.00 },
                         { id: 47, name: "Reo 4G motorisé + P.solaire", price: 640.00 },
                         { id: 48, name: "Support Mural Articulé", price: 100.00 },
-                        { id: 49, name: "Switch POE", price: 270.00 },
+                        { id: 49, name: "Switch POE", price: 270.00 }
+                    ].sort((a, b) => a.name.localeCompare(b.name)),
+                    'fog-material': [
+                        { id: 105, name: "Générateur de brouillard", price: 2990.00, isFogGenerator: true },
+                        { id: 103, name: "Cartouche supplémentaire HY3", price: 990.00 },
+                        { id: 107, name: "Clavier", price: 390.00 },
+                        { id: 108, name: "Détecteur d'ouverture", price: 190.00 },
+                        { id: 106, name: "Détecteur volumétrique", price: 240.00 },
+                        { id: 102, name: "Remplissage cartouche", price: 390.00 },
+                        { id: 100, name: "Support mural articulé", price: 390.00 },
+                        { id: 101, name: "Support mural fixe", price: 290.00 },
+                        { id: 109, name: "Télécommande", price: 190.00 },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ]
                 };
@@ -988,17 +1153,21 @@
                     'alarm-material': { paymentMonths: 0 },
                     'alarm-installation': { paymentMonths: 0 },
                     'camera-material': { paymentMonths: 0 },
-                    'camera-installation': { paymentMonths: 0 }
+                    'camera-installation': { paymentMonths: 0 },
+                    'fog-material': { paymentMonths: 0 },
+                    'fog-installation': { paymentMonths: 0 }
                 };
 
                 this.rentalMode = {
                     'alarm': false,
-                    'camera': false
+                    'camera': false,
+                    'fog': false
                 };
 
                 // Pour suivre quelle centrale est sélectionnée
                 this.selectedCentral = null;
                 this.kitOffered = false; // Pour savoir si le kit doit être offert
+                this.hasFogGenerator = false; // Pour suivre si un générateur de brouillard est sélectionné
 
                 this.init();
             }
@@ -1116,6 +1285,133 @@
                 // Mettre à jour l'affichage dans la section caméra
                 const priceDisplay = document.getElementById('camera-installation-price');
                 const offeredCheckbox = document.getElementById('camera-installation-offered');
+                
+                if (!offeredCheckbox.checked) {
+                    priceDisplay.textContent = `${price.toFixed(2)} CHF`;
+                }
+                
+                this.updateTotals();
+            }
+
+            showFogKitProposal() {
+                // Créer l'overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                // Créer le modal
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    background: white;
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 600px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                `;
+                
+                modal.innerHTML = `
+                    <h2 style="margin-bottom: 20px; color: #333;">💨 Kit de base pour Générateur de brouillard</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Voulez-vous ajouter le kit de base recommandé ?</p>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit de base recommandé</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #666;">
+                            <li>1x Clavier (390 CHF)</li>
+                            <li>1x Détecteur volumétrique (240 CHF)</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 630.00 CHF</p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button onclick="addFogKit()" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            Ajouter le kit
+                        </button>
+                        <button onclick="closeFogKitModal()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            Non merci
+                        </button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                
+                // Fonction pour fermer le modal
+                window.closeFogKitModal = () => {
+                    document.body.removeChild(overlay);
+                };
+                
+                // Fonction pour ajouter le kit
+                window.addFogKit = () => {
+                    this.addFogKitProducts();
+                    document.body.removeChild(overlay);
+                    this.showNotification('Kit de base ajouté au générateur de brouillard');
+                };
+            }
+
+            addFogKitProducts() {
+                const container = document.getElementById('fog-material-products');
+                
+                const kitProducts = [
+                    { id: 107, name: "Clavier", price: 390.00, quantity: 1 },
+                    { id: 106, name: "Détecteur volumétrique", price: 240.00, quantity: 1 }
+                ];
+                
+                // Ajouter chaque produit du kit
+                kitProducts.forEach(product => {
+                    const productLine = document.createElement('div');
+                    productLine.className = 'product-line';
+                    productLine.style.background = '#fffbf0';
+                    
+                    const lineId = 'fogkit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    
+                    productLine.innerHTML = `
+                        <div class="product-select-container" style="width: 100%;">
+                            <select class="product-select" onchange="handleProductSelection(this)" data-section="fog-material">
+                                <option value="">Sélectionner un produit</option>
+                                ${this.catalog['fog-material'].map(p => {
+                                    return `<option value="${p.id}" data-price="${p.price}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${p.price.toFixed(2)} CHF</option>`;
+                                }).join('')}
+                            </select>
+                            <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                        </div>
+                        <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+                        <input type="number" value="${product.price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
+                        <div class="checkbox-option" style="margin: 0;">
+                            <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                            <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                        </div>
+                        <div class="price-display">${product.price.toFixed(2)} CHF</div>
+                        <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
+                    `;
+                    container.appendChild(productLine);
+                });
+                
+                this.updateTotals();
+            }
+
+            updateFogInstallationPrice() {
+                const qtyInput = document.getElementById('fog-installation-qty');
+                const qty = parseInt(qtyInput.value) || 1;
+                
+                // Utiliser la même logique de calcul que pour les autres installations
+                const price = this.calculateInstallationPrice(qty);
+                
+                // Mettre à jour l'affichage
+                const priceDisplay = document.getElementById('fog-installation-price');
+                const offeredCheckbox = document.getElementById('fog-installation-offered');
                 
                 if (!offeredCheckbox.checked) {
                     priceDisplay.textContent = `${price.toFixed(2)} CHF`;
@@ -1247,6 +1543,11 @@
                 } else if (sectionId === 'alarm-material') {
                     // Vérifier si une centrale a été désélectionnée
                     this.detectSelectedCentral();
+                }
+                
+                // Détecter si un générateur de brouillard a été sélectionné
+                if (sectionId === 'fog-material' && productId === 105) {
+                    this.showFogKitProposal();
                 }
                 
                 this.updateTotals();
@@ -1789,6 +2090,65 @@
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                 }
+                
+                else if (this.currentTab === 'fog') {
+                    const materialTotal = this.calculateSectionTotal('fog-material');
+                    const installationQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
+                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
+                    
+                    // Prix d'installation standard
+                    const installationPrice = this.calculateInstallationPrice(installationQty);
+                    const installationTotal = installationOffered ? 0 : installationPrice;
+                    
+                    const totalHT = materialTotal + installationTotal;
+                    const totalTTC = totalHT * 1.08;
+                    
+                    document.getElementById('fog-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
+                    document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
+                    document.getElementById('fog-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
+                    
+                    if (!this.rentalMode['fog']) {
+                        // Gérer les mensualités avec les facilités de paiement
+                        const materialMonths = this.sections['fog-material']?.paymentMonths || 0;
+                        const installMonths = this.sections['fog-installation']?.paymentMonths || 0;
+                        const maxMonths = Math.max(materialMonths, installMonths);
+                        
+                        // Calcul des majorations selon durée
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10; // +10%
+                            if (months === 36) return 1.15; // +15%
+                            if (months === 48) return 1.20; // +20%
+                            return 1.0; // Pas de majoration si comptant
+                        };
+                        
+                        if (maxMonths > 0) {
+                            let totalMensualitesHT = 0;
+                            
+                            if (materialMonths > 0) {
+                                const majoration = getMajoration(materialMonths);
+                                totalMensualitesHT += (materialTotal * majoration) / materialMonths;
+                            }
+                            if (installMonths > 0) {
+                                const majoration = getMajoration(installMonths);
+                                totalMensualitesHT += (installationTotal * majoration) / installMonths;
+                            }
+                            
+                            // Calculer TVA sur le total
+                            const totalMensuelHT = totalMensualitesHT;
+                            const totalMensuelTVA = totalMensuelHT * 0.081;
+                            const totalMensuelTTC = totalMensuelHT + totalMensuelTVA;
+                            
+                            document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                            document.getElementById('fog-monthly-count').textContent = maxMonths;
+                            document.getElementById('fog-monthly-payment').style.display = 'block';
+                        } else {
+                            document.getElementById('fog-monthly-payment').style.display = 'none';
+                        }
+                    }
+                    
+                    document.getElementById('fog-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
+                    document.getElementById('fog-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
+                }
             }
 
             selectPayment(element, sectionId) {
@@ -1960,9 +2320,21 @@
 
             generatePDF(type) {
                 const isRental = this.rentalMode[type];
-                const clientNameField = type === 'alarm' ? 'clientName' : 'clientNameCamera';
-                const commercialField = type === 'alarm' ? 'commercial' : 'commercialCamera';
-                const commercialCustomField = type === 'alarm' ? 'commercial-custom' : 'commercialCamera-custom';
+                let clientNameField, commercialField, commercialCustomField;
+                
+                if (type === 'alarm') {
+                    clientNameField = 'clientName';
+                    commercialField = 'commercial';
+                    commercialCustomField = 'commercial-custom';
+                } else if (type === 'camera') {
+                    clientNameField = 'clientNameCamera';
+                    commercialField = 'commercialCamera';
+                    commercialCustomField = 'commercialCamera-custom';
+                } else if (type === 'fog') {
+                    clientNameField = 'clientNameFog';
+                    commercialField = 'commercialFog';
+                    commercialCustomField = 'commercialFog-custom';
+                }
                 
                 const clientName = document.getElementById(clientNameField)?.value || 'Client';
                 const commercialSelect = document.getElementById(commercialField)?.value;
@@ -1999,9 +2371,21 @@
                     
                     let title = '';
                     if (isRental) {
-                        title = type === 'camera' ? 'OFFRE LOCATION VIDÉO SURVEILLANCE' : 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
+                        if (type === 'camera') {
+                            title = 'OFFRE LOCATION VIDÉO SURVEILLANCE';
+                        } else if (type === 'fog') {
+                            title = 'OFFRE LOCATION GÉNÉRATEUR DE BROUILLARD';
+                        } else {
+                            title = 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
+                        }
                     } else {
-                        title = type === 'camera' ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE' : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
+                        if (type === 'camera') {
+                            title = 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE';
+                        } else if (type === 'fog') {
+                            title = 'OFFRE DE PARTENARIAT GÉNÉRATEUR DE BROUILLARD';
+                        } else {
+                            title = 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
+                        }
                     }
                     doc.text(title, 40, 25);
                     
@@ -2068,6 +2452,14 @@
                                 yPos += 15;
                             }
                         }
+                    } else if (type === 'fog') {
+                        // Section 1: Matériel
+                        if (this.hasSectionProducts('fog-material')) {
+                            yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos);
+                        }
+
+                        // Section 2: Installation
+                        yPos = this.createFogInstallPDF(doc, yPos);
                     }
 
                     // Section finale avec récapitulatif
@@ -2536,6 +2928,94 @@
                 return yPos + 55;
             }
 
+            createFogInstallPDF(doc, yPos) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('INSTALLATION', 40, yPos);
+                yPos += 15;
+
+                // Tableau installation
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Désignation', 120, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
+
+                const installQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
+                const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+                
+                const installPrice = this.calculateInstallationPrice(installQty);
+                
+                // Calculer le nombre de jours
+                let daysText = '';
+                if (installQty === 1) daysText = ' (1/2 journée)';
+                else if (installQty === 2) daysText = ' (1 jour)';
+                else if (installQty === 3) daysText = ' (1.5 jours)';
+                else if (installQty === 4) daysText = ' (2 jours)';
+                else if (installQty === 5) daysText = ' (2.5 jours)';
+                else if (installQty === 6) daysText = ' (3 jours)';
+                else {
+                    const fullDays = Math.floor(installQty / 2);
+                    const halfDay = installQty % 2;
+                    daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
+                }
+                const description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
+                
+                const installTotal = installOffered ? 0 : installPrice;
+
+                // Ligne installation
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 14);
+                doc.line(80, yPos, 80, yPos + 14);
+                doc.line(390, yPos, 390, yPos + 14);
+                doc.line(470, yPos, 470, yPos + 14);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text(installQty.toString(), 55, yPos + 9);
+                doc.text(description, 90, yPos + 9);
+                
+                if (installOffered) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(0, 150, 0);
+                    doc.text('OFFERT', 405, yPos + 9);
+                    doc.text('OFFERT', 485, yPos + 9);
+                } else {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
+                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                }
+                yPos += 14;
+
+                // Totaux installation
+                const installTotalTTC = installTotal * 1.081;
+                const installTVA = installTotalTTC - installTotal;
+
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 42, 'F');
+                doc.rect(390, yPos, 165, 42);
+                doc.line(390, yPos + 14, 555, yPos + 14);
+                doc.line(390, yPos + 28, 555, yPos + 28);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 23);
+                doc.text(installTVA.toFixed(2), 485, yPos + 23);
+                doc.text('Total T.T.C.', 400, yPos + 37);
+                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
+
+                return yPos + 55;
+            }
+
             createFinalSummaryPDF(doc, yPos, type, isRental) {
                 yPos += 15;
                 
@@ -2603,7 +3083,7 @@
                     // Frais de dossier toujours comptant
                     totalComptantHT += adminTotal;
                     
-                } else { // camera
+                } else if (type === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                     const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
@@ -2635,6 +3115,33 @@
                         if (remoteAccess) {
                             surveillanceMonthlyHT = 20;
                         }
+                    }
+                } else if (type === 'fog') {
+                    const materialTotal = this.calculateSectionTotal('fog-material');
+                    const installQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
+                    const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+                    
+                    const installPrice = this.calculateInstallationPrice(installQty);
+                    const installTotal = installOffered ? 0 : installPrice;
+                    
+                    const materialMonths = this.sections['fog-material']?.paymentMonths || 0;
+                    const installMonths = this.sections['fog-installation']?.paymentMonths || 0;
+                    
+                    // Calcul avec majorations
+                    if (materialMonths > 0) {
+                        const majoration = getMajoration(materialMonths);
+                        totalMensualitesHT += materialTotal * majoration;
+                        monthsCount = Math.max(monthsCount, materialMonths);
+                    } else {
+                        totalComptantHT += materialTotal;
+                    }
+                    
+                    if (installMonths > 0) {
+                        const majoration = getMajoration(installMonths);
+                        totalMensualitesHT += installTotal * majoration;
+                        monthsCount = Math.max(monthsCount, installMonths);
+                    } else {
+                        totalComptantHT += installTotal;
                     }
                 }
 
@@ -2834,6 +3341,10 @@
             generator.updateCameraInstallationPrice();
         }
 
+        function updateFogInstallationPrice() {
+            generator.updateFogInstallationPrice();
+        }
+
         function updateSurveillancePrice() {
             generator.updateSurveillancePrice();
         }
@@ -2875,6 +3386,17 @@
 
         function handleCommercialSelectionCamera(selectElement) {
             const customInput = document.getElementById('commercialCamera-custom');
+            if (selectElement.value === 'autre') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
+        }
+
+        function handleCommercialSelectionFog(selectElement) {
+            const customInput = document.getElementById('commercialFog-custom');
             if (selectElement.value === 'autre') {
                 customInput.style.display = 'block';
                 customInput.focus();
