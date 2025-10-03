@@ -683,7 +683,8 @@
                     <div>
                         <select id="surveillance-type" class="service-select" onchange="updateSurveillancePrice()">
                             <option value="">Aucun</option>
-                            <option value="telesurveillance">Télésurveillance</option>
+                            <option value="telesurveillance">Télésurveillance Particulier</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
                             <option value="autosurveillance">Autosurveillance</option>
                         </select>
                     </div>
@@ -1067,59 +1068,59 @@
                         { id: 6, name: "Centrale Titane", price: 690.00 },
                         { id: 50, name: "Centrale Ax Pro", price: 1290.00 },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 }
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00, price48Titane: 3, price48Jablotron: 5 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00, price48Titane: 22, price48Jablotron: 22 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00, price48Titane: 5, price48Jablotron: 5 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00, price48Titane: 10, price48Jablotron: 12 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 7, price48Jablotron: 7 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 7, price48Jablotron: 7 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 5, price48Jablotron: 7 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00, price48Titane: 17, price48Jablotron: 17 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 240.00, price48Titane: 5, price48Jablotron: 6 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 6, price48Jablotron: 7 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00, price48Titane: 7, price48Jablotron: 11 },
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12 },
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00, price48Titane: 10, price48Jablotron: 10 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12 },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00, price48Titane: 7, price48Jablotron: 10 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00, price48Titane: 5, price48Jablotron: 6 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': [
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00 },
+                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, priceAxPro: 200.00, price48Titane: 3, price48Jablotron: 5 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, priceAxPro: 890.00, price48Titane: 22, price48Jablotron: 22 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 190.00, price48Titane: 5, price48Jablotron: 5 },
+                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 490.00, priceAxPro: 490.00, price48Titane: 10, price48Jablotron: 12 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 7, price48Jablotron: 7 },
+                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 7, price48Jablotron: 7 },
+                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 5, price48Jablotron: 7 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, priceAxPro: 690.00, price48Titane: 17, price48Jablotron: 17 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, priceAxPro: 240.00, price48Titane: 5, price48Jablotron: 6 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, priceAxPro: 290.00, price48Titane: 6, price48Jablotron: 7 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, priceAxPro: 450.00, price48Titane: 7, price48Jablotron: 11 },
                         { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true },
-                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00 },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00 }
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12 },
+                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, priceAxPro: 390.00, price48Titane: 10, price48Jablotron: 10 },
+                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12 },
+                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, priceAxPro: 390.00, price48Titane: 7, price48Jablotron: 10 },
+                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, priceAxPro: 240.00, price48Titane: 5, price48Jablotron: 6 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
                     'camera-material': [
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 23, name: "Bullet Mini", price: 390.00, isCamera: true },
-                        { id: 24, name: "Bullet XL Varifocale Night", price: 640.00, isCamera: true },
-                        { id: 25, name: "Bullet Zone Alarme", price: 740.00, isCamera: true },
-                        { id: 26, name: "Bullet Zoom x23", price: 990.00, isCamera: true },
+                        { id: 23, name: "Bullet Mini", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
+                        { id: 24, name: "Bullet XL Varifocale Night", price: 640.00, isCamera: true, price48: 16, price36: 21, price24: 30 },
+                        { id: 25, name: "Bullet Zone Alarme", price: 740.00, isCamera: true, price48: 19, price36: 23, price24: 34 },
+                        { id: 26, name: "Bullet Zoom x23", price: 990.00, isCamera: true, price48: 25, price36: 32, price24: 46 },
                         { id: 27, name: "Caméra de comptage", price: 860.00, isCamera: true },
                         { id: 28, name: "Coffret NVR 4P", price: 240.00 },
                         { id: 29, name: "Coffret NVR 8P", price: 360.00 },
                         { id: 30, name: "Disque dur 4 To", price: 270.00 },
-                        { id: 31, name: "Dôme Antivandale", price: 390.00, isCamera: true },
-                        { id: 32, name: "Dôme Mini Antivandale", price: 390.00, isCamera: true },
-                        { id: 33, name: "Dôme Night", price: 540.00, isCamera: true },
-                        { id: 34, name: "Dôme Plat Motorisé", price: 390.00, isCamera: true },
-                        { id: 35, name: "Dôme XL Varifocale", price: 590.00, isCamera: true },
-                        { id: 36, name: "Dôme Zone Alarme", price: 740.00, isCamera: true },
+                        { id: 31, name: "Dôme Antivandale", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
+                        { id: 32, name: "Dôme Mini Antivandale", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
+                        { id: 33, name: "Dôme Night", price: 540.00, isCamera: true, price48: 14, price36: 18, price24: 25 },
+                        { id: 34, name: "Dôme Plat Motorisé", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
+                        { id: 35, name: "Dôme XL Varifocale", price: 590.00, isCamera: true, price48: 15, price36: 19, price24: 28 },
+                        { id: 36, name: "Dôme Zone Alarme", price: 740.00, isCamera: true, price48: 19, price36: 23, price24: 34 },
                         { id: 37, name: "HDMI Ext.", price: 190.00 },
                         { id: 38, name: "Modem 4G", price: 290.00 },
                         { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00 },
@@ -1132,8 +1133,8 @@
                         { id: 43, name: "Onduleur 1500 - 90min", price: 600.00 },
                         { id: 44, name: "Onduleur 2200 - 120min", price: 830.00 },
                         { id: 45, name: "Onduleur 700 - 30min", price: 240.00 },
-                        { id: 46, name: "Reo 4G + P.Solaire", price: 490.00, isReo4G: true, isCamera: true },
-                        { id: 47, name: "Reo 4G motorisé + P.solaire", price: 640.00, isReo4G: true, isCamera: true },
+                        { id: 46, name: "Reo 4G + P.Solaire", price: 490.00, isReo4G: true, isCamera: true, price48: 13, price36: 16, price24: 23 },
+                        { id: 47, name: "Solar 4G XL + P.Solaire", price: 890.00, isReo4G: true, isCamera: true, price48: 22, price36: 28, price24: 41 },
                         { id: 48, name: "Support Mural Articulé", price: 100.00 },
                         { id: 49, name: "Switch POE", price: 270.00 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
@@ -1476,12 +1477,40 @@
                 
                 offeredCheckbox.disabled = !surveillanceType;
                 
-                if (surveillanceType === 'telesurveillance') {
-                    priceInput.value = 129;
-                } else if (surveillanceType === 'autosurveillance') {
-                    priceInput.value = 59;
-                } else {
+                if (!surveillanceType) {
                     priceInput.value = 0;
+                } else {
+                    // Prix selon la centrale sélectionnée
+                    if (this.selectedCentral === 'titane') {
+                        if (surveillanceType === 'autosurveillance') {
+                            priceInput.value = 59;
+                        } else if (surveillanceType === 'telesurveillance') {
+                            // Pour Titane, on pourrait demander si c'est particulier ou pro
+                            // Par défaut on met le prix particulier
+                            priceInput.value = 129;
+                        } else if (surveillanceType === 'telesurveillance-pro') {
+                            priceInput.value = 159;
+                        }
+                    } else if (this.selectedCentral === 'jablotron') {
+                        // Jablotron n'a que télésurveillance
+                        if (surveillanceType === 'telesurveillance') {
+                            priceInput.value = 139;
+                        } else if (surveillanceType === 'telesurveillance-pro') {
+                            priceInput.value = 169;
+                        } else {
+                            // Pas d'autosurveillance pour Jablotron
+                            priceInput.value = 0;
+                        }
+                    } else {
+                        // Prix par défaut si pas de centrale spécifique
+                        if (surveillanceType === 'telesurveillance') {
+                            priceInput.value = 129;
+                        } else if (surveillanceType === 'autosurveillance') {
+                            priceInput.value = 59;
+                        } else {
+                            priceInput.value = 0;
+                        }
+                    }
                 }
                 
                 this.updateTotals();
@@ -1647,6 +1676,85 @@
                 return product.price;
             }
 
+            calculateSectionMonthlyCost(sectionId) {
+                const container = document.getElementById(`${sectionId}-products`);
+                if (!container) return 0;
+                
+                const months = this.sections[sectionId]?.paymentMonths || 0;
+                
+                // Pour les caméras, on gère 24, 36 et 48 mois
+                if (sectionId === 'camera-material') {
+                    if (months !== 24 && months !== 36 && months !== 48) return null;
+                    
+                    let monthlyTotal = 0;
+                    const productLines = container.querySelectorAll('.product-line');
+                    
+                    productLines.forEach(line => {
+                        const select = line.querySelector('.product-select');
+                        const qtyInput = line.querySelector('.quantity-input');
+                        const offeredCheckbox = line.querySelector('.offered-checkbox');
+                        const isOffered = offeredCheckbox?.checked || false;
+                        
+                        if (select && select.value && qtyInput && !isOffered) {
+                            const productId = parseInt(select.value);
+                            const qty = parseInt(qtyInput.value) || 0;
+                            const product = this.catalog[sectionId].find(p => p.id === productId);
+                            
+                            if (product) {
+                                let monthlyPrice = 0;
+                                
+                                // Prix mensuels spéciaux selon la durée
+                                if (months === 48 && product.price48) {
+                                    monthlyPrice = product.price48;
+                                } else if (months === 36 && product.price36) {
+                                    monthlyPrice = product.price36;
+                                } else if (months === 24 && product.price24) {
+                                    monthlyPrice = product.price24;
+                                }
+                                
+                                monthlyTotal += monthlyPrice * qty;
+                            }
+                        }
+                    });
+                    
+                    return monthlyTotal;
+                }
+                
+                // Pour les alarmes, on ne gère que 48 mois
+                if (months !== 48) return null;
+                
+                let monthlyTotal = 0;
+                const productLines = container.querySelectorAll('.product-line');
+                
+                productLines.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    const qtyInput = line.querySelector('.quantity-input');
+                    const offeredCheckbox = line.querySelector('.offered-checkbox');
+                    const isOffered = offeredCheckbox?.checked || false;
+                    
+                    if (select && select.value && qtyInput && !isOffered) {
+                        const productId = parseInt(select.value);
+                        const qty = parseInt(qtyInput.value) || 0;
+                        const product = this.catalog[sectionId].find(p => p.id === productId);
+                        
+                        if (product) {
+                            let monthlyPrice = 0;
+                            
+                            // Prix mensuels spéciaux pour 48 mois
+                            if (this.selectedCentral === 'titane' && product.price48Titane) {
+                                monthlyPrice = product.price48Titane;
+                            } else if (this.selectedCentral === 'jablotron' && product.price48Jablotron) {
+                                monthlyPrice = product.price48Jablotron;
+                            }
+                            
+                            monthlyTotal += monthlyPrice * qty;
+                        }
+                    }
+                });
+                
+                return monthlyTotal;
+            }
+            
             detectSelectedCentral() {
                 const container = document.getElementById('alarm-material-products');
                 if (!container) return;
@@ -1669,18 +1777,66 @@
                 if (hasJablotron) {
                     this.selectedCentral = 'jablotron';
                     this.kitOffered = true;
+                    // Limiter les options de surveillance pour Jablotron (pas d'autosurveillance)
+                    this.updateSurveillanceOptions('jablotron');
                 } else if (hasTitane) {
                     this.selectedCentral = 'titane';
                     this.kitOffered = true;
+                    // Toutes les options pour Titane
+                    this.updateSurveillanceOptions('titane');
                 } else if (hasAxPro) {
                     this.selectedCentral = 'axpro';
                     this.kitOffered = true;
+                    this.updateSurveillanceOptions('axpro');
                 } else {
                     this.selectedCentral = null;
                     this.kitOffered = false;
+                    this.updateSurveillanceOptions(null);
                 }
                 
                 this.updateAllProductSelects();
+                // Mettre à jour le prix de surveillance selon la centrale
+                this.updateSurveillancePrice();
+            }
+            
+            updateSurveillanceOptions(centralType) {
+                const surveillanceSelect = document.getElementById('surveillance-type');
+                if (!surveillanceSelect) return;
+                
+                const currentValue = surveillanceSelect.value;
+                
+                if (centralType === 'jablotron') {
+                    // Jablotron : seulement télésurveillance
+                    surveillanceSelect.innerHTML = `
+                        <option value="">Aucun</option>
+                        <option value="telesurveillance">Télésurveillance Particulier (139 CHF)</option>
+                        <option value="telesurveillance-pro">Télésurveillance Professionnel (169 CHF)</option>
+                    `;
+                } else if (centralType === 'titane') {
+                    // Titane : toutes les options
+                    surveillanceSelect.innerHTML = `
+                        <option value="">Aucun</option>
+                        <option value="telesurveillance">Télésurveillance Particulier (129 CHF)</option>
+                        <option value="telesurveillance-pro">Télésurveillance Professionnel (159 CHF)</option>
+                        <option value="autosurveillance">Autosurveillance (59 CHF)</option>
+                    `;
+                } else {
+                    // Par défaut
+                    surveillanceSelect.innerHTML = `
+                        <option value="">Aucun</option>
+                        <option value="telesurveillance">Télésurveillance Particulier</option>
+                        <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
+                        <option value="autosurveillance">Autosurveillance</option>
+                    `;
+                }
+                
+                // Restaurer la valeur si elle est toujours disponible
+                const options = Array.from(surveillanceSelect.options).map(o => o.value);
+                if (options.includes(currentValue)) {
+                    surveillanceSelect.value = currentValue;
+                } else {
+                    surveillanceSelect.value = '';
+                }
             }
 
             updateAllProductSelects() {
@@ -1987,35 +2143,95 @@
                             return 1.0;
                         };
                         
-                        if (materialMonths > 0) {
-                            const majoration = getMajoration(materialMonths);
-                            totalMensualitesHT += materialTotal * majoration;
-                            maxMonths = Math.max(maxMonths, materialMonths);
-                        } else {
-                            totalComptant += materialTotal;
-                        }
-                        
-                        if (installMonths > 0) {
-                            const majoration = getMajoration(installMonths);
-                            totalMensualitesHT += totalInstallation * majoration;
-                            maxMonths = Math.max(maxMonths, installMonths);
-                        } else {
-                            totalComptant += totalInstallation;
-                        }
-                        
-                        totalComptant += adminTotal;
-                        
-                        if (maxMonths > 0 && totalMensualitesHT > 0) {
-                            const mensualiteMatInstHT = totalMensualitesHT / maxMonths;
-                            const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
+                        // Calcul spécial pour 48 mois avec prix fixes
+                        if (materialMonths === 48 || installMonths === 48) {
+                            let monthlyFixed = 0;
                             
-                            document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('alarm-monthly-count').textContent = maxMonths;
-                            document.getElementById('alarm-monthly-payment').style.display = 'block';
+                            if (materialMonths === 48) {
+                                const materialMonthly = this.calculateSectionMonthlyCost('alarm-material');
+                                if (materialMonthly !== null) {
+                                    monthlyFixed += materialMonthly;
+                                    maxMonths = 48;
+                                }
+                            } else if (materialMonths > 0) {
+                                const majoration = getMajoration(materialMonths);
+                                totalMensualitesHT += materialTotal * majoration;
+                                maxMonths = Math.max(maxMonths, materialMonths);
+                            } else {
+                                totalComptant += materialTotal;
+                            }
+                            
+                            if (installMonths === 48) {
+                                const installMonthly = this.calculateSectionMonthlyCost('alarm-installation');
+                                if (installMonthly !== null) {
+                                    monthlyFixed += installMonthly;
+                                    maxMonths = 48;
+                                }
+                                // Ajouter l'installation elle-même si pas offerte
+                                if (!installOffered && installTotal > 0) {
+                                    // Prix mensuel approximatif pour l'installation (à ajuster selon votre logique)
+                                    monthlyFixed += installTotal / 48;
+                                }
+                            } else if (installMonths > 0) {
+                                const majoration = getMajoration(installMonths);
+                                totalMensualitesHT += totalInstallation * majoration;
+                                maxMonths = Math.max(maxMonths, installMonths);
+                            } else {
+                                totalComptant += totalInstallation;
+                            }
+                            
+                            // Si on a des mensualités fixes à 48 mois
+                            if (monthlyFixed > 0) {
+                                const totalMensuelHT = monthlyFixed + surveillanceTotal;
+                                const totalMensuelTTC = totalMensuelHT * 1.081;
+                                
+                                document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                                document.getElementById('alarm-monthly-count').textContent = '48';
+                                document.getElementById('alarm-monthly-payment').style.display = 'block';
+                            } else if (maxMonths > 0 && totalMensualitesHT > 0) {
+                                const mensualiteMatInstHT = totalMensualitesHT / maxMonths;
+                                const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
+                                const totalMensuelTTC = totalMensuelHT * 1.081;
+                                
+                                document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                                document.getElementById('alarm-monthly-count').textContent = maxMonths;
+                                document.getElementById('alarm-monthly-payment').style.display = 'block';
+                            } else {
+                                document.getElementById('alarm-monthly-payment').style.display = 'none';
+                            }
                         } else {
-                            document.getElementById('alarm-monthly-payment').style.display = 'none';
+                            // Calcul standard avec majorations en pourcentage
+                            if (materialMonths > 0) {
+                                const majoration = getMajoration(materialMonths);
+                                totalMensualitesHT += materialTotal * majoration;
+                                maxMonths = Math.max(maxMonths, materialMonths);
+                            } else {
+                                totalComptant += materialTotal;
+                            }
+                            
+                            if (installMonths > 0) {
+                                const majoration = getMajoration(installMonths);
+                                totalMensualitesHT += totalInstallation * majoration;
+                                maxMonths = Math.max(maxMonths, installMonths);
+                            } else {
+                                totalComptant += totalInstallation;
+                            }
+                            
+                            if (maxMonths > 0 && totalMensualitesHT > 0) {
+                                const mensualiteMatInstHT = totalMensualitesHT / maxMonths;
+                                const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
+                                const totalMensuelTTC = totalMensuelHT * 1.081;
+                                
+                                document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                                document.getElementById('alarm-monthly-count').textContent = maxMonths;
+                                document.getElementById('alarm-monthly-payment').style.display = 'block';
+                            } else {
+                                document.getElementById('alarm-monthly-payment').style.display = 'none';
+                            }
                         }
+                        
+                        // Frais de dossier toujours comptant
+                        totalComptant += adminTotal;
                         
                         if (totalComptant > 0) {
                             const comptantTTC = totalComptant * 1.081;
@@ -2035,7 +2251,7 @@
                     const installationOffered = document.getElementById('camera-installation-offered').checked;
                     const installationTotal = installationOffered ? 0 : installationPrice;
                     const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
-                    const remoteAccessPrice = remoteAccess ? 20 : 0; // Prix fixe de 20 CHF
+                    const remoteAccessPrice = remoteAccess ? 20 : 0;
                     
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = totalHT * 1.081;
@@ -2060,16 +2276,29 @@
                         
                         if (maxMonths > 0) {
                             let totalMensualitesHT = 0;
+                            let usePrixFixe = false;
                             
+                            // Calcul pour le matériel avec prix fixes si disponibles
                             if (materialMonths > 0) {
-                                const majoration = getMajoration(materialMonths);
-                                totalMensualitesHT += materialTotal * majoration;
+                                const materialMonthly = this.calculateSectionMonthlyCost('camera-material');
+                                if (materialMonthly !== null) {
+                                    // Utiliser les prix fixes
+                                    totalMensualitesHT = materialMonthly * materialMonths;
+                                    usePrixFixe = true;
+                                } else {
+                                    // Utiliser la majoration standard
+                                    const majoration = getMajoration(materialMonths);
+                                    totalMensualitesHT += materialTotal * majoration;
+                                }
                             }
+                            
+                            // Ajouter l'installation (toujours avec majoration)
                             if (installMonths > 0) {
                                 const majoration = getMajoration(installMonths);
                                 totalMensualitesHT += installationTotal * majoration;
                             }
                             
+                            // Calculer la mensualité
                             const mensualiteHT = totalMensualitesHT / maxMonths;
                             const totalMensuelHT = mensualiteHT + remoteAccessPrice;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
@@ -2091,1260 +2320,3 @@
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                 }
-                
-                else if (this.currentTab === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installationQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
-                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
-                    
-                    const installationPrice = this.calculateInstallationPrice(installationQty);
-                    const installationTotal = installationOffered ? 0 : installationPrice;
-                    
-                    const totalHT = materialTotal + installationTotal;
-                    const totalTTC = totalHT * 1.081;
-                    
-                    document.getElementById('fog-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('fog-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
-                    
-                    if (!this.rentalMode['fog']) {
-                        const materialMonths = this.sections['fog-material']?.paymentMonths || 0;
-                        const installMonths = this.sections['fog-installation']?.paymentMonths || 0;
-                        const maxMonths = Math.max(materialMonths, installMonths);
-                        
-                        const getMajoration = (months) => {
-                            if (months === 24) return 1.10;
-                            if (months === 36) return 1.15;
-                            if (months === 48) return 1.20;
-                            return 1.0;
-                        };
-                        
-                        if (maxMonths > 0) {
-                            let totalMensualitesHT = 0;
-                            
-                            if (materialMonths > 0) {
-                                const majoration = getMajoration(materialMonths);
-                                totalMensualitesHT += (materialTotal * majoration) / materialMonths;
-                            }
-                            if (installMonths > 0) {
-                                const majoration = getMajoration(installMonths);
-                                totalMensualitesHT += (installationTotal * majoration) / installMonths;
-                            }
-                            
-                            const totalMensuelHT = totalMensualitesHT;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
-                            
-                            document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('fog-monthly-count').textContent = maxMonths;
-                            document.getElementById('fog-monthly-payment').style.display = 'block';
-                        } else {
-                            document.getElementById('fog-monthly-payment').style.display = 'none';
-                        }
-                    }
-                    
-                    document.getElementById('fog-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
-                    document.getElementById('fog-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                }
-            }
-
-            selectPayment(element, sectionId) {
-                const tabType = sectionId.startsWith('alarm') ? 'alarm' : (sectionId.startsWith('camera') ? 'camera' : 'fog');
-                if (this.rentalMode[tabType]) return;
-                
-                const parent = element.closest('.payment-options');
-                parent.querySelectorAll('.payment-option').forEach(opt => {
-                    opt.classList.remove('active');
-                });
-                element.classList.add('active');
-                
-                const months = parseInt(element.getAttribute('data-months')) || 0;
-                this.sections[sectionId] = { paymentMonths: months };
-                
-                this.updateTotals();
-            }
-
-            async saveToGoogleDrive(pdfBlob, filename, commercial) {
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
-                
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = async function() {
-                        const base64 = reader.result.split(',')[1];
-                        
-                        try {
-                            if (isIOS || isSafari) {
-                                const formData = new FormData();
-                                formData.append('data', JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                }));
-                                
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.action = GOOGLE_SCRIPT_URL;
-                                form.target = 'hidden_iframe';
-                                form.style.display = 'none';
-                                
-                                const input = document.createElement('input');
-                                input.type = 'hidden';
-                                input.name = 'data';
-                                input.value = JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                });
-                                
-                                form.appendChild(input);
-                                document.body.appendChild(form);
-                                
-                                let iframe = document.getElementById('hidden_iframe');
-                                if (!iframe) {
-                                    iframe = document.createElement('iframe');
-                                    iframe.id = 'hidden_iframe';
-                                    iframe.name = 'hidden_iframe';
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                }
-                                
-                                form.submit();
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(form);
-                                }, 2000);
-                                
-                                console.log('PDF envoyé à Google Drive (iOS/Safari)');
-                                resolve(true);
-                                
-                            } else {
-                                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                                    method: 'POST',
-                                    mode: 'no-cors',
-                                    headers: {
-                                        'Content-Type': 'text/plain',
-                                    },
-                                    body: JSON.stringify({
-                                        pdfBase64: base64,
-                                        filename: filename,
-                                        commercial: commercial
-                                    })
-                                });
-                                
-                                console.log('PDF envoyé à Google Drive');
-                                resolve(true);
-                            }
-                        } catch (error) {
-                            console.error('Erreur lors de l\'envoi à Google Drive:', error);
-                            
-                            if (isIOS || isSafari) {
-                                const params = encodeURIComponent(JSON.stringify({
-                                    pdfBase64: base64.substring(0, 100) + '...',
-                                    filename: filename,
-                                    commercial: commercial,
-                                    error: 'Upload depuis iOS'
-                                }));
-                                
-                                this.showIOSUploadButton(pdfBlob, filename, commercial);
-                            }
-                            reject(error);
-                        }
-                    };
-                    reader.readAsDataURL(pdfBlob);
-                });
-            }
-            
-            showIOSUploadButton(pdfBlob, filename, commercial) {
-                const existingBtn = document.getElementById('ios-upload-btn');
-                if (existingBtn) existingBtn.remove();
-                
-                const uploadBtn = document.createElement('button');
-                uploadBtn.id = 'ios-upload-btn';
-                uploadBtn.className = 'btn btn-primary';
-                uploadBtn.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    padding: 15px 30px;
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 16px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-                `;
-                uploadBtn.innerHTML = '☁️ Réessayer l\'upload vers Drive';
-                
-                uploadBtn.onclick = () => {
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-                        .then(() => {
-                            this.showNotification('Upload réussi !');
-                            uploadBtn.remove();
-                        })
-                        .catch(() => {
-                            this.showNotification('Échec - Téléchargez manuellement');
-                        });
-                };
-                
-                document.body.appendChild(uploadBtn);
-                
-                setTimeout(() => {
-                    if (document.getElementById('ios-upload-btn')) {
-                        uploadBtn.remove();
-                    }
-                }, 30000);
-            }
-
-            generatePDF(type) {
-                const isRental = this.rentalMode[type];
-                let clientNameField, commercialField, commercialCustomField;
-                
-                if (type === 'alarm') {
-                    clientNameField = 'clientName';
-                    commercialField = 'commercial';
-                    commercialCustomField = 'commercial-custom';
-                } else if (type === 'camera') {
-                    clientNameField = 'clientNameCamera';
-                    commercialField = 'commercialCamera';
-                    commercialCustomField = 'commercialCamera-custom';
-                } else if (type === 'fog') {
-                    clientNameField = 'clientNameFog';
-                    commercialField = 'commercialFog';
-                    commercialCustomField = 'commercialFog-custom';
-                }
-                
-                const clientName = document.getElementById(clientNameField)?.value || 'Client';
-                const commercialSelect = document.getElementById(commercialField)?.value;
-                let commercial = '';
-                
-                if (commercialSelect === 'autre') {
-                    commercial = document.getElementById(commercialCustomField)?.value || '';
-                } else {
-                    commercial = commercialSelect;
-                }
-
-                if (!commercial) {
-                    alert('Veuillez sélectionner un commercial avant de générer le PDF.');
-                    return;
-                }
-
-                if (!window.jspdf || !window.jspdf.jsPDF) {
-                    alert('Erreur: Bibliothèque PDF non disponible.');
-                    return;
-                }
-
-                try {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF('portrait', 'pt', 'a4');
-
-                    // Header noir
-                    doc.setFillColor(51, 51, 51);
-                    doc.rect(0, 0, 595, 70, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(14);
-                    doc.setTextColor(255, 255, 255);
-                    
-                    let title = '';
-                    if (isRental) {
-                        if (type === 'camera') {
-                            title = 'OFFRE LOCATION VIDÉO SURVEILLANCE';
-                        } else if (type === 'fog') {
-                            title = 'OFFRE LOCATION GÉNÉRATEUR DE BROUILLARD';
-                        } else {
-                            title = 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
-                        }
-                    } else {
-                        if (type === 'camera') {
-                            title = 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE';
-                        } else if (type === 'fog') {
-                            title = 'OFFRE DE PARTENARIAT GÉNÉRATEUR DE BROUILLARD';
-                        } else {
-                            title = 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
-                        }
-                    }
-                    doc.text(title, 40, 25);
-                    
-                    const now = new Date();
-                    const quoteNumber = `DIA-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-                    
-                    doc.setFontSize(10);
-                    doc.text(quoteNumber, 40, 42);
-                    doc.text(`DIALARME | A L'ATTENTION DE ${clientName.toUpperCase()}`, 40, 56);
-
-                    // Bande jaune
-                    doc.setFillColor(244, 230, 0);
-                    doc.rect(0, 70, 595, 6, 'F');
-
-                    let yPos = 90;
-
-                    // Infos commercial et date
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(9);
-                    doc.text(`NOM DU CONSEILLER : ${commercial}`, 40, yPos);
-                    doc.text(`DATE (Devis valable 30 jours) : ${new Date().toLocaleDateString('fr-CH')}`, 350, yPos);
-                    yPos += 20;
-                    
-                    if (isRental) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.text('MODE LOCATION - Pas de mensualités de paiement', 40, yPos);
-                        yPos += 20;
-                    }
-
-                    if (type === 'alarm') {
-                        if (this.hasSectionProducts('alarm-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL (KIT DE BASE)', 'alarm-material', yPos);
-                        }
-
-                        yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
-                        yPos = this.createAdminFeesPDF(doc, yPos);
-                        yPos = this.createServicesPDF(doc, yPos);
-
-                    } else if (type === 'camera') {
-                        if (this.hasSectionProducts('camera-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos);
-                        }
-
-                        yPos = this.createCameraInstallPDF(doc, yPos);
-
-                        if (!isRental) {
-                            const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-                            if (remoteAccess) {
-                                yPos += 15;
-                                doc.setFont('helvetica', 'normal');
-                                doc.setFontSize(8);
-                                doc.text('Vision à distance : 20.00 CHF/mois', 40, yPos);
-                                yPos += 15;
-                            }
-                        }
-                    } else if (type === 'fog') {
-                        if (this.hasSectionProducts('fog-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos);
-                        }
-
-                        yPos = this.createFogInstallPDF(doc, yPos);
-                    }
-
-                    yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
-                    this.createPDFFooter(doc, clientName);
-
-                    this.showNotification('PDF généré avec succès!');
-                    
-                    const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-                    
-                    const pdfBlob = doc.output('blob');
-                    
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-                        .then(() => {
-                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
-                        })
-                        .catch(error => {
-                            console.error('Erreur Google Drive:', error);
-                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
-                        });
-                    
-                    doc.save(filename);
-                    
-                } catch (error) {
-                    console.error('Erreur PDF:', error);
-                    alert(`Erreur lors de la génération du PDF: ${error.message}`);
-                }
-            }
-
-            hasSectionProducts(sectionId) {
-                const container = document.getElementById(`${sectionId}-products`);
-                if (!container) return false;
-                const productLines = container.querySelectorAll('.product-line');
-                let hasProducts = false;
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    if (select && select.value) hasProducts = true;
-                });
-                return hasProducts;
-            }
-
-            createPDFSection(doc, title, sectionId, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(0, 0, 0);
-                doc.text(title, 40, yPos);
-                yPos += 12;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 9);
-                doc.text('Désignation du matériel', 120, yPos + 9);
-                doc.text('Prix uni. HT', 400, yPos + 9);
-                doc.text('Total HT', 480, yPos + 9);
-                yPos += 14;
-
-                const container = document.getElementById(`${sectionId}-products`);
-                const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
-                let sectionTotal = 0;
-                let sectionTotalWithOffert = 0;
-                let lineCount = 0;
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    const qtyInput = line.querySelector('.quantity-input');
-                    const offeredCheckbox = line.querySelector('.offered-checkbox');
-                    const priceInput = line.querySelector('.price-input');
-                    
-                    if (select && select.value && qtyInput) {
-                        lineCount++;
-                        if (lineCount % 2 === 0) {
-                            doc.setFillColor(245, 245, 245);
-                            doc.rect(40, yPos, 515, 12, 'F');
-                        }
-
-                        const qty = parseFloat(qtyInput.value) || 0;
-                        const isOffered = offeredCheckbox?.checked || false;
-                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                        
-                        let price = 0;
-                        let productName = '';
-                        
-                        const nameInput = line.querySelector('.product-name-input');
-                        
-                        if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
-                            productName = nameInput.value;
-                            price = parseFloat(priceInput?.value) || 0;
-                        } else if (priceInput && priceInput.style.display !== 'none') {
-                            price = parseFloat(priceInput.value) || 0;
-                            productName = selectedOption?.getAttribute('data-original-name') || selectedOption?.text || 'Produit personnalisé';
-                        } else if (selectedOption) {
-                            price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                            productName = selectedOption.text.split(' - ')[0] || '';
-                        }
-                        
-                        let lineTotal = price * qty;
-                        sectionTotalWithOffert += lineTotal;
-                        if (!isOffered) {
-                            sectionTotal += lineTotal;
-                        }
-
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(6);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(qty.toString(), 55, yPos + 8);
-                        
-                        const maxNameLength = 45;
-                        const displayName = productName.length > maxNameLength 
-                            ? productName.substring(0, maxNameLength - 3) + '...' 
-                            : productName;
-                        doc.text(displayName, 90, yPos + 8);
-                        
-                        doc.text(price.toFixed(2), 405, yPos + 8);
-                        
-                        if (isOffered) {
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0, 150, 0);
-                            doc.text('OFFERT', 485, yPos + 8);
-                        } else {
-                            doc.setTextColor(0, 0, 0);
-                            doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-                        }
-                        doc.setFont('helvetica', 'normal');
-                        doc.setTextColor(0, 0, 0);
-                        yPos += 12;
-                    }
-                });
-
-                if (sectionId === 'alarm-installation') {
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    let daysText = '';
-                    if (installQty === 1) daysText = ' (1/2 journée)';
-                    else if (installQty === 2) daysText = ' (1 jour)';
-                    else if (installQty === 3) daysText = ' (1.5 jours)';
-                    else if (installQty === 4) daysText = ' (2 jours)';
-                    else if (installQty === 5) daysText = ' (2.5 jours)';
-                    else if (installQty === 6) daysText = ' (3 jours)';
-                    else {
-                        const fullDays = Math.floor(installQty / 2);
-                        const halfDay = installQty % 2;
-                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text(installQty.toString(), 55, yPos + 8);
-                    doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 8);
-                    
-                    if (installOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(installPrice.toFixed(2), 405, yPos + 8);
-                        doc.text(installTotal.toFixed(2), 485, yPos + 8);
-                    }
-                    
-                    sectionTotal += installTotal;
-                    yPos += 12;
-                }
-
-                const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
-                const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                
-                if (discountValue > 0) {
-                    if (discountType === 'percent') {
-                        sectionTotal = sectionTotal * (1 - discountValue / 100);
-                    } else {
-                        sectionTotal = Math.max(0, sectionTotal - discountValue);
-                    }
-                }
-
-                const totalTTC = sectionTotal * 1.081;
-                const tva = totalTTC - sectionTotal;
-
-                doc.setFillColor(230, 230, 230);
-                doc.rect(390, yPos, 165, 36, 'F');
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 8);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 8);
-                doc.text('TVA 8.1%', 400, yPos + 20);
-                doc.text(tva.toFixed(2), 485, yPos + 20);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 32);
-
-                yPos += 40;
-
-                if (!this.rentalMode[this.currentTab]) {
-                    const paymentMonths = this.sections[sectionId]?.paymentMonths || 0;
-                    if (paymentMonths > 0 && sectionTotal > 0) {
-                        const monthlyTTC = totalTTC / paymentMonths;
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`Mensualités: ${monthlyTTC.toFixed(2)} CHF TTC x ${paymentMonths} mois`, 40, yPos);
-                        yPos += 10;
-                    }
-                }
-
-                return yPos + 5;
-            }
-
-            createServicesPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text('SERVICES', 40, yPos);
-                yPos += 12;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Service', 120, yPos + 9);
-                doc.text('Prix', 400, yPos + 9);
-                doc.text('Total', 480, yPos + 9);
-                yPos += 14;
-
-                const testCycliqueSelected = document.getElementById('test-cyclique-selected')?.checked || false;
-                const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || 0;
-                const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked || false;
-                
-                if (testCycliqueSelected) {
-                    doc.setFillColor(245, 245, 245);
-                    doc.rect(40, yPos, 515, 12, 'F');
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text('Test Cyclique', 90, yPos + 8);
-                    
-                    if (testCycliqueOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(testCycliquePrice.toFixed(2), 405, yPos + 8);
-                        doc.text(testCycliquePrice.toFixed(2), 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-                
-                const surveillanceType = document.getElementById('surveillance-type')?.value;
-                const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-                const surveillanceOffered = document.getElementById('surveillance-offered')?.checked || false;
-                
-                if (surveillanceType) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    const serviceName = surveillanceType === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance';
-                    doc.text(serviceName, 90, yPos + 8);
-                    
-                    if (surveillanceOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
-                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-
-                return yPos + 5;
-            }
-
-            createAdminFeesPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Description', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
-                    { qty: 1, desc: 'Frais de dossier', price: 190 }
-                ];
-
-                adminItems.forEach(item => {
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setLineWidth(0.5);
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.text(item.qty.toString(), 55, yPos + 9);
-                    doc.text(item.desc, 90, yPos + 9);
-                    doc.text(item.price.toFixed(2), 405, yPos + 9);
-                    doc.text(item.price.toFixed(2), 485, yPos + 9);
-                    yPos += 14;
-                });
-
-                const adminTotalTTC = 240 * 1.081;
-                const adminTVA = adminTotalTTC - 240;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text('240.00', 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 37);
-
-                yPos += 50;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('Montant à régler à l\'installation', 40, yPos);
-
-                return yPos + 15;
-            }
-
-            createCameraInstallPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                const installPrice = this.calculateCameraInstallationPrice();
-                const installTotal = installOffered ? 0 : installPrice;
-                
-                // Déterminer la description en fonction du prix
-                let description = '';
-                const cameraCount = this.getCameraCount();
-                const hasReo4G = this.hasReo4GCamera();
-                
-                if (cameraCount === 1) {
-                    if (hasReo4G) {
-                        description = 'Installation caméra Reo/Solar 4G';
-                    } else {
-                        description = 'Installation 1 caméra';
-                    }
-                } else {
-                    const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                    let daysText = '';
-                    if (installQty === 1) daysText = ' (1/2 journée)';
-                    else if (installQty === 2) daysText = ' (1 jour)';
-                    else if (installQty === 3) daysText = ' (1.5 jours)';
-                    else if (installQty === 4) daysText = ' (2 jours)';
-                    else if (installQty === 5) daysText = ' (2.5 jours)';
-                    else if (installQty === 6) daysText = ' (3 jours)';
-                    else {
-                        const fullDays = Math.floor(installQty / 2);
-                        const halfDay = installQty % 2;
-                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                    }
-                    description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
-                }
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('1', 55, yPos + 9);
-                doc.text(description, 90, yPos + 9);
-                
-                if (installOffered) {
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                }
-                yPos += 14;
-
-                const installTotalTTC = installTotal * 1.081;
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
-
-                return yPos + 55;
-            }
-
-            createFogInstallPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const installQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
-                const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                
-                const installPrice = this.calculateInstallationPrice(installQty);
-                
-                let daysText = '';
-                if (installQty === 1) daysText = ' (1/2 journée)';
-                else if (installQty === 2) daysText = ' (1 jour)';
-                else if (installQty === 3) daysText = ' (1.5 jours)';
-                else if (installQty === 4) daysText = ' (2 jours)';
-                else if (installQty === 5) daysText = ' (2.5 jours)';
-                else if (installQty === 6) daysText = ' (3 jours)';
-                else {
-                    const fullDays = Math.floor(installQty / 2);
-                    const halfDay = installQty % 2;
-                    daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                }
-                const description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
-                
-                const installTotal = installOffered ? 0 : installPrice;
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text(installQty.toString(), 55, yPos + 9);
-                doc.text(description, 90, yPos + 9);
-                
-                if (installOffered) {
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                }
-                yPos += 14;
-
-                const installTotalTTC = installTotal * 1.081;
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
-
-                return yPos + 55;
-            }
-
-            createFinalSummaryPDF(doc, yPos, type, isRental) {
-                yPos += 15;
-                
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-                yPos += 16;
-
-                const getMajoration = (months) => {
-                    if (months === 24) return 1.10;
-                    if (months === 36) return 1.15;
-                    if (months === 48) return 1.20;
-                    return 1.0;
-                };
-
-                let totalMensualitesHT = 0;
-                let totalComptantHT = 0;
-                let monthsCount = 0;
-                let surveillanceMonthlyHT = 0;
-                
-                if (type === 'alarm') {
-                    const materialTotal = this.calculateSectionTotal('alarm-material');
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-                    const totalInstallation = installTotal + otherInstallationTotal;
-                    
-                    const adminTotal = 240;
-                    
-                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                    const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
-                    
-                    const surveillanceType = document.getElementById('surveillance-type')?.value;
-                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-                    const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
-                    surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
-                    
-                    if (materialMonths > 0) {
-                        const majoration = getMajoration(materialMonths);
-                        totalMensualitesHT += materialTotal * majoration;
-                        monthsCount = Math.max(monthsCount, materialMonths);
-                    } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    if (installMonths > 0) {
-                        const majoration = getMajoration(installMonths);
-                        totalMensualitesHT += totalInstallation * majoration;
-                        monthsCount = Math.max(monthsCount, installMonths);
-                    } else {
-                        totalComptantHT += totalInstallation;
-                    }
-                    
-                    totalComptantHT += adminTotal;
-                    
-                } else if (type === 'camera') {
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                    const installPrice = this.calculateCameraInstallationPrice();
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
-                    const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
-                    
-                    if (materialMonths > 0) {
-                        const majoration = getMajoration(materialMonths);
-                        totalMensualitesHT += materialTotal * majoration;
-                        monthsCount = Math.max(monthsCount, materialMonths);
-                    } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    if (installMonths > 0) {
-                        const majoration = getMajoration(installMonths);
-                        totalMensualitesHT += installTotal * majoration;
-                        monthsCount = Math.max(monthsCount, installMonths);
-                    } else {
-                        totalComptantHT += installTotal;
-                    }
-                    
-                    if (!isRental) {
-                        const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-                        if (remoteAccess) {
-                            surveillanceMonthlyHT = 20; // Prix fixe de 20 CHF/mois
-                        }
-                    }
-                } else if (type === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
-                    const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                    
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    const materialMonths = this.sections['fog-material']?.paymentMonths || 0;
-                    const installMonths = this.sections['fog-installation']?.paymentMonths || 0;
-                    
-                    if (materialMonths > 0) {
-                        const majoration = getMajoration(materialMonths);
-                        totalMensualitesHT += materialTotal * majoration;
-                        monthsCount = Math.max(monthsCount, materialMonths);
-                    } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    if (installMonths > 0) {
-                        const majoration = getMajoration(installMonths);
-                        totalMensualitesHT += installTotal * majoration;
-                        monthsCount = Math.max(monthsCount, installMonths);
-                    } else {
-                        totalComptantHT += installTotal;
-                    }
-                }
-
-                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    const mensualiteMatInstHT = totalMensualitesHT / monthsCount;
-                    const totalMensuelHT = mensualiteMatInstHT + surveillanceMonthlyHT;
-                    const totalMensuelTVA = totalMensuelHT * 0.081;
-                    const totalMensuelTTC = totalMensuelHT * 1.081;
-
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 90, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 90);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 15);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Matériel + Installation (avec majoration): ${mensualiteMatInstHT.toFixed(2)} CHF HT/mois`, 50, yPos + 30);
-                    
-                    if (surveillanceMonthlyHT > 0) {
-                        const serviceName = type === 'alarm' ? 
-                            (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance') : 
-                            'Vision à distance';
-                        doc.text(`${serviceName}: ${surveillanceMonthlyHT.toFixed(2)} CHF HT/mois`, 50, yPos + 45);
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 60);
-                    } else {
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 45);
-                    }
-                    
-                    doc.text(`TVA 8.1%: ${totalMensuelTVA.toFixed(2)} CHF`, 300, yPos + (surveillanceMonthlyHT > 0 ? 60 : 45));
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text(`TOTAL MENSUALITÉ TTC: ${totalMensuelTTC.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 80);
-                    
-                    yPos += 95;
-                    
-                    if (totalComptantHT > 0) {
-                        doc.setFillColor(200, 200, 200);
-                        doc.rect(40, yPos, 515, 55, 'F');
-                        doc.setDrawColor(0, 0, 0);
-                        doc.rect(40, yPos, 515, 55);
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(9);
-                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
-                        
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
-                        doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                        const comptantTVA = totalComptantHT * 0.081;
-                        const comptantTTC = totalComptantHT * 1.081;
-                        doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                        
-                        yPos += 60;
-                    }
-                    
-                } else {
-                    const totalTVA = totalComptantHT * 0.081;
-                    const totalTTC = totalComptantHT * 1.081;
-                    
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 55, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 55);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    if (isRental) {
-                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 15);
-                    } else {
-                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 15);
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC: ${totalTTC.toFixed(2)} CHF`, 400, yPos + 30);
-                    
-                    yPos += 60;
-                }
-
-                if (!isRental && monthsCount > 0) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
-                    yPos += 12;
-                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
-                    yPos += 15;
-                }
-
-                return yPos;
-            }
-
-            createPDFFooter(doc, clientName) {
-                doc.setFillColor(51, 51, 51);
-                doc.rect(0, 720, 595, 122, 'F');
-                
-                doc.setFillColor(244, 230, 0);
-                doc.rect(0, 720, 595, 6, 'F');
-
-                doc.setFillColor(255, 255, 255);
-                doc.rect(50, 745, 200, 25, 'F');
-                doc.rect(350, 745, 200, 60, 'F');
-                doc.rect(50, 780, 200, 25, 'F');
-
-                doc.setTextColor(0, 0, 0);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.text(`NOM DU CLIENT : ${clientName}`, 60, 760);
-                doc.text('SIGNATURE DU CLIENT', 430, 735);
-                doc.text('DATE DE SIGNATURE :', 60, 795);
-            }
-
-            exportQuote() {
-                const quote = {
-                    timestamp: new Date().toISOString(),
-                    type: this.currentTab,
-                    isRental: this.rentalMode[this.currentTab],
-                    sections: this.sections
-                };
-                
-                const dataStr = JSON.stringify(quote, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                
-                const exportFileDefaultName = `devis-${this.currentTab}-${this.rentalMode[this.currentTab] ? 'location' : 'vente'}-${new Date().toISOString().split('T')[0]}.json`;
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-                
-                this.showNotification('Devis exporté avec succès!');
-            }
-
-            showNotification(message) {
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #28a745;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 5px;
-                    z-index: 10000;
-                    animation: slideIn 0.3s ease;
-                `;
-                notification.textContent = message;
-                document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
-            }
-        }
-
-        // Instance globale
-        let generator;
-
-        // Fonctions globales
-        function showTab(tabName, element) {
-            generator.showTab(tabName, element);
-        }
-
-        function toggleRentalMode(type) {
-            generator.toggleRentalMode(type);
-        }
-
-        function updateAlarmInstallationPrice() {
-            generator.updateAlarmInstallationPrice();
-        }
-
-        function updateCameraInstallationPrice() {
-            generator.updateCameraInstallationPrice();
-        }
-
-        function updateFogInstallationPrice() {
-            generator.updateFogInstallationPrice();
-        }
-
-        function updateSurveillancePrice() {
-            generator.updateSurveillancePrice();
-        }
-
-        function generatePDF(type) {
-            generator.generatePDF(type);
-        }
-
-        function exportQuote() {
-            generator.exportQuote();
-        }
-
-        function selectPayment(element, sectionId) {
-            generator.selectPayment(element, sectionId);
-        }
-
-        function addProductLine(sectionId) {
-            generator.addProductLine(sectionId);
-        }
-
-        function handleProductSelection(selectElement) {
-            generator.handleProductSelection(selectElement);
-        }
-
-        function updateTotals() {
-            generator.updateTotals();
-        }
-
-        function handleCommercialSelection(selectElement) {
-            const customInput = document.getElementById('commercial-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        function handleCommercialSelectionCamera(selectElement) {
-            const customInput = document.getElementById('commercialCamera-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        function handleCommercialSelectionFog(selectElement) {
-            const customInput = document.getElementById('commercialFog-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            generator = new DialarmeFinalGenerator();
-        });
-
-        // Animation CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
