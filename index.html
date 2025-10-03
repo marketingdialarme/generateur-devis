@@ -499,6 +499,11 @@
                 gap: 10px;
             }
         }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -1238,6 +1243,16 @@
                         this.sections['camera-material'].paymentMonths = 0;
                         this.sections['camera-installation'].paymentMonths = 0;
                         document.getElementById('camera-remote-access').checked = false;
+                    }
+                } else if (type === 'fog') {
+                    document.getElementById('fog-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('fog-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    document.getElementById('fog-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
+                    document.getElementById('fog-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
+                    
+                    if (this.rentalMode[type]) {
+                        this.sections['fog-material'].paymentMonths = 0;
+                        this.sections['fog-installation'].paymentMonths = 0;
                     }
                 }
                 
@@ -2226,97 +2241,4 @@
                                 document.getElementById('alarm-monthly-count').textContent = maxMonths;
                                 document.getElementById('alarm-monthly-payment').style.display = 'block';
                             } else {
-                                document.getElementById('alarm-monthly-payment').style.display = 'none';
-                            }
-                        }
-                        
-                        // Frais de dossier toujours comptant
-                        totalComptant += adminTotal;
-                        
-                        if (totalComptant > 0) {
-                            const comptantTTC = totalComptant * 1.081;
-                            document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
-                            document.getElementById('alarm-cash-payment').style.display = 'block';
-                        } else {
-                            document.getElementById('alarm-cash-payment').style.display = 'none';
-                        }
-                    } else {
-                        document.getElementById('alarm-monthly-payment').style.display = 'none';
-                        document.getElementById('alarm-cash-payment').style.display = 'none';
-                    }
-                    
-                } else if (this.currentTab === 'camera') {
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installationPrice = this.calculateCameraInstallationPrice();
-                    const installationOffered = document.getElementById('camera-installation-offered').checked;
-                    const installationTotal = installationOffered ? 0 : installationPrice;
-                    const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
-                    const remoteAccessPrice = remoteAccess ? 20 : 0;
-                    
-                    const totalHT = materialTotal + installationTotal;
-                    const totalTTC = totalHT * 1.081;
-                    
-                    document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
-                    
-                    if (!this.rentalMode['camera']) {
-                        document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
-                        
-                        const materialMonths = this.sections['camera-material']?.paymentMonths || 0;
-                        const installMonths = this.sections['camera-installation']?.paymentMonths || 0;
-                        const maxMonths = Math.max(materialMonths, installMonths);
-                        
-                        const getMajoration = (months) => {
-                            if (months === 24) return 1.10;
-                            if (months === 36) return 1.15;
-                            if (months === 48) return 1.20;
-                            return 1.0;
-                        };
-                        
-                        if (maxMonths > 0) {
-                            let totalMensualitesHT = 0;
-                            let usePrixFixe = false;
-                            
-                            // Calcul pour le matériel avec prix fixes si disponibles
-                            if (materialMonths > 0) {
-                                const materialMonthly = this.calculateSectionMonthlyCost('camera-material');
-                                if (materialMonthly !== null) {
-                                    // Utiliser les prix fixes
-                                    totalMensualitesHT = materialMonthly * materialMonths;
-                                    usePrixFixe = true;
-                                } else {
-                                    // Utiliser la majoration standard
-                                    const majoration = getMajoration(materialMonths);
-                                    totalMensualitesHT += materialTotal * majoration;
-                                }
-                            }
-                            
-                            // Ajouter l'installation (toujours avec majoration)
-                            if (installMonths > 0) {
-                                const majoration = getMajoration(installMonths);
-                                totalMensualitesHT += installationTotal * majoration;
-                            }
-                            
-                            // Calculer la mensualité
-                            const mensualiteHT = totalMensualitesHT / maxMonths;
-                            const totalMensuelHT = mensualiteHT + remoteAccessPrice;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
-                            
-                            document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('camera-monthly-count').textContent = maxMonths;
-                            document.getElementById('camera-monthly-payment').style.display = 'block';
-                            
-                            const remoteMonthly = document.getElementById('camera-remote-monthly');
-                            if (remoteMonthly) {
-                                remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
-                                remoteMonthly.innerHTML = `+ Vision à distance incluse dans le total`;
-                            }
-                        } else {
-                            document.getElementById('camera-monthly-payment').style.display = 'none';
-                        }
-                    }
-                    
-                    document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
-                    document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                }
+                                document.getElementById('alarm-monthly-payment').
