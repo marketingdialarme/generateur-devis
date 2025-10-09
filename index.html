@@ -580,10 +580,12 @@
                                 <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
                                 <option value="Arnaud Bloch">Arnaud Bloch</option>
                                 <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Bryan Debrosse">Bryan Debrosse</option>
                                 <option value="Cédric Boldron">Cédric Boldron</option>
                                 <option value="Emin Comert">Emin Comert</option>
                                 <option value="Gérald Clausen">Gérald Clausen</option>
                                 <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Iyed Baccouche">Iyed Baccouche</option>
                                 <option value="Matys Goiot">Matys Goiot</option>
                                 <option value="Mohamed Tartik">Mohamed Tartik</option>
                                 <option value="Nassim Jaza">Nassim Jaza</option>
@@ -591,6 +593,7 @@
                                 <option value="Rodolphe De Vito">Rodolphe De Vito</option>
                                 <option value="Sabine Balducci">Sabine Balducci</option>
                                 <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thilan Curt">Thilan Curt</option>
                                 <option value="Thomas Garcia">Thomas Garcia</option>
                                 <option value="Wassim Tahiri">Wassim Tahiri</option>
                                 <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
@@ -791,10 +794,12 @@
                                 <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
                                 <option value="Arnaud Bloch">Arnaud Bloch</option>
                                 <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Bryan Debrosse">Bryan Debrosse</option>
                                 <option value="Cédric Boldron">Cédric Boldron</option>
                                 <option value="Emin Comert">Emin Comert</option>
                                 <option value="Gérald Clausen">Gérald Clausen</option>
                                 <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Iyed Baccouche">Iyed Baccouche</option>
                                 <option value="Matys Goiot">Matys Goiot</option>
                                 <option value="Mohamed Tartik">Mohamed Tartik</option>
                                 <option value="Nassim Jaza">Nassim Jaza</option>
@@ -802,6 +807,7 @@
                                 <option value="Rodolphe De Vito">Rodolphe De Vito</option>
                                 <option value="Sabine Balducci">Sabine Balducci</option>
                                 <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thilan Curt">Thilan Curt</option>
                                 <option value="Thomas Garcia">Thomas Garcia</option>
                                 <option value="Wassim Tahiri">Wassim Tahiri</option>
                                 <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
@@ -957,10 +963,12 @@
                                 <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
                                 <option value="Arnaud Bloch">Arnaud Bloch</option>
                                 <option value="Benali Kodad">Benali Kodad</option>
+                                <option value="Bryan Debrosse">Bryan Debrosse</option>
                                 <option value="Cédric Boldron">Cédric Boldron</option>
                                 <option value="Emin Comert">Emin Comert</option>
                                 <option value="Gérald Clausen">Gérald Clausen</option>
                                 <option value="Heythem Ziaya">Heythem Ziaya</option>
+                                <option value="Iyed Baccouche">Iyed Baccouche</option>
                                 <option value="Matys Goiot">Matys Goiot</option>
                                 <option value="Mohamed Tartik">Mohamed Tartik</option>
                                 <option value="Nassim Jaza">Nassim Jaza</option>
@@ -968,6 +976,7 @@
                                 <option value="Rodolphe De Vito">Rodolphe De Vito</option>
                                 <option value="Sabine Balducci">Sabine Balducci</option>
                                 <option value="Samir Ouhameni">Samir Ouhameni</option>
+                                <option value="Thilan Curt">Thilan Curt</option>
                                 <option value="Thomas Garcia">Thomas Garcia</option>
                                 <option value="Wassim Tahiri">Wassim Tahiri</option>
                                 <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
@@ -2473,6 +2482,584 @@
         }
 
         async function generatePDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Configuration des couleurs
+            const yellow = [243, 230, 0]; // #F3E600
+            const black = [0, 0, 0];
+            const gray = [100, 100, 100];
+            const lightGray = [240, 240, 240];
+            const white = [255, 255, 255];
+            
+            // Récupération des infos client
+            let clientName = '';
+            let commercial = '';
+            let phone = '';
+            let address = '';
+            
+            if (type === 'alarm') {
+                clientName = document.getElementById('clientName').value;
+                const commercialSelect = document.getElementById('commercial');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercial-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhone').value;
+                address = document.getElementById('clientAddress').value;
+            } else if (type === 'camera') {
+                clientName = document.getElementById('clientNameCamera').value;
+                const commercialSelect = document.getElementById('commercialCamera');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercialCamera-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhoneCamera').value;
+                address = document.getElementById('clientAddressCamera').value;
+            } else if (type === 'fog') {
+                clientName = document.getElementById('clientNameFog').value;
+                const commercialSelect = document.getElementById('commercialFog');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercialFog-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhoneFog').value;
+                address = document.getElementById('clientAddressFog').value;
+            }
+            
+            // Génération du numéro de devis
+            const devisNumber = `DEV-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+            
+            let y = 10;
+            
+            // En-tête plus compact avec fond jaune
+            doc.setFillColor(...yellow);
+            doc.rect(0, 0, 210, 30, 'F');
+            
+            // Logo DIALARME
+            doc.setFillColor(...black);
+            doc.setTextColor(...black);
+            doc.setFontSize(18);
+            doc.text('DIALARME', 15, 15);
+            
+            // Numéro de devis
+            doc.setFontSize(10);
+            doc.text(`N° ${devisNumber}`, 15, 22);
+            
+            // Date à droite
+            doc.setFontSize(10);
+            const date = new Date().toLocaleDateString('fr-CH', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            doc.text(date, 195, 15, { align: 'right' });
+            
+            // Titre principal du devis sous l'entête
+            y = 40;
+            doc.setFontSize(14);
+            doc.setTextColor(...black);
+            
+            let devisTitle = '';
+            if (type === 'alarm') {
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                if (surveillanceType === 'autosurveillance') {
+                    devisTitle = `Offre d'autosurveillance`;
+                } else if (surveillanceType) {
+                    devisTitle = `Offre de télésurveillance`;
+                } else {
+                    devisTitle = `Offre de système d'alarme`;
+                }
+                devisTitle += clientName ? ` à l'attention de ${clientName}` : '';
+            } else if (type === 'camera') {
+                devisTitle = `Solution vidéo${clientName ? ` à l'attention de ${clientName}` : ''}`;
+            } else if (type === 'fog') {
+                devisTitle = `Solution générateur de brouillard${clientName ? ` à l'attention de ${clientName}` : ''}`;
+            }
+            
+            doc.text(devisTitle, 15, y);
+            y += 10;
+            
+            // Informations client sur 2 lignes max
+            doc.setFontSize(10);
+            doc.setTextColor(...gray);
+            
+            const clientInfo = [];
+            if (clientName) clientInfo.push(clientName);
+            if (phone) clientInfo.push(phone);
+            if (address && clientInfo.length < 2) clientInfo.push(address);
+            
+            if (clientInfo.length > 0) {
+                doc.text(clientInfo.slice(0, 2).join(' • '), 15, y);
+                y += 6;
+            }
+            
+            if (commercial) {
+                doc.text(`Conseiller: ${commercial}`, 15, y);
+                y += 6;
+            }
+            
+            y += 8;
+            
+            // Fonction pour créer une section avec fond gris
+            const createSection = (title, yPos) => {
+                doc.setFillColor(...lightGray);
+                doc.rect(10, yPos - 6, 190, 10, 'F');
+                doc.setFontSize(12);
+                doc.setTextColor(...black);
+                doc.text(title, 15, yPos);
+                return yPos + 8;
+            };
+            
+            // Fonction pour créer une ligne de tableau
+            const createTableHeader = (yPos) => {
+                doc.setFontSize(9);
+                doc.setTextColor(...gray);
+                doc.text('Désignation', 15, yPos);
+                doc.text('Qté', 130, yPos);
+                doc.text('Prix unit.', 150, yPos);
+                doc.text('Total', 178, yPos);
+                
+                doc.setDrawColor(...gray);
+                doc.setLineWidth(0.2);
+                doc.line(15, yPos + 2, 195, yPos + 2);
+                return yPos + 7;
+            };
+            
+            // Fonction pour obtenir le nombre de jours d'installation
+            const getInstallDays = (qty) => {
+                const days = {
+                    1: '0.5 jour',
+                    2: '1 jour',
+                    3: '1.5 jours',
+                    4: '2 jours',
+                    5: '2.5 jours',
+                    6: '3 jours'
+                };
+                
+                if (qty > 6) {
+                    const fullDays = Math.floor(qty / 2);
+                    const halfDay = qty % 2;
+                    const totalDays = fullDays + (halfDay * 0.5);
+                    return totalDays === Math.floor(totalDays) ? 
+                        `${totalDays} jours` : 
+                        `${totalDays} jours`;
+                }
+                
+                return days[qty] || '0.5 jour';
+            };
+            
+            // Variables pour calculer les totaux
+            let totalMaterielsHT = 0;
+            let totalInstallationHT = 0;
+            let totalComptantHT = 0;
+            let mensualitesInfo = null;
+            
+            // Traitement des produits pour l'alarme
+            if (type === 'alarm') {
+                const materialProducts = document.querySelectorAll('#alarm-material-products .product-line');
+                const freeProducts = [];
+                const paidProducts = [];
+                
+                // Séparer produits gratuits et payants
+                materialProducts.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    const nameInput = line.querySelector('.product-name-input');
+                    const qty = line.querySelector('.quantity-input').value;
+                    const offered = line.querySelector('.offered-checkbox').checked;
+                    
+                    let productName = '';
+                    let unitPrice = 0;
+                    
+                    if (nameInput && nameInput.style.display !== 'none') {
+                        productName = nameInput.value || 'Produit personnalisé';
+                        unitPrice = parseFloat(line.querySelector('.price-input').value) || 0;
+                    } else if (select && select.value) {
+                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                        if (selectedOption) {
+                            productName = selectedOption.textContent.split(' - ')[0];
+                            unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                        }
+                    }
+                    
+                    if (productName) {
+                        const product = {
+                            name: productName,
+                            qty: qty,
+                            unitPrice: unitPrice,
+                            total: unitPrice * qty,
+                            offered: offered
+                        };
+                        
+                        if (offered) {
+                            freeProducts.push(product);
+                        } else {
+                            paidProducts.push(product);
+                            totalMaterielsHT += product.total;
+                        }
+                    }
+                });
+                
+                // Kit de base OFFERT
+                if (freeProducts.length > 0) {
+                    y = createSection('Matériel - Kit de base', y);
+                    y = createTableHeader(y);
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    freeProducts.forEach(product => {
+                        doc.text(product.name.substring(0, 60), 15, y);
+                        doc.text(product.qty.toString(), 130, y);
+                        doc.text(`${product.unitPrice.toFixed(2)} CHF`, 150, y);
+                        doc.setTextColor(...yellow);
+                        doc.text('OFFERT', 178, y);
+                        doc.setTextColor(...black);
+                        y += 5;
+                        
+                        if (y > 270) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                    });
+                    
+                    y += 5;
+                }
+                
+                // Matériel supplémentaire ou Matériel (si tout est payant)
+                if (paidProducts.length > 0) {
+                    const sectionTitle = freeProducts.length > 0 ? 'Matériel supplémentaire' : 'Matériel';
+                    y = createSection(sectionTitle, y);
+                    y = createTableHeader(y);
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    let sectionTotal = 0;
+                    paidProducts.forEach(product => {
+                        doc.text(product.name.substring(0, 60), 15, y);
+                        doc.text(product.qty.toString(), 130, y);
+                        doc.text(`${product.unitPrice.toFixed(2)} CHF`, 150, y);
+                        doc.text(`${product.total.toFixed(2)} CHF`, 178, y);
+                        sectionTotal += product.total;
+                        y += 5;
+                        
+                        if (y > 270) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                    });
+                    
+                    // Facilités de paiement pour cette section
+                    const materialMonths = generator.sections['alarm-material']?.paymentMonths || 0;
+                    if (materialMonths > 0 && sectionTotal > 0) {
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10;
+                            if (months === 36) return 1.15;
+                            if (months === 48) return 1.20;
+                            return 1.0;
+                        };
+                        
+                        const majoration = getMajoration(materialMonths);
+                        const totalMajore = sectionTotal * majoration;
+                        const mensualite = totalMajore / materialMonths;
+                        
+                        y += 3;
+                        doc.setFontSize(8);
+                        doc.setTextColor(...yellow);
+                        doc.text(`Facilité de paiement: ${materialMonths} x ${mensualite.toFixed(2)} CHF/mois`, 15, y);
+                        y += 7;
+                    } else {
+                        totalComptantHT += sectionTotal;
+                        y += 5;
+                    }
+                }
+                
+                // Installation
+                const installQty = parseInt(document.getElementById('alarm-installation-qty').value) || 1;
+                const installPrice = parseFloat(document.getElementById('alarm-installation-price').value) || 690;
+                const installOffered = document.getElementById('alarm-installation-offered').checked;
+                const installDays = getInstallDays(installQty);
+                
+                y = createSection('Installation', y);
+                y = createTableHeader(y);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(...black);
+                doc.text(`Installation, paramétrages, tests (${installDays})`, 15, y);
+                doc.text('1', 130, y);
+                doc.text(`${installPrice.toFixed(2)} CHF`, 150, y);
+                
+                if (installOffered) {
+                    doc.setTextColor(...yellow);
+                    doc.text('OFFERT', 178, y);
+                } else {
+                    doc.text(`${installPrice.toFixed(2)} CHF`, 178, y);
+                    totalInstallationHT = installPrice;
+                }
+                y += 5;
+                
+                // Facilités de paiement pour installation
+                const installMonths = generator.sections['alarm-installation']?.paymentMonths || 0;
+                if (installMonths > 0 && !installOffered) {
+                    const getMajoration = (months) => {
+                        if (months === 24) return 1.10;
+                        if (months === 36) return 1.15;
+                        if (months === 48) return 1.20;
+                        return 1.0;
+                    };
+                    
+                    const majoration = getMajoration(installMonths);
+                    const totalMajore = installPrice * majoration;
+                    const mensualite = totalMajore / installMonths;
+                    
+                    y += 3;
+                    doc.setFontSize(8);
+                    doc.setTextColor(...yellow);
+                    doc.text(`Facilité de paiement: ${installMonths} x ${mensualite.toFixed(2)} CHF/mois`, 15, y);
+                    y += 7;
+                } else if (!installOffered) {
+                    totalComptantHT += installPrice;
+                    y += 5;
+                }
+                
+                // Frais de dossier (toujours comptant)
+                y = createSection('Frais de dossier', y);
+                y = createTableHeader(y);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(...black);
+                doc.text('Carte SIM + Activation', 15, y);
+                doc.text('1', 130, y);
+                doc.text('50.00 CHF', 150, y);
+                doc.text('50.00 CHF', 178, y);
+                y += 5;
+                
+                doc.text('Frais de dossier', 15, y);
+                doc.text('1', 130, y);
+                doc.text('190.00 CHF', 150, y);
+                doc.text('190.00 CHF', 178, y);
+                y += 5;
+                
+                totalComptantHT += 240; // Frais de dossier toujours comptant
+                
+                y += 3;
+                
+                // Services
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                if (surveillanceType) {
+                    y = createSection('Services', y);
+                    
+                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
+                    const surveillanceOffered = document.getElementById('surveillance-offered').checked;
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    let serviceName = '';
+                    if (surveillanceType === 'autosurveillance') {
+                        serviceName = 'Autosurveillance';
+                    } else if (surveillanceType === 'telesurveillance') {
+                        serviceName = 'Télésurveillance Particulier';
+                    } else if (surveillanceType === 'telesurveillance-pro') {
+                        serviceName = 'Télésurveillance Professionnel';
+                    }
+                    
+                    doc.text(serviceName, 15, y);
+                    
+                    if (surveillanceOffered) {
+                        doc.setTextColor(...yellow);
+                        doc.text('OFFERT', 178, y);
+                    } else {
+                        doc.text(`${surveillancePrice.toFixed(2)} CHF/mois`, 178, y);
+                    }
+                    y += 10;
+                }
+                
+                // Calcul des mensualités globales
+                const monthlyPayment = document.getElementById('alarm-monthly-payment');
+                if (monthlyPayment && monthlyPayment.style.display !== 'none') {
+                    const monthlyAmount = document.getElementById('alarm-monthly-amount').textContent;
+                    const monthlyCount = document.getElementById('alarm-monthly-count').textContent;
+                    mensualitesInfo = {
+                        amount: monthlyAmount,
+                        count: monthlyCount
+                    };
+                }
+                
+            } else if (type === 'camera') {
+                // Matériel caméras
+                const cameraProducts = document.querySelectorAll('#camera-material-products .product-line');
+                
+                if (cameraProducts.length > 0) {
+                    y = createSection('Matériel', y);
+                    y = createTableHeader(y);
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    let sectionTotal = 0;
+                    cameraProducts.forEach(line => {
+                        const select = line.querySelector('.product-select');
+                        const nameInput = line.querySelector('.product-name-input');
+                        const qty = line.querySelector('.quantity-input').value;
+                        const offered = line.querySelector('.offered-checkbox').checked;
+                        
+                        let productName = '';
+                        let unitPrice = 0;
+                        
+                        if (nameInput && nameInput.style.display !== 'none') {
+                            productName = nameInput.value || 'Produit personnalisé';
+                            unitPrice = parseFloat(line.querySelector('.price-input').value) || 0;
+                        } else if (select && select.value) {
+                            const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                            if (selectedOption) {
+                                productName = selectedOption.textContent.split(' - ')[0];
+                                unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                            }
+                        }
+                        
+                        if (productName) {
+                            const total = unitPrice * qty;
+                            doc.text(productName.substring(0, 60), 15, y);
+                            doc.text(qty.toString(), 130, y);
+                            doc.text(`${unitPrice.toFixed(2)} CHF`, 150, y);
+                            
+                            if (offered) {
+                                doc.setTextColor(...yellow);
+                                doc.text('OFFERT', 178, y);
+                                doc.setTextColor(...black);
+                            } else {
+                                doc.text(`${total.toFixed(2)} CHF`, 178, y);
+                                sectionTotal += total;
+                                totalMaterielsHT += total;
+                            }
+                            y += 5;
+                            
+                            if (y > 270) {
+                                doc.addPage();
+                                y = 20;
+                            }
+                        }
+                    });
+                    
+                    // Facilités de paiement pour matériel
+                    const materialMonths = generator.sections['camera-material']?.paymentMonths || 0;
+                    if (materialMonths > 0 && sectionTotal > 0) {
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10;
+                            if (months === 36) return 1.15;
+                            if (months === 48) return 1.20;
+                            return 1.0;
+                        };
+                        
+                        const majoration = getMajoration(materialMonths);
+                        const totalMajore = sectionTotal * majoration;
+                        const mensualite = totalMajore / materialMonths;
+                        
+                        y += 3;
+                        doc.setFontSize(8);
+                        doc.setTextColor(...yellow);
+                        doc.text(`Facilité de paiement: ${materialMonths} x ${mensualite.toFixed(2)} CHF/mois`, 15, y);
+                        y += 7;
+                    } else {
+                        totalComptantHT += sectionTotal;
+                    }
+                }
+                
+                // Installation caméra
+                const installQty = parseInt(document.getElementById('camera-installation-qty').value) || 1;
+                const installPrice = generator.calculateCameraInstallationPrice();
+                const installOffered = document.getElementById('camera-installation-offered').checked;
+                const installDays = getInstallDays(installQty);
+                
+                y = createSection('Installation', y);
+                y = createTableHeader(y);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(...black);
+                doc.text(`Installation et configuration (${installDays})`, 15, y);
+                doc.text('1', 130, y);
+                doc.text(`${installPrice.toFixed(2)} CHF`, 150, y);
+                
+                if (installOffered) {
+                    doc.setTextColor(...yellow);
+                    doc.text('OFFERT', 178, y);
+                } else {
+                    doc.text(`${installPrice.toFixed(2)} CHF`, 178, y);
+                    totalInstallationHT = installPrice;
+                    totalComptantHT += installPrice;
+                }
+                y += 8;
+            }
+            
+            // RÉCAPITULATIF FINAL - Version simplifiée
+            y += 5;
+            doc.setFillColor(...black);
+            doc.rect(10, y - 6, 190, 10, 'F');
+            doc.setFontSize(12);
+            doc.setTextColor(...white);
+            doc.text('RÉCAPITULATIF', 15, y);
+            y += 15;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(...black);
+            
+            // Mensualités si applicable
+            if (mensualitesInfo) {
+                // Parse de la valeur TTC des mensualités
+                const mensualiteTTC = parseFloat(mensualitesInfo.amount);
+                const mensualiteHT = mensualiteTTC / 1.081;
+                const mensualiteTVA = mensualiteTTC - mensualiteHT;
+                
+                doc.setFontSize(11);
+                doc.text(`Mensualités (${mensualitesInfo.count} mois):`, 15, y);
+                y += 6;
+                
+                doc.setFontSize(10);
+                doc.text(`${mensualiteHT.toFixed(2)} CHF HT + ${mensualiteTVA.toFixed(2)} CHF TVA = `, 15, y);
+                doc.setTextColor(...yellow);
+                doc.setFontSize(11);
+                doc.text(`${mensualiteTTC.toFixed(2)} CHF TTC`, 150, y);
+                y += 10;
+            }
+            
+            // Montant comptant si applicable
+            if (totalComptantHT > 0) {
+                const comptantTVA = totalComptantHT * 0.081;
+                const comptantTTC = totalComptantHT * 1.081;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(...black);
+                doc.text(`Montant comptant:`, 15, y);
+                y += 6;
+                
+                doc.setFontSize(10);
+                doc.text(`${totalComptantHT.toFixed(2)} CHF HT + ${comptantTVA.toFixed(2)} CHF TVA = `, 15, y);
+                doc.setTextColor(...yellow);
+                doc.setFontSize(11);
+                doc.text(`${comptantTTC.toFixed(2)} CHF TTC`, 150, y);
+                y += 10;
+            }
+            
+            // Service de surveillance si applicable (pour alarme)
+            if (type === 'alarm') {
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                if (surveillanceType) {
+                    const surveillanceTotal = document.getElementById('surveillance-total').textContent;
+                    doc.setFontSize(10);
+                    doc.setTextColor(...gray);
+                    doc.text(`Service de surveillance: ${surveillanceTotal}`, 15, y);
+                }
+            }
+            
+            // Pied de page
+            doc.setFontSize(8);
+            doc.setTextColor(...gray);
+            doc.text('Devis valable 30 jours - TVA 8.1% incluse', 105, 285, { align: 'center' });
+            doc.text('DIALARME SA - Votre sécurité, notre priorité', 105, 290, { align: 'center' });
+            
+            // Sauvegarder le PDF
+            const filename = `Devis_Dialarme_${clientName || 'Client'}_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(filename);
+        }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
