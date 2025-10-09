@@ -2472,257 +2472,414 @@
             }
         }
 
-        function generatePDF(type) {
+        async function generatePDF(type) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
             // Configuration des couleurs
-            const yellow = [244, 230, 0];
+            const orange = [243, 110, 0]; // #F36E00
             const black = [0, 0, 0];
             const gray = [100, 100, 100];
+            const lightGray = [240, 240, 240];
+            const white = [255, 255, 255];
             
-            let y = 20;
-            
-            // En-tête avec logo
-            doc.setFillColor(...yellow);
-            doc.rect(0, 0, 210, 40, 'F');
-            
-            doc.setFontSize(24);
-            doc.setTextColor(...black);
-            doc.text('DIALARME', 20, 25);
-            
-            doc.setFontSize(10);
-            doc.text('Devis professionnel', 20, 32);
-            
-            // Date
-            doc.setFontSize(10);
-            doc.setTextColor(...gray);
-            const date = new Date().toLocaleDateString('fr-CH');
-            doc.text(`Date: ${date}`, 150, 25);
-            
-            y = 50;
-            
-            // Informations client
-            doc.setFontSize(14);
-            doc.setTextColor(...black);
-            doc.text('INFORMATIONS CLIENT', 20, y);
-            y += 10;
-            
-            doc.setFontSize(10);
-            doc.setTextColor(...gray);
-            
+            // Récupération des infos client
             let clientName = '';
             let commercial = '';
             let phone = '';
             let address = '';
             
             if (type === 'alarm') {
-                clientName = document.getElementById('clientName').value || 'Non renseigné';
-                commercial = document.getElementById('commercial').value || 
-                            document.getElementById('commercial-custom').value || 'Non renseigné';
-                phone = document.getElementById('clientPhone').value || 'Non renseigné';
-                address = document.getElementById('clientAddress').value || 'Non renseigné';
+                clientName = document.getElementById('clientName').value;
+                const commercialSelect = document.getElementById('commercial');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercial-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhone').value;
+                address = document.getElementById('clientAddress').value;
             } else if (type === 'camera') {
-                clientName = document.getElementById('clientNameCamera').value || 'Non renseigné';
-                commercial = document.getElementById('commercialCamera').value || 
-                            document.getElementById('commercialCamera-custom').value || 'Non renseigné';
-                phone = document.getElementById('clientPhoneCamera').value || 'Non renseigné';
-                address = document.getElementById('clientAddressCamera').value || 'Non renseigné';
+                clientName = document.getElementById('clientNameCamera').value;
+                const commercialSelect = document.getElementById('commercialCamera');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercialCamera-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhoneCamera').value;
+                address = document.getElementById('clientAddressCamera').value;
             } else if (type === 'fog') {
-                clientName = document.getElementById('clientNameFog').value || 'Non renseigné';
-                commercial = document.getElementById('commercialFog').value || 
-                            document.getElementById('commercialFog-custom').value || 'Non renseigné';
-                phone = document.getElementById('clientPhoneFog').value || 'Non renseigné';
-                address = document.getElementById('clientAddressFog').value || 'Non renseigné';
+                clientName = document.getElementById('clientNameFog').value;
+                const commercialSelect = document.getElementById('commercialFog');
+                commercial = commercialSelect.value === 'autre' ? 
+                    document.getElementById('commercialFog-custom').value : 
+                    commercialSelect.value;
+                phone = document.getElementById('clientPhoneFog').value;
+                address = document.getElementById('clientAddressFog').value;
             }
             
-            doc.text(`Client: ${clientName}`, 20, y);
-            y += 6;
-            doc.text(`Commercial: ${commercial}`, 20, y);
-            y += 6;
-            doc.text(`Téléphone: ${phone}`, 20, y);
-            y += 6;
-            doc.text(`Adresse: ${address}`, 20, y);
-            y += 15;
+            let y = 15;
             
-            // Titre du type de devis
-            doc.setFontSize(14);
+            // En-tête avec logo et fond orange
+            doc.setFillColor(...orange);
+            doc.rect(0, 0, 210, 45, 'F');
+            
+            // Ajout du logo (placeholder pour le logo)
+            try {
+                // Note: Pour ajouter une vraie image, il faut d'abord la charger
+                // Dans un environnement réel, vous devriez charger l'image en base64
+                // doc.addImage(logoBase64, 'PNG', 15, 10, 40, 25);
+                
+                // Placeholder du logo
+                doc.setFillColor(...white);
+                doc.setTextColor(...white);
+                doc.setFontSize(20);
+                doc.text('DIALARME', 20, 28);
+            } catch(e) {
+                // Fallback text si l'image ne charge pas
+                doc.setFillColor(...white);
+                doc.setTextColor(...white);
+                doc.setFontSize(20);
+                doc.text('DIALARME', 20, 28);
+            }
+            
+            // Date à droite
+            doc.setFontSize(10);
+            doc.setTextColor(...white);
+            const date = new Date().toLocaleDateString('fr-CH', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            doc.text(date, 190, 28, { align: 'right' });
+            
+            y = 55;
+            
+            // Titre principal du devis
+            doc.setFontSize(16);
             doc.setTextColor(...black);
-            const devisType = type === 'alarm' ? 'DEVIS ALARME' : 
-                            type === 'camera' ? 'DEVIS CAMÉRA DE SURVEILLANCE' : 
-                            'DEVIS GÉNÉRATEUR DE BROUILLARD';
-            doc.text(devisType, 20, y);
-            y += 10;
             
-            // Mode location ou vente
-            const isRental = generator.rentalMode[type];
+            let devisTitle = '';
+            if (type === 'alarm') {
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                if (surveillanceType === 'autosurveillance') {
+                    devisTitle = `Offre d'autosurveillance`;
+                } else if (surveillanceType) {
+                    devisTitle = `Offre de télésurveillance`;
+                } else {
+                    devisTitle = `Offre de système d'alarme`;
+                }
+                devisTitle += clientName ? ` à l'attention de ${clientName}` : '';
+            } else if (type === 'camera') {
+                devisTitle = `Solution vidéo${clientName ? ` à l'attention de ${clientName}` : ''}`;
+            } else if (type === 'fog') {
+                devisTitle = `Solution générateur de brouillard${clientName ? ` à l'attention de ${clientName}` : ''}`;
+            }
+            
+            doc.text(devisTitle, 20, y);
+            y += 12;
+            
+            // Informations client sur 2 lignes max
             doc.setFontSize(10);
             doc.setTextColor(...gray);
-            doc.text(`Mode: ${isRental ? 'LOCATION' : 'VENTE'}`, 20, y);
-            y += 10;
             
-            // Lignes de produits
-            doc.setFontSize(12);
-            doc.setTextColor(...black);
-            doc.text('DÉTAIL DES PRODUITS', 20, y);
+            const clientInfo = [];
+            if (clientName) clientInfo.push(clientName);
+            if (phone) clientInfo.push(phone);
+            if (address && clientInfo.length < 2) clientInfo.push(address);
+            
+            if (clientInfo.length > 0) {
+                doc.text(clientInfo.slice(0, 2).join(' • '), 20, y);
+                y += 6;
+            }
+            
+            if (commercial) {
+                doc.text(`Conseiller: ${commercial}`, 20, y);
+                y += 6;
+            }
+            
             y += 8;
             
-            // Table header
-            doc.setFontSize(9);
-            doc.setTextColor(...gray);
-            doc.text('Produit', 20, y);
-            doc.text('Qté', 130, y);
-            doc.text('Prix unit.', 145, y);
-            doc.text('Total', 175, y);
-            y += 2;
+            // Fonction pour créer une section avec fond gris
+            const createSection = (title, yPos) => {
+                doc.setFillColor(...lightGray);
+                doc.rect(15, yPos - 6, 180, 10, 'F');
+                doc.setFontSize(12);
+                doc.setTextColor(...black);
+                doc.text(title, 20, yPos);
+                return yPos + 8;
+            };
             
-            // Ligne de séparation
-            doc.setDrawColor(...gray);
-            doc.line(20, y, 190, y);
-            y += 5;
+            // Fonction pour créer une ligne de tableau
+            const createTableHeader = (yPos) => {
+                doc.setFontSize(9);
+                doc.setTextColor(...gray);
+                doc.text('Désignation', 20, yPos);
+                doc.text('Qté', 130, yPos);
+                doc.text('Prix unit.', 150, yPos);
+                doc.text('Total', 175, yPos);
+                
+                doc.setDrawColor(...gray);
+                doc.setLineWidth(0.2);
+                doc.line(20, yPos + 2, 190, yPos + 2);
+                return yPos + 7;
+            };
             
-            // Récupérer les produits selon le type
+            // Traitement des produits pour l'alarme
             if (type === 'alarm') {
-                // Section Matériel
                 const materialProducts = document.querySelectorAll('#alarm-material-products .product-line');
-                if (materialProducts.length > 0) {
-                    doc.setFontSize(10);
-                    doc.setTextColor(...black);
-                    doc.text('Matériel', 20, y);
-                    y += 5;
+                const freeProducts = [];
+                const paidProducts = [];
+                
+                // Séparer produits gratuits et payants
+                materialProducts.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    const nameInput = line.querySelector('.product-name-input');
+                    const qty = line.querySelector('.quantity-input').value;
+                    const offered = line.querySelector('.offered-checkbox').checked;
                     
-                    materialProducts.forEach(line => {
-                        const select = line.querySelector('.product-select');
-                        const nameInput = line.querySelector('.product-name-input');
-                        const qty = line.querySelector('.quantity-input').value;
-                        const offered = line.querySelector('.offered-checkbox').checked;
-                        const total = line.querySelector('.price-display').textContent;
-                        
-                        let productName = '';
-                        let unitPrice = '0';
-                        
-                        if (nameInput && nameInput.style.display !== 'none') {
-                            productName = nameInput.value || 'Produit personnalisé';
-                            unitPrice = line.querySelector('.price-input').value || '0';
-                        } else if (select && select.value) {
-                            const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                            if (selectedOption) {
-                                productName = selectedOption.textContent.split(' - ')[0];
-                                unitPrice = selectedOption.getAttribute('data-price');
-                            }
+                    let productName = '';
+                    let unitPrice = 0;
+                    
+                    if (nameInput && nameInput.style.display !== 'none') {
+                        productName = nameInput.value || 'Produit personnalisé';
+                        unitPrice = parseFloat(line.querySelector('.price-input').value) || 0;
+                    } else if (select && select.value) {
+                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                        if (selectedOption) {
+                            productName = selectedOption.textContent.split(' - ')[0];
+                            unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                         }
+                    }
+                    
+                    if (productName) {
+                        const product = {
+                            name: productName,
+                            qty: qty,
+                            unitPrice: unitPrice,
+                            total: unitPrice * qty,
+                            offered: offered
+                        };
                         
-                        if (productName) {
-                            doc.setFontSize(9);
-                            doc.setTextColor(...gray);
-                            doc.text(productName.substring(0, 50), 20, y);
-                            doc.text(qty, 130, y);
-                            doc.text(`${parseFloat(unitPrice).toFixed(2)} CHF`, 145, y);
-                            doc.text(offered ? 'OFFERT' : total, 175, y);
-                            y += 5;
-                            
-                            if (y > 270) {
-                                doc.addPage();
-                                y = 20;
-                            }
+                        if (offered) {
+                            freeProducts.push(product);
+                        } else {
+                            paidProducts.push(product);
+                        }
+                    }
+                });
+                
+                // Kit de base OFFERT
+                if (freeProducts.length > 0) {
+                    y = createSection('Matériel - Kit de base', y);
+                    y = createTableHeader(y);
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    freeProducts.forEach(product => {
+                        doc.text(product.name.substring(0, 60), 20, y);
+                        doc.text(product.qty.toString(), 130, y);
+                        doc.text(`${product.unitPrice.toFixed(2)} CHF`, 150, y);
+                        doc.setTextColor(...orange);
+                        doc.text('OFFERT', 175, y);
+                        doc.setTextColor(...black);
+                        y += 5;
+                        
+                        if (y > 270) {
+                            doc.addPage();
+                            y = 20;
                         }
                     });
+                    
+                    y += 5;
+                }
+                
+                // Matériel supplémentaire ou Matériel (si tout est payant)
+                if (paidProducts.length > 0) {
+                    const sectionTitle = freeProducts.length > 0 ? 'Matériel supplémentaire' : 'Matériel';
+                    y = createSection(sectionTitle, y);
+                    y = createTableHeader(y);
+                    
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    let sectionTotal = 0;
+                    paidProducts.forEach(product => {
+                        doc.text(product.name.substring(0, 60), 20, y);
+                        doc.text(product.qty.toString(), 130, y);
+                        doc.text(`${product.unitPrice.toFixed(2)} CHF`, 150, y);
+                        doc.text(`${product.total.toFixed(2)} CHF`, 175, y);
+                        sectionTotal += product.total;
+                        y += 5;
+                        
+                        if (y > 270) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                    });
+                    
+                    // Facilités de paiement pour cette section
+                    const materialMonths = generator.sections['alarm-material']?.paymentMonths || 0;
+                    if (materialMonths > 0 && sectionTotal > 0) {
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10;
+                            if (months === 36) return 1.15;
+                            if (months === 48) return 1.20;
+                            return 1.0;
+                        };
+                        
+                        const majoration = getMajoration(materialMonths);
+                        const totalMajore = sectionTotal * majoration;
+                        const mensualite = totalMajore / materialMonths;
+                        
+                        y += 3;
+                        doc.setFontSize(8);
+                        doc.setTextColor(...orange);
+                        doc.text(`Facilité de paiement: ${materialMonths} x ${mensualite.toFixed(2)} CHF/mois`, 20, y);
+                        y += 7;
+                    } else {
+                        y += 5;
+                    }
                 }
                 
                 // Installation
-                y += 5;
-                doc.setFontSize(10);
-                doc.setTextColor(...black);
-                doc.text('Installation', 20, y);
-                y += 5;
-                
                 const installQty = document.getElementById('alarm-installation-qty').value;
-                const installPrice = document.getElementById('alarm-installation-price').value;
+                const installPrice = parseFloat(document.getElementById('alarm-installation-price').value) || 690;
                 const installOffered = document.getElementById('alarm-installation-offered').checked;
                 
+                y = createSection('Installation', y);
+                y = createTableHeader(y);
+                
                 doc.setFontSize(9);
-                doc.setTextColor(...gray);
+                doc.setTextColor(...black);
                 doc.text('Installation, paramétrages, tests, mise en service', 20, y);
                 doc.text(installQty, 130, y);
-                doc.text(`${parseFloat(installPrice).toFixed(2)} CHF`, 145, y);
-                doc.text(installOffered ? 'OFFERT' : `${parseFloat(installPrice).toFixed(2)} CHF`, 175, y);
-                y += 8;
+                doc.text(`${installPrice.toFixed(2)} CHF`, 150, y);
+                
+                if (installOffered) {
+                    doc.setTextColor(...orange);
+                    doc.text('OFFERT', 175, y);
+                } else {
+                    doc.text(`${installPrice.toFixed(2)} CHF`, 175, y);
+                }
+                y += 5;
+                
+                // Facilités de paiement pour installation
+                const installMonths = generator.sections['alarm-installation']?.paymentMonths || 0;
+                if (installMonths > 0 && !installOffered) {
+                    const getMajoration = (months) => {
+                        if (months === 24) return 1.10;
+                        if (months === 36) return 1.15;
+                        if (months === 48) return 1.20;
+                        return 1.0;
+                    };
+                    
+                    const majoration = getMajoration(installMonths);
+                    const totalMajore = installPrice * majoration;
+                    const mensualite = totalMajore / installMonths;
+                    
+                    y += 3;
+                    doc.setFontSize(8);
+                    doc.setTextColor(...orange);
+                    doc.text(`Facilité de paiement: ${installMonths} x ${mensualite.toFixed(2)} CHF/mois`, 20, y);
+                    y += 7;
+                } else {
+                    y += 5;
+                }
                 
                 // Frais de dossier
-                doc.setFontSize(10);
-                doc.setTextColor(...black);
-                doc.text('Frais de dossier', 20, y);
-                y += 5;
+                y = createSection('Frais de dossier', y);
+                y = createTableHeader(y);
                 
                 doc.setFontSize(9);
-                doc.setTextColor(...gray);
+                doc.setTextColor(...black);
                 doc.text('Carte SIM + Activation', 20, y);
                 doc.text('1', 130, y);
-                doc.text('50.00 CHF', 145, y);
-                doc.text('50.00 CHF HT', 175, y);
+                doc.text('50.00 CHF', 150, y);
+                doc.text('50.00 CHF', 175, y);
                 y += 5;
                 
                 doc.text('Frais de dossier', 20, y);
                 doc.text('1', 130, y);
-                doc.text('190.00 CHF', 145, y);
-                doc.text('190.00 CHF HT', 175, y);
+                doc.text('190.00 CHF', 150, y);
+                doc.text('190.00 CHF', 175, y);
                 y += 8;
                 
                 // Services
                 const surveillanceType = document.getElementById('surveillance-type').value;
                 if (surveillanceType) {
-                    doc.setFontSize(10);
-                    doc.setTextColor(...black);
-                    doc.text('Services', 20, y);
-                    y += 5;
+                    y = createSection('Services', y);
                     
-                    const surveillancePrice = document.getElementById('surveillance-price').value;
+                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
                     const surveillanceOffered = document.getElementById('surveillance-offered').checked;
                     
                     doc.setFontSize(9);
-                    doc.setTextColor(...gray);
-                    doc.text('Service de surveillance', 20, y);
-                    doc.text(`${surveillancePrice} CHF/mois`, 145, y);
-                    doc.text(surveillanceOffered ? 'OFFERT' : `${surveillancePrice} CHF/mois`, 175, y);
+                    doc.setTextColor(...black);
+                    
+                    let serviceName = '';
+                    if (surveillanceType === 'autosurveillance') {
+                        serviceName = 'Autosurveillance';
+                    } else if (surveillanceType === 'telesurveillance') {
+                        serviceName = 'Télésurveillance Particulier';
+                    } else if (surveillanceType === 'telesurveillance-pro') {
+                        serviceName = 'Télésurveillance Professionnel';
+                    }
+                    
+                    doc.text(serviceName, 20, y);
+                    
+                    if (surveillanceOffered) {
+                        doc.setTextColor(...orange);
+                        doc.text('OFFERT', 175, y);
+                    } else {
+                        doc.text(`${surveillancePrice.toFixed(2)} CHF/mois`, 175, y);
+                    }
                     y += 10;
                 }
+                
             } else if (type === 'camera') {
-                // Produits caméra
+                // Matériel caméras
                 const cameraProducts = document.querySelectorAll('#camera-material-products .product-line');
+                
                 if (cameraProducts.length > 0) {
-                    doc.setFontSize(10);
-                    doc.setTextColor(...black);
-                    doc.text('Matériel', 20, y);
-                    y += 5;
+                    y = createSection('Matériel', y);
+                    y = createTableHeader(y);
                     
+                    doc.setFontSize(9);
+                    doc.setTextColor(...black);
+                    
+                    let sectionTotal = 0;
                     cameraProducts.forEach(line => {
                         const select = line.querySelector('.product-select');
                         const nameInput = line.querySelector('.product-name-input');
                         const qty = line.querySelector('.quantity-input').value;
                         const offered = line.querySelector('.offered-checkbox').checked;
-                        const total = line.querySelector('.price-display').textContent;
                         
                         let productName = '';
-                        let unitPrice = '0';
+                        let unitPrice = 0;
                         
                         if (nameInput && nameInput.style.display !== 'none') {
                             productName = nameInput.value || 'Produit personnalisé';
-                            unitPrice = line.querySelector('.price-input').value || '0';
+                            unitPrice = parseFloat(line.querySelector('.price-input').value) || 0;
                         } else if (select && select.value) {
                             const selectedOption = select.querySelector(`option[value="${select.value}"]`);
                             if (selectedOption) {
                                 productName = selectedOption.textContent.split(' - ')[0];
-                                unitPrice = selectedOption.getAttribute('data-price');
+                                unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                             }
                         }
                         
                         if (productName) {
-                            doc.setFontSize(9);
-                            doc.setTextColor(...gray);
-                            doc.text(productName.substring(0, 50), 20, y);
-                            doc.text(qty, 130, y);
-                            doc.text(`${parseFloat(unitPrice).toFixed(2)} CHF`, 145, y);
-                            doc.text(offered ? 'OFFERT' : total, 175, y);
+                            const total = unitPrice * qty;
+                            doc.text(productName.substring(0, 60), 20, y);
+                            doc.text(qty.toString(), 130, y);
+                            doc.text(`${unitPrice.toFixed(2)} CHF`, 150, y);
+                            
+                            if (offered) {
+                                doc.setTextColor(...orange);
+                                doc.text('OFFERT', 175, y);
+                                doc.setTextColor(...black);
+                            } else {
+                                doc.text(`${total.toFixed(2)} CHF`, 175, y);
+                                sectionTotal += total;
+                            }
                             y += 5;
                             
                             if (y > 270) {
@@ -2731,102 +2888,162 @@
                             }
                         }
                     });
+                    
+                    // Facilités de paiement pour matériel
+                    const materialMonths = generator.sections['camera-material']?.paymentMonths || 0;
+                    if (materialMonths > 0 && sectionTotal > 0) {
+                        const getMajoration = (months) => {
+                            if (months === 24) return 1.10;
+                            if (months === 36) return 1.15;
+                            if (months === 48) return 1.20;
+                            return 1.0;
+                        };
+                        
+                        const majoration = getMajoration(materialMonths);
+                        const totalMajore = sectionTotal * majoration;
+                        const mensualite = totalMajore / materialMonths;
+                        
+                        y += 3;
+                        doc.setFontSize(8);
+                        doc.setTextColor(...orange);
+                        doc.text(`Facilité de paiement: ${materialMonths} x ${mensualite.toFixed(2)} CHF/mois`, 20, y);
+                        y += 7;
+                    }
                 }
+                
+                // Installation caméra
+                const installPrice = generator.calculateCameraInstallationPrice();
+                const installOffered = document.getElementById('camera-installation-offered').checked;
+                
+                y = createSection('Installation', y);
+                y = createTableHeader(y);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(...black);
+                doc.text('Installation et configuration', 20, y);
+                doc.text('1', 130, y);
+                doc.text(`${installPrice.toFixed(2)} CHF`, 150, y);
+                
+                if (installOffered) {
+                    doc.setTextColor(...orange);
+                    doc.text('OFFERT', 175, y);
+                } else {
+                    doc.text(`${installPrice.toFixed(2)} CHF`, 175, y);
+                }
+                y += 8;
             }
             
-            // Récapitulatif des totaux
-            y += 10;
-            doc.setDrawColor(...gray);
-            doc.line(20, y, 190, y);
-            y += 8;
-            
+            // RÉCAPITULATIF FINAL
+            y += 5;
+            doc.setFillColor(...black);
+            doc.rect(15, y - 6, 180, 10, 'F');
             doc.setFontSize(12);
-            doc.setTextColor(...black);
+            doc.setTextColor(...white);
             doc.text('RÉCAPITULATIF', 20, y);
-            y += 8;
+            y += 12;
             
             doc.setFontSize(10);
+            doc.setTextColor(...black);
             
+            // Récupération des totaux
             if (type === 'alarm') {
-                const materialTotal = document.getElementById('alarm-material-total').textContent;
-                const installTotal = document.getElementById('alarm-installation-total').textContent;
                 const totalHT = document.getElementById('alarm-total-ht').textContent;
                 const totalTTC = document.getElementById('alarm-total-ttc').textContent;
                 
-                doc.text('Matériel:', 20, y);
-                doc.text(materialTotal, 175, y);
-                y += 6;
-                
-                doc.text('Installation:', 20, y);
-                doc.text(installTotal, 175, y);
-                y += 6;
-                
-                doc.text('Frais de dossier:', 20, y);
-                doc.text('240.00 CHF HT', 175, y);
-                y += 8;
-                
-                doc.setFontSize(11);
-                doc.setTextColor(...black);
-                doc.text('TOTAL HT:', 20, y);
-                doc.text(totalHT, 175, y);
+                doc.text('Total HT:', 20, y);
+                doc.text(totalHT, 175, y, { align: 'right' });
                 y += 6;
                 
                 doc.setFontSize(12);
-                doc.setTextColor(0, 128, 0);
-                doc.text('TOTAL TTC:', 20, y);
-                doc.text(totalTTC, 175, y);
+                doc.setTextColor(...orange);
+                doc.text('Total TTC:', 20, y);
+                doc.text(totalTTC, 175, y, { align: 'right' });
+                y += 10;
+                
+                // Mensualités globales si applicable
+                const monthlyPayment = document.getElementById('alarm-monthly-payment');
+                if (monthlyPayment && monthlyPayment.style.display !== 'none') {
+                    const monthlyAmount = document.getElementById('alarm-monthly-amount').textContent;
+                    const monthlyCount = document.getElementById('alarm-monthly-count').textContent;
+                    
+                    doc.setFillColor(...lightGray);
+                    doc.rect(15, y - 3, 180, 12, 'F');
+                    
+                    doc.setFontSize(11);
+                    doc.setTextColor(...black);
+                    doc.text(`Mensualités: ${monthlyCount} x ${monthlyAmount} CHF/mois`, 20, y + 3);
+                    y += 15;
+                }
+                
+                // Montant comptant si applicable
+                const cashPayment = document.getElementById('alarm-cash-payment');
+                if (cashPayment && cashPayment.style.display !== 'none') {
+                    const cashAmount = document.getElementById('alarm-cash-amount').textContent;
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(...gray);
+                    doc.text(`Montant à régler comptant: ${cashAmount} CHF`, 20, y);
+                    y += 6;
+                }
+                
+                // Service de surveillance mensuel
+                const surveillanceType = document.getElementById('surveillance-type').value;
+                if (surveillanceType) {
+                    const surveillanceTotal = document.getElementById('surveillance-total').textContent;
+                    doc.setFontSize(10);
+                    doc.setTextColor(...black);
+                    doc.text(`Service de surveillance: ${surveillanceTotal}`, 20, y);
+                }
+                
             } else if (type === 'camera') {
-                const materialTotal = document.getElementById('camera-material-total').textContent;
-                const installTotal = document.getElementById('camera-installation-total').textContent;
                 const totalHT = document.getElementById('camera-total-ht').textContent;
                 const totalTTC = document.getElementById('camera-total-ttc').textContent;
                 
-                doc.text('Matériel:', 20, y);
-                doc.text(materialTotal, 175, y);
-                y += 6;
-                
-                doc.text('Installation:', 20, y);
-                doc.text(installTotal, 175, y);
-                y += 8;
-                
-                doc.setFontSize(11);
-                doc.setTextColor(...black);
-                doc.text('TOTAL HT:', 20, y);
-                doc.text(totalHT, 175, y);
+                doc.text('Total HT:', 20, y);
+                doc.text(totalHT, 175, y, { align: 'right' });
                 y += 6;
                 
                 doc.setFontSize(12);
-                doc.setTextColor(0, 128, 0);
-                doc.text('TOTAL TTC:', 20, y);
-                doc.text(totalTTC, 175, y);
+                doc.setTextColor(...orange);
+                doc.text('Total TTC:', 20, y);
+                doc.text(totalTTC, 175, y, { align: 'right' });
+                y += 10;
+                
+                // Mensualités si applicable
+                const monthlyPayment = document.getElementById('camera-monthly-payment');
+                if (monthlyPayment && monthlyPayment.style.display !== 'none') {
+                    const monthlyAmount = document.getElementById('camera-monthly-amount').textContent;
+                    const monthlyCount = document.getElementById('camera-monthly-count').textContent;
+                    
+                    doc.setFillColor(...lightGray);
+                    doc.rect(15, y - 3, 180, 12, 'F');
+                    
+                    doc.setFontSize(11);
+                    doc.setTextColor(...black);
+                    doc.text(`Mensualités: ${monthlyCount} x ${monthlyAmount} CHF/mois`, 20, y + 3);
+                }
             } else if (type === 'fog') {
-                const materialTotal = document.getElementById('fog-material-total').textContent;
-                const installTotal = document.getElementById('fog-installation-total').textContent;
                 const totalHT = document.getElementById('fog-total-ht').textContent;
                 const totalTTC = document.getElementById('fog-total-ttc').textContent;
                 
-                doc.text('Matériel:', 20, y);
-                doc.text(materialTotal, 175, y);
-                y += 6;
-                
-                doc.text('Installation:', 20, y);
-                doc.text(installTotal, 175, y);
-                y += 8;
-                
-                doc.setFontSize(11);
-                doc.setTextColor(...black);
-                doc.text('TOTAL HT:', 20, y);
-                doc.text(totalHT, 175, y);
+                doc.text('Total HT:', 20, y);
+                doc.text(totalHT, 175, y, { align: 'right' });
                 y += 6;
                 
                 doc.setFontSize(12);
-                doc.setTextColor(0, 128, 0);
-                doc.text('TOTAL TTC:', 20, y);
-                doc.text(totalTTC, 175, y);
+                doc.setTextColor(...orange);
+                doc.text('Total TTC:', 20, y);
+                doc.text(totalTTC, 175, y, { align: 'right' });
             }
             
+            // Pied de page
+            doc.setFontSize(8);
+            doc.setTextColor(...gray);
+            doc.text('Devis valable 30 jours - TVA 8.1% incluse', 105, 285, { align: 'center' });
+            doc.text('DIALARME SA - Votre sécurité, notre priorité', 105, 290, { align: 'center' });
+            
             // Sauvegarder le PDF
-            const filename = `Devis_Dialarme_${type}_${new Date().toISOString().split('T')[0]}.pdf`;
+            const filename = `Devis_Dialarme_${clientName || 'Client'}_${new Date().toISOString().split('T')[0]}.pdf`;
             doc.save(filename);
         }
 
