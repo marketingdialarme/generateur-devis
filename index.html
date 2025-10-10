@@ -580,11 +580,11 @@
                 </div>
             </div>
 
-            <!-- Section 1: Matériel -->
+            <!-- Section 1: Kit de base -->
             <div class="quote-section">
-                <h3>🛡️ 1. Matériel <button class="add-product-btn" onclick="addProductLine('alarm-material')">+</button></h3>
+                <h3>🛡️ 1. Kit de base <button class="add-product-btn" onclick="showKitSelector()">+</button></h3>
                 <div id="alarm-material-products">
-                    <!-- Products will be added here -->
+                    <!-- Kit will be added here -->
                 </div>
                 <div class="discount-section">
                     <label>Réduction:</label>
@@ -593,12 +593,6 @@
                         <option value="amount">CHF</option>
                     </select>
                     <input type="number" id="alarm-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
-                </div>
-                <div class="payment-options" id="alarm-material-payment">
-                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-material')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-material')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-material')">36 mois</div>
-                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'alarm-material')">48 mois</div>
                 </div>
             </div>
 
@@ -628,12 +622,6 @@
                         <option value="amount">CHF</option>
                     </select>
                     <input type="number" id="alarm-installation-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
-                </div>
-                <div class="payment-options" id="alarm-installation-payment">
-                    <div class="payment-option active" data-months="0" onclick="selectPayment(this, 'alarm-installation')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectPayment(this, 'alarm-installation')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectPayment(this, 'alarm-installation')">36 mois</div>
-                    <div class="payment-option" data-months="48" onclick="selectPayment(this, 'alarm-installation')">48 mois</div>
                 </div>
             </div>
 
@@ -689,6 +677,17 @@
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="surveillance-total">0.00 CHF/mois</div>
+                </div>
+            </div>
+
+            <!-- Section 5: Mode de paiement -->
+            <div class="quote-section" id="alarm-payment-section">
+                <h3>💳 5. Mode de paiement</h3>
+                <div class="payment-options" id="alarm-global-payment">
+                    <div class="payment-option" data-months="0" onclick="selectGlobalPayment(this, 'alarm')">Comptant</div>
+                    <div class="payment-option" data-months="24" onclick="selectGlobalPayment(this, 'alarm')">24 mois</div>
+                    <div class="payment-option" data-months="36" onclick="selectGlobalPayment(this, 'alarm')">36 mois</div>
+                    <div class="payment-option active" data-months="48" onclick="selectGlobalPayment(this, 'alarm')">48 mois</div>
                 </div>
             </div>
 
@@ -1146,6 +1145,12 @@
                     'fog-installation': { paymentMonths: 0 }
                 };
 
+                this.globalPaymentMonths = {
+                    'alarm': 48,
+                    'camera': 0,
+                    'fog': 0
+                };
+
                 this.rentalMode = {
                     'alarm': false,
                     'camera': false,
@@ -1203,12 +1208,15 @@
                 this.rentalMode[type] = document.getElementById(`${type}-rental-mode`).checked;
                 
                 if (type === 'alarm') {
-                    document.getElementById('alarm-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
-                    document.getElementById('alarm-installation-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
+                    const paymentSection = document.getElementById('alarm-payment-section');
+                    if (paymentSection) {
+                        paymentSection.style.display = this.rentalMode[type] ? 'none' : 'block';
+                    }
                     
                     if (this.rentalMode[type]) {
-                        this.sections['alarm-material'].paymentMonths = 0;
-                        this.sections['alarm-installation'].paymentMonths = 0;
+                        this.globalPaymentMonths['alarm'] = 0;
+                    } else {
+                        this.globalPaymentMonths['alarm'] = 48;
                     }
                 } else if (type === 'camera') {
                     document.getElementById('camera-material-payment').style.display = this.rentalMode[type] ? 'none' : 'grid';
@@ -1437,6 +1445,230 @@
                 this.updateTotals();
             }
 
+            showKitSelector() {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    background: white;
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 700px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                `;
+                
+                modal.innerHTML = `
+                    <h2 style="margin-bottom: 20px; color: #333;">🛡️ Sélection du Kit de Base</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Choisissez d'abord votre centrale, puis le kit de base inclus</p>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin-bottom: 15px; color: #333; font-size: 18px;">1️⃣ Choisissez votre centrale</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div id="central-titane" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                                 onmouseover="this.style.borderColor='#f4e600'" 
+                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
+                                 onclick="selectCentralType('titane')">
+                                <h4 style="margin-bottom: 10px; color: #333;">Centrale Titane</h4>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Système complet de sécurité</p>
+                                <p style="font-weight: bold; color: #28a745;">690.00 CHF</p>
+                            </div>
+                            <div id="central-jablotron" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                                 onmouseover="this.style.borderColor='#f4e600'" 
+                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
+                                 onclick="selectCentralType('jablotron')">
+                                <h4 style="margin-bottom: 10px; color: #333;">Centrale Jablotron</h4>
+                                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Système premium avancé</p>
+                                <p style="font-weight: bold; color: #28a745;">990.00 CHF</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="kit-selection" style="display: none;">
+                        <h3 style="margin-bottom: 15px; color: #333; font-size: 18px;">2️⃣ Choisissez votre kit OFFERT</h3>
+                        <div id="kit-options"></div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button id="validate-kit-btn" onclick="validateKitSelection()" disabled style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; opacity: 0.5;">
+                            Valider la sélection
+                        </button>
+                        <button onclick="closeKitSelector()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            Annuler
+                        </button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                
+                window.selectedCentralType = null;
+                window.selectedKitType = null;
+                
+                window.selectCentralType = (type) => {
+                    document.getElementById('central-titane').classList.remove('selected');
+                    document.getElementById('central-jablotron').classList.remove('selected');
+                    document.getElementById('central-titane').style.borderColor = 'transparent';
+                    document.getElementById('central-jablotron').style.borderColor = 'transparent';
+                    
+                    const selectedElement = document.getElementById(`central-${type}`);
+                    selectedElement.classList.add('selected');
+                    selectedElement.style.borderColor = '#f4e600';
+                    window.selectedCentralType = type;
+                    
+                    const isTitane = type === 'titane';
+                    const detecteurVolPrice = isTitane ? 240 : 290;
+                    const detecteurOuvPrice = isTitane ? 190 : 190;
+                    const clavierPrice = isTitane ? 390 : 490;
+                    const sirenePrice = 390;
+                    
+                    const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
+                    const kit2Total = detecteurVolPrice + (detecteurOuvPrice * 3) + clavierPrice + sirenePrice;
+                    
+                    document.getElementById('kit-options').innerHTML = `
+                        <div style="display: grid; gap: 15px;">
+                            <div id="kit-standard" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                                 onmouseover="this.style.borderColor='#f4e600'" 
+                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
+                                 onclick="selectKitType('kit1')">
+                                <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
+                                <ul style="margin: 0 0 10px 20px; padding: 0; color: #666; font-size: 14px;">
+                                    <li>2x Détecteur volumétrique (${detecteurVolPrice} CHF/u)</li>
+                                    <li>1x Détecteur d'ouverture (${detecteurOuvPrice} CHF)</li>
+                                    <li>1x Clavier (${clavierPrice} CHF)</li>
+                                    <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
+                                </ul>
+                                <p style="font-weight: bold; color: #28a745;">Valeur: ${kit1Total.toFixed(2)} CHF - OFFERT</p>
+                            </div>
+                            <div id="kit-perimetrique" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                                 onmouseover="this.style.borderColor='#f4e600'" 
+                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
+                                 onclick="selectKitType('kit2')">
+                                <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
+                                <ul style="margin: 0 0 10px 20px; padding: 0; color: #666; font-size: 14px;">
+                                    <li>1x Détecteur volumétrique (${detecteurVolPrice} CHF)</li>
+                                    <li>3x Détecteur d'ouverture (${detecteurOuvPrice} CHF/u)</li>
+                                    <li>1x Clavier (${clavierPrice} CHF)</li>
+                                    <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
+                                </ul>
+                                <p style="font-weight: bold; color: #28a745;">Valeur: ${kit2Total.toFixed(2)} CHF - OFFERT</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('kit-selection').style.display = 'block';
+                };
+                
+                window.selectKitType = (type) => {
+                    document.getElementById('kit-standard').classList.remove('selected');
+                    document.getElementById('kit-perimetrique').classList.remove('selected');
+                    document.getElementById('kit-standard').style.borderColor = 'transparent';
+                    document.getElementById('kit-perimetrique').style.borderColor = 'transparent';
+                    
+                    const selectedElement = type === 'kit1' ? document.getElementById('kit-standard') : document.getElementById('kit-perimetrique');
+                    selectedElement.classList.add('selected');
+                    selectedElement.style.borderColor = '#f4e600';
+                    window.selectedKitType = type;
+                    
+                    document.getElementById('validate-kit-btn').disabled = false;
+                    document.getElementById('validate-kit-btn').style.opacity = '1';
+                };
+                
+                window.validateKitSelection = () => {
+                    if (window.selectedCentralType && window.selectedKitType) {
+                        this.addCompleteKit(window.selectedCentralType, window.selectedKitType);
+                        document.body.removeChild(overlay);
+                        this.showNotification(`Kit ${window.selectedKitType === 'kit1' ? 'Standard' : 'Périmétrique'} avec centrale ${window.selectedCentralType === 'titane' ? 'Titane' : 'Jablotron'} ajouté`);
+                    }
+                };
+                
+                window.closeKitSelector = () => {
+                    document.body.removeChild(overlay);
+                };
+            }
+
+            addCompleteKit(centralType, kitType) {
+                const container = document.getElementById('alarm-material-products');
+                container.innerHTML = '';
+                
+                this.selectedCentral = centralType;
+                this.kitOffered = true;
+                
+                const centralId = centralType === 'titane' ? 6 : 5;
+                const centralName = centralType === 'titane' ? 'Centrale Titane' : 'Centrale Jablotron';
+                const centralPrice = centralType === 'titane' ? 690 : 990;
+                
+                const centralLine = document.createElement('div');
+                centralLine.className = 'product-line central-line';
+                centralLine.style.background = '#e3f2fd';
+                centralLine.innerHTML = `
+                    <div style="font-weight: bold;">${centralName}</div>
+                    <input type="number" value="1" min="1" class="quantity-input" readonly>
+                    <input type="number" value="${centralPrice}" class="price-input discount-input" style="display: none;">
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display">${centralPrice.toFixed(2)} CHF</div>
+                    <button class="remove-btn" onclick="this.closest('#alarm-material-products').innerHTML=''; generator.selectedCentral=null; generator.kitOffered=false; updateTotals();">×</button>
+                `;
+                container.appendChild(centralLine);
+                
+                const kitProducts = kitType === 'kit1' ? [
+                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 2 },
+                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 1 },
+                    { id: 7, name: "Clavier (radio)", quantity: 1 },
+                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
+                ] : [
+                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 1 },
+                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 3 },
+                    { id: 7, name: "Clavier (radio)", quantity: 1 },
+                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
+                ];
+                
+                kitProducts.forEach(product => {
+                    const productData = this.catalog['alarm-material'].find(p => p.id === product.id);
+                    if (productData) {
+                        const price = this.getProductPrice(productData);
+                        
+                        const productLine = document.createElement('div');
+                        productLine.className = 'product-line';
+                        productLine.style.background = '#fffbf0';
+                        
+                        productLine.innerHTML = `
+                            <div>${product.name}</div>
+                            <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+                            <input type="number" value="${price}" class="price-input discount-input" style="display: none;">
+                            <div class="checkbox-option" style="margin: 0;">
+                                <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
+                                <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                            </div>
+                            <div class="price-display">OFFERT</div>
+                            <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
+                        `;
+                        container.appendChild(productLine);
+                    }
+                });
+                
+                this.updateSurveillanceOptions(centralType);
+                this.updateAllProductSelects();
+                this.updateTotals();
+            }
+
             updateFogInstallationPrice() {
                 const qtyInput = document.getElementById('fog-installation-qty');
                 const qty = parseInt(qtyInput.value) || 1;
@@ -1586,9 +1818,6 @@
                 
                 if (sectionId === 'alarm-material' && (productId === 5 || productId === 6)) {
                     this.detectSelectedCentral();
-                    
-                    const centraleName = productId === 6 ? 'Titane' : 'Jablotron';
-                    this.showKitProposal(centraleName, sectionId);
                 } else if (sectionId === 'alarm-material') {
                     this.detectSelectedCentral();
                 }
@@ -2068,58 +2297,23 @@
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
                     if (!this.rentalMode['alarm']) {
-                        const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                        const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                        const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                         
-                        let totalMensualitesHT = 0;
-                        let totalComptant = 0;
-                        let maxMonths = 0;
-                        
-                        if (materialMonths > 0) {
-                            const materialMonthly = this.calculateSectionMonthlyCost('alarm-material');
-                            if (materialMonthly > 0) {
-                                totalMensualitesHT += materialMonthly;
-                                maxMonths = Math.max(maxMonths, materialMonths);
-                            } else {
-                                totalComptant += materialTotal;
-                            }
-                        } else {
-                            totalComptant += materialTotal;
-                        }
-                        
-                        if (installMonths > 0) {
-                            const installMonthly = this.calculateSectionMonthlyCost('alarm-installation');
-                            if (installMonthly > 0) {
-                                totalMensualitesHT += installMonthly;
-                                if (!installOffered && installTotal > 0) {
-                                    totalMensualitesHT += installTotal / installMonths;
-                                }
-                                maxMonths = Math.max(maxMonths, installMonths);
-                            } else {
-                                totalComptant += totalInstallation;
-                            }
-                        } else {
-                            totalComptant += totalInstallation;
-                        }
-                        
-                        totalComptant += adminTotal;
-                        
-                        if (maxMonths > 0 && totalMensualitesHT > 0) {
-                            const totalMensuelHT = totalMensualitesHT + surveillanceTotal;
+                        if (paymentMonths > 0) {
+                            const totalMensualitesHT = materialTotal + totalInstallation;
+                            const mensualiteMatInstHT = totalMensualitesHT / paymentMonths;
+                            const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
                             
                             document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('alarm-monthly-count').textContent = maxMonths;
+                            document.getElementById('alarm-monthly-count').textContent = paymentMonths;
                             document.getElementById('alarm-monthly-payment').style.display = 'block';
-                        } else {
-                            document.getElementById('alarm-monthly-payment').style.display = 'none';
-                        }
-                        
-                        if (totalComptant > 0) {
-                            const comptantTTC = totalComptant * 1.081;
+                            
+                            const comptantTTC = adminTotal * 1.081;
                             document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
                             document.getElementById('alarm-cash-payment').style.display = 'block';
                         } else {
+                            document.getElementById('alarm-monthly-payment').style.display = 'none';
                             document.getElementById('alarm-cash-payment').style.display = 'none';
                         }
                     } else {
@@ -2479,7 +2673,7 @@
 
                     if (type === 'alarm') {
                         if (this.hasSectionProducts('alarm-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL (KIT DE BASE)', 'alarm-material', yPos);
+                            yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos);
                         }
 
                         yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
@@ -2712,18 +2906,6 @@
                 doc.text(totalTTC.toFixed(2), 485, yPos + 32);
 
                 yPos += 40;
-
-                if (!this.rentalMode[this.currentTab]) {
-                    const paymentMonths = this.sections[sectionId]?.paymentMonths || 0;
-                    if (paymentMonths > 0 && sectionTotal > 0) {
-                        const monthlyTTC = totalTTC / paymentMonths;
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`Mensualités: ${monthlyTTC.toFixed(2)} CHF TTC x ${paymentMonths} mois`, 40, yPos);
-                        yPos += 10;
-                    }
-                }
 
                 return yPos + 5;
             }
@@ -3065,39 +3247,18 @@
                     
                     const adminTotal = 240;
                     
-                    const materialMonths = this.sections['alarm-material']?.paymentMonths || 0;
-                    const installMonths = this.sections['alarm-installation']?.paymentMonths || 0;
+                    const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                     
                     const surveillanceType = document.getElementById('surveillance-type')?.value;
                     const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
                     const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
                     surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
                     
-                    if (materialMonths > 0) {
-                        const materialMonthly = this.calculateSectionMonthlyCost('alarm-material');
-                        if (materialMonthly > 0) {
-                            totalMensualitesHT = materialMonthly * materialMonths;
-                            monthsCount = materialMonths;
-                        } else {
-                            totalComptantHT += materialTotal;
-                        }
+                    if (paymentMonths > 0) {
+                        totalMensualitesHT = materialTotal + totalInstallation;
+                        monthsCount = paymentMonths;
                     } else {
-                        totalComptantHT += materialTotal;
-                    }
-                    
-                    if (installMonths > 0) {
-                        const installMonthly = this.calculateSectionMonthlyCost('alarm-installation');
-                        if (installMonthly > 0) {
-                            totalMensualitesHT += installMonthly * installMonths;
-                            if (!installOffered && installTotal > 0) {
-                                totalMensualitesHT += installTotal;
-                            }
-                            monthsCount = Math.max(monthsCount, installMonths);
-                        } else {
-                            totalComptantHT += totalInstallation;
-                        }
-                    } else {
-                        totalComptantHT += totalInstallation;
+                        totalComptantHT = materialTotal + totalInstallation;
                     }
                     
                     totalComptantHT += adminTotal;
@@ -3377,6 +3538,14 @@
 
         function updateTotals() {
             generator.updateTotals();
+        }
+
+        function showKitSelector() {
+            generator.showKitSelector();
+        }
+
+        function selectGlobalPayment(element, type) {
+            generator.selectGlobalPayment(element, type);
         }
 
         function handleCommercialSelection(selectElement) {
