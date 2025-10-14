@@ -36,6 +36,29 @@
             align-items: center;
             justify-content: space-between;
             color: #333;
+            position: relative;
+        }
+
+        .catalog-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(51, 51, 51, 0.8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .catalog-btn:hover {
+            background: rgba(51, 51, 51, 1);
+            transform: translateY(-2px);
         }
 
         .logo {
@@ -471,6 +494,335 @@
             width: 200px;
         }
 
+        .catalog-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            overflow-y: auto;
+        }
+
+        .catalog-modal.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .catalog-content {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .catalog-header {
+            background: #333;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .catalog-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .close-catalog {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .close-catalog:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .catalog-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .catalog-tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .catalog-tab:hover {
+            background: #e9ecef;
+        }
+
+        .catalog-tab.active {
+            color: #f4e600;
+            background: white;
+        }
+
+        .catalog-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #f4e600;
+        }
+
+        .catalog-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .catalog-section {
+            display: none;
+        }
+
+        .catalog-section.active {
+            display: block;
+        }
+
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .product-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 13px;
+        }
+
+        .product-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .product-table input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .product-table input:focus {
+            outline: none;
+            border-color: #f4e600;
+        }
+
+        .product-table .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .icon-btn.delete {
+            color: #dc3545;
+        }
+
+        .icon-btn.delete:hover {
+            background: #ffe6e6;
+        }
+
+        .add-product-row {
+            margin-top: 15px;
+        }
+
+        .catalog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .catalog-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+
+        .commercial-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .commercial-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .commercial-item input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: auto;
+        }
+
+        .centrale-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .centrale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .centrale-header h4 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .centrale-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .kit-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .kit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .kit-header h5 {
+            margin: 0;
+            font-size: 16px;
+            color: #495057;
+        }
+
+        .kit-product-line {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .kit-product-line select,
+        .kit-product-line input {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #218838;
+        }
+
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -510,6 +862,9 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
+            <button class="catalog-btn" onclick="openCatalogModal()">
+                ⚙️ Catalogue
+            </button>
             <div class="logo">
                 <div class="logo-img">D</div>
                 <div class="company-info">
@@ -1045,6 +1400,138 @@
         </div>
     </div>
 
+    <!-- Catalog Management Modal -->
+    <div id="catalogModal" class="catalog-modal">
+        <div class="catalog-content">
+            <div class="catalog-header">
+                <h2>📦 Gestion du Catalogue</h2>
+                <button class="close-catalog" onclick="closeCatalogModal()">×</button>
+            </div>
+
+            <div class="catalog-tabs">
+                <button class="catalog-tab active" onclick="showCatalogTab('centrales-catalog')">Centrales & Kits</button>
+                <button class="catalog-tab" onclick="showCatalogTab('alarm-catalog')">Alarmes</button>
+                <button class="catalog-tab" onclick="showCatalogTab('camera-catalog')">Caméras</button>
+                <button class="catalog-tab" onclick="showCatalogTab('fog-catalog')">Brouillard</button>
+                <button class="catalog-tab" onclick="showCatalogTab('commercial-catalog')">Commerciaux</button>
+            </div>
+
+            <div class="catalog-body">
+                <!-- Centrales & Kits -->
+                <div id="centrales-catalog" class="catalog-section active">
+                    <h3>Centrales d'alarme et kits de base</h3>
+                    <div id="centrales-container">
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="addNewCentrale()">+ Ajouter une centrale</button>
+                </div>
+
+                <!-- Alarm Products -->
+                <div id="alarm-catalog" class="catalog-section active">
+                    <h3>🔵 Produits Alarmes - Centrale Titane</h3>
+                    <table class="product-table" id="alarm-titane-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Nom du produit</th>
+                                <th style="width: 20%">Prix comptant (CHF)</th>
+                                <th style="width: 15%">Mensualité</th>
+                                <th style="width: 15%">
+                                    <div class="checkbox-field">
+                                        <span>Comptant uniquement</span>
+                                    </div>
+                                </th>
+                                <th style="width: 10%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alarm-titane-body">
+                        </tbody>
+                    </table>
+                    <button class="btn btn-primary" onclick="addNewAlarmProduct('titane')" style="margin-bottom: 30px;">+ Ajouter un produit Titane</button>
+
+                    <h3 style="margin-top: 30px;">🟢 Produits Alarmes - Centrale Jablotron</h3>
+                    <table class="product-table" id="alarm-jablotron-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Nom du produit</th>
+                                <th style="width: 20%">Prix comptant (CHF)</th>
+                                <th style="width: 15%">Mensualité</th>
+                                <th style="width: 15%">
+                                    <div class="checkbox-field">
+                                        <span>Comptant uniquement</span>
+                                    </div>
+                                </th>
+                                <th style="width: 10%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alarm-jablotron-body">
+                        </tbody>
+                    </table>
+                    <button class="btn btn-primary" onclick="addNewAlarmProduct('jablotron')">+ Ajouter un produit Jablotron</button>
+                </div>
+
+                <!-- Camera Products -->
+                <div id="camera-catalog" class="catalog-section">
+                    <h3>Produits Caméras</h3>
+                    <table class="product-table" id="camera-products-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%">Nom du produit</th>
+                                <th style="width: 12%">Prix comptant (CHF)</th>
+                                <th style="width: 10%">Mensualité 48 mois</th>
+                                <th style="width: 10%">Mensualité 36 mois</th>
+                                <th style="width: 10%">Mensualité 24 mois</th>
+                                <th style="width: 15%">
+                                    <div class="checkbox-field">
+                                        <span>Comptant uniquement</span>
+                                    </div>
+                                </th>
+                                <th style="width: 10%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="camera-products-body">
+                        </tbody>
+                    </table>
+                    <button class="btn btn-primary" onclick="addNewCameraProduct()">+ Ajouter un produit</button>
+                </div>
+
+                <!-- Fog Products -->
+                <div id="fog-catalog" class="catalog-section">
+                    <h3>Produits Générateur de Brouillard</h3>
+                    <table class="product-table" id="fog-products-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Nom du produit</th>
+                                <th style="width: 20%">Prix comptant (CHF)</th>
+                                <th style="width: 15%">Mensualité</th>
+                                <th style="width: 15%">
+                                    <div class="checkbox-field">
+                                        <span>Comptant uniquement</span>
+                                    </div>
+                                </th>
+                                <th style="width: 10%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fog-products-body">
+                        </tbody>
+                    </table>
+                    <button class="btn btn-primary" onclick="addNewFogProduct()">+ Ajouter un produit</button>
+                </div>
+
+                <!-- Commerciaux -->
+                <div id="commercial-catalog" class="catalog-section">
+                    <h3>Liste des Commerciaux</h3>
+                    <div class="commercial-list" id="commercial-list">
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="addNewCommercial()">+ Ajouter un commercial</button>
+                </div>
+            </div>
+
+            <div class="catalog-actions">
+                <button class="btn-reset" onclick="resetCatalog()">Réinitialiser par défaut</button>
+                <button class="btn-save" onclick="saveCatalog()">💾 Enregistrer les modifications</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Générateur de devis Dialarme - Version avec prix mensuels corrigés
         class DialarmeFinalGenerator {
@@ -1163,6 +1650,70 @@
                 this.selectedCentral = null;
                 this.kitOffered = false;
 
+                this.commercialsList = [
+                    'Alikhan Guisseinov', 'Arnaud Bloch', 'Benali Kodad', 'Bryan Debrosse',
+                    'Cédric Boldron', 'Emin Comert', 'Gérald Clausen', 'Heythem Ziaya',
+                    'Iyed Baccouche', 'Matys Goiot', 'Mohamed Tartik', 'Nassim Jaza',
+                    'Nora Sassi', 'Rodolphe De Vito', 'Sabine Balducci', 'Samir Ouhameni',
+                    'Thilan Curt', 'Thomas Garcia', 'Wassim Tahiri'
+                ];
+
+                this.centralesConfig = [
+                    {
+                        id: 'titane',
+                        name: 'Centrale Titane',
+                        productId: 6,
+                        price: 690,
+                        kits: [
+                            {
+                                name: 'Kit Standard',
+                                products: [
+                                    { id: 8, quantity: 2 },  // Détecteur volumétrique
+                                    { id: 10, quantity: 1 }, // Détecteur d'ouverture
+                                    { id: 7, quantity: 1 },  // Clavier
+                                    { id: 18, quantity: 1 }  // Sirène petite
+                                ]
+                            },
+                            {
+                                name: 'Kit Périmétrique',
+                                products: [
+                                    { id: 8, quantity: 1 },  // Détecteur volumétrique
+                                    { id: 10, quantity: 3 }, // Détecteur d'ouverture
+                                    { id: 7, quantity: 1 },  // Clavier
+                                    { id: 18, quantity: 1 }  // Sirène petite
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: 'jablotron',
+                        name: 'Centrale Jablotron',
+                        productId: 5,
+                        price: 990,
+                        kits: [
+                            {
+                                name: 'Kit Standard',
+                                products: [
+                                    { id: 8, quantity: 2 },
+                                    { id: 10, quantity: 1 },
+                                    { id: 7, quantity: 1 },
+                                    { id: 18, quantity: 1 }
+                                ]
+                            },
+                            {
+                                name: 'Kit Périmétrique',
+                                products: [
+                                    { id: 8, quantity: 1 },
+                                    { id: 10, quantity: 3 },
+                                    { id: 7, quantity: 1 },
+                                    { id: 18, quantity: 1 }
+                                ]
+                            }
+                        ]
+                    }
+                ];
+
+                this.loadCatalogFromStorage();
                 this.init();
             }
 
@@ -1174,6 +1725,585 @@
 
             roundToFiveCents(amount) {
                 return Math.ceil(amount * 20) / 20;
+            }
+
+            loadCatalogFromStorage() {
+                const savedCatalog = localStorage.getItem('dialarme_catalog');
+                const savedCommercials = localStorage.getItem('dialarme_commercials');
+                const savedCentrales = localStorage.getItem('dialarme_centrales');
+                
+                if (savedCatalog) {
+                    try {
+                        this.catalog = JSON.parse(savedCatalog);
+                    } catch (e) {
+                        console.error('Erreur lors du chargement du catalogue', e);
+                    }
+                }
+                
+                if (savedCommercials) {
+                    try {
+                        this.commercialsList = JSON.parse(savedCommercials);
+                    } catch (e) {
+                        console.error('Erreur lors du chargement des commerciaux', e);
+                    }
+                }
+                
+                if (savedCentrales) {
+                    try {
+                        this.centralesConfig = JSON.parse(savedCentrales);
+                    } catch (e) {
+                        console.error('Erreur lors du chargement des centrales', e);
+                    }
+                }
+            }
+
+            saveCatalogToStorage() {
+                localStorage.setItem('dialarme_catalog', JSON.stringify(this.catalog));
+                localStorage.setItem('dialarme_commercials', JSON.stringify(this.commercialsList));
+                localStorage.setItem('dialarme_centrales', JSON.stringify(this.centralesConfig));
+            }
+
+            renderCatalogModal() {
+                this.renderCentrales();
+                this.renderAlarmProducts();
+                this.renderCameraProducts();
+                this.renderFogProducts();
+                this.renderCommercials();
+            }
+
+            renderCentrales() {
+                const container = document.getElementById('centrales-container');
+                container.innerHTML = '';
+                
+                this.centralesConfig.forEach((centrale, centraleIndex) => {
+                    const card = document.createElement('div');
+                    card.className = 'centrale-card';
+                    card.innerHTML = `
+                        <div class="centrale-header">
+                            <h4>${centrale.name}</h4>
+                            <button class="icon-btn delete" onclick="deleteCentrale(${centraleIndex})">🗑️ Supprimer centrale</button>
+                        </div>
+                        
+                        <div class="centrale-info">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Nom de la centrale</label>
+                                <input type="text" value="${centrale.name}" 
+                                       data-centrale="${centraleIndex}" 
+                                       data-field="name" 
+                                       style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Prix (CHF)</label>
+                                <input type="number" step="0.01" value="${centrale.price}" 
+                                       data-centrale="${centraleIndex}" 
+                                       data-field="price" 
+                                       style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;">
+                            </div>
+                        </div>
+                        
+                        <div id="kits-container-${centraleIndex}"></div>
+                        
+                        <button class="btn-small btn-add" onclick="addKitToCentrale(${centraleIndex})" style="margin-top: 10px;">+ Ajouter un kit</button>
+                    `;
+                    container.appendChild(card);
+                    
+                    // Rendre les kits
+                    this.renderKits(centraleIndex);
+                });
+            }
+
+            renderKits(centraleIndex) {
+                const centrale = this.centralesConfig[centraleIndex];
+                const kitsContainer = document.getElementById(`kits-container-${centraleIndex}`);
+                kitsContainer.innerHTML = '';
+                
+                centrale.kits.forEach((kit, kitIndex) => {
+                    const kitSection = document.createElement('div');
+                    kitSection.className = 'kit-section';
+                    kitSection.innerHTML = `
+                        <div class="kit-header">
+                            <h5>📦 ${kit.name}</h5>
+                            <button class="icon-btn delete" onclick="deleteKit(${centraleIndex}, ${kitIndex})">🗑️</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 500;">Nom du kit</label>
+                            <input type="text" value="${kit.name}" 
+                                   data-centrale="${centraleIndex}" 
+                                   data-kit="${kitIndex}" 
+                                   data-field="kitName" 
+                                   style="width: 100%; padding: 6px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px;">
+                        </div>
+                        
+                        <div id="kit-products-${centraleIndex}-${kitIndex}" style="margin-top: 10px;">
+                        </div>
+                        
+                        <button class="btn-small btn-add" onclick="addProductToKit(${centraleIndex}, ${kitIndex})">+ Ajouter un produit au kit</button>
+                    `;
+                    kitsContainer.appendChild(kitSection);
+                    
+                    // Rendre les produits du kit
+                    this.renderKitProducts(centraleIndex, kitIndex);
+                });
+            }
+
+            renderKitProducts(centraleIndex, kitIndex) {
+                const kit = this.centralesConfig[centraleIndex].kits[kitIndex];
+                const container = document.getElementById(`kit-products-${centraleIndex}-${kitIndex}`);
+                container.innerHTML = '';
+                
+                const alarmProducts = this.catalog['alarm-material'].filter(p => !p.isCustom && p.id !== 5 && p.id !== 6);
+                
+                kit.products.forEach((product, productIndex) => {
+                    const line = document.createElement('div');
+                    line.className = 'kit-product-line';
+                    
+                    const selectedProduct = alarmProducts.find(p => p.id === product.id);
+                    
+                    line.innerHTML = `
+                        <select data-centrale="${centraleIndex}" 
+                                data-kit="${kitIndex}" 
+                                data-product="${productIndex}">
+                            <option value="">Sélectionner un produit</option>
+                            ${alarmProducts.map(p => `
+                                <option value="${p.id}" ${p.id === product.id ? 'selected' : ''}>
+                                    ${p.name}
+                                </option>
+                            `).join('')}
+                        </select>
+                        
+                        <input type="number" min="1" value="${product.quantity}" 
+                               data-centrale="${centraleIndex}" 
+                               data-kit="${kitIndex}" 
+                               data-product="${productIndex}"
+                               placeholder="Qté">
+                        
+                        <button class="icon-btn delete" onclick="deleteKitProduct(${centraleIndex}, ${kitIndex}, ${productIndex})">🗑️</button>
+                    `;
+                    
+                    container.appendChild(line);
+                });
+            }
+
+            renderAlarmProducts() {
+                const tbodyTitane = document.getElementById('alarm-titane-body');
+                const tbodyJablotron = document.getElementById('alarm-jablotron-body');
+                tbodyTitane.innerHTML = '';
+                tbodyJablotron.innerHTML = '';
+                
+                const products = this.catalog['alarm-material'].filter(p => !p.isCustom);
+                
+                // Produits Titane
+                products.forEach((product, index) => {
+                    // Si le produit a un prix Titane ou un prix générique (et n'est pas exclusif Jablotron)
+                    if ((product.priceTitane !== undefined || (product.price !== undefined && !product.requiresJablotron)) && product.id !== 5) {
+                        const isCentral = product.id === 6;
+                        const price = product.priceTitane !== undefined ? product.priceTitane : product.price;
+                        const cashOnly = !product.monthlyTitane;
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="text" value="${product.name}" data-field="name" data-index="${index}" data-type="titane"></td>
+                            <td><input type="number" step="0.01" value="${price || 0}" data-field="priceTitane" data-index="${index}" data-type="titane"></td>
+                            <td><input type="number" step="1" value="${product.monthlyTitane || ''}" data-field="monthlyTitane" data-index="${index}" data-type="titane" ${cashOnly ? 'disabled' : ''}></td>
+                            <td>
+                                <div class="checkbox-field">
+                                    <input type="checkbox" ${cashOnly ? 'checked' : ''} onchange="toggleAlarmCashOnly(${index}, 'titane', this.checked)">
+                                </div>
+                            </td>
+                            <td class="actions">
+                                ${!isCentral ? `<button class="icon-btn delete" onclick="deleteAlarmProduct(${index}, 'titane')">🗑️</button>` : ''}
+                            </td>
+                        `;
+                        tbodyTitane.appendChild(row);
+                    }
+                });
+                
+                // Produits Jablotron
+                products.forEach((product, index) => {
+                    // Si le produit a un prix Jablotron ou est exclusif Jablotron
+                    if (product.priceJablotron !== undefined || product.requiresJablotron || product.id === 5) {
+                        const isCentral = product.id === 5;
+                        const price = product.priceJablotron !== undefined ? product.priceJablotron : product.price;
+                        const cashOnly = !product.monthlyJablotron;
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="text" value="${product.name}" data-field="name" data-index="${index}" data-type="jablotron"></td>
+                            <td><input type="number" step="0.01" value="${price || 0}" data-field="priceJablotron" data-index="${index}" data-type="jablotron"></td>
+                            <td><input type="number" step="1" value="${product.monthlyJablotron || ''}" data-field="monthlyJablotron" data-index="${index}" data-type="jablotron" ${cashOnly ? 'disabled' : ''}></td>
+                            <td>
+                                <div class="checkbox-field">
+                                    <input type="checkbox" ${cashOnly ? 'checked' : ''} onchange="toggleAlarmCashOnly(${index}, 'jablotron', this.checked)">
+                                </div>
+                            </td>
+                            <td class="actions">
+                                ${!isCentral ? `<button class="icon-btn delete" onclick="deleteAlarmProduct(${index}, 'jablotron')">🗑️</button>` : ''}
+                            </td>
+                        `;
+                        tbodyJablotron.appendChild(row);
+                    }
+                });
+            }
+
+            renderCameraProducts() {
+                const tbody = document.getElementById('camera-products-body');
+                tbody.innerHTML = '';
+                
+                const products = this.catalog['camera-material'].filter(p => !p.isCustom);
+                
+                products.forEach((product, index) => {
+                    const cashOnly = !product.monthly48 && !product.monthly36 && !product.monthly24;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="text" value="${product.name}" data-field="name" data-index="${index}"></td>
+                        <td><input type="number" step="0.01" value="${product.price}" data-field="price" data-index="${index}"></td>
+                        <td><input type="number" step="1" value="${product.monthly48 || ''}" data-field="monthly48" data-index="${index}" ${cashOnly ? 'disabled' : ''}></td>
+                        <td><input type="number" step="1" value="${product.monthly36 || ''}" data-field="monthly36" data-index="${index}" ${cashOnly ? 'disabled' : ''}></td>
+                        <td><input type="number" step="1" value="${product.monthly24 || ''}" data-field="monthly24" data-index="${index}" ${cashOnly ? 'disabled' : ''}></td>
+                        <td>
+                            <div class="checkbox-field">
+                                <input type="checkbox" ${cashOnly ? 'checked' : ''} onchange="toggleCameraCashOnly(${index}, this.checked)">
+                            </div>
+                        </td>
+                        <td class="actions">
+                            <button class="icon-btn delete" onclick="deleteCameraProduct(${index})">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            renderFogProducts() {
+                const tbody = document.getElementById('fog-products-body');
+                tbody.innerHTML = '';
+                
+                const products = this.catalog['fog-material'].filter(p => !p.isCustom);
+                
+                products.forEach((product, index) => {
+                    const cashOnly = !product.monthly;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="text" value="${product.name}" data-field="name" data-index="${index}"></td>
+                        <td><input type="number" step="0.01" value="${product.price}" data-field="price" data-index="${index}"></td>
+                        <td><input type="number" step="1" value="${product.monthly || ''}" data-field="monthly" data-index="${index}" ${cashOnly ? 'disabled' : ''}></td>
+                        <td>
+                            <div class="checkbox-field">
+                                <input type="checkbox" ${cashOnly ? 'checked' : ''} onchange="toggleFogCashOnly(${index}, this.checked)">
+                            </div>
+                        </td>
+                        <td class="actions">
+                            <button class="icon-btn delete" onclick="deleteFogProduct(${index})">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            renderCommercials() {
+                const container = document.getElementById('commercial-list');
+                container.innerHTML = '';
+                
+                this.commercialsList.forEach((commercial, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'commercial-item';
+                    item.innerHTML = `
+                        <input type="text" value="${commercial}" data-index="${index}">
+                        <button class="icon-btn delete" onclick="deleteCommercial(${index})">🗑️</button>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            collectCatalogData() {
+                // Centrales configuration
+                const centralesConfig = [];
+                this.centralesConfig.forEach((centrale, centraleIndex) => {
+                    const centraleData = {
+                        id: centrale.id,
+                        name: document.querySelector(`input[data-centrale="${centraleIndex}"][data-field="name"]`).value,
+                        productId: centrale.productId,
+                        price: parseFloat(document.querySelector(`input[data-centrale="${centraleIndex}"][data-field="price"]`).value) || 0,
+                        kits: []
+                    };
+                    
+                    centrale.kits.forEach((kit, kitIndex) => {
+                        const kitName = document.querySelector(`input[data-centrale="${centraleIndex}"][data-kit="${kitIndex}"][data-field="kitName"]`).value;
+                        const kitProducts = [];
+                        
+                        const productSelects = document.querySelectorAll(`select[data-centrale="${centraleIndex}"][data-kit="${kitIndex}"]`);
+                        productSelects.forEach((select, productIndex) => {
+                            const productId = parseInt(select.value);
+                            const qtyInput = document.querySelector(`input[data-centrale="${centraleIndex}"][data-kit="${kitIndex}"][data-product="${productIndex}"]`);
+                            const quantity = parseInt(qtyInput.value) || 1;
+                            
+                            if (productId) {
+                                kitProducts.push({ id: productId, quantity });
+                            }
+                        });
+                        
+                        if (kitProducts.length > 0) {
+                            centraleData.kits.push({
+                                name: kitName,
+                                products: kitProducts
+                            });
+                        }
+                    });
+                    
+                    centralesConfig.push(centraleData);
+                });
+                
+                // Alarm products - on doit fusionner les données des deux tableaux
+                const alarmProducts = [];
+                const productsMap = new Map();
+                
+                // Collecter les produits Titane
+                const titaneRows = document.querySelectorAll('#alarm-titane-body tr');
+                titaneRows.forEach(row => {
+                    const index = parseInt(row.querySelector('input[data-field="name"]').getAttribute('data-index'));
+                    const originalProduct = this.catalog['alarm-material'].filter(p => !p.isCustom)[index];
+                    
+                    const product = {
+                        id: originalProduct.id,
+                        name: row.querySelector('input[data-field="name"]').value,
+                        priceTitane: parseFloat(row.querySelector('input[data-field="priceTitane"]').value) || 0
+                    };
+                    
+                    const monthlyTitane = row.querySelector('input[data-field="monthlyTitane"]').value;
+                    if (monthlyTitane) product.monthlyTitane = parseInt(monthlyTitane);
+                    
+                    productsMap.set(originalProduct.id, product);
+                });
+                
+                // Collecter les produits Jablotron et fusionner
+                const jablotronRows = document.querySelectorAll('#alarm-jablotron-body tr');
+                jablotronRows.forEach(row => {
+                    const index = parseInt(row.querySelector('input[data-field="name"]').getAttribute('data-index'));
+                    const originalProduct = this.catalog['alarm-material'].filter(p => !p.isCustom)[index];
+                    
+                    const priceJablotron = parseFloat(row.querySelector('input[data-field="priceJablotron"]').value) || 0;
+                    const monthlyJablotron = row.querySelector('input[data-field="monthlyJablotron"]').value;
+                    
+                    if (productsMap.has(originalProduct.id)) {
+                        // Produit existe déjà (commun aux deux), ajouter les infos Jablotron
+                        const product = productsMap.get(originalProduct.id);
+                        product.priceJablotron = priceJablotron;
+                        if (monthlyJablotron) product.monthlyJablotron = parseInt(monthlyJablotron);
+                    } else {
+                        // Produit exclusif Jablotron
+                        const product = {
+                            id: originalProduct.id,
+                            name: row.querySelector('input[data-field="name"]').value,
+                            priceJablotron: priceJablotron,
+                            requiresJablotron: true
+                        };
+                        if (monthlyJablotron) product.monthlyJablotron = parseInt(monthlyJablotron);
+                        productsMap.set(originalProduct.id, product);
+                    }
+                });
+                
+                // Convertir la Map en tableau
+                productsMap.forEach(product => {
+                    // Si le produit n'a qu'un prix (pas les deux), on le met dans price aussi
+                    if (product.priceTitane !== undefined && product.priceJablotron === undefined) {
+                        product.price = product.priceTitane;
+                    } else if (product.priceJablotron !== undefined && product.priceTitane === undefined) {
+                        product.price = product.priceJablotron;
+                    }
+                    alarmProducts.push(product);
+                });
+                
+                // Camera products
+                const cameraProducts = [];
+                const cameraRows = document.querySelectorAll('#camera-products-body tr');
+                cameraRows.forEach(row => {
+                    const index = parseInt(row.querySelector('input[data-field="name"]').getAttribute('data-index'));
+                    const originalProduct = this.catalog['camera-material'].filter(p => !p.isCustom)[index];
+                    
+                    const product = {
+                        id: originalProduct.id,
+                        name: row.querySelector('input[data-field="name"]').value,
+                        price: parseFloat(row.querySelector('input[data-field="price"]').value) || 0
+                    };
+                    
+                    const monthly48 = row.querySelector('input[data-field="monthly48"]').value;
+                    const monthly36 = row.querySelector('input[data-field="monthly36"]').value;
+                    const monthly24 = row.querySelector('input[data-field="monthly24"]').value;
+                    
+                    if (monthly48) product.monthly48 = parseInt(monthly48);
+                    if (monthly36) product.monthly36 = parseInt(monthly36);
+                    if (monthly24) product.monthly24 = parseInt(monthly24);
+                    
+                    cameraProducts.push(product);
+                });
+                
+                // Fog products
+                const fogProducts = [];
+                const fogRows = document.querySelectorAll('#fog-products-body tr');
+                fogRows.forEach(row => {
+                    const index = parseInt(row.querySelector('input[data-field="name"]').getAttribute('data-index'));
+                    const originalProduct = this.catalog['fog-material'].filter(p => !p.isCustom)[index];
+                    
+                    const product = {
+                        id: originalProduct.id,
+                        name: row.querySelector('input[data-field="name"]').value,
+                        price: parseFloat(row.querySelector('input[data-field="price"]').value) || 0
+                    };
+                    
+                    const monthly = row.querySelector('input[data-field="monthly"]').value;
+                    if (monthly) product.monthly = parseInt(monthly);
+                    
+                    fogProducts.push(product);
+                });
+                
+                // Commercials
+                const commercials = [];
+                const commercialInputs = document.querySelectorAll('#commercial-list input');
+                commercialInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        commercials.push(input.value.trim());
+                    }
+                });
+                
+                return {
+                    centralesConfig,
+                    alarmProducts,
+                    cameraProducts,
+                    fogProducts,
+                    commercials
+                };
+            }
+
+            validateCatalogData(data) {
+                // Check centrales
+                for (let centrale of data.centralesConfig) {
+                    if (!centrale.name.trim()) {
+                        alert('Toutes les centrales doivent avoir un nom');
+                        return false;
+                    }
+                    if (centrale.price === 0 || isNaN(centrale.price)) {
+                        alert(`La centrale "${centrale.name}" doit avoir un prix valide`);
+                        return false;
+                    }
+                    if (centrale.kits.length === 0) {
+                        alert(`La centrale "${centrale.name}" doit avoir au moins un kit`);
+                        return false;
+                    }
+                    for (let kit of centrale.kits) {
+                        if (!kit.name.trim()) {
+                            alert(`Tous les kits de la centrale "${centrale.name}" doivent avoir un nom`);
+                            return false;
+                        }
+                        if (kit.products.length === 0) {
+                            alert(`Le kit "${kit.name}" de la centrale "${centrale.name}" doit contenir au moins un produit`);
+                            return false;
+                        }
+                    }
+                }
+                
+                // Check alarm products
+                for (let product of data.alarmProducts) {
+                    if (!product.name.trim()) {
+                        alert('Tous les produits d\'alarme doivent avoir un nom');
+                        return false;
+                    }
+                    if (product.price === 0 || isNaN(product.price)) {
+                        alert(`Le produit "${product.name}" doit avoir un prix valide`);
+                        return false;
+                    }
+                }
+                
+                // Check camera products
+                for (let product of data.cameraProducts) {
+                    if (!product.name.trim()) {
+                        alert('Tous les produits caméra doivent avoir un nom');
+                        return false;
+                    }
+                    if (product.price === 0 || isNaN(product.price)) {
+                        alert(`Le produit "${product.name}" doit avoir un prix valide`);
+                        return false;
+                    }
+                }
+                
+                // Check fog products
+                for (let product of data.fogProducts) {
+                    if (!product.name.trim()) {
+                        alert('Tous les produits brouillard doivent avoir un nom');
+                        return false;
+                    }
+                    if (product.price === 0 || isNaN(product.price)) {
+                        alert(`Le produit "${product.name}" doit avoir un prix valide`);
+                        return false;
+                    }
+                }
+                
+                if (data.commercials.length === 0) {
+                    alert('Vous devez avoir au moins un commercial');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            applyCatalogChanges(data) {
+                // Update centrales config
+                this.centralesConfig = data.centralesConfig;
+                
+                // Update alarm products
+                this.catalog['alarm-material'] = [
+                    ...data.alarmProducts.sort((a, b) => a.name.localeCompare(b.name)),
+                    { id: 99, name: "Autre", price: 0.00, isCustom: true }
+                ];
+                
+                this.catalog['alarm-installation'] = [
+                    { id: 99, name: "Autre", price: 0.00, isCustom: true },
+                    ...data.alarmProducts.filter(p => p.id !== 5 && p.id !== 6).sort((a, b) => a.name.localeCompare(b.name)),
+                    { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 }
+                ];
+                
+                // Update camera products
+                this.catalog['camera-material'] = [
+                    { id: 99, name: "Autre", price: 0.00, isCustom: true },
+                    ...data.cameraProducts.sort((a, b) => a.name.localeCompare(b.name))
+                ];
+                
+                // Update fog products
+                this.catalog['fog-material'] = [
+                    ...data.fogProducts.sort((a, b) => a.name.localeCompare(b.name)),
+                    { id: 99, name: "Autre", price: 0.00, isCustom: true }
+                ];
+                
+                // Update commercials
+                this.commercialsList = data.commercials;
+                
+                // Save to storage
+                this.saveCatalogToStorage();
+                
+                // Update all dropdowns
+                this.updateAllProductSelects();
+                this.updateCommercialSelects();
+            }
+
+            updateCommercialSelects() {
+                const selects = ['commercial', 'commercialCamera', 'commercialFog'];
+                
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        const currentValue = select.value;
+                        const optionsHTML = `
+                            <option value="">Sélectionner un commercial</option>
+                            ${this.commercialsList.map(c => `<option value="${c}">${c}</option>`).join('')}
+                            <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
+                        `;
+                        select.innerHTML = optionsHTML;
+                        if (currentValue && (this.commercialsList.includes(currentValue) || currentValue === 'autre')) {
+                            select.value = currentValue;
+                        }
+                    }
+                });
             }
 
             updateCurrentDate() {
@@ -1431,29 +2561,26 @@
                     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
                 `;
                 
+                // Créer les options de centrales dynamiquement
+                const centralesHTML = this.centralesConfig.map(centrale => `
+                    <div id="central-${centrale.id}" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                         onmouseover="this.style.borderColor='#f4e600'" 
+                         onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
+                         onclick="selectCentralType('${centrale.id}')">
+                        <h4 style="margin-bottom: 10px; color: #333;">${centrale.name}</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Système de sécurité</p>
+                        <p style="font-weight: bold; color: #28a745;">${centrale.price.toFixed(2)} CHF</p>
+                    </div>
+                `).join('');
+                
                 modal.innerHTML = `
                     <h2 style="margin-bottom: 20px; color: #333;">🛡️ Sélection du Kit de Base</h2>
                     <p style="margin-bottom: 20px; color: #666;">Choisissez d'abord votre centrale, puis le kit de base inclus</p>
                     
                     <div style="margin-bottom: 25px;">
                         <h3 style="margin-bottom: 15px; color: #333; font-size: 18px;">1️⃣ Choisissez votre centrale</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div id="central-titane" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
-                                 onmouseover="this.style.borderColor='#f4e600'" 
-                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
-                                 onclick="selectCentralType('titane')">
-                                <h4 style="margin-bottom: 10px; color: #333;">Centrale Titane</h4>
-                                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Système complet de sécurité</p>
-                                <p style="font-weight: bold; color: #28a745;">690.00 CHF</p>
-                            </div>
-                            <div id="central-jablotron" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
-                                 onmouseover="this.style.borderColor='#f4e600'" 
-                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
-                                 onclick="selectCentralType('jablotron')">
-                                <h4 style="margin-bottom: 10px; color: #333;">Centrale Jablotron</h4>
-                                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Système premium avancé</p>
-                                <p style="font-weight: bold; color: #28a745;">990.00 CHF</p>
-                            </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                            ${centralesHTML}
                         </div>
                     </div>
                     
@@ -1478,80 +2605,83 @@
                 window.selectedCentralType = null;
                 window.selectedKitType = null;
                 
-                window.selectCentralType = (type) => {
-                    document.getElementById('central-titane').classList.remove('selected');
-                    document.getElementById('central-jablotron').classList.remove('selected');
-                    document.getElementById('central-titane').style.borderColor = 'transparent';
-                    document.getElementById('central-jablotron').style.borderColor = 'transparent';
+                window.selectCentralType = (centraleId) => {
+                    // Réinitialiser tous les styles
+                    this.centralesConfig.forEach(c => {
+                        const el = document.getElementById(`central-${c.id}`);
+                        if (el) {
+                            el.classList.remove('selected');
+                            el.style.borderColor = 'transparent';
+                        }
+                    });
                     
-                    const selectedElement = document.getElementById(`central-${type}`);
+                    const selectedElement = document.getElementById(`central-${centraleId}`);
                     selectedElement.classList.add('selected');
                     selectedElement.style.borderColor = '#f4e600';
-                    window.selectedCentralType = type;
+                    window.selectedCentralType = centraleId;
                     
-                    const isTitane = type === 'titane';
-                    const detecteurVolPrice = isTitane ? 240 : 290;
-                    const detecteurOuvPrice = isTitane ? 190 : 240;
-                    const clavierPrice = isTitane ? 390 : 390;
-                    const sirenePrice = 390;
+                    // Trouver la centrale sélectionnée
+                    const centrale = this.centralesConfig.find(c => c.id === centraleId);
                     
-                    const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
-                    const kit2Total = detecteurVolPrice + (detecteurOuvPrice * 3) + clavierPrice + sirenePrice;
-                    
-                    document.getElementById('kit-options').innerHTML = `
-                        <div style="display: grid; gap: 15px;">
-                            <div id="kit-standard" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
+                    // Construire les options de kits
+                    const kitsHTML = centrale.kits.map((kit, index) => {
+                        // Calculer le total du kit
+                        let kitTotal = 0;
+                        const kitProducts = kit.products.map(p => {
+                            const product = this.catalog['alarm-material'].find(prod => prod.id === p.id);
+                            if (product) {
+                                const price = this.getProductPrice(product);
+                                kitTotal += price * p.quantity;
+                                return `<li>${p.quantity}x ${product.name} (${price.toFixed(2)} CHF/u)</li>`;
+                            }
+                            return '';
+                        }).join('');
+                        
+                        return `
+                            <div id="kit-${index}" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s; margin-bottom: 10px;" 
                                  onmouseover="this.style.borderColor='#f4e600'" 
                                  onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
-                                 onclick="selectKitType('kit1')">
-                                <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
+                                 onclick="selectKitType(${index})">
+                                <h4 style="margin-bottom: 10px; color: #333;">📦 ${kit.name}</h4>
                                 <ul style="margin: 0 0 10px 20px; padding: 0; color: #666; font-size: 14px;">
-                                    <li>2x Détecteur volumétrique (${detecteurVolPrice} CHF/u)</li>
-                                    <li>1x Détecteur d'ouverture (${detecteurOuvPrice} CHF)</li>
-                                    <li>1x Clavier (${clavierPrice} CHF)</li>
-                                    <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
+                                    ${kitProducts}
                                 </ul>
-                                <p style="font-weight: bold; color: #28a745;">Valeur: ${kit1Total.toFixed(2)} CHF - OFFERT</p>
+                                <p style="font-weight: bold; color: #28a745;">Valeur: ${kitTotal.toFixed(2)} CHF - OFFERT</p>
                             </div>
-                            <div id="kit-perimetrique" style="background: #f8f9fa; padding: 20px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;" 
-                                 onmouseover="this.style.borderColor='#f4e600'" 
-                                 onmouseout="if(!this.classList.contains('selected')) this.style.borderColor='transparent'"
-                                 onclick="selectKitType('kit2')">
-                                <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
-                                <ul style="margin: 0 0 10px 20px; padding: 0; color: #666; font-size: 14px;">
-                                    <li>1x Détecteur volumétrique (${detecteurVolPrice} CHF)</li>
-                                    <li>3x Détecteur d'ouverture (${detecteurOuvPrice} CHF/u)</li>
-                                    <li>1x Clavier (${clavierPrice} CHF)</li>
-                                    <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
-                                </ul>
-                                <p style="font-weight: bold; color: #28a745;">Valeur: ${kit2Total.toFixed(2)} CHF - OFFERT</p>
-                            </div>
-                        </div>
-                    `;
+                        `;
+                    }).join('');
                     
+                    document.getElementById('kit-options').innerHTML = kitsHTML;
                     document.getElementById('kit-selection').style.display = 'block';
                 };
                 
-                window.selectKitType = (type) => {
-                    document.getElementById('kit-standard').classList.remove('selected');
-                    document.getElementById('kit-perimetrique').classList.remove('selected');
-                    document.getElementById('kit-standard').style.borderColor = 'transparent';
-                    document.getElementById('kit-perimetrique').style.borderColor = 'transparent';
+                window.selectKitType = (kitIndex) => {
+                    // Réinitialiser tous les kits
+                    const centrale = this.centralesConfig.find(c => c.id === window.selectedCentralType);
+                    centrale.kits.forEach((kit, index) => {
+                        const el = document.getElementById(`kit-${index}`);
+                        if (el) {
+                            el.classList.remove('selected');
+                            el.style.borderColor = 'transparent';
+                        }
+                    });
                     
-                    const selectedElement = type === 'kit1' ? document.getElementById('kit-standard') : document.getElementById('kit-perimetrique');
+                    const selectedElement = document.getElementById(`kit-${kitIndex}`);
                     selectedElement.classList.add('selected');
                     selectedElement.style.borderColor = '#f4e600';
-                    window.selectedKitType = type;
+                    window.selectedKitType = kitIndex;
                     
                     document.getElementById('validate-kit-btn').disabled = false;
                     document.getElementById('validate-kit-btn').style.opacity = '1';
                 };
                 
                 window.validateKitSelection = () => {
-                    if (window.selectedCentralType && window.selectedKitType) {
+                    if (window.selectedCentralType && window.selectedKitType !== null) {
+                        const centrale = this.centralesConfig.find(c => c.id === window.selectedCentralType);
+                        const kit = centrale.kits[window.selectedKitType];
                         this.addCompleteKit(window.selectedCentralType, window.selectedKitType);
                         document.body.removeChild(overlay);
-                        this.showNotification(`Kit ${window.selectedKitType === 'kit1' ? 'Standard' : 'Périmétrique'} avec centrale ${window.selectedCentralType === 'titane' ? 'Titane' : 'Jablotron'} ajouté`);
+                        this.showNotification(`Kit ${kit.name} avec centrale ${centrale.name} ajouté`);
                     }
                 };
                 
@@ -1560,16 +2690,18 @@
                 };
             }
 
-            addCompleteKit(centralType, kitType) {
+            addCompleteKit(centraleId, kitIndex) {
                 const container = document.getElementById('alarm-material-products');
                 container.innerHTML = '';
                 
-                this.selectedCentral = centralType;
+                const centrale = this.centralesConfig.find(c => c.id === centraleId);
+                const kit = centrale.kits[kitIndex];
+                
+                this.selectedCentral = centraleId;
                 this.kitOffered = true;
                 
-                const centralId = centralType === 'titane' ? 6 : 5;
-                const centralName = centralType === 'titane' ? 'Centrale Titane' : 'Centrale Jablotron';
-                const centralPrice = centralType === 'titane' ? 690 : 990;
+                const centralProduct = this.catalog['alarm-material'].find(p => p.id === centrale.productId);
+                const centralPrice = centrale.price;
                 
                 const availableProducts = this.getFilteredProducts('alarm-material');
                 const centralLine = document.createElement('div');
@@ -1581,7 +2713,7 @@
                             <option value="">Sélectionner un produit</option>
                             ${availableProducts.map(p => {
                                 const pPrice = this.getProductPrice(p);
-                                return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === centralId ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                                return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === centrale.productId ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
                             }).join('')}
                         </select>
                         <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
@@ -1597,20 +2729,9 @@
                 `;
                 container.appendChild(centralLine);
                 
-                const kitProducts = kitType === 'kit1' ? [
-                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 2 },
-                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 1 },
-                    { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
-                ] : [
-                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 1 },
-                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 3 },
-                    { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
-                ];
-                
-                kitProducts.forEach(product => {
-                    const productData = this.catalog['alarm-material'].find(p => p.id === product.id);
+                // Ajouter les produits du kit
+                kit.products.forEach(kitProduct => {
+                    const productData = this.catalog['alarm-material'].find(p => p.id === kitProduct.id);
                     if (productData) {
                         const availableProducts = this.getFilteredProducts('alarm-material');
                         const price = this.getProductPrice(productData);
@@ -1627,12 +2748,12 @@
                                     <option value="">Sélectionner un produit</option>
                                     ${availableProducts.map(p => {
                                         const pPrice = this.getProductPrice(p);
-                                        return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                                        return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === kitProduct.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
                                     }).join('')}
                                 </select>
                                 <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
                             </div>
-                            <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+                            <input type="number" value="${kitProduct.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
                             <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
                             <div class="checkbox-option" style="margin: 0;">
                                 <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
@@ -1645,7 +2766,7 @@
                     }
                 });
                 
-                this.updateSurveillanceOptions(centralType);
+                this.updateSurveillanceOptions(centraleId);
                 this.updateAllProductSelects();
                 this.updateTotals();
             }
@@ -1660,6 +2781,7 @@
                 if (!surveillanceType) {
                     priceInput.value = 0;
                 } else {
+                    // Utiliser les prix basés sur le type de centrale
                     if (this.selectedCentral === 'titane') {
                         if (surveillanceType === 'autosurveillance') {
                             priceInput.value = 59;
@@ -1677,8 +2799,11 @@
                             priceInput.value = 0;
                         }
                     } else {
+                        // Prix par défaut pour les autres centrales
                         if (surveillanceType === 'telesurveillance') {
                             priceInput.value = 129;
+                        } else if (surveillanceType === 'telesurveillance-pro') {
+                            priceInput.value = 159;
                         } else if (surveillanceType === 'autosurveillance') {
                             priceInput.value = 59;
                         } else {
@@ -1840,26 +2965,24 @@
                 if (!container) return;
                 
                 const productLines = container.querySelectorAll('.product-line');
-                let hasJablotron = false;
-                let hasTitane = false;
+                let detectedCentrale = null;
                 
                 productLines.forEach(line => {
                     const select = line.querySelector('.product-select');
                     if (select && select.value) {
                         const productId = parseInt(select.value);
-                        if (productId === 5) hasJablotron = true;
-                        if (productId === 6) hasTitane = true;
+                        // Chercher si ce produit correspond à une centrale
+                        const centrale = this.centralesConfig.find(c => c.productId === productId);
+                        if (centrale) {
+                            detectedCentrale = centrale.id;
+                        }
                     }
                 });
                 
-                if (hasJablotron) {
-                    this.selectedCentral = 'jablotron';
+                if (detectedCentrale) {
+                    this.selectedCentral = detectedCentrale;
                     this.kitOffered = true;
-                    this.updateSurveillanceOptions('jablotron');
-                } else if (hasTitane) {
-                    this.selectedCentral = 'titane';
-                    this.kitOffered = true;
-                    this.updateSurveillanceOptions('titane');
+                    this.updateSurveillanceOptions(detectedCentrale);
                 } else {
                     this.selectedCentral = null;
                     this.kitOffered = false;
@@ -1870,19 +2993,22 @@
                 this.updateSurveillancePrice();
             }
             
-            updateSurveillanceOptions(centralType) {
+            updateSurveillanceOptions(centraleId) {
                 const surveillanceSelect = document.getElementById('surveillance-type');
                 if (!surveillanceSelect) return;
                 
                 const currentValue = surveillanceSelect.value;
                 
-                if (centralType === 'jablotron') {
+                // Trouver la centrale pour déterminer ses options
+                const centrale = this.centralesConfig.find(c => c.id === centraleId);
+                
+                if (centraleId === 'jablotron') {
                     surveillanceSelect.innerHTML = `
                         <option value="">Aucun</option>
                         <option value="telesurveillance">Télésurveillance Particulier (139 CHF)</option>
                         <option value="telesurveillance-pro">Télésurveillance Professionnel (169 CHF)</option>
                     `;
-                } else if (centralType === 'titane') {
+                } else if (centraleId === 'titane') {
                     surveillanceSelect.innerHTML = `
                         <option value="">Aucun</option>
                         <option value="telesurveillance">Télésurveillance Particulier (129 CHF)</option>
@@ -1890,6 +3016,7 @@
                         <option value="autosurveillance">Autosurveillance (59 CHF)</option>
                     `;
                 } else {
+                    // Pour les autres centrales, options par défaut
                     surveillanceSelect.innerHTML = `
                         <option value="">Aucun</option>
                         <option value="telesurveillance">Télésurveillance Particulier</option>
@@ -3332,6 +4459,244 @@
         document.addEventListener('DOMContentLoaded', () => {
             generator = new DialarmeFinalGenerator();
         });
+
+        function openCatalogModal() {
+            generator.renderCatalogModal();
+            document.getElementById('catalogModal').classList.add('active');
+        }
+
+        function closeCatalogModal() {
+            document.getElementById('catalogModal').classList.remove('active');
+        }
+
+        function showCatalogTab(tabName) {
+            document.querySelectorAll('.catalog-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.catalog-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function toggleAlarmCashOnly(index, type, checked) {
+            const tbody = type === 'titane' ? 'alarm-titane-body' : 'alarm-jablotron-body';
+            const rows = document.querySelectorAll(`#${tbody} tr`);
+            
+            // Trouver la bonne ligne par l'index
+            let targetRow = null;
+            rows.forEach(row => {
+                const rowIndex = parseInt(row.querySelector('input[data-index]').getAttribute('data-index'));
+                if (rowIndex === index) targetRow = row;
+            });
+            
+            if (targetRow) {
+                const monthlyInput = targetRow.querySelector(`input[data-field="monthly${type === 'titane' ? 'Titane' : 'Jablotron'}"]`);
+                if (monthlyInput) {
+                    monthlyInput.disabled = checked;
+                    if (checked) monthlyInput.value = '';
+                }
+            }
+        }
+
+        function toggleCameraCashOnly(index, checked) {
+            const row = document.querySelectorAll('#camera-products-body tr')[index];
+            const monthlyInputs = row.querySelectorAll('input[data-field^="monthly"]');
+            
+            monthlyInputs.forEach(input => {
+                input.disabled = checked;
+                if (checked) input.value = '';
+            });
+        }
+
+        function toggleFogCashOnly(index, checked) {
+            const row = document.querySelectorAll('#fog-products-body tr')[index];
+            const monthlyInput = row.querySelector('input[data-field="monthly"]');
+            
+            monthlyInput.disabled = checked;
+            if (checked) monthlyInput.value = '';
+        }
+
+        function deleteAlarmProduct(index, type) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+                const products = generator.catalog['alarm-material'].filter(p => !p.isCustom);
+                const product = products[index];
+                
+                // Si le produit est dans les deux catalogues, on supprime seulement la partie correspondante
+                if (type === 'titane' && product.priceJablotron !== undefined) {
+                    // Le produit existe aussi pour Jablotron, on supprime juste la partie Titane
+                    delete product.priceTitane;
+                    delete product.monthlyTitane;
+                    if (!product.price) product.price = product.priceJablotron;
+                } else if (type === 'jablotron' && product.priceTitane !== undefined) {
+                    // Le produit existe aussi pour Titane, on supprime juste la partie Jablotron
+                    delete product.priceJablotron;
+                    delete product.monthlyJablotron;
+                    delete product.requiresJablotron;
+                    if (!product.price) product.price = product.priceTitane;
+                } else {
+                    // Le produit n'existe que pour ce type, on le supprime complètement
+                    products.splice(index, 1);
+                }
+                
+                generator.renderAlarmProducts();
+            }
+        }
+
+        function deleteCameraProduct(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+                const products = generator.catalog['camera-material'].filter(p => !p.isCustom);
+                products.splice(index, 1);
+                generator.renderCameraProducts();
+            }
+        }
+
+        function deleteFogProduct(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+                const products = generator.catalog['fog-material'].filter(p => !p.isCustom);
+                products.splice(index, 1);
+                generator.renderFogProducts();
+            }
+        }
+
+        function deleteCommercial(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce commercial ?')) {
+                generator.commercialsList.splice(index, 1);
+                generator.renderCommercials();
+            }
+        }
+
+        function addNewAlarmProduct(type) {
+            const products = generator.catalog['alarm-material'].filter(p => !p.isCustom);
+            const maxId = Math.max(...products.map(p => p.id), 100);
+            
+            const newProduct = {
+                id: maxId + 1,
+                name: "Nouveau produit",
+            };
+            
+            if (type === 'titane') {
+                newProduct.priceTitane = 0;
+                newProduct.monthlyTitane = 0;
+            } else {
+                newProduct.priceJablotron = 0;
+                newProduct.monthlyJablotron = 0;
+                newProduct.requiresJablotron = true;
+            }
+            
+            products.push(newProduct);
+            generator.renderAlarmProducts();
+        }
+
+        function addNewCameraProduct() {
+            const products = generator.catalog['camera-material'].filter(p => !p.isCustom);
+            const maxId = Math.max(...products.map(p => p.id));
+            
+            products.push({
+                id: maxId + 1,
+                name: "Nouveau produit",
+                price: 0,
+                monthly48: 0,
+                monthly36: 0,
+                monthly24: 0
+            });
+            
+            generator.renderCameraProducts();
+        }
+
+        function addNewFogProduct() {
+            const products = generator.catalog['fog-material'].filter(p => !p.isCustom);
+            const maxId = Math.max(...products.map(p => p.id));
+            
+            products.push({
+                id: maxId + 1,
+                name: "Nouveau produit",
+                price: 0,
+                monthly: 0
+            });
+            
+            generator.renderFogProducts();
+        }
+
+        function addNewCommercial() {
+            generator.commercialsList.push("Nouveau commercial");
+            generator.renderCommercials();
+        }
+
+        function saveCatalog() {
+            const data = generator.collectCatalogData();
+            
+            if (!generator.validateCatalogData(data)) {
+                return;
+            }
+            
+            generator.applyCatalogChanges(data);
+            generator.showNotification('Catalogue sauvegardé avec succès !');
+            closeCatalogModal();
+        }
+
+        function resetCatalog() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser le catalogue aux valeurs par défaut ? Toutes vos modifications seront perdues.')) {
+                localStorage.removeItem('dialarme_catalog');
+                localStorage.removeItem('dialarme_commercials');
+                localStorage.removeItem('dialarme_centrales');
+                location.reload();
+            }
+        }
+
+        function addNewCentrale() {
+            const maxId = Math.max(...generator.centralesConfig.map(c => parseInt(c.id.match(/\d+/) || 0)), 0);
+            generator.centralesConfig.push({
+                id: `centrale${maxId + 1}`,
+                name: 'Nouvelle Centrale',
+                productId: 1000 + maxId,
+                price: 0,
+                kits: [
+                    {
+                        name: 'Kit de base',
+                        products: []
+                    }
+                ]
+            });
+            generator.renderCentrales();
+        }
+
+        function deleteCentrale(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette centrale et tous ses kits ?')) {
+                generator.centralesConfig.splice(index, 1);
+                generator.renderCentrales();
+            }
+        }
+
+        function addKitToCentrale(centraleIndex) {
+            generator.centralesConfig[centraleIndex].kits.push({
+                name: 'Nouveau kit',
+                products: []
+            });
+            generator.renderKits(centraleIndex);
+        }
+
+        function deleteKit(centraleIndex, kitIndex) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce kit ?')) {
+                generator.centralesConfig[centraleIndex].kits.splice(kitIndex, 1);
+                generator.renderKits(centraleIndex);
+            }
+        }
+
+        function addProductToKit(centraleIndex, kitIndex) {
+            generator.centralesConfig[centraleIndex].kits[kitIndex].products.push({
+                id: 0,
+                quantity: 1
+            });
+            generator.renderKitProducts(centraleIndex, kitIndex);
+        }
+
+        function deleteKitProduct(centraleIndex, kitIndex, productIndex) {
+            generator.centralesConfig[centraleIndex].kits[kitIndex].products.splice(productIndex, 1);
+            generator.renderKitProducts(centraleIndex, kitIndex);
+        }
     </script>
 </body>
 </html>
