@@ -1172,6 +1172,10 @@
                 console.log('Générateur Dialarme initialisé');
             }
 
+            roundToFiveCents(amount) {
+                return Math.ceil(amount * 20) / 20;
+            }
+
             updateCurrentDate() {
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('fr-CH', {
@@ -1362,6 +1366,7 @@
                         monthlyPrice = priceHT / months;
                     }
                     
+                    monthlyPrice = this.roundToFiveCents(monthlyPrice);
                     monthlyTotal += monthlyPrice * qty;
                 });
                 
@@ -1584,10 +1589,10 @@
                     <input type="number" value="1" min="1" class="quantity-input" readonly>
                     <input type="number" value="${centralPrice}" class="price-input discount-input" style="display: none;">
                     <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
+                        <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
-                    <div class="price-display">${centralPrice.toFixed(2)} CHF</div>
+                    <div class="price-display">OFFERT</div>
                     <button class="remove-btn" onclick="this.closest('#alarm-material-products').innerHTML=''; generator.selectedCentral=null; generator.kitOffered=false; updateTotals();">×</button>
                 `;
                 container.appendChild(centralLine);
@@ -2039,7 +2044,7 @@
                         (surveillanceOffered ? 'OFFERT' : `${surveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
                     
                     const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
-                    const totalTTC = totalHT * 1.081;
+                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
                     document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
@@ -2052,15 +2057,15 @@
                         if (paymentMonths > 0) {
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
                             const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
-                            const mensualiteInstallHT = this.getInstallationMonthlyPrice(installQty, paymentMonths);
+                            const mensualiteInstallHT = this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
                             const totalMensuelHT = mensualiteMatHT + mensualiteMatSuppHT + mensualiteInstallHT + surveillanceTotal;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
+                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                             
                             document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('alarm-monthly-count').textContent = paymentMonths;
                             document.getElementById('alarm-monthly-payment').style.display = 'block';
                             
-                            const comptantTTC = adminTotal * 1.081;
+                            const comptantTTC = this.roundToFiveCents(adminTotal * 1.081);
                             document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
                             document.getElementById('alarm-cash-payment').style.display = 'block';
                         } else {
@@ -2081,7 +2086,7 @@
                     const remoteAccessPrice = remoteAccess ? 20 : 0;
                     
                     const totalHT = materialTotal + installationTotal;
-                    const totalTTC = totalHT * 1.081;
+                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
                     document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
@@ -2096,9 +2101,9 @@
                             const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                             
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
-                            const mensualiteInstallHT = installationOffered ? 0 : this.getInstallationMonthlyPrice(installQty, paymentMonths);
+                            const mensualiteInstallHT = installationOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
                             const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
+                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                             
                             document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('camera-monthly-count').textContent = paymentMonths;
@@ -2125,7 +2130,7 @@
                     const installationTotal = installationOffered ? 0 : installationPrice;
                     
                     const totalHT = materialTotal + installationTotal;
-                    const totalTTC = totalHT * 1.081;
+                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
                     document.getElementById('fog-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
                     document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
@@ -2137,7 +2142,7 @@
                         if (paymentMonths > 0) {
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
                             const totalMensuelHT = mensualiteMatHT;
-                            const totalMensuelTTC = totalMensuelHT * 1.081;
+                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                             
                             document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('fog-monthly-count').textContent = paymentMonths;
@@ -2642,7 +2647,7 @@
                     }
                 }
 
-                const totalTTC = sectionTotal * 1.081;
+                const totalTTC = this.roundToFiveCents(sectionTotal * 1.081);
                 const tva = totalTTC - sectionTotal;
 
                 doc.setFillColor(230, 230, 230);
@@ -2778,7 +2783,7 @@
                     yPos += 14;
                 });
 
-                const adminTotalTTC = 240 * 1.081;
+                const adminTotalTTC = this.roundToFiveCents(240 * 1.081);
                 const adminTVA = adminTotalTTC - 240;
 
                 doc.setFillColor(200, 200, 200);
@@ -2866,7 +2871,7 @@
                 }
                 yPos += 14;
 
-                const installTotalTTC = installTotal * 1.081;
+                const installTotalTTC = this.roundToFiveCents(installTotal * 1.081);
                 const installTVA = installTotalTTC - installTotal;
 
                 doc.setFillColor(200, 200, 200);
@@ -2942,7 +2947,7 @@
                 doc.text('* Installation uniquement au comptant (non mensualisée)', 90, yPos + 5);
                 yPos += 10;
 
-                const installTotalTTC = installTotal * 1.081;
+                const installTotalTTC = this.roundToFiveCents(installTotal * 1.081);
                 const installTVA = installTotalTTC - installTotal;
 
                 doc.setFillColor(200, 200, 200);
@@ -3055,7 +3060,7 @@
                         const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
                         
                         mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
+                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
                         
                         const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
                         mensualiteMatHT += otherInstallMensualite;
@@ -3064,7 +3069,7 @@
                         const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
                         
                         mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
+                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
                     } else if (type === 'fog') {
                         mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
                         mensualiteInstallHT = 0;
@@ -3072,7 +3077,7 @@
                     
                     const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceMonthlyHT;
                     const totalMensuelTVA = totalMensuelHT * 0.081;
-                    const totalMensuelTTC = totalMensuelHT * 1.081;
+                    const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
 
                     doc.setFillColor(200, 200, 200);
                     doc.rect(40, yPos, 515, 110, 'F');
@@ -3121,7 +3126,7 @@
                         doc.setFontSize(8);
                         doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
                         const comptantTVA = totalComptantHT * 0.081;
-                        const comptantTTC = totalComptantHT * 1.081;
+                        const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
                         doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
                         
                         doc.setFont('helvetica', 'bold');
@@ -3132,7 +3137,7 @@
                     
                 } else {
                     const totalTVA = totalComptantHT * 0.081;
-                    const totalTTC = totalComptantHT * 1.081;
+                    const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
                     
                     doc.setFillColor(200, 200, 200);
                     doc.rect(40, yPos, 515, 55, 'F');
