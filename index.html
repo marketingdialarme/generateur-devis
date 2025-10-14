@@ -1272,6 +1272,40 @@
                 
                 return prices[qty] || 690;
             }
+
+            getInstallationMonthlyPrice(qty, months) {
+                // Tableau des mensualités HT pour l'installation
+                // Format: qty -> {24: prix, 36: prix, 48: prix}
+                const monthlyPrices = {
+                    1: { 24: 32, 36: 23, 48: 18 },      // 1/2 journée
+                    2: { 24: 60, 36: 42, 48: 33 },      // 1 journée
+                    3: { 24: 91, 36: 64, 48: 50 },      // 1,5 journée
+                    4: { 24: 119, 36: 83, 48: 65 },     // 2 journées
+                    5: { 24: 151, 36: 106, 48: 83 },    // 2,5 journées (extrapolé)
+                    6: { 24: 179, 36: 125, 48: 98 }     // 3 journées (extrapolé)
+                };
+                
+                // Si qty > 6, calculer proportionnellement
+                if (qty > 6) {
+                    const fullDays = Math.floor(qty / 2);
+                    const halfDay = qty % 2;
+                    
+                    if (months === 24) {
+                        return (fullDays * 60) + (halfDay * 32);
+                    } else if (months === 36) {
+                        return (fullDays * 42) + (halfDay * 23);
+                    } else if (months === 48) {
+                        return (fullDays * 33) + (halfDay * 18);
+                    }
+                }
+                
+                if (monthlyPrices[qty] && monthlyPrices[qty][months]) {
+                    return monthlyPrices[qty][months];
+                }
+                
+                // Si pas de mensualités définies, retourner 0 (comptant)
+                return 0;
+            }
             
             calculateCameraInstallationPrice() {
                 const qtyInput = document.getElementById('camera-installation-qty');
@@ -1972,8 +2006,11 @@
                         
                         if (paymentMonths > 0) {
                             const totalMensualitesHT = materialTotal + totalInstallation;
-                            const mensualiteMatInstHT = totalMensualitesHT / paymentMonths;
-                            const totalMensuelHT = mensualiteMatInstHT + surveillanceTotal;
+                            
+                            // Calcul des mensualités avec le nouveau système
+                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            const mensualiteInstallHT = this.getInstallationMonthlyPrice(installQty, paymentMonths);
+                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceTotal;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
                             
                             document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
@@ -2013,9 +2050,12 @@
                         const paymentMonths = this.globalPaymentMonths['camera'] || 0;
                         
                         if (paymentMonths > 0) {
-                            const totalMensualitesHT = materialTotal + installationTotal;
-                            const mensualiteHT = totalMensualitesHT / paymentMonths;
-                            const totalMensuelHT = mensualiteHT + remoteAccessPrice;
+                            const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                            
+                            // Calcul des mensualités avec le nouveau système
+                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            const mensualiteInstallHT = installationOffered ? 0 : this.getInstallationMonthlyPrice(installQty, paymentMonths);
+                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
                             
                             document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
@@ -2054,10 +2094,13 @@
                         const paymentMonths = this.globalPaymentMonths['fog'] || 0;
                         
                         if (paymentMonths > 0) {
-                            const totalMensualitesHT = materialTotal + installationTotal;
-                            const mensualiteTTC = (totalMensualitesHT / paymentMonths) * 1.081;
+                            // Calcul des mensualités avec le nouveau système
+                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            const mensualiteInstallHT = installationOffered ? 0 : this.getInstallationMonthlyPrice(installationQty, paymentMonths);
+                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT;
+                            const totalMensuelTTC = totalMensuelHT * 1.081;
                             
-                            document.getElementById('fog-monthly-amount').textContent = mensualiteTTC.toFixed(2);
+                            document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
                             document.getElementById('fog-monthly-count').textContent = paymentMonths;
                             document.getElementById('fog-monthly-payment').style.display = 'block';
                         } else {
@@ -2972,15 +3015,45 @@
                 }
 
                 if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    const mensualiteMatInstHT = totalMensualitesHT / monthsCount;
-                    const totalMensuelHT = mensualiteMatInstHT + surveillanceMonthlyHT;
+                    // Calcul avec le nouveau système de mensualités d'installation
+                    let mensualiteMatHT = 0;
+                    let mensualiteInstallHT = 0;
+                    
+                    if (type === 'alarm') {
+                        const materialTotal = this.calculateSectionTotal('alarm-material');
+                        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                        
+                        mensualiteMatHT = materialTotal / monthsCount;
+                        mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
+                        
+                        const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                        const otherInstallMensualite = otherInstallationTotal / monthsCount;
+                        mensualiteMatHT += otherInstallMensualite;
+                    } else if (type === 'camera') {
+                        const materialTotal = this.calculateSectionTotal('camera-material');
+                        const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+                        
+                        mensualiteMatHT = materialTotal / monthsCount;
+                        mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
+                    } else if (type === 'fog') {
+                        const materialTotal = this.calculateSectionTotal('fog-material');
+                        const installQty = parseFloat(document.getElementById('fog-installation-qty')?.value) || 1;
+                        const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+                        
+                        mensualiteMatHT = materialTotal / monthsCount;
+                        mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
+                    }
+                    
+                    const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceMonthlyHT;
                     const totalMensuelTVA = totalMensuelHT * 0.081;
                     const totalMensuelTTC = totalMensuelHT * 1.081;
 
                     doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 90, 'F');
+                    doc.rect(40, yPos, 515, 110, 'F');
                     doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 90);
+                    doc.rect(40, yPos, 515, 110);
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
@@ -2989,25 +3062,26 @@
                     
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
-                    doc.text(`Matériel + Installation: ${mensualiteMatInstHT.toFixed(2)} CHF HT/mois`, 50, yPos + 30);
+                    doc.text(`Matériel: ${mensualiteMatHT.toFixed(2)} CHF HT/mois`, 50, yPos + 35);
+                    doc.text(`Installation: ${mensualiteInstallHT.toFixed(2)} CHF HT/mois`, 50, yPos + 50);
                     
                     if (surveillanceMonthlyHT > 0) {
                         const serviceName = type === 'alarm' ? 
                             (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance') : 
                             'Vision à distance';
-                        doc.text(`${serviceName}: ${surveillanceMonthlyHT.toFixed(2)} CHF HT/mois`, 50, yPos + 45);
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 60);
+                        doc.text(`${serviceName}: ${surveillanceMonthlyHT.toFixed(2)} CHF HT/mois`, 50, yPos + 65);
+                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 80);
                     } else {
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 45);
+                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 65);
                     }
                     
-                    doc.text(`TVA 8.1%: ${totalMensuelTVA.toFixed(2)} CHF`, 300, yPos + (surveillanceMonthlyHT > 0 ? 60 : 45));
+                    doc.text(`TVA 8.1%: ${totalMensuelTVA.toFixed(2)} CHF`, 300, yPos + (surveillanceMonthlyHT > 0 ? 80 : 65));
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
-                    doc.text(`TOTAL MENSUALITÉ TTC: ${totalMensuelTTC.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 80);
+                    doc.text(`TOTAL MENSUALITÉ TTC: ${totalMensuelTTC.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 100);
                     
-                    yPos += 95;
+                    yPos += 115;
                     
                     if (totalComptantHT > 0) {
                         doc.setFillColor(200, 200, 200);
