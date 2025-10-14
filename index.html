@@ -36,6 +36,7 @@
             align-items: center;
             justify-content: space-between;
             color: #333;
+            position: relative;
         }
 
         .logo {
@@ -65,6 +66,237 @@
         .company-info p {
             opacity: 0.8;
             font-size: 14px;
+        }
+
+        /* Bouton paramètres discret */
+        .settings-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(51, 51, 51, 0.1);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            opacity: 0.3;
+        }
+
+        .settings-btn:hover {
+            opacity: 1;
+            background: rgba(51, 51, 51, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .settings-btn::before {
+            content: '⚙️';
+            font-size: 16px;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-small {
+            max-width: 400px;
+        }
+
+        .modal-large {
+            max-width: 1200px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f4e600;
+            box-shadow: 0 0 0 3px rgba(244, 230, 0, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #f4e600;
+            color: #333;
+        }
+
+        .btn-primary:hover {
+            background: #e6d200;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Admin panel styles */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .admin-tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .admin-tab:hover {
+            color: #333;
+        }
+
+        .admin-tab.active {
+            color: #f4e600;
+            border-bottom-color: #f4e600;
+        }
+
+        .admin-content {
+            display: none;
+        }
+
+        .admin-content.active {
+            display: block;
+        }
+
+        .catalog-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .catalog-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .catalog-item-info {
+            display: grid;
+            gap: 5px;
+        }
+
+        .catalog-item-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .catalog-item-price {
+            color: #28a745;
+            font-size: 14px;
+        }
+
+        .catalog-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
         }
 
         .nav-tabs {
@@ -351,7 +583,10 @@
             flex-wrap: wrap;
         }
 
-        .btn {
+        .btn-primary {
+            background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%);
+            color: #333;
+            box-shadow: 0 5px 15px rgba(244, 230, 0, 0.3);
             padding: 15px 30px;
             border: none;
             border-radius: 50px;
@@ -365,12 +600,6 @@
             gap: 10px;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%);
-            color: #333;
-            box-shadow: 0 5px 15px rgba(244, 230, 0, 0.3);
-        }
-
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(244, 230, 0, 0.4);
@@ -379,6 +608,17 @@
         .btn-secondary {
             background: #6c757d;
             color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .btn-secondary:hover {
@@ -510,6 +750,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
+            <button class="settings-btn" onclick="openPasswordModal()" title="Gestion du catalogue"></button>
             <div class="logo">
                 <div class="logo-img">D</div>
                 <div class="company-info">
@@ -558,26 +799,6 @@
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <select id="commercial" onchange="handleCommercialSelection(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
                                 <option value="">Sélectionner un commercial</option>
-                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                                <option value="Arnaud Bloch">Arnaud Bloch</option>
-                                <option value="Benali Kodad">Benali Kodad</option>
-                                <option value="Bryan Debrosse">Bryan Debrosse</option>
-                                <option value="Cédric Boldron">Cédric Boldron</option>
-                                <option value="Emin Comert">Emin Comert</option>
-                                <option value="Gérald Clausen">Gérald Clausen</option>
-                                <option value="Heythem Ziaya">Heythem Ziaya</option>
-                                <option value="Iyed Baccouche">Iyed Baccouche</option>
-                                <option value="Matys Goiot">Matys Goiot</option>
-                                <option value="Mohamed Tartik">Mohamed Tartik</option>
-                                <option value="Nassim Jaza">Nassim Jaza</option>
-                                <option value="Nora Sassi">Nora Sassi</option>
-                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
-                                <option value="Sabine Balducci">Sabine Balducci</option>
-                                <option value="Samir Ouhameni">Samir Ouhameni</option>
-                                <option value="Thilan Curt">Thilan Curt</option>
-                                <option value="Thomas Garcia">Thomas Garcia</option>
-                                <option value="Wassim Tahiri">Wassim Tahiri</option>
-                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
                             </select>
                             <input type="text" id="commercial-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
                         </div>
@@ -763,26 +984,6 @@
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <select id="commercialCamera" onchange="handleCommercialSelectionCamera(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
                                 <option value="">Sélectionner un commercial</option>
-                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                                <option value="Arnaud Bloch">Arnaud Bloch</option>
-                                <option value="Benali Kodad">Benali Kodad</option>
-                                <option value="Bryan Debrosse">Bryan Debrosse</option>
-                                <option value="Cédric Boldron">Cédric Boldron</option>
-                                <option value="Emin Comert">Emin Comert</option>
-                                <option value="Gérald Clausen">Gérald Clausen</option>
-                                <option value="Heythem Ziaya">Heythem Ziaya</option>
-                                <option value="Iyed Baccouche">Iyed Baccouche</option>
-                                <option value="Matys Goiot">Matys Goiot</option>
-                                <option value="Mohamed Tartik">Mohamed Tartik</option>
-                                <option value="Nassim Jaza">Nassim Jaza</option>
-                                <option value="Nora Sassi">Nora Sassi</option>
-                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
-                                <option value="Sabine Balducci">Sabine Balducci</option>
-                                <option value="Samir Ouhameni">Samir Ouhameni</option>
-                                <option value="Thilan Curt">Thilan Curt</option>
-                                <option value="Thomas Garcia">Thomas Garcia</option>
-                                <option value="Wassim Tahiri">Wassim Tahiri</option>
-                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
                             </select>
                             <input type="text" id="commercialCamera-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
                         </div>
@@ -923,26 +1124,6 @@
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <select id="commercialFog" onchange="handleCommercialSelectionFog(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
                                 <option value="">Sélectionner un commercial</option>
-                                <option value="Alikhan Guisseinov">Alikhan Guisseinov</option>
-                                <option value="Arnaud Bloch">Arnaud Bloch</option>
-                                <option value="Benali Kodad">Benali Kodad</option>
-                                <option value="Bryan Debrosse">Bryan Debrosse</option>
-                                <option value="Cédric Boldron">Cédric Boldron</option>
-                                <option value="Emin Comert">Emin Comert</option>
-                                <option value="Gérald Clausen">Gérald Clausen</option>
-                                <option value="Heythem Ziaya">Heythem Ziaya</option>
-                                <option value="Iyed Baccouche">Iyed Baccouche</option>
-                                <option value="Matys Goiot">Matys Goiot</option>
-                                <option value="Mohamed Tartik">Mohamed Tartik</option>
-                                <option value="Nassim Jaza">Nassim Jaza</option>
-                                <option value="Nora Sassi">Nora Sassi</option>
-                                <option value="Rodolphe De Vito">Rodolphe De Vito</option>
-                                <option value="Sabine Balducci">Sabine Balducci</option>
-                                <option value="Samir Ouhameni">Samir Ouhameni</option>
-                                <option value="Thilan Curt">Thilan Curt</option>
-                                <option value="Thomas Garcia">Thomas Garcia</option>
-                                <option value="Wassim Tahiri">Wassim Tahiri</option>
-                                <option value="autre" style="font-style: italic; color: #007bff;">➕ Autre (saisir le nom)</option>
                             </select>
                             <input type="text" id="commercialFog-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
                         </div>
@@ -1045,11 +1226,125 @@
         </div>
     </div>
 
+    <!-- Modal Password -->
+    <div id="password-modal" class="modal-overlay">
+        <div class="modal modal-small">
+            <h2>🔒 Accès Administration</h2>
+            <div class="form-group">
+                <label for="admin-password">Mot de passe</label>
+                <input type="password" id="admin-password" placeholder="Entrez le mot de passe">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="checkPassword()">Valider</button>
+                <button class="btn btn-secondary" onclick="closePasswordModal()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Admin Panel -->
+    <div id="admin-modal" class="modal-overlay">
+        <div class="modal modal-large">
+            <h2>⚙️ Gestion du Catalogue</h2>
+            
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchAdminTab('centrales')">Centrales d'alarme</button>
+                <button class="admin-tab" onclick="switchAdminTab('products')">Produits d'alarme</button>
+                <button class="admin-tab" onclick="switchAdminTab('cameras')">Caméras</button>
+                <button class="admin-tab" onclick="switchAdminTab('fog')">Générateurs</button>
+                <button class="admin-tab" onclick="switchAdminTab('commercials')">Commerciaux</button>
+            </div>
+
+            <!-- Onglet Centrales -->
+            <div id="admin-centrales" class="admin-content active">
+                <button class="btn btn-success" onclick="addCentrale()">+ Ajouter une centrale</button>
+                <div id="centrales-list" class="catalog-list"></div>
+            </div>
+
+            <!-- Onglet Produits -->
+            <div id="admin-products" class="admin-content">
+                <button class="btn btn-success" onclick="addProduct()">+ Ajouter un produit</button>
+                <div id="products-list" class="catalog-list"></div>
+            </div>
+
+            <!-- Onglet Caméras -->
+            <div id="admin-cameras" class="admin-content">
+                <button class="btn btn-success" onclick="addCamera()">+ Ajouter une caméra</button>
+                <div id="cameras-list" class="catalog-list"></div>
+            </div>
+
+            <!-- Onglet Générateurs -->
+            <div id="admin-fog" class="admin-content">
+                <button class="btn btn-success" onclick="addFog()">+ Ajouter un générateur</button>
+                <div id="fog-list" class="catalog-list"></div>
+            </div>
+
+            <!-- Onglet Commerciaux -->
+            <div id="admin-commercials" class="admin-content">
+                <button class="btn btn-success" onclick="addCommercial()">+ Ajouter un commercial</button>
+                <div id="commercials-list" class="catalog-list"></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="saveCatalog()">💾 Sauvegarder</button>
+                <button class="btn btn-secondary" onclick="closeAdminModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Générateur de devis Dialarme - Version avec prix mensuels corrigés
+        // CODE JAVASCRIPT ORIGINAL (suite dans le prochain message)
         class DialarmeFinalGenerator {
             constructor() {
-                this.catalog = {
+                this.loadCatalog();
+                this.currentTab = 'alarm';
+                this.sections = {
+                    'alarm-material': { paymentMonths: 0 },
+                    'alarm-installation': { paymentMonths: 0 },
+                    'camera-material': { paymentMonths: 0 },
+                    'camera-installation': { paymentMonths: 0 },
+                    'fog-material': { paymentMonths: 0 },
+                    'fog-installation': { paymentMonths: 0 }
+                };
+
+                this.globalPaymentMonths = {
+                    'alarm': 48,
+                    'camera': 48,
+                    'fog': 48
+                };
+
+                this.rentalMode = {
+                    'alarm': false,
+                    'camera': false,
+                    'fog': false
+                };
+
+                this.selectedCentral = null;
+                this.kitOffered = false;
+
+                this.init();
+            }
+
+            loadCatalog() {
+                const savedCatalog = localStorage.getItem('dialarme-catalog');
+                const savedCommercials = localStorage.getItem('dialarme-commercials');
+                
+                if (savedCatalog) {
+                    this.catalog = JSON.parse(savedCatalog);
+                } else {
+                    this.catalog = this.getDefaultCatalog();
+                }
+
+                if (savedCommercials) {
+                    this.commercials = JSON.parse(savedCommercials);
+                } else {
+                    this.commercials = this.getDefaultCommercials();
+                }
+                
+                this.updateCommercialSelects();
+            }
+
+            getDefaultCatalog() {
+                return {
                     'alarm-material': [
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
                         { id: 6, name: "Centrale Titane", price: 690.00 },
@@ -1137,33 +1432,54 @@
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ]
                 };
+            }
 
-                this.currentTab = 'alarm';
-                this.sections = {
-                    'alarm-material': { paymentMonths: 0 },
-                    'alarm-installation': { paymentMonths: 0 },
-                    'camera-material': { paymentMonths: 0 },
-                    'camera-installation': { paymentMonths: 0 },
-                    'fog-material': { paymentMonths: 0 },
-                    'fog-installation': { paymentMonths: 0 }
-                };
+            getDefaultCommercials() {
+                return [
+                    "Alikhan Guisseinov",
+                    "Arnaud Bloch",
+                    "Benali Kodad",
+                    "Bryan Debrosse",
+                    "Cédric Boldron",
+                    "Emin Comert",
+                    "Gérald Clausen",
+                    "Heythem Ziaya",
+                    "Iyed Baccouche",
+                    "Matys Goiot",
+                    "Mohamed Tartik",
+                    "Nassim Jaza",
+                    "Nora Sassi",
+                    "Rodolphe De Vito",
+                    "Sabine Balducci",
+                    "Samir Ouhameni",
+                    "Thilan Curt",
+                    "Thomas Garcia",
+                    "Wassim Tahiri"
+                ];
+            }
 
-                this.globalPaymentMonths = {
-                    'alarm': 48,
-                    'camera': 48,
-                    'fog': 48
-                };
-
-                this.rentalMode = {
-                    'alarm': false,
-                    'camera': false,
-                    'fog': false
-                };
-
-                this.selectedCentral = null;
-                this.kitOffered = false;
-
-                this.init();
+            updateCommercialSelects() {
+                const selects = ['commercial', 'commercialCamera', 'commercialFog'];
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        const currentValue = select.value;
+                        select.innerHTML = '<option value="">Sélectionner un commercial</option>';
+                        this.commercials.forEach(name => {
+                            const option = document.createElement('option');
+                            option.value = name;
+                            option.textContent = name;
+                            select.appendChild(option);
+                        });
+                        const autreOption = document.createElement('option');
+                        autreOption.value = 'autre';
+                        autreOption.textContent = '➕ Autre (saisir le nom)';
+                        autreOption.style.fontStyle = 'italic';
+                        autreOption.style.color = '#007bff';
+                        select.appendChild(autreOption);
+                        if (currentValue) select.value = currentValue;
+                    }
+                });
             }
 
             init() {
@@ -2043,92 +2359,6 @@
                     document.getElementById('surveillance-summary').textContent = surveillanceType ? 
                         (surveillanceOffered ? 'OFFERT' : `${surveillanceTotal.toFixed(2)} CHF/mois`) : '0.00 CHF/mois';
                     
-                    const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
-                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
-                    
-                    document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
-                    document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
-                    document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                    
-                    if (!this.rentalMode['alarm']) {
-                        const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
-                        
-                        if (paymentMonths > 0) {
-                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
-                            const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
-                            const mensualiteInstallHT = this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
-                            const totalMensuelHT = mensualiteMatHT + mensualiteMatSuppHT + mensualiteInstallHT + surveillanceTotal;
-                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
-                            
-                            document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('alarm-monthly-count').textContent = paymentMonths;
-                            document.getElementById('alarm-monthly-payment').style.display = 'block';
-                            
-                            const comptantTTC = this.roundToFiveCents(adminTotal * 1.081);
-                            document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
-                            document.getElementById('alarm-cash-payment').style.display = 'block';
-                        } else {
-                            document.getElementById('alarm-monthly-payment').style.display = 'none';
-                            document.getElementById('alarm-cash-payment').style.display = 'none';
-                        }
-                    } else {
-                        document.getElementById('alarm-monthly-payment').style.display = 'none';
-                        document.getElementById('alarm-cash-payment').style.display = 'none';
-                    }
-                    
-                } else if (this.currentTab === 'camera') {
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installationPrice = this.calculateCameraInstallationPrice();
-                    const installationOffered = document.getElementById('camera-installation-offered').checked;
-                    const installationTotal = installationOffered ? 0 : installationPrice;
-                    const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
-                    const remoteAccessPrice = remoteAccess ? 20 : 0;
-                    
-                    const totalHT = materialTotal + installationTotal;
-                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
-                    
-                    document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
-                    
-                    if (!this.rentalMode['camera']) {
-                        document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
-                        
-                        const paymentMonths = this.globalPaymentMonths['camera'] || 0;
-                        
-                        if (paymentMonths > 0) {
-                            const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                            
-                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
-                            const mensualiteInstallHT = installationOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
-                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
-                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
-                            
-                            document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('camera-monthly-count').textContent = paymentMonths;
-                            document.getElementById('camera-monthly-payment').style.display = 'block';
-                            
-                            const remoteMonthly = document.getElementById('camera-remote-monthly');
-                            if (remoteMonthly) {
-                                remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
-                            }
-                        } else {
-                            document.getElementById('camera-monthly-payment').style.display = 'none';
-                        }
-                    }
-                    
-                    document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
-                    document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                }
-                
-                else if (this.currentTab === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
-                    
-                    const installationPrice = 490;
-                    const installationTotal = installationOffered ? 0 : installationPrice;
-                    
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
@@ -2421,18 +2651,14 @@
 
                     if (type === 'alarm') {
                         yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos);
-
                         yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
                         yPos = this.createAdminFeesPDF(doc, yPos);
                         yPos = this.createServicesPDF(doc, yPos);
-
                     } else if (type === 'camera') {
                         if (this.hasSectionProducts('camera-material')) {
                             yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos);
                         }
-
                         yPos = this.createCameraInstallPDF(doc, yPos);
-
                         if (!isRental) {
                             const remoteAccess = document.getElementById('camera-remote-access')?.checked;
                             if (remoteAccess) {
@@ -2447,7 +2673,6 @@
                         if (this.hasSectionProducts('fog-material')) {
                             yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos);
                         }
-
                         yPos = this.createFogInstallPDF(doc, yPos);
                     }
 
@@ -2457,7 +2682,6 @@
                     this.showNotification('PDF généré avec succès!');
                     
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-                    
                     const pdfBlob = doc.output('blob');
                     
                     this.saveToGoogleDrive(pdfBlob, filename, commercial)
@@ -3244,6 +3468,7 @@
 
         let generator;
 
+        // Fonctions globales pour l'interface principale
         function showTab(tabName, element) {
             generator.showTab(tabName, element);
         }
@@ -3329,9 +3554,489 @@
             }
         }
 
+        // Fonctions pour la gestion admin du catalogue
+        const ADMIN_PASSWORD = 'Marketing@1227';
+
+        function openPasswordModal() {
+            document.getElementById('password-modal').classList.add('active');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-password').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.remove('active');
+        }
+
+        function checkPassword() {
+            const password = document.getElementById('admin-password').value;
+            if (password === ADMIN_PASSWORD) {
+                closePasswordModal();
+                openAdminModal();
+            } else {
+                alert('Mot de passe incorrect');
+            }
+        }
+
+        function openAdminModal() {
+            document.getElementById('admin-modal').classList.add('active');
+            loadAdminData();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.remove('active');
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.admin-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`admin-${tabName}`).classList.add('active');
+        }
+
+        function loadAdminData() {
+            loadCentralesList();
+            loadProductsList();
+            loadCamerasList();
+            loadFogList();
+            loadCommercialsList();
+        }
+
+        function loadCentralesList() {
+            const container = document.getElementById('centrales-list');
+            const centrales = generator.catalog['alarm-material'].filter(p => p.id === 5 || p.id === 6);
+            
+            container.innerHTML = centrales.map(centrale => `
+                <div class="catalog-item">
+                    <div class="catalog-item-info">
+                        <div class="catalog-item-name">${centrale.name}</div>
+                        <div class="catalog-item-price">${centrale.price.toFixed(2)} CHF</div>
+                    </div>
+                    <div class="catalog-item-actions">
+                        <button class="btn btn-small btn-primary" onclick="editCentrale(${centrale.id})">✏️ Modifier</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadProductsList() {
+            const container = document.getElementById('products-list');
+            const products = generator.catalog['alarm-material'].filter(p => p.id !== 5 && p.id !== 6 && p.id !== 99);
+            
+            container.innerHTML = products.map(product => `
+                <div class="catalog-item">
+                    <div class="catalog-item-info">
+                        <div class="catalog-item-name">${product.name}</div>
+                        <div class="catalog-item-price">
+                            ${product.priceTitane ? `Titane: ${product.priceTitane.toFixed(2)} CHF` : ''}
+                            ${product.priceJablotron ? ` | Jablotron: ${product.priceJablotron.toFixed(2)} CHF` : ''}
+                        </div>
+                    </div>
+                    <div class="catalog-item-actions">
+                        <button class="btn btn-small btn-primary" onclick="editProduct(${product.id})">✏️ Modifier</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteProduct(${product.id})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadCamerasList() {
+            const container = document.getElementById('cameras-list');
+            const cameras = generator.catalog['camera-material'].filter(p => p.id !== 99);
+            
+            container.innerHTML = cameras.map(camera => `
+                <div class="catalog-item">
+                    <div class="catalog-item-info">
+                        <div class="catalog-item-name">${camera.name}</div>
+                        <div class="catalog-item-price">${camera.price.toFixed(2)} CHF</div>
+                    </div>
+                    <div class="catalog-item-actions">
+                        <button class="btn btn-small btn-primary" onclick="editCamera(${camera.id})">✏️ Modifier</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteCamera(${camera.id})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadFogList() {
+            const container = document.getElementById('fog-list');
+            const fogs = generator.catalog['fog-material'].filter(p => p.id !== 99);
+            
+            container.innerHTML = fogs.map(fog => `
+                <div class="catalog-item">
+                    <div class="catalog-item-info">
+                        <div class="catalog-item-name">${fog.name}</div>
+                        <div class="catalog-item-price">${fog.price.toFixed(2)} CHF</div>
+                    </div>
+                    <div class="catalog-item-actions">
+                        <button class="btn btn-small btn-primary" onclick="editFog(${fog.id})">✏️ Modifier</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteFog(${fog.id})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadCommercialsList() {
+            const container = document.getElementById('commercials-list');
+            
+            container.innerHTML = generator.commercials.map((commercial, index) => `
+                <div class="catalog-item">
+                    <div class="catalog-item-info">
+                        <div class="catalog-item-name">${commercial}</div>
+                    </div>
+                    <div class="catalog-item-actions">
+                        <button class="btn btn-small btn-danger" onclick="deleteCommercial(${index})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addCommercial() {
+            const name = prompt('Nom du nouveau commercial:');
+            if (name && name.trim()) {
+                generator.commercials.push(name.trim());
+                generator.commercials.sort();
+                loadCommercialsList();
+            }
+        }
+
+        function deleteCommercial(index) {
+            if (confirm(`Supprimer ${generator.commercials[index]} ?`)) {
+                generator.commercials.splice(index, 1);
+                loadCommercialsList();
+            }
+        }
+
+        function saveCatalog() {
+            localStorage.setItem('dialarme-catalog', JSON.stringify(generator.catalog));
+            localStorage.setItem('dialarme-commercials', JSON.stringify(generator.commercials));
+            generator.updateCommercialSelects();
+            generator.showNotification('Catalogue sauvegardé avec succès!');
+        }
+
+        // Fonctions d'édition et suppression
+        function editCentrale(id) {
+            const centrale = generator.catalog['alarm-material'].find(p => p.id === id);
+            if (!centrale) return;
+            
+            const name = prompt('Nom de la centrale:', centrale.name);
+            if (name === null) return;
+            
+            const price = parseFloat(prompt('Prix (CHF):', centrale.price));
+            if (isNaN(price)) return;
+            
+            centrale.name = name;
+            centrale.price = price;
+            
+            loadCentralesList();
+        }
+
+        function addProduct() {
+            const name = prompt('Nom du produit:');
+            if (!name) return;
+            
+            const priceTitane = parseFloat(prompt('Prix Titane (CHF):'));
+            if (isNaN(priceTitane)) return;
+            
+            const priceJablotron = parseFloat(prompt('Prix Jablotron (CHF):'));
+            if (isNaN(priceJablotron)) return;
+            
+            const monthlyTitane = parseFloat(prompt('Mensualité Titane (CHF):'));
+            if (isNaN(monthlyTitane)) return;
+            
+            const monthlyJablotron = parseFloat(prompt('Mensualité Jablotron (CHF):'));
+            if (isNaN(monthlyJablotron)) return;
+            
+            const newId = Math.max(...generator.catalog['alarm-material'].map(p => p.id)) + 1;
+            
+            const newProduct = {
+                id: newId,
+                name: name,
+                priceTitane: priceTitane,
+                priceJablotron: priceJablotron,
+                monthlyTitane: monthlyTitane,
+                monthlyJablotron: monthlyJablotron
+            };
+            
+            generator.catalog['alarm-material'].push(newProduct);
+            generator.catalog['alarm-installation'].push(newProduct);
+            
+            generator.catalog['alarm-material'].sort((a, b) => a.name.localeCompare(b.name));
+            generator.catalog['alarm-installation'].sort((a, b) => a.name.localeCompare(b.name));
+            
+            loadProductsList();
+        }
+
+        function editProduct(id) {
+            const product = generator.catalog['alarm-material'].find(p => p.id === id);
+            if (!product) return;
+            
+            const name = prompt('Nom du produit:', product.name);
+            if (name === null) return;
+            
+            const priceTitane = parseFloat(prompt('Prix Titane (CHF):', product.priceTitane || 0));
+            if (isNaN(priceTitane)) return;
+            
+            const priceJablotron = parseFloat(prompt('Prix Jablotron (CHF):', product.priceJablotron || 0));
+            if (isNaN(priceJablotron)) return;
+            
+            const monthlyTitane = parseFloat(prompt('Mensualité Titane (CHF):', product.monthlyTitane || 0));
+            if (isNaN(monthlyTitane)) return;
+            
+            const monthlyJablotron = parseFloat(prompt('Mensualité Jablotron (CHF):', product.monthlyJablotron || 0));
+            if (isNaN(monthlyJablotron)) return;
+            
+            product.name = name;
+            product.priceTitane = priceTitane;
+            product.priceJablotron = priceJablotron;
+            product.monthlyTitane = monthlyTitane;
+            product.monthlyJablotron = monthlyJablotron;
+            
+            const productInInstall = generator.catalog['alarm-installation'].find(p => p.id === id);
+            if (productInInstall) {
+                productInInstall.name = name;
+                productInInstall.priceTitane = priceTitane;
+                productInInstall.priceJablotron = priceJablotron;
+                productInInstall.monthlyTitane = monthlyTitane;
+                productInInstall.monthlyJablotron = monthlyJablotron;
+            }
+            
+            loadProductsList();
+        }
+
+        function deleteProduct(id) {
+            const product = generator.catalog['alarm-material'].find(p => p.id === id);
+            if (!product) return;
+            
+            if (confirm(`Supprimer ${product.name} ?`)) {
+                generator.catalog['alarm-material'] = generator.catalog['alarm-material'].filter(p => p.id !== id);
+                generator.catalog['alarm-installation'] = generator.catalog['alarm-installation'].filter(p => p.id !== id);
+                loadProductsList();
+            }
+        }
+
+        function addCamera() {
+            const name = prompt('Nom de la caméra:');
+            if (!name) return;
+            
+            const price = parseFloat(prompt('Prix (CHF):'));
+            if (isNaN(price)) return;
+            
+            const monthly48 = parseFloat(prompt('Mensualité 48 mois (CHF) - 0 si non applicable:') || 0);
+            const monthly36 = parseFloat(prompt('Mensualité 36 mois (CHF) - 0 si non applicable:') || 0);
+            const monthly24 = parseFloat(prompt('Mensualité 24 mois (CHF) - 0 si non applicable:') || 0);
+            
+            const newId = Math.max(...generator.catalog['camera-material'].map(p => p.id)) + 1;
+            
+            const newCamera = {
+                id: newId,
+                name: name,
+                price: price
+            };
+            
+            if (monthly48 > 0) newCamera.monthly48 = monthly48;
+            if (monthly36 > 0) newCamera.monthly36 = monthly36;
+            if (monthly24 > 0) newCamera.monthly24 = monthly24;
+            
+            generator.catalog['camera-material'].push(newCamera);
+            generator.catalog['camera-material'].sort((a, b) => a.name.localeCompare(b.name));
+            
+            loadCamerasList();
+        }
+
+        function editCamera(id) {
+            const camera = generator.catalog['camera-material'].find(p => p.id === id);
+            if (!camera) return;
+            
+            const name = prompt('Nom de la caméra:', camera.name);
+            if (name === null) return;
+            
+            const price = parseFloat(prompt('Prix (CHF):', camera.price));
+            if (isNaN(price)) return;
+            
+            const monthly48 = parseFloat(prompt('Mensualité 48 mois (CHF) - 0 si non applicable:', camera.monthly48 || 0));
+            const monthly36 = parseFloat(prompt('Mensualité 36 mois (CHF) - 0 si non applicable:', camera.monthly36 || 0));
+            const monthly24 = parseFloat(prompt('Mensualité 24 mois (CHF) - 0 si non applicable:', camera.monthly24 || 0));
+            
+            camera.name = name;
+            camera.price = price;
+            
+            delete camera.monthly48;
+            delete camera.monthly36;
+            delete camera.monthly24;
+            
+            if (monthly48 > 0) camera.monthly48 = monthly48;
+            if (monthly36 > 0) camera.monthly36 = monthly36;
+            if (monthly24 > 0) camera.monthly24 = monthly24;
+            
+            loadCamerasList();
+        }
+
+        function deleteCamera(id) {
+            const camera = generator.catalog['camera-material'].find(p => p.id === id);
+            if (!camera) return;
+            
+            if (confirm(`Supprimer ${camera.name} ?`)) {
+                generator.catalog['camera-material'] = generator.catalog['camera-material'].filter(p => p.id !== id);
+                loadCamerasList();
+            }
+        }
+
+        function addFog() {
+            const name = prompt('Nom du produit:');
+            if (!name) return;
+            
+            const price = parseFloat(prompt('Prix (CHF):'));
+            if (isNaN(price)) return;
+            
+            const monthly = parseFloat(prompt('Mensualité (CHF) - 0 si non applicable:') || 0);
+            
+            const newId = Math.max(...generator.catalog['fog-material'].map(p => p.id)) + 1;
+            
+            const newFog = {
+                id: newId,
+                name: name,
+                price: price
+            };
+            
+            if (monthly > 0) newFog.monthly = monthly;
+            
+            generator.catalog['fog-material'].push(newFog);
+            
+            loadFogList();
+        }
+
+        function editFog(id) {
+            const fog = generator.catalog['fog-material'].find(p => p.id === id);
+            if (!fog) return;
+            
+            const name = prompt('Nom du produit:', fog.name);
+            if (name === null) return;
+            
+            const price = parseFloat(prompt('Prix (CHF):', fog.price));
+            if (isNaN(price)) return;
+            
+            const monthly = parseFloat(prompt('Mensualité (CHF) - 0 si non applicable:', fog.monthly || 0));
+            
+            fog.name = name;
+            fog.price = price;
+            
+            delete fog.monthly;
+            if (monthly > 0) fog.monthly = monthly;
+            
+            loadFogList();
+        }
+
+        function deleteFog(id) {
+            const fog = generator.catalog['fog-material'].find(p => p.id === id);
+            if (!fog) return;
+            
+            if (confirm(`Supprimer ${fog.name} ?`)) {
+                generator.catalog['fog-material'] = generator.catalog['fog-material'].filter(p => p.id !== id);
+                loadFogList();
+            }
+        }
+
+        // Écouter Enter sur le champ mot de passe
         document.addEventListener('DOMContentLoaded', () => {
             generator = new DialarmeFinalGenerator();
+            
+            document.getElementById('admin-password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
         });
     </script>
 </body>
-</html>
+</html>T = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
+                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
+                    
+                    document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
+                    document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
+                    document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
+                    document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
+                    
+                    if (!this.rentalMode['alarm']) {
+                        const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
+                        
+                        if (paymentMonths > 0) {
+                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
+                            const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
+                            const mensualiteInstallHT = this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
+                            const totalMensuelHT = mensualiteMatHT + mensualiteMatSuppHT + mensualiteInstallHT + surveillanceTotal;
+                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
+                            
+                            document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                            document.getElementById('alarm-monthly-count').textContent = paymentMonths;
+                            document.getElementById('alarm-monthly-payment').style.display = 'block';
+                            
+                            const comptantTTC = this.roundToFiveCents(adminTotal * 1.081);
+                            document.getElementById('alarm-cash-amount').textContent = comptantTTC.toFixed(2);
+                            document.getElementById('alarm-cash-payment').style.display = 'block';
+                        } else {
+                            document.getElementById('alarm-monthly-payment').style.display = 'none';
+                            document.getElementById('alarm-cash-payment').style.display = 'none';
+                        }
+                    } else {
+                        document.getElementById('alarm-monthly-payment').style.display = 'none';
+                        document.getElementById('alarm-cash-payment').style.display = 'none';
+                    }
+                    
+                } else if (this.currentTab === 'camera') {
+                    const materialTotal = this.calculateSectionTotal('camera-material');
+                    const installationPrice = this.calculateCameraInstallationPrice();
+                    const installationOffered = document.getElementById('camera-installation-offered').checked;
+                    const installationTotal = installationOffered ? 0 : installationPrice;
+                    const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
+                    const remoteAccessPrice = remoteAccess ? 20 : 0;
+                    
+                    const totalHT = materialTotal + installationTotal;
+                    const totalTTC = this.roundToFiveCents(totalHT * 1.081);
+                    
+                    document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
+                    document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
+                    document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
+                    
+                    if (!this.rentalMode['camera']) {
+                        document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
+                        
+                        const paymentMonths = this.globalPaymentMonths['camera'] || 0;
+                        
+                        if (paymentMonths > 0) {
+                            const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                            
+                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
+                            const mensualiteInstallHT = installationOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
+                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
+                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
+                            
+                            document.getElementById('camera-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                            document.getElementById('camera-monthly-count').textContent = paymentMonths;
+                            document.getElementById('camera-monthly-payment').style.display = 'block';
+                            
+                            const remoteMonthly = document.getElementById('camera-remote-monthly');
+                            if (remoteMonthly) {
+                                remoteMonthly.style.display = remoteAccess ? 'block' : 'none';
+                            }
+                        } else {
+                            document.getElementById('camera-monthly-payment').style.display = 'none';
+                        }
+                    }
+                    
+                    document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
+                    document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
+                }
+                
+                else if (this.currentTab === 'fog') {
+                    const materialTotal = this.calculateSectionTotal('fog-material');
+                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
+                    
+                    const installationPrice = 490;
+                    const installationTotal = installationOffered ? 0 : installationPrice;
+                    
+                    const totalH
