@@ -1046,7 +1046,7 @@
     </div>
 
     <script>
-        // Générateur de devis Dialarme avec TVA corrigée à 8.1% et nouveaux prix mensuels
+        // Générateur de devis Dialarme - Version Complète
         class DialarmeFinalGenerator {
             constructor() {
                 this.catalog = {
@@ -1170,7 +1170,7 @@
             init() {
                 this.updateCurrentDate();
                 this.updateTotals();
-                console.log('Générateur Dialarme avec TVA 8.1% initialisé');
+                console.log('Générateur Dialarme initialisé');
             }
 
             updateCurrentDate() {
@@ -1256,12 +1256,12 @@
 
             calculateInstallationPrice(qty) {
                 const prices = {
-                    1: 690,   // 0.5 jour
-                    2: 1290,  // 1 jour  
-                    3: 1980,  // 1.5 jours (1290 + 690)
-                    4: 2580,  // 2 jours (1290 * 2)
-                    5: 3270,  // 2.5 jours (1290 * 2 + 690)
-                    6: 3870   // 3 jours (1290 * 3)
+                    1: 690,
+                    2: 1290,
+                    3: 1980,
+                    4: 2580,
+                    5: 3270,
+                    6: 3870
                 };
                 
                 if (qty > 6) {
@@ -1277,53 +1277,6 @@
                 const qtyInput = document.getElementById('camera-installation-qty');
                 const qty = parseInt(qtyInput.value) || 1;
                 return this.calculateInstallationPrice(qty);
-            }
-            
-            getCameraCount() {
-                const container = document.getElementById('camera-material-products');
-                if (!container) return 0;
-                
-                let totalCameras = 0;
-                const productLines = container.querySelectorAll('.product-line');
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    const qtyInput = line.querySelector('.quantity-input');
-                    
-                    if (select && select.value && qtyInput) {
-                        const selectedOption = select.querySelector(`option[value="${select.value}"]`);
-                        if (selectedOption) {
-                            const productId = parseInt(select.value);
-                            const product = this.catalog['camera-material'].find(p => p.id === productId);
-                            if (product && product.isCamera) {
-                                const qty = parseInt(qtyInput.value) || 0;
-                                totalCameras += qty;
-                            }
-                        }
-                    }
-                });
-                
-                return totalCameras;
-            }
-            
-            hasReo4GCamera() {
-                const container = document.getElementById('camera-material-products');
-                if (!container) return false;
-                
-                const productLines = container.querySelectorAll('.product-line');
-                
-                for (let line of productLines) {
-                    const select = line.querySelector('.product-select');
-                    if (select && select.value) {
-                        const productId = parseInt(select.value);
-                        const product = this.catalog['camera-material'].find(p => p.id === productId);
-                        if (product && product.isReo4G) {
-                            return true;
-                        }
-                    }
-                }
-                
-                return false;
             }
 
             updateAlarmInstallationPrice() {
@@ -1351,106 +1304,18 @@
                 this.updateTotals();
             }
 
-            showFogKitProposal() {
-                const overlay = document.createElement('div');
-                overlay.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 9999;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                `;
+            updateFogInstallationPrice() {
+                const qtyInput = document.getElementById('fog-installation-qty');
+                const qty = parseInt(qtyInput.value) || 1;
                 
-                const modal = document.createElement('div');
-                modal.style.cssText = `
-                    background: white;
-                    border-radius: 15px;
-                    padding: 30px;
-                    max-width: 600px;
-                    width: 90%;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                `;
+                const price = this.calculateInstallationPrice(qty);
                 
-                modal.innerHTML = `
-                    <h2 style="margin-bottom: 20px; color: #333;">💨 Kit de base pour Générateur de brouillard</h2>
-                    <p style="margin-bottom: 20px; color: #666;">Voulez-vous ajouter le kit de base recommandé ?</p>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit de base recommandé</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #666;">
-                            <li>1x Clavier (390 CHF)</li>
-                            <li>1x Détecteur volumétrique (240 CHF)</li>
-                        </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Prix du kit: 630.00 CHF</p>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button onclick="addFogKit()" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                            Ajouter le kit
-                        </button>
-                        <button onclick="closeFogKitModal()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                            Non merci
-                        </button>
-                    </div>
-                `;
+                const priceDisplay = document.getElementById('fog-installation-price');
+                const offeredCheckbox = document.getElementById('fog-installation-offered');
                 
-                overlay.appendChild(modal);
-                document.body.appendChild(overlay);
-                
-                window.closeFogKitModal = () => {
-                    document.body.removeChild(overlay);
-                };
-                
-                window.addFogKit = () => {
-                    this.addFogKitProducts();
-                    document.body.removeChild(overlay);
-                    this.showNotification('Kit de base ajouté au générateur de brouillard');
-                };
-            }
-
-            addFogKitProducts() {
-                const container = document.getElementById('fog-material-products');
-                
-                const kitProducts = [
-                    { id: 107, name: "Clavier", price: 390.00, quantity: 1 },
-                    { id: 106, name: "Détecteur volumétrique", price: 240.00, quantity: 1 }
-                ];
-                
-                kitProducts.forEach(product => {
-                    const productLine = document.createElement('div');
-                    productLine.className = 'product-line';
-                    productLine.style.background = '#fffbf0';
-                    
-                    const lineId = 'fogkit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    
-                    productLine.innerHTML = `
-                        <div class="product-select-container" style="width: 100%;">
-                            <select class="product-select" onchange="handleProductSelection(this)" data-section="fog-material">
-                                <option value="">Sélectionner un produit</option>
-                                ${this.catalog['fog-material'].map(p => {
-                                    return `<option value="${p.id}" data-price="${p.price}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${p.price.toFixed(2)} CHF</option>`;
-                                }).join('')}
-                            </select>
-                            <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
-                        </div>
-                        <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
-                        <input type="number" value="${product.price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
-                        <div class="checkbox-option" style="margin: 0;">
-                            <input type="checkbox" class="offered-checkbox" onchange="updateTotals()">
-                            <label style="margin: 0; font-size: 12px;">OFFERT</label>
-                        </div>
-                        <div class="price-display">${product.price.toFixed(2)} CHF</div>
-                        <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
-                    `;
-                    container.appendChild(productLine);
-                });
+                if (!offeredCheckbox.checked) {
+                    priceDisplay.textContent = `${price.toFixed(2)} CHF`;
+                }
                 
                 this.updateTotals();
             }
@@ -1622,11 +1487,21 @@
                 const centralName = centralType === 'titane' ? 'Centrale Titane' : 'Centrale Jablotron';
                 const centralPrice = centralType === 'titane' ? 690 : 990;
                 
+                const availableProducts = this.getFilteredProducts('alarm-material');
                 const centralLine = document.createElement('div');
                 centralLine.className = 'product-line central-line';
                 centralLine.style.background = '#e3f2fd';
                 centralLine.innerHTML = `
-                    <div style="font-weight: bold;">${centralName}</div>
+                    <div class="product-select-container" style="width: 100%;">
+                        <select class="product-select" onchange="handleProductSelection(this)" data-section="alarm-material">
+                            <option value="">Sélectionner un produit</option>
+                            ${availableProducts.map(p => {
+                                const pPrice = this.getProductPrice(p);
+                                return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === centralId ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                            }).join('')}
+                        </select>
+                        <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                    </div>
                     <input type="number" value="1" min="1" class="quantity-input" readonly>
                     <input type="number" value="${centralPrice}" class="price-input discount-input" style="display: none;">
                     <div class="checkbox-option" style="margin: 0;">
@@ -1653,16 +1528,28 @@
                 kitProducts.forEach(product => {
                     const productData = this.catalog['alarm-material'].find(p => p.id === product.id);
                     if (productData) {
+                        const availableProducts = this.getFilteredProducts('alarm-material');
                         const price = this.getProductPrice(productData);
                         
                         const productLine = document.createElement('div');
                         productLine.className = 'product-line';
                         productLine.style.background = '#fffbf0';
                         
+                        const lineId = 'kit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                        
                         productLine.innerHTML = `
-                            <div>${product.name}</div>
+                            <div class="product-select-container" style="width: 100%;">
+                                <select class="product-select" onchange="handleProductSelection(this)" data-section="alarm-material">
+                                    <option value="">Sélectionner un produit</option>
+                                    ${availableProducts.map(p => {
+                                        const pPrice = this.getProductPrice(p);
+                                        return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
+                                    }).join('')}
+                                </select>
+                                <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
+                            </div>
                             <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
-                            <input type="number" value="${price}" class="price-input discount-input" style="display: none;">
+                            <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
                             <div class="checkbox-option" style="margin: 0;">
                                 <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
                                 <label style="margin: 0; font-size: 12px;">OFFERT</label>
@@ -1676,22 +1563,6 @@
                 
                 this.updateSurveillanceOptions(centralType);
                 this.updateAllProductSelects();
-                this.updateTotals();
-            }
-
-            updateFogInstallationPrice() {
-                const qtyInput = document.getElementById('fog-installation-qty');
-                const qty = parseInt(qtyInput.value) || 1;
-                
-                const price = this.calculateInstallationPrice(qty);
-                
-                const priceDisplay = document.getElementById('fog-installation-price');
-                const offeredCheckbox = document.getElementById('fog-installation-offered');
-                
-                if (!offeredCheckbox.checked) {
-                    priceDisplay.textContent = `${price.toFixed(2)} CHF`;
-                }
-                
                 this.updateTotals();
             }
 
@@ -1832,10 +1703,6 @@
                     this.detectSelectedCentral();
                 }
                 
-                if (sectionId === 'fog-material' && productId === 105) {
-                    this.showFogKitProposal();
-                }
-                
                 if (sectionId === 'camera-material') {
                     this.updateCameraInstallationPrice();
                 }
@@ -1882,69 +1749,6 @@
                 }
                 
                 return product.price;
-            }
-
-            calculateSectionMonthlyCost(sectionId) {
-                const container = document.getElementById(`${sectionId}-products`);
-                if (!container) return 0;
-                
-                const months = this.sections[sectionId]?.paymentMonths || 0;
-                if (months === 0) return 0;
-                
-                let monthlyTotal = 0;
-                const productLines = container.querySelectorAll('.product-line');
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    const qtyInput = line.querySelector('.quantity-input');
-                    const offeredCheckbox = line.querySelector('.offered-checkbox');
-                    const isOffered = offeredCheckbox?.checked || false;
-                    
-                    if (select && select.value && qtyInput && !isOffered) {
-                        const productId = parseInt(select.value);
-                        const qty = parseInt(qtyInput.value) || 0;
-                        const product = this.catalog[sectionId].find(p => p.id === productId);
-                        
-                        if (product) {
-                            let monthlyPrice = 0;
-                            
-                            if (sectionId.includes('alarm')) {
-                                if (months === 48) {
-                                    if (this.selectedCentral === 'titane' && product.price48Titane) {
-                                        monthlyPrice = product.price48Titane;
-                                    } else if (this.selectedCentral === 'jablotron' && product.price48Jablotron) {
-                                        monthlyPrice = product.price48Jablotron;
-                                    }
-                                } else if (months === 36) {
-                                    if (this.selectedCentral === 'titane' && product.price36Titane) {
-                                        monthlyPrice = product.price36Titane;
-                                    } else if (this.selectedCentral === 'jablotron' && product.price36Jablotron) {
-                                        monthlyPrice = product.price36Jablotron;
-                                    }
-                                } else if (months === 24) {
-                                    if (this.selectedCentral === 'titane' && product.price24Titane) {
-                                        monthlyPrice = product.price24Titane;
-                                    } else if (this.selectedCentral === 'jablotron' && product.price24Jablotron) {
-                                        monthlyPrice = product.price24Jablotron;
-                                    }
-                                }
-                            }
-                            else if (sectionId === 'camera-material') {
-                                if (months === 48 && product.price48) {
-                                    monthlyPrice = product.price48;
-                                } else if (months === 36 && product.price36) {
-                                    monthlyPrice = product.price36;
-                                } else if (months === 24 && product.price24) {
-                                    monthlyPrice = product.price24;
-                                }
-                            }
-                            
-                            monthlyTotal += monthlyPrice * qty;
-                        }
-                    }
-                });
-                
-                return monthlyTotal;
             }
             
             detectSelectedCentral() {
@@ -2064,149 +1868,6 @@
                         }
                     }
                 });
-            }
-
-            showKitProposal(centraleName, sectionId) {
-                const overlay = document.createElement('div');
-                overlay.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 9999;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                `;
-                
-                const isTitane = centraleName === 'Titane';
-                const detecteurVolPrice = isTitane ? 240 : 290;
-                const detecteurOuvPrice = isTitane ? 190 : 190;
-                const clavierPrice = isTitane ? 390 : 490;
-                const sirenePrice = 390;
-                
-                const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
-                const kit2Total = detecteurVolPrice + (detecteurOuvPrice * 3) + clavierPrice + sirenePrice;
-                
-                const modal = document.createElement('div');
-                modal.style.cssText = `
-                    background: white;
-                    border-radius: 15px;
-                    padding: 30px;
-                    max-width: 600px;
-                    width: 90%;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                `;
-                
-                modal.innerHTML = `
-                    <h2 style="margin-bottom: 20px; color: #333;">🎁 Kit OFFERT avec Centrale ${centraleName}</h2>
-                    <p style="margin-bottom: 20px; color: #28a745; font-weight: bold;">Le kit sera automatiquement marqué comme OFFERT</p>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
-                         onmouseover="this.style.borderColor='#f4e600'" 
-                         onmouseout="this.style.borderColor='transparent'"
-                         onclick="selectKit('kit1', '${centraleName}', '${sectionId}')">
-                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Standard</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #666;">
-                            <li>2x Détecteur volumétrique (${detecteurVolPrice} CHF/u)</li>
-                            <li>1x Détecteur d'ouverture (${detecteurOuvPrice} CHF)</li>
-                            <li>1x Clavier (${clavierPrice} CHF)</li>
-                            <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
-                        </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Valeur du kit: ${kit1Total.toFixed(2)} CHF - OFFERT</p>
-                    </div>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
-                         onmouseover="this.style.borderColor='#f4e600'" 
-                         onmouseout="this.style.borderColor='transparent'"
-                         onclick="selectKit('kit2', '${centraleName}', '${sectionId}')">
-                        <h4 style="margin-bottom: 10px; color: #333;">📦 Kit Périmétrique</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #666;">
-                            <li>1x Détecteur volumétrique (${detecteurVolPrice} CHF)</li>
-                            <li>3x Détecteur d'ouverture (${detecteurOuvPrice} CHF/u)</li>
-                            <li>1x Clavier (${clavierPrice} CHF)</li>
-                            <li>1x Sirène déportée petite (${sirenePrice} CHF)</li>
-                        </ul>
-                        <p style="margin-top: 10px; font-weight: bold; color: #28a745;">Valeur du kit: ${kit2Total.toFixed(2)} CHF - OFFERT</p>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button onclick="closeKitModal()" style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                            Non merci
-                        </button>
-                    </div>
-                `;
-                
-                overlay.appendChild(modal);
-                document.body.appendChild(overlay);
-                
-                window.closeKitModal = () => {
-                    document.body.removeChild(overlay);
-                };
-                
-                window.selectKit = (kitType, centraleName, sectionId) => {
-                    this.addKit(kitType, sectionId);
-                    document.body.removeChild(overlay);
-                    this.showNotification(`Kit ${kitType === 'kit1' ? 'Standard' : 'Périmétrique'} ajouté pour ${centraleName} - OFFERT`);
-                };
-            }
-
-            addKit(kitType, sectionId) {
-                const container = document.getElementById(`${sectionId}-products`);
-                
-                const kitProducts = kitType === 'kit1' ? [
-                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 2 },
-                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 1 },
-                    { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
-                ] : [
-                    { id: 8, name: "Détecteur volumétrique (radio)", quantity: 1 },
-                    { id: 10, name: "Détecteur d'ouverture (radio)", quantity: 3 },
-                    { id: 7, name: "Clavier (radio)", quantity: 1 },
-                    { id: 18, name: "Sirène déportée petite (radio)", quantity: 1 }
-                ];
-                
-                kitProducts.forEach(product => {
-                    const productData = this.catalog[sectionId].find(p => p.id === product.id);
-                    if (productData) {
-                        const availableProducts = this.getFilteredProducts(sectionId);
-                        const price = this.getProductPrice(productData);
-                        
-                        const productLine = document.createElement('div');
-                        productLine.className = 'product-line';
-                        productLine.style.background = '#fffbf0';
-                        
-                        const lineId = 'kit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                        
-                        productLine.innerHTML = `
-                            <div class="product-select-container" style="width: 100%;">
-                                <select class="product-select" onchange="handleProductSelection(this)" data-section="${sectionId}">
-                                    <option value="">Sélectionner un produit</option>
-                                    ${availableProducts.map(p => {
-                                        const pPrice = this.getProductPrice(p);
-                                        return `<option value="${p.id}" data-price="${pPrice}" data-custom="${p.isCustom ? 'true' : 'false'}" ${p.id === product.id ? 'selected' : ''}>${p.name} - ${pPrice.toFixed(2)} CHF</option>`;
-                                    }).join('')}
-                                </select>
-                                <input type="text" class="product-name-input" style="display: none; width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="Nom du produit personnalisé" oninput="updateTotals()">
-                            </div>
-                            <input type="number" value="${product.quantity}" min="1" class="quantity-input" oninput="updateTotals()">
-                            <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
-                            <div class="checkbox-option" style="margin: 0;">
-                                <input type="checkbox" class="offered-checkbox" checked onchange="updateTotals()">
-                                <label style="margin: 0; font-size: 12px;">OFFERT</label>
-                            </div>
-                            <div class="price-display">0.00 CHF</div>
-                            <button class="remove-btn" onclick="this.closest('.product-line').remove(); updateTotals();">×</button>
-                        `;
-                        container.appendChild(productLine);
-                    }
-                });
-                
-                this.updateTotals();
             }
 
             calculateSectionTotal(sectionId, forPDF = false) {
@@ -2672,9 +2333,7 @@
                     }
 
                     if (type === 'alarm') {
-                        if (this.hasSectionProducts('alarm-material')) {
-                            yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos);
-                        }
+                        yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos);
 
                         yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
                         yPos = this.createAdminFeesPDF(doc, yPos);
@@ -2780,7 +2439,6 @@
                     if ((select && select.value && qtyInput) || (isCentralLine && qtyInput) || (line.querySelector('.price-input') && qtyInput)) {
                         lineCount++;
                         
-                        // Couleur de fond différente pour le kit de base
                         if (isKitLine) {
                             doc.setFillColor(255, 251, 240);
                             doc.rect(40, yPos, 515, 12, 'F');
@@ -2795,26 +2453,21 @@
                         let price = 0;
                         let productName = '';
                         
-                        if (isCentralLine) {
-                            productName = line.querySelector('div').textContent;
+                        const selectedOption = select?.querySelector(`option[value="${select.value}"]`);
+                        const nameInput = line.querySelector('.product-name-input');
+                        
+                        if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
+                            productName = nameInput.value;
                             price = parseFloat(priceInput?.value) || 0;
-                        } else {
-                            const selectedOption = select?.querySelector(`option[value="${select.value}"]`);
-                            const nameInput = line.querySelector('.product-name-input');
-                            
-                            if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
-                                productName = nameInput.value;
-                                price = parseFloat(priceInput?.value) || 0;
-                            } else if (priceInput && priceInput.style.display !== 'none') {
-                                price = parseFloat(priceInput.value) || 0;
-                                productName = selectedOption?.text?.split(' - ')[0] || 'Produit personnalisé';
-                            } else if (selectedOption) {
-                                price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                                productName = selectedOption.text.split(' - ')[0] || '';
-                            } else if (priceInput) {
-                                productName = line.querySelector('div')?.textContent || '';
-                                price = parseFloat(priceInput.value) || 0;
-                            }
+                        } else if (priceInput && priceInput.style.display !== 'none') {
+                            price = parseFloat(priceInput.value) || 0;
+                            productName = selectedOption?.text?.split(' - ')[0] || 'Produit personnalisé';
+                        } else if (selectedOption) {
+                            price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                            productName = selectedOption.text.split(' - ')[0] || '';
+                        } else if (priceInput) {
+                            productName = line.querySelector('div')?.textContent || '';
+                            price = parseFloat(priceInput.value) || 0;
                         }
                         
                         let lineTotal = price * qty;
@@ -2834,11 +2487,9 @@
                             : productName;
                         doc.text(displayName, 90, yPos + 8);
                         
-                        // TOUJOURS afficher le prix unitaire (même si offert)
                         doc.setTextColor(0, 0, 0);
                         doc.text(price.toFixed(2), 405, yPos + 8);
                         
-                        // Dans la colonne Total: afficher OFFERT si c'est le cas, sinon le total
                         if (isOffered) {
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0, 150, 0);
