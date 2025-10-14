@@ -1046,7 +1046,7 @@
     </div>
 
     <script>
-        // Générateur de devis Dialarme - Version Complète
+        // Générateur de devis Dialarme - Version avec prix mensuels corrigés
         class DialarmeFinalGenerator {
             constructor() {
                 this.catalog = {
@@ -1054,86 +1054,86 @@
                         { id: 5, name: "Centrale Jablotron", price: 990.00 },
                         { id: 6, name: "Centrale Titane", price: 690.00 },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, price48Titane: 3, price36Titane: 4, price24Titane: 5, price48Jablotron: 5, price36Jablotron: 6, price24Jablotron: 9 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, price48Titane: 22, price36Titane: 29, price24Titane: 41, price48Jablotron: 22, price36Jablotron: 29, price24Jablotron: 41 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 5, price36Jablotron: 6, price24Jablotron: 9 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, price48Titane: 10, price36Titane: 13, price24Titane: 18, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, price48Titane: 17, price36Titane: 22, price24Titane: 32, price48Jablotron: 17, price36Jablotron: 22, price24Jablotron: 32 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 6, price36Jablotron: 7, price24Jablotron: 10 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, price48Titane: 6, price36Titane: 8, price24Titane: 11, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 11, price36Jablotron: 15, price24Jablotron: 21 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, price48Titane: 10, price36Titane: 13, price24Titane: 18, price48Jablotron: 10, price36Jablotron: 13, price24Jablotron: 18 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 10, price36Jablotron: 13, price24Jablotron: 18 },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 6, price36Jablotron: 8, price24Jablotron: 11 }
+                        { id: 3, name: "Badge x 4", priceTitane: 100.00, priceJablotron: 200.00, monthlyTitane: 3, monthlyJablotron: 5 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", priceTitane: 890.00, priceJablotron: 890.00, monthlyTitane: 22, monthlyJablotron: 22 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", priceTitane: 190.00, priceJablotron: 190.00, monthlyTitane: 5, monthlyJablotron: 5 },
+                        { id: 7, name: "Clavier (radio)", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 12 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
+                        { id: 11, name: "Détecteur de choc (radio)", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
+                        { id: 13, name: "Détecteur de fumée (radio)", priceTitane: 190.00, priceJablotron: 290.00, monthlyTitane: 5, monthlyJablotron: 7 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", priceTitane: 690.00, priceJablotron: 690.00, monthlyTitane: 17, monthlyJablotron: 17 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", priceTitane: 240.00, priceJablotron: 290.00, monthlyTitane: 6, monthlyJablotron: 7 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", priceTitane: 290.00, priceJablotron: 450.00, monthlyTitane: 7, monthlyJablotron: 11 },
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
+                        { id: 18, name: "Sirène déportée petite (radio)", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 10 },
+                        { id: 21, name: "Sirène déportée grande (radio)", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
+                        { id: 17, name: "Sonde inondation (radio)", priceTitane: 290.00, priceJablotron: 390.00, monthlyTitane: 7, monthlyJablotron: 10 },
+                        { id: 19, name: "Télécommande (radio)", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': [
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 3, name: "Badge x 4", price: 100.00, priceTitane: 100.00, priceJablotron: 200.00, price48Titane: 3, price36Titane: 4, price24Titane: 5, price48Jablotron: 5, price36Jablotron: 6, price24Jablotron: 9 },
-                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", price: 890.00, priceTitane: 890.00, priceJablotron: 890.00, price48Titane: 22, price36Titane: 29, price24Titane: 41, price48Jablotron: 22, price36Jablotron: 29, price24Jablotron: 41 },
-                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 190.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 5, price36Jablotron: 6, price24Jablotron: 9 },
-                        { id: 7, name: "Clavier (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, price48Titane: 10, price36Titane: 13, price24Titane: 18, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 12, name: "Détecteur de bris de verre (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 11, name: "Détecteur de choc (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 290.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 13, name: "Détecteur de fumée (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 290.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", price: 690.00, priceTitane: 690.00, priceJablotron: 690.00, price48Titane: 17, price36Titane: 22, price24Titane: 32, price48Jablotron: 17, price36Jablotron: 22, price24Jablotron: 32 },
-                        { id: 10, name: "Détecteur d'ouverture (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 6, price36Jablotron: 7, price24Jablotron: 10 },
-                        { id: 8, name: "Détecteur volumétrique (radio)", price: 240.00, priceTitane: 240.00, priceJablotron: 290.00, price48Titane: 6, price36Titane: 8, price24Titane: 11, price48Jablotron: 7, price36Jablotron: 9, price24Jablotron: 13 },
-                        { id: 9, name: "Détecteur volumétrique caméra (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 450.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 11, price36Jablotron: 15, price24Jablotron: 21 },
+                        { id: 3, name: "Badge x 4", priceTitane: 100.00, priceJablotron: 200.00, monthlyTitane: 3, monthlyJablotron: 5 },
+                        { id: 2, name: "Barrière extérieure 2x12 mètres (radio)", priceTitane: 890.00, priceJablotron: 890.00, monthlyTitane: 22, monthlyJablotron: 22 },
+                        { id: 1, name: "Bouton panique/Montre d'urgence (radio)", priceTitane: 190.00, priceJablotron: 190.00, monthlyTitane: 5, monthlyJablotron: 5 },
+                        { id: 7, name: "Clavier (radio)", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 12 },
+                        { id: 12, name: "Détecteur de bris de verre (radio)", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
+                        { id: 11, name: "Détecteur de choc (radio)", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
+                        { id: 13, name: "Détecteur de fumée (radio)", priceTitane: 190.00, priceJablotron: 290.00, monthlyTitane: 5, monthlyJablotron: 7 },
+                        { id: 14, name: "Détecteur de mouvement extérieur (caméra)", priceTitane: 690.00, priceJablotron: 690.00, monthlyTitane: 17, monthlyJablotron: 17 },
+                        { id: 10, name: "Détecteur d'ouverture (radio)", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
+                        { id: 8, name: "Détecteur volumétrique (radio)", priceTitane: 240.00, priceJablotron: 290.00, monthlyTitane: 6, monthlyJablotron: 7 },
+                        { id: 9, name: "Détecteur volumétrique caméra (radio)", priceTitane: 290.00, priceJablotron: 450.00, monthlyTitane: 7, monthlyJablotron: 11 },
                         { id: 20, name: "Installation, paramétrages, tests, mise en service & formation (1/2 journée)", price: 690.00 },
-                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 18, name: "Sirène déportée petite (radio)", price: 390.00, priceTitane: 390.00, priceJablotron: 390.00, price48Titane: 10, price36Titane: 13, price24Titane: 18, price48Jablotron: 10, price36Jablotron: 13, price24Jablotron: 18 },
-                        { id: 21, name: "Sirène déportée grande (radio)", price: 490.00, requiresJablotron: true, price48Jablotron: 12, price36Jablotron: 16, price24Jablotron: 23 },
-                        { id: 17, name: "Sonde inondation (radio)", price: 290.00, priceTitane: 290.00, priceJablotron: 390.00, price48Titane: 7, price36Titane: 9, price24Titane: 13, price48Jablotron: 10, price36Jablotron: 13, price24Jablotron: 18 },
-                        { id: 19, name: "Télécommande (radio)", price: 190.00, priceTitane: 190.00, priceJablotron: 240.00, price48Titane: 5, price36Titane: 6, price24Titane: 9, price48Jablotron: 6, price36Jablotron: 8, price24Jablotron: 11 }
+                        { id: 22, name: "Lecteur de badge intérieur (filaire/radio)", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
+                        { id: 18, name: "Sirène déportée petite (radio)", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 10 },
+                        { id: 21, name: "Sirène déportée grande (radio)", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
+                        { id: 17, name: "Sonde inondation (radio)", priceTitane: 290.00, priceJablotron: 390.00, monthlyTitane: 7, monthlyJablotron: 10 },
+                        { id: 19, name: "Télécommande (radio)", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
                     'camera-material': [
                         { id: 99, name: "Autre", price: 0.00, isCustom: true },
-                        { id: 23, name: "Bullet Mini", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
-                        { id: 24, name: "Bullet XL Varifocale Night", price: 640.00, isCamera: true, price48: 16, price36: 21, price24: 30 },
-                        { id: 25, name: "Bullet Zone Alarme", price: 740.00, isCamera: true, price48: 19, price36: 23, price24: 34 },
-                        { id: 26, name: "Bullet Zoom x23", price: 990.00, isCamera: true, price48: 25, price36: 32, price24: 46 },
-                        { id: 27, name: "Caméra de comptage", price: 860.00, isCamera: true },
+                        { id: 23, name: "Bullet Mini", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18 },
+                        { id: 24, name: "Bullet XL Varifocale Night", price: 640.00, monthly48: 16, monthly36: 21, monthly24: 30 },
+                        { id: 25, name: "Bullet Zone Alarme", price: 740.00, monthly48: 19, monthly36: 23, monthly24: 34 },
+                        { id: 26, name: "Bullet Zoom x23", price: 990.00, monthly48: 25, monthly36: 32, monthly24: 46 },
+                        { id: 27, name: "Caméra de comptage", price: 860.00 },
                         { id: 28, name: "Coffret NVR 4P", price: 240.00 },
                         { id: 29, name: "Coffret NVR 8P", price: 360.00 },
                         { id: 30, name: "Disque dur 4 To", price: 270.00 },
-                        { id: 31, name: "Dôme Antivandale", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
-                        { id: 32, name: "Dôme Mini Antivandale", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
-                        { id: 33, name: "Dôme Night", price: 540.00, isCamera: true, price48: 14, price36: 18, price24: 25 },
-                        { id: 34, name: "Dôme Plat Motorisé", price: 390.00, isCamera: true, price48: 10, price36: 13, price24: 18 },
-                        { id: 35, name: "Dôme XL Varifocale", price: 590.00, isCamera: true, price48: 15, price36: 19, price24: 28 },
-                        { id: 36, name: "Dôme Zone Alarme", price: 740.00, isCamera: true, price48: 19, price36: 23, price24: 34 },
+                        { id: 31, name: "Dôme Antivandale", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18 },
+                        { id: 32, name: "Dôme Mini Antivandale", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18 },
+                        { id: 33, name: "Dôme Night", price: 540.00, monthly48: 14, monthly36: 18, monthly24: 25 },
+                        { id: 34, name: "Dôme Plat Motorisé", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18 },
+                        { id: 35, name: "Dôme XL Varifocale", price: 590.00, monthly48: 15, monthly36: 19, monthly24: 28 },
+                        { id: 36, name: "Dôme Zone Alarme", price: 740.00, monthly48: 19, monthly36: 23, monthly24: 34 },
                         { id: 37, name: "HDMI Ext.", price: 190.00 },
                         { id: 38, name: "Modem 4G", price: 290.00 },
                         { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00 },
                         { id: 40, name: "Moniteur Vidéo 28\" 4K", price: 460.00 },
                         { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00 },
-                        { id: 50, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00, isNVR: true },
-                        { id: 51, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00, isNVR: true },
-                        { id: 52, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00, isNVR: true },
+                        { id: 50, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00 },
+                        { id: 51, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00 },
+                        { id: 52, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00 },
                         { id: 42, name: "Onduleur 1000 - 60min", price: 360.00 },
                         { id: 43, name: "Onduleur 1500 - 90min", price: 600.00 },
                         { id: 44, name: "Onduleur 2200 - 120min", price: 830.00 },
                         { id: 45, name: "Onduleur 700 - 30min", price: 240.00 },
-                        { id: 46, name: "Reo 4G + P.Solaire", price: 490.00, isReo4G: true, isCamera: true, price48: 13, price36: 16, price24: 23 },
-                        { id: 47, name: "Solar 4G + P.solaire", price: 890.00, isReo4G: true, isCamera: true, price48: 22, price36: 28, price24: 41 },
+                        { id: 46, name: "Reo 4G + P.Solaire", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23 },
+                        { id: 47, name: "Solar 4G + P.solaire", price: 890.00, monthly48: 22, monthly36: 28, monthly24: 41 },
                         { id: 48, name: "Support Mural Articulé", price: 100.00 },
                         { id: 49, name: "Switch POE", price: 270.00 }
                     ].sort((a, b) => a.name.localeCompare(b.name)),
                     'fog-material': [
-                        { id: 105, name: "Générateur de brouillard", price: 2990.00, isFogGenerator: true },
+                        { id: 105, name: "Générateur de brouillard", price: 2990.00 },
                         { id: 103, name: "Cartouche supplémentaire HY3", price: 990.00 },
-                        { id: 107, name: "Clavier", price: 390.00, price48: 9, price36: 12, price24: 18 },
-                        { id: 108, name: "Détecteur d'ouverture", price: 190.00, price48: 5, price36: 6, price24: 9 },
-                        { id: 106, name: "Détecteur volumétrique", price: 240.00, price48: 6, price36: 8, price24: 11 },
+                        { id: 107, name: "Clavier", price: 390.00, monthly: 9 },
+                        { id: 108, name: "Détecteur d'ouverture", price: 190.00, monthly: 5 },
+                        { id: 106, name: "Détecteur volumétrique", price: 240.00, monthly: 6 },
                         { id: 102, name: "Remplissage cartouche", price: 390.00 },
-                        { id: 100, name: "Support mural articulé", price: 390.00, price48: 9, price36: 12, price24: 18 },
-                        { id: 101, name: "Support mural fixe", price: 290.00, price48: 7, price36: 9, price24: 13 },
-                        { id: 109, name: "Télécommande", price: 240.00, price48: 6, price36: 8, price24: 11 },
+                        { id: 100, name: "Support mural articulé", price: 390.00, monthly: 9 },
+                        { id: 101, name: "Support mural fixe", price: 290.00, monthly: 7 },
+                        { id: 109, name: "Télécommande", price: 240.00, monthly: 6 },
                         { id: 99, name: "Autre", price: 0.00, isCustom: true }
                     ]
                 };
@@ -1162,7 +1162,6 @@
 
                 this.selectedCentral = null;
                 this.kitOffered = false;
-                this.hasFogGenerator = false;
 
                 this.init();
             }
@@ -1274,18 +1273,15 @@
             }
 
             getInstallationMonthlyPrice(qty, months) {
-                // Tableau des mensualités HT pour l'installation
-                // Format: qty -> {24: prix, 36: prix, 48: prix}
                 const monthlyPrices = {
-                    1: { 24: 32, 36: 23, 48: 18 },      // 1/2 journée
-                    2: { 24: 60, 36: 42, 48: 33 },      // 1 journée
-                    3: { 24: 91, 36: 64, 48: 50 },      // 1,5 journée
-                    4: { 24: 119, 36: 83, 48: 65 },     // 2 journées
-                    5: { 24: 151, 36: 106, 48: 83 },    // 2,5 journées (extrapolé)
-                    6: { 24: 179, 36: 125, 48: 98 }     // 3 journées (extrapolé)
+                    1: { 24: 32, 36: 23, 48: 18 },
+                    2: { 24: 60, 36: 42, 48: 33 },
+                    3: { 24: 91, 36: 64, 48: 50 },
+                    4: { 24: 119, 36: 83, 48: 65 },
+                    5: { 24: 151, 36: 106, 48: 83 },
+                    6: { 24: 179, 36: 125, 48: 98 }
                 };
                 
-                // Si qty > 6, calculer proportionnellement
                 if (qty > 6) {
                     const fullDays = Math.floor(qty / 2);
                     const halfDay = qty % 2;
@@ -1303,12 +1299,10 @@
                     return monthlyPrices[qty][months];
                 }
                 
-                // Si pas de mensualités définies, retourner 0 (comptant)
                 return 0;
             }
 
             calculateSectionMonthlyPrice(sectionId, months) {
-                // Calcule le total des mensualités pour une section en utilisant les prix mensuels du catalogue
                 const container = document.getElementById(`${sectionId}-products`);
                 if (!container || months === 0) return 0;
                 
@@ -1323,12 +1317,11 @@
                     const priceInput = line.querySelector('.price-input');
                     
                     const isOffered = offeredCheckbox?.checked || false;
-                    if (isOffered) return; // Si offert, pas de mensualité
+                    if (isOffered) return;
                     
                     const qty = parseInt(qtyInput?.value) || 0;
                     if (qty === 0) return;
                     
-                    // Si c'est un produit personnalisé (Autre)
                     if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
                         const priceHT = parseFloat(priceInput?.value) || 0;
                         monthlyTotal += (priceHT / months) * qty;
@@ -1342,57 +1335,28 @@
                     
                     if (!product) return;
                     
-                    // Chercher le prix mensuel selon le type de section et la centrale
                     let monthlyPrice = 0;
                     
                     if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
-                        // Pour les alarmes, utiliser les prix selon la centrale et la durée
-                        if (months === 48) {
-                            if (this.selectedCentral === 'titane' && product.price48Titane !== undefined) {
-                                monthlyPrice = product.price48Titane;
-                            } else if (this.selectedCentral === 'jablotron' && product.price48Jablotron !== undefined) {
-                                monthlyPrice = product.price48Jablotron;
-                            } else if (product.price48 !== undefined) {
-                                monthlyPrice = product.price48;
-                            }
-                        } else if (months === 36) {
-                            if (this.selectedCentral === 'titane' && product.price36Titane !== undefined) {
-                                monthlyPrice = product.price36Titane;
-                            } else if (this.selectedCentral === 'jablotron' && product.price36Jablotron !== undefined) {
-                                monthlyPrice = product.price36Jablotron;
-                            } else if (product.price36 !== undefined) {
-                                monthlyPrice = product.price36;
-                            }
-                        } else if (months === 24) {
-                            if (this.selectedCentral === 'titane' && product.price24Titane !== undefined) {
-                                monthlyPrice = product.price24Titane;
-                            } else if (this.selectedCentral === 'jablotron' && product.price24Jablotron !== undefined) {
-                                monthlyPrice = product.price24Jablotron;
-                            } else if (product.price24 !== undefined) {
-                                monthlyPrice = product.price24;
-                            }
+                        if (this.selectedCentral === 'titane' && product.monthlyTitane !== undefined) {
+                            monthlyPrice = product.monthlyTitane;
+                        } else if (this.selectedCentral === 'jablotron' && product.monthlyJablotron !== undefined) {
+                            monthlyPrice = product.monthlyJablotron;
                         }
                     } else if (sectionId === 'camera-material') {
-                        // Pour les caméras
-                        if (months === 48 && product.price48 !== undefined) {
-                            monthlyPrice = product.price48;
-                        } else if (months === 36 && product.price36 !== undefined) {
-                            monthlyPrice = product.price36;
-                        } else if (months === 24 && product.price24 !== undefined) {
-                            monthlyPrice = product.price24;
+                        if (months === 48 && product.monthly48 !== undefined) {
+                            monthlyPrice = product.monthly48;
+                        } else if (months === 36 && product.monthly36 !== undefined) {
+                            monthlyPrice = product.monthly36;
+                        } else if (months === 24 && product.monthly24 !== undefined) {
+                            monthlyPrice = product.monthly24;
                         }
                     } else if (sectionId === 'fog-material') {
-                        // Pour le brouillard
-                        if (months === 48 && product.price48 !== undefined) {
-                            monthlyPrice = product.price48;
-                        } else if (months === 36 && product.price36 !== undefined) {
-                            monthlyPrice = product.price36;
-                        } else if (months === 24 && product.price24 !== undefined) {
-                            monthlyPrice = product.price24;
+                        if (product.monthly !== undefined) {
+                            monthlyPrice = product.monthly;
                         }
                     }
                     
-                    // Si pas de prix mensuel défini, diviser le prix par le nombre de mois
                     if (monthlyPrice === 0) {
                         const priceHT = this.getProductPrice(product);
                         monthlyPrice = priceHT / months;
@@ -1522,8 +1486,8 @@
                     
                     const isTitane = type === 'titane';
                     const detecteurVolPrice = isTitane ? 240 : 290;
-                    const detecteurOuvPrice = isTitane ? 190 : 190;
-                    const clavierPrice = isTitane ? 390 : 490;
+                    const detecteurOuvPrice = isTitane ? 190 : 240;
+                    const clavierPrice = isTitane ? 390 : 390;
                     const sirenePrice = 390;
                     
                     const kit1Total = (detecteurVolPrice * 2) + detecteurOuvPrice + clavierPrice + sirenePrice;
@@ -2086,7 +2050,6 @@
                         const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                         
                         if (paymentMonths > 0) {
-                            // Calcul des mensualités avec les prix mensuels du catalogue
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
                             const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
                             const mensualiteInstallHT = this.getInstallationMonthlyPrice(installQty, paymentMonths);
@@ -2132,7 +2095,6 @@
                         if (paymentMonths > 0) {
                             const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                             
-                            // Calcul des mensualités avec les prix mensuels du catalogue
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
                             const mensualiteInstallHT = installationOffered ? 0 : this.getInstallationMonthlyPrice(installQty, paymentMonths);
                             const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
@@ -2159,7 +2121,6 @@
                     const materialTotal = this.calculateSectionTotal('fog-material');
                     const installationOffered = document.getElementById('fog-installation-offered')?.checked;
                     
-                    // Installation fixe à 490 CHF pour le brouillard (uniquement comptant)
                     const installationPrice = 490;
                     const installationTotal = installationOffered ? 0 : installationPrice;
                     
@@ -2174,8 +2135,6 @@
                         const paymentMonths = this.globalPaymentMonths['fog'] || 0;
                         
                         if (paymentMonths > 0) {
-                            // Calcul des mensualités avec les prix mensuels du catalogue
-                            // Pour le brouillard, seul le matériel est mensualisé
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
                             const totalMensuelHT = mensualiteMatHT;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
@@ -2948,7 +2907,6 @@
 
                 const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
                 
-                // Installation fixe à 490 CHF pour le brouillard
                 const installPrice = 490;
                 const description = 'Installation, paramétrages, tests, mise en service & formation';
                 
@@ -2978,7 +2936,6 @@
                 }
                 yPos += 14;
                 
-                // Note importante
                 doc.setFont('helvetica', 'italic');
                 doc.setFontSize(7);
                 doc.setTextColor(100, 100, 100);
@@ -3074,18 +3031,15 @@
                     const materialTotal = this.calculateSectionTotal('fog-material');
                     const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
                     
-                    // Installation fixe à 490 CHF pour le brouillard (uniquement comptant)
                     const installPrice = 490;
                     const installTotal = installOffered ? 0 : installPrice;
                     
                     const paymentMonths = this.globalPaymentMonths['fog'] || 0;
                     
                     if (paymentMonths > 0) {
-                        // Pour le brouillard, seul le matériel est mensualisé, PAS l'installation
                         totalMensualitesHT = materialTotal;
                         monthsCount = paymentMonths;
                         
-                        // L'installation est toujours comptant pour le brouillard
                         totalComptantHT = installTotal;
                     } else {
                         totalComptantHT = materialTotal + installTotal;
@@ -3093,35 +3047,27 @@
                 }
 
                 if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    // Calcul avec le nouveau système de mensualités d'installation
                     let mensualiteMatHT = 0;
                     let mensualiteInstallHT = 0;
                     
                     if (type === 'alarm') {
-                        const materialTotal = this.calculateSectionTotal('alarm-material');
                         const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
                         const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
                         
-                        mensualiteMatHT = materialTotal / monthsCount;
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
                         mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
                         
-                        const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-                        const otherInstallMensualite = otherInstallationTotal / monthsCount;
+                        const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
                         mensualiteMatHT += otherInstallMensualite;
                     } else if (type === 'camera') {
-                        const materialTotal = this.calculateSectionTotal('camera-material');
                         const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                         const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
                         
-                        mensualiteMatHT = materialTotal / monthsCount;
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
                         mensualiteInstallHT = installOffered ? 0 : this.getInstallationMonthlyPrice(installQty, monthsCount);
                     } else if (type === 'fog') {
-                        const materialTotal = this.calculateSectionTotal('fog-material');
-                        const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                        
-                        // Pour le brouillard : seul le matériel est mensualisé
-                        mensualiteMatHT = materialTotal / monthsCount;
-                        mensualiteInstallHT = 0; // L'installation du brouillard n'est JAMAIS mensualisée
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
+                        mensualiteInstallHT = 0;
                     }
                     
                     const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceMonthlyHT;
