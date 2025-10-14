@@ -1306,6 +1306,103 @@
                 // Si pas de mensualités définies, retourner 0 (comptant)
                 return 0;
             }
+
+            calculateSectionMonthlyPrice(sectionId, months) {
+                // Calcule le total des mensualités pour une section en utilisant les prix mensuels du catalogue
+                const container = document.getElementById(`${sectionId}-products`);
+                if (!container || months === 0) return 0;
+                
+                let monthlyTotal = 0;
+                const productLines = container.querySelectorAll('.product-line');
+                
+                productLines.forEach(line => {
+                    const select = line.querySelector('.product-select');
+                    const qtyInput = line.querySelector('.quantity-input');
+                    const offeredCheckbox = line.querySelector('.offered-checkbox');
+                    const nameInput = line.querySelector('.product-name-input');
+                    const priceInput = line.querySelector('.price-input');
+                    
+                    const isOffered = offeredCheckbox?.checked || false;
+                    if (isOffered) return; // Si offert, pas de mensualité
+                    
+                    const qty = parseInt(qtyInput?.value) || 0;
+                    if (qty === 0) return;
+                    
+                    // Si c'est un produit personnalisé (Autre)
+                    if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
+                        const priceHT = parseFloat(priceInput?.value) || 0;
+                        monthlyTotal += (priceHT / months) * qty;
+                        return;
+                    }
+                    
+                    if (!select || !select.value) return;
+                    
+                    const productId = parseInt(select.value);
+                    const product = this.catalog[sectionId]?.find(p => p.id === productId);
+                    
+                    if (!product) return;
+                    
+                    // Chercher le prix mensuel selon le type de section et la centrale
+                    let monthlyPrice = 0;
+                    
+                    if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
+                        // Pour les alarmes, utiliser les prix selon la centrale et la durée
+                        if (months === 48) {
+                            if (this.selectedCentral === 'titane' && product.price48Titane !== undefined) {
+                                monthlyPrice = product.price48Titane;
+                            } else if (this.selectedCentral === 'jablotron' && product.price48Jablotron !== undefined) {
+                                monthlyPrice = product.price48Jablotron;
+                            } else if (product.price48 !== undefined) {
+                                monthlyPrice = product.price48;
+                            }
+                        } else if (months === 36) {
+                            if (this.selectedCentral === 'titane' && product.price36Titane !== undefined) {
+                                monthlyPrice = product.price36Titane;
+                            } else if (this.selectedCentral === 'jablotron' && product.price36Jablotron !== undefined) {
+                                monthlyPrice = product.price36Jablotron;
+                            } else if (product.price36 !== undefined) {
+                                monthlyPrice = product.price36;
+                            }
+                        } else if (months === 24) {
+                            if (this.selectedCentral === 'titane' && product.price24Titane !== undefined) {
+                                monthlyPrice = product.price24Titane;
+                            } else if (this.selectedCentral === 'jablotron' && product.price24Jablotron !== undefined) {
+                                monthlyPrice = product.price24Jablotron;
+                            } else if (product.price24 !== undefined) {
+                                monthlyPrice = product.price24;
+                            }
+                        }
+                    } else if (sectionId === 'camera-material') {
+                        // Pour les caméras
+                        if (months === 48 && product.price48 !== undefined) {
+                            monthlyPrice = product.price48;
+                        } else if (months === 36 && product.price36 !== undefined) {
+                            monthlyPrice = product.price36;
+                        } else if (months === 24 && product.price24 !== undefined) {
+                            monthlyPrice = product.price24;
+                        }
+                    } else if (sectionId === 'fog-material') {
+                        // Pour le brouillard
+                        if (months === 48 && product.price48 !== undefined) {
+                            monthlyPrice = product.price48;
+                        } else if (months === 36 && product.price36 !== undefined) {
+                            monthlyPrice = product.price36;
+                        } else if (months === 24 && product.price24 !== undefined) {
+                            monthlyPrice = product.price24;
+                        }
+                    }
+                    
+                    // Si pas de prix mensuel défini, diviser le prix par le nombre de mois
+                    if (monthlyPrice === 0) {
+                        const priceHT = this.getProductPrice(product);
+                        monthlyPrice = priceHT / months;
+                    }
+                    
+                    monthlyTotal += monthlyPrice * qty;
+                });
+                
+                return monthlyTotal;
+            }
             
             calculateCameraInstallationPrice() {
                 const qtyInput = document.getElementById('camera-installation-qty');
@@ -1989,12 +2086,11 @@
                         const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                         
                         if (paymentMonths > 0) {
-                            const totalMensualitesHT = materialTotal + totalInstallation;
-                            
-                            // Calcul des mensualités avec le nouveau système
-                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            // Calcul des mensualités avec les prix mensuels du catalogue
+                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
+                            const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
                             const mensualiteInstallHT = this.getInstallationMonthlyPrice(installQty, paymentMonths);
-                            const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceTotal;
+                            const totalMensuelHT = mensualiteMatHT + mensualiteMatSuppHT + mensualiteInstallHT + surveillanceTotal;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
                             
                             document.getElementById('alarm-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
@@ -2036,8 +2132,8 @@
                         if (paymentMonths > 0) {
                             const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                             
-                            // Calcul des mensualités avec le nouveau système
-                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            // Calcul des mensualités avec les prix mensuels du catalogue
+                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
                             const mensualiteInstallHT = installationOffered ? 0 : this.getInstallationMonthlyPrice(installQty, paymentMonths);
                             const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
@@ -2078,8 +2174,9 @@
                         const paymentMonths = this.globalPaymentMonths['fog'] || 0;
                         
                         if (paymentMonths > 0) {
-                            // Pour le brouillard, l'installation n'est PAS mensualisée (uniquement comptant)
-                            const mensualiteMatHT = materialTotal / paymentMonths;
+                            // Calcul des mensualités avec les prix mensuels du catalogue
+                            // Pour le brouillard, seul le matériel est mensualisé
+                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
                             const totalMensuelHT = mensualiteMatHT;
                             const totalMensuelTTC = totalMensuelHT * 1.081;
                             
