@@ -2775,10 +2775,16 @@
                     const priceInput = line.querySelector('.price-input');
                     
                     const isCentralLine = line.classList.contains('central-line');
+                    const isKitLine = line.style.background === 'rgb(255, 251, 240)' || line.style.background === '#fffbf0';
                     
                     if ((select && select.value && qtyInput) || (isCentralLine && qtyInput) || (line.querySelector('.price-input') && qtyInput)) {
                         lineCount++;
-                        if (lineCount % 2 === 0) {
+                        
+                        // Couleur de fond différente pour le kit de base
+                        if (isKitLine) {
+                            doc.setFillColor(255, 251, 240);
+                            doc.rect(40, yPos, 515, 12, 'F');
+                        } else if (lineCount % 2 === 0) {
                             doc.setFillColor(245, 245, 245);
                             doc.rect(40, yPos, 515, 12, 'F');
                         }
@@ -2801,7 +2807,7 @@
                                 price = parseFloat(priceInput?.value) || 0;
                             } else if (priceInput && priceInput.style.display !== 'none') {
                                 price = parseFloat(priceInput.value) || 0;
-                                productName = selectedOption?.getAttribute('data-original-name') || selectedOption?.text || 'Produit personnalisé';
+                                productName = selectedOption?.text?.split(' - ')[0] || 'Produit personnalisé';
                             } else if (selectedOption) {
                                 price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                                 productName = selectedOption.text.split(' - ')[0] || '';
@@ -2828,17 +2834,20 @@
                             : productName;
                         doc.text(displayName, 90, yPos + 8);
                         
+                        // TOUJOURS afficher le prix unitaire (même si offert)
+                        doc.setTextColor(0, 0, 0);
                         doc.text(price.toFixed(2), 405, yPos + 8);
                         
+                        // Dans la colonne Total: afficher OFFERT si c'est le cas, sinon le total
                         if (isOffered) {
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0, 150, 0);
                             doc.text('OFFERT', 485, yPos + 8);
+                            doc.setFont('helvetica', 'normal');
                         } else {
                             doc.setTextColor(0, 0, 0);
                             doc.text(lineTotal.toFixed(2), 485, yPos + 8);
                         }
-                        doc.setFont('helvetica', 'normal');
                         doc.setTextColor(0, 0, 0);
                         yPos += 12;
                     }
