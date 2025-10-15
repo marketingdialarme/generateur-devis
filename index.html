@@ -1682,13 +1682,6 @@ addProductLine(sectionId) {
                             }
                         }
                     }
-                    
-                    if (this.kitOffered && sectionId === 'alarm-material') {
-                        const offeredCheckbox = line.querySelector('.offered-checkbox');
-                        if (offeredCheckbox && !line.classList.contains('central-line')) {
-                            offeredCheckbox.checked = true;
-                        }
-                    }
                 });
             }
 
@@ -2098,8 +2091,10 @@ applyKit(centralType, kitType) {
         return;
     }
     
-    this.addProductToContainer('alarm-material', config.id, 1, false);
+    // Ajouter la centrale (aussi cochée comme OFFERT)
+    this.addProductToContainer('alarm-material', config.id, 1, true);
     
+    // Ajouter les produits du kit (tous cochés comme OFFERT)
     const kit = config.kits[kitType];
     if (kit && kit.products) {
         kit.products.forEach(product => {
@@ -2215,132 +2210,199 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 };
     
                 if (type === 'alarm') {
+                    // Collecter les détails du kit
+                    const kitDetails = [];
+                    const container = document.getElementById('alarm-material-products');
+                    if (container) {
+                        const productLines = container.querySelectorAll('.product-line');
+                        productLines.forEach(line => {
+                            const select = line.querySelector('.product-select');
+                            const qtyInput = line.querySelector('.quantity-input');
+                            const offeredCheckbox = line.querySelector('.offered-checkbox');
+                            const nameInput = line.querySelector('.product-name-input');
+                            const priceInput = line.querySelector('.price-input');
+                            
+                            if (!select || !select.value) return;
+                            
+                            const quantity = parseFloat(qtyInput?.value) || 0;
+                            const isOffered = offeredCheckbox?.checked || false;
+                            
+                            let productName = '';
+                            let unitPrice = 0;
+                            
+                            if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
+                                productName = nameInput.value;
+                                unitPrice = parseFloat(priceInput?.value) || 0;
+                            } else {
+                                const productId = parseInt(select.value);
+                                const product = this.catalog['alarm-material']?.find(p => p.id === productId);
+                                if (product) {
+                                    productName = product.name;
+                                    unitPrice = this.getProductPrice(product);
+                                }
+                            }
+                            
+                            if (productName && isOffered) {
+                                const totalPrice = unitPrice * quantity;
+                                kitDetails.push({
+                                    name: `  ${quantity}x ${productName}`,
+                                    value: `${totalPrice.toFixed(2)} CHF`
+                                });
+                            }
+                        });
+                    }
+                    
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     const installTotal = parseFloat(document.getElementById('alarm-installation-total').textContent);
                     const totalHT = parseFloat(document.getElementById('alarm-total-ht').textContent);
                     const totalTTC = parseFloat(document.getElementById('alarm-total-ttc').textContent);
         
-        const items = [
-            { name: 'Matériel', value: `${materialTotal.toFixed(2)} CHF` },
-            { name: 'Installation', value: `${installTotal.toFixed(2)} CHF` },
-            { name: 'Frais de dossier', value: '240.00 CHF HT' }
-        ];
+                    const items = [];
+                    
+                    // Ajouter le kit de base avec détails si présent
+                    if (kitDetails.length > 0) {
+                        items.push({ 
+                            name: 'Kit de base', 
+                            value: 'OFFERT' 
+                        });
+                        
+                        // Ajouter le détail des produits du kit (y compris la centrale)
+                        kitDetails.forEach(detail => items.push(detail));
+                    }
+                    
+                    // Ajouter le matériel supplémentaire si présent
+                    if (materialTotal > 0) {
+                        items.push({ 
+                            name: 'Matériel supplémentaire', 
+                            value: `${materialTotal.toFixed(2)} CHF` 
+                        });
+                    }
+                    
+                    items.push({ 
+                        name: 'Installation', 
+                        value: `${installTotal.toFixed(2)} CHF` 
+                    });
+                    
+                    items.push({ 
+                        name: 'Frais de dossier', 
+                        value: '240.00 CHF HT' 
+                    });
         
-        const surveillanceType = document.getElementById('surveillance-type').value;
-        if (surveillanceType) {
-            const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
-            const surveillanceOffered = document.getElementById('surveillance-offered').checked;
-            items.push({ 
-                name: 'Service de surveillance', 
-                value: surveillanceOffered ? 'OFFERT' : `${surveillancePrice.toFixed(2)} CHF/mois` 
-            });
-        }
+                    const surveillanceType = document.getElementById('surveillance-type').value;
+                    if (surveillanceType) {
+                        const surveillancePrice = parseFloat(document.getElementById('surveillance-price').value) || 0;
+                        const surveillanceOffered = document.getElementById('surveillance-offered').checked;
+                        items.push({ 
+                            name: 'Service de surveillance', 
+                            value: surveillanceOffered ? 'OFFERT' : `${surveillancePrice.toFixed(2)} CHF/mois` 
+                        });
+                    }
         
-        yPosition = addSection('📋 Récapitulatif', items, yPosition);
+                    yPosition = addSection('📋 Détail du devis', items, yPosition);
         
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, yPosition, 190, yPosition);
-        yPosition += 7;
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(20, yPosition, 190, yPosition);
+                    yPosition += 7;
         
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(11);
-        doc.text('TOTAL HT (hors surveillance)', 20, yPosition);
-        doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
-        yPosition += 7;
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(11);
+                    doc.text('TOTAL HT (hors surveillance)', 20, yPosition);
+                    doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                    yPosition += 7;
         
-        doc.text('TOTAL TTC (hors surveillance)', 20, yPosition);
-        doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
-        yPosition += 10;
+                    doc.text('TOTAL TTC (hors surveillance)', 20, yPosition);
+                    doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                    yPosition += 10;
         
-        if (!isRental && this.globalPaymentMonths['alarm'] > 0) {
-            const monthlyAmount = document.getElementById('alarm-monthly-amount').textContent;
-            const monthlyCount = document.getElementById('alarm-monthly-count').textContent;
+                    if (!isRental && this.globalPaymentMonths['alarm'] > 0) {
+                        const monthlyAmount = document.getElementById('alarm-monthly-amount').textContent;
+                        const monthlyCount = document.getElementById('alarm-monthly-count').textContent;
             
-            doc.setFillColor(240, 240, 240);
-            doc.rect(20, yPosition, 170, 15, 'F');
-            doc.setFont(undefined, 'bold');
-            doc.text(`Mensualités: ${monthlyAmount} CHF x ${monthlyCount} mois`, 25, yPosition + 10);
-        }
+                        doc.setFillColor(240, 240, 240);
+                        doc.rect(20, yPosition, 170, 15, 'F');
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`Mensualités: ${monthlyAmount} CHF x ${monthlyCount} mois`, 25, yPosition + 10);
+                    }
         
-    } else if (type === 'camera') {
-        const materialTotal = this.calculateSectionTotal('camera-material');
-        const installTotal = parseFloat(document.getElementById('camera-installation-total').textContent);
-        const totalHT = parseFloat(document.getElementById('camera-total-ht').textContent);
-        const totalTTC = parseFloat(document.getElementById('camera-total-ttc').textContent);
+                } else if (type === 'camera') {
+                    const materialTotal = this.calculateSectionTotal('camera-material');
+                    const installTotal = parseFloat(document.getElementById('camera-installation-total').textContent);
+                    const totalHT = parseFloat(document.getElementById('camera-total-ht').textContent);
+                    const totalTTC = parseFloat(document.getElementById('camera-total-ttc').textContent);
         
-        const items = [
-            { name: 'Matériel', value: `${materialTotal.toFixed(2)} CHF` },
-            { name: 'Installation', value: `${installTotal.toFixed(2)} CHF` }
-        ];
+                    const items = [
+                        { name: 'Matériel', value: `${materialTotal.toFixed(2)} CHF` },
+                        { name: 'Installation', value: `${installTotal.toFixed(2)} CHF` }
+                    ];
         
-        if (!isRental && document.getElementById('camera-remote-access').checked) {
-            items.push({ name: 'Vision à distance', value: '20.00 CHF/mois' });
-        }
+                    if (!isRental && document.getElementById('camera-remote-access').checked) {
+                        items.push({ name: 'Vision à distance', value: '20.00 CHF/mois' });
+                    }
         
-        if (!isRental) {
-            items.push({ name: 'Maintenance', value: 'OFFERT' });
-        }
+                    if (!isRental) {
+                        items.push({ name: 'Maintenance', value: 'OFFERT' });
+                    }
         
-        yPosition = addSection('📋 Récapitulatif', items, yPosition);
+                    yPosition = addSection('📋 Récapitulatif', items, yPosition);
         
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, yPosition, 190, yPosition);
-        yPosition += 7;
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(20, yPosition, 190, yPosition);
+                    yPosition += 7;
         
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(11);
-        doc.text('TOTAL HT', 20, yPosition);
-        doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
-        yPosition += 7;
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(11);
+                    doc.text('TOTAL HT', 20, yPosition);
+                    doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                    yPosition += 7;
         
-        doc.text('TOTAL TTC', 20, yPosition);
-        doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                    doc.text('TOTAL TTC', 20, yPosition);
+                    doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
         
-    } else if (type === 'fog') {
-        const materialTotal = this.calculateSectionTotal('fog-material');
-        const installTotal = parseFloat(document.getElementById('fog-installation-total').textContent);
-        const totalHT = parseFloat(document.getElementById('fog-total-ht').textContent);
-        const totalTTC = parseFloat(document.getElementById('fog-total-ttc').textContent);
+                } else if (type === 'fog') {
+                    const materialTotal = this.calculateSectionTotal('fog-material');
+                    const installTotal = parseFloat(document.getElementById('fog-installation-total').textContent);
+                    const totalHT = parseFloat(document.getElementById('fog-total-ht').textContent);
+                    const totalTTC = parseFloat(document.getElementById('fog-total-ttc').textContent);
         
-        const items = [
-            { name: 'Matériel', value: `${materialTotal.toFixed(2)} CHF` },
-            { name: 'Installation', value: `${installTotal.toFixed(2)} CHF` }
-        ];
+                    const items = [
+                        { name: 'Matériel', value: `${materialTotal.toFixed(2)} CHF` },
+                        { name: 'Installation', value: `${installTotal.toFixed(2)} CHF` }
+                    ];
         
-        if (!isRental) {
-            items.push({ name: 'Maintenance', value: 'OFFERT' });
-        }
+                    if (!isRental) {
+                        items.push({ name: 'Maintenance', value: 'OFFERT' });
+                    }
         
-        yPosition = addSection('📋 Récapitulatif', items, yPosition);
+                    yPosition = addSection('📋 Récapitulatif', items, yPosition);
         
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, yPosition, 190, yPosition);
-        yPosition += 7;
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(20, yPosition, 190, yPosition);
+                    yPosition += 7;
         
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(11);
-        doc.text('TOTAL HT', 20, yPosition);
-        doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
-        yPosition += 7;
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(11);
+                    doc.text('TOTAL HT', 20, yPosition);
+                    doc.text(`${totalHT.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                    yPosition += 7;
         
-        doc.text('TOTAL TTC', 20, yPosition);
-        doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
-    }
+                    doc.text('TOTAL TTC', 20, yPosition);
+                    doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
+                }
     
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Page ${i} sur ${pageCount}`, 105, 290, { align: 'center' });
-        doc.text('Dialarme - Devis généré automatiquement', 105, 295, { align: 'center' });
-    }
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text(`Page ${i} sur ${pageCount}`, 105, 290, { align: 'center' });
+                    doc.text('Dialarme - Devis généré automatiquement', 105, 295, { align: 'center' });
+                }
     
-    const filename = `devis-${type}-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(filename);
+                const filename = `devis-${type}-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(filename);
     
-    this.showNotification('✅ PDF généré avec succès!');
-}
+                this.showNotification('✅ PDF généré avec succès!');
+            }
 
             exportQuote() {
                 const quote = {
