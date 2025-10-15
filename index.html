@@ -627,6 +627,22 @@
             width: 200px;
         }
 
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -807,8 +823,27 @@
                 </div>
             </div>
 
+            <div class="quote-section">
+                <h3>⭐ 5. Options de l'offre</h3>
+                <div class="options-grid">
+                    <div class="option-item">
+                        <input type="checkbox" id="option-interventions-gratuites" onchange="updateTotals()">
+                        <label for="option-interventions-gratuites">Interventions gratuites & illimitées des agents</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="option-interventions-annee" onchange="toggleInterventionsQty()">
+                        <label for="option-interventions-annee">Intervention par année des agents</label>
+                        <input type="number" id="interventions-qty" value="1" min="1" max="10" class="quantity-input" style="width: 60px; display: none;" oninput="updateTotals()">
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="option-service-cles" onchange="updateTotals()">
+                        <label for="option-service-cles">Service des clés offert</label>
+                    </div>
+                </div>
+            </div>
+
             <div class="quote-section" id="alarm-payment-section">
-                <h3>💳 5. Mode de paiement</h3>
+                <h3>💳 6. Mode de paiement</h3>
                 <div class="payment-options" id="alarm-global-payment">
                     <div class="payment-option" data-months="0" onclick="selectGlobalPayment(this, 'alarm')">Comptant</div>
                     <div class="payment-option" data-months="24" onclick="selectGlobalPayment(this, 'alarm')">24 mois</div>
@@ -902,7 +937,7 @@
 
             <div class="quote-section">
                 <h3>🔧 2. Installation</h3>
-                <div class="product-line">
+                <div class="product-line" id="camera-installation-line">
                     <div>Installation, paramétrages, tests, mise en service & formation des utilisateurs</div>
                     <div>
                         <label style="margin-right: 5px;">Nombre:</label>
@@ -913,6 +948,13 @@
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="camera-installation-price">690.00 CHF</div>
+                    <div></div>
+                </div>
+                <div class="product-line" id="camera-uninstall-line" style="display: none;">
+                    <div>Désinstallation facturée si durée inférieure à 12 mois</div>
+                    <input type="number" value="1" class="quantity-input" readonly>
+                    <div></div>
+                    <div class="price-display">290.00 CHF</div>
                     <div></div>
                 </div>
             </div>
@@ -988,15 +1030,6 @@
 
         <!-- TAB FOG -->
         <div id="fog-tab" class="tab-content">
-            <div class="rental-toggle-container">
-                <span>Mode vente</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="fog-rental-mode" onchange="toggleRentalMode('fog')">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span>Location</span>
-            </div>
-
             <div class="form-section">
                 <h3>📋 Informations Client</h3>
                 <div class="form-grid">
@@ -1225,23 +1258,35 @@
                     document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
                     document.getElementById('camera-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
                     
+                    // Afficher/masquer ligne désinstallation
+                    document.getElementById('camera-uninstall-line').style.display = this.rentalMode[type] ? 'flex' : 'none';
+                    
+                    // Modifier le texte de l'installation en location
+                    const installLine = document.getElementById('camera-installation-line');
+                    if (this.rentalMode[type]) {
+                        installLine.querySelector('div:first-child').textContent = 'Installation, paramétrages, tests, mise en service & formation des utilisateurs';
+                        document.getElementById('camera-installation-price').textContent = 'Compris dans le forfait';
+                        document.getElementById('camera-installation-qty').style.display = 'none';
+                        installLine.querySelector('label').style.display = 'none';
+                        document.getElementById('camera-installation-offered').parentElement.style.display = 'none';
+                    } else {
+                        document.getElementById('camera-installation-qty').style.display = 'inline-block';
+                        installLine.querySelector('label').style.display = 'inline';
+                        document.getElementById('camera-installation-offered').parentElement.style.display = 'flex';
+                        this.updateCameraInstallationPrice();
+                    }
+                    
                     if (this.rentalMode[type]) {
                         this.globalPaymentMonths['camera'] = 0;
                         document.getElementById('camera-remote-access').checked = false;
                     } else {
                         this.globalPaymentMonths['camera'] = 48;
                     }
-                } else if (type === 'fog') {
-                    const paymentSection = document.getElementById('fog-payment-section');
-                    if (paymentSection) {
-                        paymentSection.style.display = this.rentalMode[type] ? 'none' : 'block';
-                    }
-                    
-                    if (this.rentalMode[type]) {
-                        this.globalPaymentMonths['fog'] = 0;
-                    } else {
-                        this.globalPaymentMonths['fog'] = 48;
-                    }
+                }
+                
+                // Mettre à jour les prix de surveillance pour alarme
+                if (type === 'alarm') {
+                    this.updateSurveillancePrice();
                 }
                 
                 this.updateTotals();
@@ -1375,6 +1420,12 @@
             }
 
             updateCameraInstallationPrice() {
+                if (this.rentalMode['camera']) {
+                    document.getElementById('camera-installation-price').textContent = 'Compris dans le forfait';
+                    this.updateTotals();
+                    return;
+                }
+                
                 const qtyInput = document.getElementById('camera-installation-qty');
                 const qty = parseInt(qtyInput.value) || 1;
                 const price = this.calculateInstallationPrice(qty);
@@ -1399,29 +1450,43 @@
                 if (!surveillanceType) {
                     priceInput.value = 0;
                 } else {
-                    if (this.selectedCentral === 'titane') {
-                        if (surveillanceType === 'autosurveillance') {
-                            priceInput.value = 59;
-                        } else if (surveillanceType === 'telesurveillance') {
-                            priceInput.value = 129;
-                        } else if (surveillanceType === 'telesurveillance-pro') {
-                            priceInput.value = 159;
-                        }
-                    } else if (this.selectedCentral === 'jablotron') {
+                    const isRental = this.rentalMode['alarm'];
+                    
+                    if (isRental) {
+                        // Prix en location
                         if (surveillanceType === 'telesurveillance') {
-                            priceInput.value = 139;
+                            priceInput.value = 200; // Particulier
                         } else if (surveillanceType === 'telesurveillance-pro') {
-                            priceInput.value = 169;
-                        } else {
-                            priceInput.value = 0;
+                            priceInput.value = 250; // Professionnel
+                        } else if (surveillanceType === 'autosurveillance') {
+                            priceInput.value = 100; // Particulier
                         }
                     } else {
-                        if (surveillanceType === 'telesurveillance') {
-                            priceInput.value = 129;
-                        } else if (surveillanceType === 'autosurveillance') {
-                            priceInput.value = 59;
+                        // Prix en vente (mode normal)
+                        if (this.selectedCentral === 'titane') {
+                            if (surveillanceType === 'autosurveillance') {
+                                priceInput.value = 59;
+                            } else if (surveillanceType === 'telesurveillance') {
+                                priceInput.value = 129;
+                            } else if (surveillanceType === 'telesurveillance-pro') {
+                                priceInput.value = 159;
+                            }
+                        } else if (this.selectedCentral === 'jablotron') {
+                            if (surveillanceType === 'telesurveillance') {
+                                priceInput.value = 139;
+                            } else if (surveillanceType === 'telesurveillance-pro') {
+                                priceInput.value = 169;
+                            } else {
+                                priceInput.value = 0;
+                            }
                         } else {
-                            priceInput.value = 0;
+                            if (surveillanceType === 'telesurveillance') {
+                                priceInput.value = 129;
+                            } else if (surveillanceType === 'autosurveillance') {
+                                priceInput.value = 59;
+                            } else {
+                                priceInput.value = 0;
+                            }
                         }
                     }
                 }
@@ -1805,9 +1870,14 @@ addProductLine(sectionId) {
                     
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installationPrice = this.calculateCameraInstallationPrice();
-                    const installationOffered = document.getElementById('camera-installation-offered').checked;
-                    const installationTotal = installationOffered ? 0 : installationPrice;
+                    
+                    let installationTotal = 0;
+                    if (!this.rentalMode['camera']) {
+                        const installationPrice = this.calculateCameraInstallationPrice();
+                        const installationOffered = document.getElementById('camera-installation-offered').checked;
+                        installationTotal = installationOffered ? 0 : installationPrice;
+                    }
+                    
                     const remoteAccess = !this.rentalMode['camera'] && document.getElementById('camera-remote-access').checked;
                     const remoteAccessPrice = remoteAccess ? 20 : 0;
                     
@@ -1815,8 +1885,13 @@ addProductLine(sectionId) {
                     const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
                     document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('camera-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
+                    
+                    if (this.rentalMode['camera']) {
+                        document.getElementById('camera-installation-total').textContent = 'Compris dans le forfait';
+                    } else {
+                        document.getElementById('camera-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
+                        document.getElementById('camera-installation-price').textContent = document.getElementById('camera-installation-offered').checked ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
+                    }
                     
                     if (!this.rentalMode['camera']) {
                         document.getElementById('camera-remote-total').textContent = remoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois';
@@ -1827,7 +1902,7 @@ addProductLine(sectionId) {
                             const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
                             
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', paymentMonths);
-                            const mensualiteInstallHT = installationOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
+                            const mensualiteInstallHT = document.getElementById('camera-installation-offered').checked ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
                             const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + remoteAccessPrice;
                             const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                             
@@ -1862,20 +1937,18 @@ addProductLine(sectionId) {
                     document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
                     document.getElementById('fog-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
                     
-                    if (!this.rentalMode['fog']) {
-                        const paymentMonths = this.globalPaymentMonths['fog'] || 0;
+                    const paymentMonths = this.globalPaymentMonths['fog'] || 0;
+                    
+                    if (paymentMonths > 0) {
+                        const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
+                        const totalMensuelHT = mensualiteMatHT;
+                        const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                         
-                        if (paymentMonths > 0) {
-                            const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
-                            const totalMensuelHT = mensualiteMatHT;
-                            const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
-                            
-                            document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                            document.getElementById('fog-monthly-count').textContent = paymentMonths;
-                            document.getElementById('fog-monthly-payment').style.display = 'block';
-                        } else {
-                            document.getElementById('fog-monthly-payment').style.display = 'none';
-                        }
+                        document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
+                        document.getElementById('fog-monthly-count').textContent = paymentMonths;
+                        document.getElementById('fog-monthly-payment').style.display = 'block';
+                    } else {
+                        document.getElementById('fog-monthly-payment').style.display = 'none';
                     }
                     
                     document.getElementById('fog-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
@@ -1930,7 +2003,6 @@ showKitSelector() {
     `;
     
     const selectKit = (btn, centralType, kitType) => {
-        // Désélectionner tous les autres boutons
         modal.querySelectorAll('.kit-btn').forEach(b => {
             b.style.background = 'white';
             b.style.borderWidth = '2px';
@@ -1938,12 +2010,10 @@ showKitSelector() {
             if (checkmark) checkmark.remove();
         });
         
-        // Sélectionner le bouton cliqué
         const isTitane = centralType === 'titane';
         btn.style.background = isTitane ? '#fffef0' : '#f8f9fa';
         btn.style.borderWidth = '3px';
         
-        // Ajouter un checkmark
         if (!btn.querySelector('.checkmark')) {
             const checkmark = document.createElement('div');
             checkmark.className = 'checkmark';
@@ -1967,7 +2037,6 @@ showKitSelector() {
             btn.appendChild(checkmark);
         }
         
-        // Appliquer le kit après un court délai
         setTimeout(() => {
             this.applyKit(centralType, kitType);
             modal.remove();
@@ -2062,7 +2131,6 @@ showKitSelector() {
     
     document.body.appendChild(modal);
     
-    // Ajouter les événements de clic sur les boutons de kit
     modal.querySelectorAll('.kit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const centralType = btn.getAttribute('data-central');
@@ -2071,7 +2139,6 @@ showKitSelector() {
         });
     });
     
-    // Fermeture au clic sur le fond
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -2091,10 +2158,8 @@ applyKit(centralType, kitType) {
         return;
     }
     
-    // Ajouter la centrale (aussi cochée comme OFFERT)
     this.addProductToContainer('alarm-material', config.id, 1, true);
     
-    // Ajouter les produits du kit (tous cochés comme OFFERT)
     const kit = config.kits[kitType];
     if (kit && kit.products) {
         kit.products.forEach(product => {
@@ -2332,9 +2397,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     if (isRental) {
                         if (type === 'camera') {
                             title = 'OFFRE LOCATION VIDÉO SURVEILLANCE';
-                        } else if (type === 'fog') {
-                            title = 'OFFRE LOCATION GÉNÉRATEUR DE BROUILLARD';
-                        } else {
+                        } else if (type === 'alarm') {
                             title = 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
                         }
                     } else {
@@ -2374,15 +2437,16 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     }
 
                     if (type === 'alarm') {
-                        yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos);
-                        yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos);
+                        yPos = this.createPDFSection(doc, 'KIT DE BASE', 'alarm-material', yPos, isRental);
+                        yPos = this.createPDFSection(doc, 'INSTALLATION & MATERIEL SUPPLEMENTAIRE', 'alarm-installation', yPos, isRental);
                         yPos = this.createAdminFeesPDF(doc, yPos);
-                        yPos = this.createServicesPDF(doc, yPos);
+                        yPos = this.createServicesPDF(doc, yPos, isRental);
+                        yPos = this.createOptionsAlarmPDF(doc, yPos);
                     } else if (type === 'camera') {
                         if (this.hasSectionProducts('camera-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos);
+                            yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos, isRental);
                         }
-                        yPos = this.createCameraInstallPDF(doc, yPos);
+                        yPos = this.createCameraInstallPDF(doc, yPos, isRental);
                         if (!isRental) {
                             const remoteAccess = document.getElementById('camera-remote-access')?.checked;
                             if (remoteAccess) {
@@ -2395,7 +2459,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         }
                     } else if (type === 'fog') {
                         if (this.hasSectionProducts('fog-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos);
+                            yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos, isRental);
                         }
                         yPos = this.createFogInstallPDF(doc, yPos);
                     }
@@ -2438,7 +2502,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 return hasProducts;
             }
 
-            createPDFSection(doc, title, sectionId, yPos) {
+            createPDFSection(doc, title, sectionId, yPos, isRental) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
@@ -2616,7 +2680,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 return yPos + 5;
             }
 
-            createServicesPDF(doc, yPos) {
+            createServicesPDF(doc, yPos, isRental) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.text('SERVICES', 40, yPos);
@@ -2693,73 +2757,105 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 return yPos + 5;
             }
 
+            createOptionsAlarmPDF(doc, yPos) {
+                const optionInterventionsGratuites = document.getElementById('option-interventions-gratuites')?.checked;
+                const optionInterventionsAnnee = document.getElementById('option-interventions-annee')?.checked;
+                const interventionsQty = parseInt(document.getElementById('interventions-qty')?.value) || 1;
+                const optionServiceCles = document.getElementById('option-service-cles')?.checked;
+                
+                if (!optionInterventionsGratuites && !optionInterventionsAnnee && !optionServiceCles) {
+                    return yPos;
+                }
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text('OPTIONS DE L\'OFFRE : ', 40, yPos);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                
+                const options = [];
+                if (optionInterventionsGratuites) {
+                    options.push('Interventions gratuites & illimitées des agents');
+                }
+                if (optionInterventionsAnnee) {
+                    options.push(`${interventionsQty} intervention(s) par année des agents`);
+                }
+                if (optionServiceCles) {
+                    options.push('Service des clés offert');
+                }
+                
+                doc.text(options.join(' | '), 165, yPos);
+                yPos += 20;
+                
+                return yPos;
+            }
+
             createAdminFeesPDF(doc, yPos) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-    yPos += 15;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
+                yPos += 15;
 
-    doc.setFillColor(244, 230, 0);
-    doc.rect(40, yPos, 515, 16, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Qté', 50, yPos + 10);
-    doc.text('Description', 120, yPos + 10);
-    doc.text('Prix uni. HT', 400, yPos + 10);
-    doc.text('Total HT', 480, yPos + 10);
-    yPos += 16;
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Description', 120, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
 
-    const adminItems = [
-        { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
-        { qty: 1, desc: 'Frais de dossier', price: 190 }
-    ];
+                const adminItems = [
+                    { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
+                    { qty: 1, desc: 'Frais de dossier', price: 190 }
+                ];
 
-    let lineCount = 0;
-    adminItems.forEach(item => {
-        lineCount++;
-        
-        // Alternance gris/blanc comme le kit de base
-        if (lineCount % 2 === 0) {
-            doc.setFillColor(245, 245, 245);
-            doc.rect(40, yPos, 515, 14, 'F');
-        }
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(0, 0, 0);
-        doc.text(item.qty.toString(), 55, yPos + 9);
-        doc.text(item.desc, 90, yPos + 9);
-        doc.text(item.price.toFixed(2), 405, yPos + 9);
-        doc.text(item.price.toFixed(2), 485, yPos + 9);
-        yPos += 14;
-    });
+                let lineCount = 0;
+                adminItems.forEach(item => {
+                    lineCount++;
+                    
+                    if (lineCount % 2 === 0) {
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(40, yPos, 515, 14, 'F');
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(item.qty.toString(), 55, yPos + 9);
+                    doc.text(item.desc, 90, yPos + 9);
+                    doc.text(item.price.toFixed(2), 405, yPos + 9);
+                    doc.text(item.price.toFixed(2), 485, yPos + 9);
+                    yPos += 14;
+                });
 
-    const adminTotalTTC = this.roundToFiveCents(240 * 1.081);
-    const adminTVA = adminTotalTTC - 240;
+                const adminTotalTTC = this.roundToFiveCents(240 * 1.081);
+                const adminTVA = adminTotalTTC - 240;
 
-    doc.setFillColor(230, 230, 230);
-    doc.rect(390, yPos, 165, 36, 'F');
+                doc.setFillColor(230, 230, 230);
+                doc.rect(390, yPos, 165, 36, 'F');
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.text('Total H.T.', 400, yPos + 8);
-    doc.text('240.00', 485, yPos + 8);
-    doc.text('TVA 8.1%', 400, yPos + 20);
-    doc.text(adminTVA.toFixed(2), 485, yPos + 20);
-    doc.text('Total T.T.C.', 400, yPos + 32);
-    doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7);
+                doc.text('Total H.T.', 400, yPos + 8);
+                doc.text('240.00', 485, yPos + 8);
+                doc.text('TVA 8.1%', 400, yPos + 20);
+                doc.text(adminTVA.toFixed(2), 485, yPos + 20);
+                doc.text('Total T.T.C.', 400, yPos + 32);
+                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
 
-    // Texte sur la même ligne que Total T.T.C.
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Montant à régler à l\'installation', 50, yPos + 32);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Montant à régler à l\'installation', 50, yPos + 32);
 
-    return yPos + 50;
-}
+                return yPos + 50;
+            }
 
-            createCameraInstallPDF(doc, yPos) {
+            createCameraInstallPDF(doc, yPos, isRental) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(12);
                 doc.text('INSTALLATION', 40, yPos);
@@ -2776,71 +2872,110 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
 
-                const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                const installPrice = this.calculateCameraInstallationPrice();
-                const installTotal = installOffered ? 0 : installPrice;
-                
-                const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                let description = '';
-                
-                let daysText = '';
-                if (installQty === 1) daysText = ' (1/2 journée)';
-                else if (installQty === 2) daysText = ' (1 jour)';
-                else if (installQty === 3) daysText = ' (1.5 jours)';
-                else if (installQty === 4) daysText = ' (2 jours)';
-                else if (installQty === 5) daysText = ' (2.5 jours)';
-                else if (installQty === 6) daysText = ' (3 jours)';
-                else {
-                    const fullDays = Math.floor(installQty / 2);
-                    const halfDay = installQty % 2;
-                    daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                }
-                description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('1', 55, yPos + 9);
-                doc.text(description, 90, yPos + 9);
-                
-                if (installOffered) {
+                if (isRental) {
+                    // Ligne Installation - Compris dans le forfait
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 14);
+                    doc.line(80, yPos, 80, yPos + 14);
+                    doc.line(390, yPos, 390, yPos + 14);
+                    doc.line(470, yPos, 470, yPos + 14);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.text('1', 55, yPos + 9);
+                    doc.text('Installation, paramétrages, tests, mise en service & formation des utilisateurs', 90, yPos + 9);
                     doc.setFont('helvetica', 'bold');
                     doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
+                    doc.text('Compris dans le forfait', 395, yPos + 9);
+                    doc.text('Compris', 475, yPos + 9);
                     doc.setTextColor(0, 0, 0);
-                    doc.text(installPrice.toFixed(2), 405, yPos + 9);
+                    yPos += 14;
+                    
+                    // Ligne Désinstallation
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFillColor(245, 245, 245);
+                    doc.rect(40, yPos, 515, 14, 'F');
+                    doc.rect(40, yPos, 515, 14);
+                    doc.line(80, yPos, 80, yPos + 14);
+                    doc.line(390, yPos, 390, yPos + 14);
+                    doc.line(470, yPos, 470, yPos + 14);
+                    
+                    doc.setFontSize(7);
+                    doc.text('1', 55, yPos + 9);
+                    doc.text('Désinstallation facturée si durée inférieure à 12 mois', 90, yPos + 9);
+                    doc.text('290.00', 405, yPos + 9);
+                    doc.text('290.00', 485, yPos + 9);
+                    yPos += 14;
+                } else {
+                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+                    const installPrice = this.calculateCameraInstallationPrice();
+                    const installTotal = installOffered ? 0 : installPrice;
+                    
+                    const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                    let description = '';
+                    
+                    let daysText = '';
+                    if (installQty === 1) daysText = ' (1/2 journée)';
+                    else if (installQty === 2) daysText = ' (1 jour)';
+                    else if (installQty === 3) daysText = ' (1.5 jours)';
+                    else if (installQty === 4) daysText = ' (2 jours)';
+                    else if (installQty === 5) daysText = ' (2.5 jours)';
+                    else if (installQty === 6) daysText = ' (3 jours)';
+                    else {
+                        const fullDays = Math.floor(installQty / 2);
+                        const halfDay = installQty % 2;
+                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
+                    }
+                    description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
+
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.rect(40, yPos, 515, 14);
+                    doc.line(80, yPos, 80, yPos + 14);
+                    doc.line(390, yPos, 390, yPos + 14);
+                    doc.line(470, yPos, 470, yPos + 14);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.text('1', 55, yPos + 9);
+                    doc.text(description, 90, yPos + 9);
+                    
+                    if (installOffered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 9);
+                        doc.text('OFFERT', 485, yPos + 9);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(installPrice.toFixed(2), 405, yPos + 9);
+                        doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                    }
+                    yPos += 14;
+
+                    const installTotalTTC = this.roundToFiveCents(installTotal * 1.081);
+                    const installTVA = installTotalTTC - installTotal;
+
+                    doc.setFillColor(200, 200, 200);
+                    doc.rect(390, yPos, 165, 42, 'F');
+                    doc.rect(390, yPos, 165, 42);
+                    doc.line(390, yPos + 14, 555, yPos + 14);
+                    doc.line(390, yPos + 28, 555, yPos + 28);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Total H.T.', 400, yPos + 9);
                     doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                    doc.text('TVA 8.1%', 400, yPos + 23);
+                    doc.text(installTVA.toFixed(2), 485, yPos + 23);
+                    doc.text('Total T.T.C.', 400, yPos + 37);
+                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
+
+                    yPos += 42;
                 }
-                yPos += 14;
 
-                const installTotalTTC = this.roundToFiveCents(installTotal * 1.081);
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
-
-                return yPos + 55;
+                return yPos + 15;
             }
 
             createFogInstallPDF(doc, yPos) {
@@ -2920,225 +3055,223 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
 
             createFinalSummaryPDF(doc, yPos, type, isRental) {
-    yPos += 15;
-    
-    doc.setFillColor(244, 230, 0);
-    doc.rect(40, yPos, 515, 16, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-    yPos += 16;
+                yPos += 15;
+                
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
+                yPos += 16;
 
-    let totalMensualitesHT = 0;
-    let totalComptantHT = 0;
-    let monthsCount = 0;
-    let surveillanceMonthlyHT = 0;
-    
-    if (type === 'alarm') {
-        const materialTotal = this.calculateSectionTotal('alarm-material');
-        
-        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-        const installPrice = this.calculateInstallationPrice(installQty);
-        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-        const installTotal = installOffered ? 0 : installPrice;
-        const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-        const totalInstallation = installTotal + otherInstallationTotal;
-        
-        const adminTotal = 240;
-        
-        const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
-        
-        const surveillanceType = document.getElementById('surveillance-type')?.value;
-        const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-        const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
-        surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
-        
-        if (paymentMonths > 0) {
-            totalMensualitesHT = materialTotal + totalInstallation;
-            monthsCount = paymentMonths;
-        } else {
-            totalComptantHT = materialTotal + totalInstallation;
-        }
-        
-        totalComptantHT += adminTotal;
-        
-    } else if (type === 'camera') {
-        const materialTotal = this.calculateSectionTotal('camera-material');
-        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-        const installPrice = this.calculateCameraInstallationPrice();
-        const installTotal = installOffered ? 0 : installPrice;
-        const paymentMonths = this.globalPaymentMonths['camera'] || 0;
-        
-        if (paymentMonths > 0) {
-            totalMensualitesHT = materialTotal + installTotal;
-            monthsCount = paymentMonths;
-        } else {
-            totalComptantHT = materialTotal + installTotal;
-        }
-        
-        if (!isRental) {
-            const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-            if (remoteAccess) {
-                surveillanceMonthlyHT = 20;
+                let totalMensualitesHT = 0;
+                let totalComptantHT = 0;
+                let monthsCount = 0;
+                let surveillanceMonthlyHT = 0;
+                
+                if (type === 'alarm') {
+                    const materialTotal = this.calculateSectionTotal('alarm-material');
+                    
+                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                    const installPrice = this.calculateInstallationPrice(installQty);
+                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                    const totalInstallation = installTotal + otherInstallationTotal;
+                    
+                    const adminTotal = 240;
+                    
+                    const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
+                    
+                    const surveillanceType = document.getElementById('surveillance-type')?.value;
+                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
+                    const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
+                    surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
+                    
+                    if (paymentMonths > 0) {
+                        totalMensualitesHT = materialTotal + totalInstallation;
+                        monthsCount = paymentMonths;
+                    } else {
+                        totalComptantHT = materialTotal + totalInstallation;
+                    }
+                    
+                    totalComptantHT += adminTotal;
+                    
+                } else if (type === 'camera') {
+                    const materialTotal = this.calculateSectionTotal('camera-material');
+                    
+                    let installTotal = 0;
+                    if (!isRental) {
+                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+                        const installPrice = this.calculateCameraInstallationPrice();
+                        installTotal = installOffered ? 0 : installPrice;
+                    }
+                    
+                    const paymentMonths = this.globalPaymentMonths['camera'] || 0;
+                    
+                    if (paymentMonths > 0 && !isRental) {
+                        totalMensualitesHT = materialTotal + installTotal;
+                        monthsCount = paymentMonths;
+                    } else {
+                        totalComptantHT = materialTotal + installTotal;
+                    }
+                    
+                    if (!isRental) {
+                        const remoteAccess = document.getElementById('camera-remote-access')?.checked;
+                        if (remoteAccess) {
+                            surveillanceMonthlyHT = 20;
+                        }
+                    }
+                } else if (type === 'fog') {
+                    const materialTotal = this.calculateSectionTotal('fog-material');
+                    const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+                    
+                    const installPrice = 490;
+                    const installTotal = installOffered ? 0 : installPrice;
+                    
+                    const paymentMonths = this.globalPaymentMonths['fog'] || 0;
+                    
+                    if (paymentMonths > 0) {
+                        totalMensualitesHT = materialTotal;
+                        monthsCount = paymentMonths;
+                        
+                        totalComptantHT = installTotal;
+                    } else {
+                        totalComptantHT = materialTotal + installTotal;
+                    }
+                }
+
+                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
+                    let mensualiteMatHT = 0;
+                    let mensualiteInstallHT = 0;
+                    
+                    if (type === 'alarm') {
+                        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                        
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
+                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
+                        
+                        const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
+                        mensualiteMatHT += otherInstallMensualite;
+                    } else if (type === 'camera') {
+                        const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+                        
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
+                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
+                    } else if (type === 'fog') {
+                        mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
+                        mensualiteInstallHT = 0;
+                    }
+                    
+                    const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
+                    const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
+                    const totalMensuelTVA = totalMensuelHT * 0.081;
+                    const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
+
+                    doc.setFillColor(245, 245, 245);
+                    doc.roundedRect(40, yPos, 515, 75, 8, 8, 'F');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    const serviceName = type === 'alarm' ? 
+                        (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
+                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
+                        'Vision à distance';
+                    
+                    doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
+                    
+                    doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 48);
+                    doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 48);
+                    
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(420, yPos + 38, 120, 20, 5, 5, 'F');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 51);
+                    
+                    yPos += 75;
+                    
+                    if (totalComptantHT > 0) {
+                        yPos += 15;
+                        
+                        doc.setFillColor(245, 245, 245);
+                        doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
+                        
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9);
+                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8);
+                        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                        const comptantTVA = totalComptantHT * 0.081;
+                        const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
+                        doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                        
+                        doc.setFillColor(255, 255, 255);
+                        doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
+                        
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 33);
+                        
+                        yPos += 50;
+                    }
+                    
+                } else {
+                    const totalTVA = totalComptantHT * 0.081;
+                    const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
+                    
+                    doc.setFillColor(245, 245, 245);
+                    doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    
+                    if (isRental) {
+                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
+                    } else {
+                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                    doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                    
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
+                    
+                    yPos += 50;
+                }
+
+                // Ne pas ajouter la mention pour les locations ET les caméras
+                if (!isRental && type !== 'camera' && monthsCount > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0);
+                    yPos += 10;
+                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
+                    yPos += 12;
+                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
+                    yPos += 15;
+                }
+
+                return yPos;
             }
-        }
-    } else if (type === 'fog') {
-        const materialTotal = this.calculateSectionTotal('fog-material');
-        const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-        
-        const installPrice = 490;
-        const installTotal = installOffered ? 0 : installPrice;
-        
-        const paymentMonths = this.globalPaymentMonths['fog'] || 0;
-        
-        if (paymentMonths > 0) {
-            totalMensualitesHT = materialTotal;
-            monthsCount = paymentMonths;
-            
-            totalComptantHT = installTotal;
-        } else {
-            totalComptantHT = materialTotal + installTotal;
-        }
-    }
 
-    if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-        let mensualiteMatHT = 0;
-        let mensualiteInstallHT = 0;
-        
-        if (type === 'alarm') {
-            const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-            const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-            
-            mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
-            mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-            
-            const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
-            mensualiteMatHT += otherInstallMensualite;
-        } else if (type === 'camera') {
-            const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-            const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-            
-            mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
-            mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-        } else if (type === 'fog') {
-            mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
-            mensualiteInstallHT = 0;
-        }
-        
-        const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
-        const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
-        const totalMensuelTVA = totalMensuelHT * 0.081;
-        const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
-
-        // 🎨 RECTANGLE PRINCIPAL MODERNE - Hauteur réduite
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(40, yPos, 515, 75, 8, 8, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
-        
-        // Ligne 1 : Installation et matériel supp. + Télésurveillance
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        const serviceName = type === 'alarm' ? 
-            (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
-            document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
-            'Vision à distance';
-        
-        doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
-        
-        // Ligne 2 : Total mensualité HT, TVA
-        doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 48);
-        doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 48);
-        
-        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(420, yPos + 38, 120, 20, 5, 5, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 51);
-        
-        yPos += 75;
-        
-        // SAUT DE LIGNE ENTRE LES 2 RECTANGLES
-        if (totalComptantHT > 0) {
-            yPos += 15;  // 🔥 SAUT DE LIGNE ICI
-            
-            // 🎨 RECTANGLE MODERNE - Hauteur réduite
-            doc.setFillColor(245, 245, 245);
-            doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
-            
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-            const comptantTVA = totalComptantHT * 0.081;
-            const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
-            doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
-            
-            // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
-            
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 33);
-            
-            yPos += 50;
-        }
-        
-    } else {
-        const totalTVA = totalComptantHT * 0.081;
-        const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
-        
-        // 🎨 RECTANGLE MODERNE - Hauteur réduite
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        
-        if (isRental) {
-            doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
-        } else {
-            doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
-        }
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-        doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
-        
-        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
-        
-        yPos += 50;
-    }
-
-    if (!isRental && monthsCount > 0) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        yPos += 10;
-        doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
-        yPos += 12;
-        doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
-        yPos += 15;
-    }
-
-    return yPos;
-}
             createPDFFooter(doc, clientName) {
                 doc.setFillColor(51, 51, 51);
                 doc.rect(0, 720, 595, 122, 'F');
@@ -3218,6 +3351,13 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
         function toggleRentalMode(type) {
             if (generator) generator.toggleRentalMode(type);
+        }
+
+        function toggleInterventionsQty() {
+            const checkbox = document.getElementById('option-interventions-annee');
+            const qtyInput = document.getElementById('interventions-qty');
+            qtyInput.style.display = checkbox.checked ? 'inline-block' : 'none';
+            updateTotals();
         }
 
         function updateAlarmInstallationPrice() {
