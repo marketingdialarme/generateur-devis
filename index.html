@@ -121,20 +121,20 @@
                         name: "Kit Standard",
                         icon: "📦",
                         products: [
-                            { id: 8, quantity: 2 },  // Détecteur volumétrique (radio)
-                            { id: 10, quantity: 1 }, // Détecteur d'ouverture (radio)
-                            { id: 7, quantity: 1 },  // Clavier (radio)
-                            { id: 18, quantity: 1 }  // Sirène déportée petite (radio)
+                            { id: 8, quantity: 2 },
+                            { id: 10, quantity: 1 },
+                            { id: 7, quantity: 1 },
+                            { id: 18, quantity: 1 }
                         ]
                     },
                     kit2: {
                         name: "Kit Périmétrique",
                         icon: "📦",
                         products: [
-                            { id: 8, quantity: 1 },  // Détecteur volumétrique (radio)
-                            { id: 10, quantity: 3 }, // Détecteur d'ouverture (radio)
-                            { id: 7, quantity: 1 },  // Clavier (radio)
-                            { id: 18, quantity: 1 }  // Sirène déportée petite (radio)
+                            { id: 8, quantity: 1 },
+                            { id: 10, quantity: 3 },
+                            { id: 7, quantity: 1 },
+                            { id: 18, quantity: 1 }
                         ]
                     }
                 }
@@ -149,20 +149,20 @@
                         name: "Kit Standard",
                         icon: "📦",
                         products: [
-                            { id: 8, quantity: 2 },  // Détecteur volumétrique (radio)
-                            { id: 10, quantity: 1 }, // Détecteur d'ouverture (radio)
-                            { id: 7, quantity: 1 },  // Clavier (radio)
-                            { id: 18, quantity: 1 }  // Sirène déportée petite (radio)
+                            { id: 8, quantity: 2 },
+                            { id: 10, quantity: 1 },
+                            { id: 7, quantity: 1 },
+                            { id: 18, quantity: 1 }
                         ]
                     },
                     kit2: {
                         name: "Kit Périmétrique",
                         icon: "📦",
                         products: [
-                            { id: 8, quantity: 1 },  // Détecteur volumétrique (radio)
-                            { id: 10, quantity: 3 }, // Détecteur d'ouverture (radio)
-                            { id: 7, quantity: 1 },  // Clavier (radio)
-                            { id: 18, quantity: 1 }  // Sirène déportée petite (radio)
+                            { id: 8, quantity: 1 },
+                            { id: 10, quantity: 3 },
+                            { id: 7, quantity: 1 },
+                            { id: 18, quantity: 1 }
                         ]
                     }
                 }
@@ -1250,10 +1250,8 @@
                         paymentSection.style.display = this.rentalMode[type] ? 'none' : 'block';
                     }
                     
-                    // Afficher/masquer ligne désinstallation
                     document.getElementById('alarm-uninstall-line').style.display = this.rentalMode[type] ? 'flex' : 'none';
                     
-                    // Modifier le texte de l'installation en location
                     const installLine = document.getElementById('alarm-installation-line');
                     if (this.rentalMode[type]) {
                         installLine.querySelector('div:first-child').textContent = 'Installation, paramétrages, tests, mise en service & formation';
@@ -1276,7 +1274,7 @@
                         this.globalPaymentMonths['alarm'] = 48;
                     }
                     
-                    // Mettre à jour les prix de surveillance pour alarme
+                    this.updateSurveillanceOptions(this.selectedCentral);
                     this.updateSurveillancePrice();
                 } else if (type === 'camera') {
                     const paymentSection = document.getElementById('camera-payment-section');
@@ -1289,10 +1287,8 @@
                     document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
                     document.getElementById('camera-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
                     
-                    // Afficher/masquer ligne désinstallation
                     document.getElementById('camera-uninstall-line').style.display = this.rentalMode[type] ? 'flex' : 'none';
                     
-                    // Modifier le texte de l'installation en location
                     const installLine = document.getElementById('camera-installation-line');
                     if (this.rentalMode[type]) {
                         installLine.querySelector('div:first-child').textContent = 'Installation, paramétrages, tests, mise en service & formation des utilisateurs';
@@ -1479,7 +1475,6 @@
                     const isRental = this.rentalMode['alarm'];
                     
                     if (isRental) {
-                        // Prix en location (identiques pour Titane et Jablotron)
                         if (surveillanceType === 'autosurveillance') {
                             priceInput.value = 100;
                         } else if (surveillanceType === 'autosurveillance-pro') {
@@ -1490,7 +1485,6 @@
                             priceInput.value = 250;
                         }
                     } else {
-                        // Prix en vente (mode normal)
                         if (this.selectedCentral === 'titane') {
                             if (surveillanceType === 'autosurveillance') {
                                 priceInput.value = 59;
@@ -1507,11 +1501,9 @@
                             } else if (surveillanceType === 'telesurveillance-pro') {
                                 priceInput.value = 169;
                             } else {
-                                // Jablotron en vente ne propose pas d'autosurveillance
                                 priceInput.value = 0;
                             }
                         } else {
-                            // Aucune centrale sélectionnée - prix par défaut Titane
                             if (surveillanceType === 'autosurveillance') {
                                 priceInput.value = 59;
                             } else if (surveillanceType === 'autosurveillance-pro') {
@@ -1528,7 +1520,7 @@
                 this.updateTotals();
             }
 
-addProductLine(sectionId) {
+            addProductLine(sectionId) {
                 const container = document.getElementById(`${sectionId}-products`);
                 
                 const productLine = document.createElement('div');
@@ -1712,29 +1704,50 @@ addProductLine(sectionId) {
                 if (!surveillanceSelect) return;
                 
                 const currentValue = surveillanceSelect.value;
+                const isRental = this.rentalMode['alarm'];
                 
-                if (centralType === 'jablotron') {
-                    surveillanceSelect.innerHTML = `
-                        <option value="">Aucun</option>
-                        <option value="telesurveillance">Télésurveillance Particulier (139 CHF)</option>
-                        <option value="telesurveillance-pro">Télésurveillance Professionnel (169 CHF)</option>
-                    `;
-                } else if (centralType === 'titane') {
-                    surveillanceSelect.innerHTML = `
-                        <option value="">Aucun</option>
-                        <option value="telesurveillance">Télésurveillance Particulier (129 CHF)</option>
-                        <option value="telesurveillance-pro">Télésurveillance Professionnel (159 CHF)</option>
-                        <option value="autosurveillance">Autosurveillance (59 CHF)</option>
-                        <option value="autosurveillance-pro">Autosurveillance Professionnel (79 CHF)</option>
-                    `;
+                if (isRental) {
+                    if (centralType === 'jablotron' || centralType === 'titane') {
+                        surveillanceSelect.innerHTML = `
+                            <option value="">Aucun</option>
+                            <option value="autosurveillance">Autosurveillance (100 CHF/mois)</option>
+                            <option value="autosurveillance-pro">Autosurveillance Professionnel (150 CHF/mois)</option>
+                            <option value="telesurveillance">Télésurveillance (200 CHF/mois)</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel (250 CHF/mois)</option>
+                        `;
+                    } else {
+                        surveillanceSelect.innerHTML = `
+                            <option value="">Aucun</option>
+                            <option value="autosurveillance">Autosurveillance</option>
+                            <option value="autosurveillance-pro">Autosurveillance Professionnel</option>
+                            <option value="telesurveillance">Télésurveillance</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
+                        `;
+                    }
                 } else {
-                    surveillanceSelect.innerHTML = `
-                        <option value="">Aucun</option>
-                        <option value="telesurveillance">Télésurveillance Particulier</option>
-                        <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
-                        <option value="autosurveillance">Autosurveillance</option>
-                        <option value="autosurveillance-pro">Autosurveillance Professionnel</option>
-                    `;
+                    if (centralType === 'jablotron') {
+                        surveillanceSelect.innerHTML = `
+                            <option value="">Aucun</option>
+                            <option value="telesurveillance">Télésurveillance (139 CHF/mois)</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel (169 CHF/mois)</option>
+                        `;
+                    } else if (centralType === 'titane') {
+                        surveillanceSelect.innerHTML = `
+                            <option value="">Aucun</option>
+                            <option value="autosurveillance">Autosurveillance (59 CHF/mois)</option>
+                            <option value="autosurveillance-pro">Autosurveillance Professionnel (79 CHF/mois)</option>
+                            <option value="telesurveillance">Télésurveillance (129 CHF/mois)</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel (159 CHF/mois)</option>
+                        `;
+                    } else {
+                        surveillanceSelect.innerHTML = `
+                            <option value="">Aucun</option>
+                            <option value="autosurveillance">Autosurveillance</option>
+                            <option value="autosurveillance-pro">Autosurveillance Professionnel</option>
+                            <option value="telesurveillance">Télésurveillance</option>
+                            <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
+                        `;
+                    }
                 }
                 
                 const options = Array.from(surveillanceSelect.options).map(o => o.value);
@@ -2189,6 +2202,7 @@ showKitSelector() {
         }
     });
 }
+
 applyKit(centralType, kitType) {
     const container = document.getElementById('alarm-material-products');
     container.innerHTML = '';
@@ -2215,6 +2229,7 @@ applyKit(centralType, kitType) {
     this.updateTotals();
     this.showNotification(`✅ ${config.name} + ${kit.name} ajouté avec succès!`);
 }
+
 addProductToContainer(sectionId, productId, quantity, isOffered) {
     const container = document.getElementById(`${sectionId}-products`);
     if (!container) return;
@@ -2249,7 +2264,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     
     container.appendChild(productLine);
 }
-
 
             async saveToGoogleDrive(pdfBlob, filename, commercial) {
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
@@ -2692,7 +2706,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     sectionTotal += installTotal;
                     yPos += 12;
                 } else if (sectionId === 'alarm-installation' && isRental) {
-                    // En location alarme, afficher comme pour les caméras
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
@@ -2710,7 +2723,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.setTextColor(0, 0, 0);
                     yPos += 12;
                     
-                    // Ligne Désinstallation
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
@@ -2847,7 +2859,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     return yPos;
                 }
                 
-                yPos += 10; // Saut de ligne avant les options
+                yPos += 10;
                 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
@@ -2955,7 +2967,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 yPos += 16;
 
                 if (isRental) {
-                    // Ligne Installation - Compris dans le forfait
                     doc.setDrawColor(0, 0, 0);
                     doc.setLineWidth(0.5);
                     doc.rect(40, yPos, 515, 14);
@@ -2974,7 +2985,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.setTextColor(0, 0, 0);
                     yPos += 14;
                     
-                    // Ligne Désinstallation
                     doc.setFont('helvetica', 'normal');
                     doc.setFillColor(245, 245, 245);
                     doc.rect(40, yPos, 515, 14, 'F');
@@ -3340,7 +3350,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos += 50;
                 }
 
-                // Ne pas ajouter la mention pour les locations ET les caméras
                 if (!isRental && type !== 'camera' && monthsCount > 0) {
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
@@ -3416,16 +3425,8 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
         }
 
-        // ============================================
-        // INSTANCE GLOBALE
-        // ============================================
-        
         let generator;
 
-        // ============================================
-        // FONCTIONS GLOBALES
-        // ============================================
-        
         function showTab(tabName, element) {
             if (generator) generator.showTab(tabName, element);
         }
@@ -3514,10 +3515,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
         }
 
-        // ============================================
-        // INITIALISATION
-        // ============================================
-        
         document.addEventListener('DOMContentLoaded', () => {
             generator = new DialarmeFinalGenerator();
             console.log('✅ Application Dialarme chargée avec succès');
