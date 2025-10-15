@@ -2750,12 +2750,13 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     doc.text('Total T.T.C.', 400, yPos + 32);
     doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
 
-    yPos += 44;
+    // Texte sur la même ligne que Total T.T.C.
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.text('Montant à régler à l\'installation', 40, yPos);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Montant à régler à l\'installation', 50, yPos + 32);
 
-    return yPos + 15;
+    return yPos + 50;
 }
 
             createCameraInstallPDF(doc, yPos) {
