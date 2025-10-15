@@ -746,7 +746,7 @@
 
             <div class="quote-section">
                 <h3>🔧 2. Installation et matériel supplémentaire <button class="add-product-btn" onclick="addProductLine('alarm-installation')">+</button></h3>
-                <div class="product-line" style="background: #f0f8ff;">
+                <div class="product-line" id="alarm-installation-line" style="background: #f0f8ff;">
                     <div>Installation, paramétrages, tests, mise en service & formation</div>
                     <div>
                         <label style="margin-right: 5px; font-size: 12px;">Nombre:</label>
@@ -758,6 +758,13 @@
                         <label style="margin: 0; font-size: 12px;">OFFERT</label>
                     </div>
                     <div class="price-display" id="alarm-installation-display">690.00 CHF</div>
+                </div>
+                <div class="product-line" id="alarm-uninstall-line" style="display: none;">
+                    <div>Désinstallation facturée si durée inférieure à 12 mois</div>
+                    <input type="number" value="1" class="quantity-input" readonly>
+                    <div></div>
+                    <div class="price-display">290.00 CHF</div>
+                    <div></div>
                 </div>
                 <div id="alarm-installation-products"></div>
                 <div class="discount-section">
@@ -812,6 +819,7 @@
                             <option value="telesurveillance">Télésurveillance Particulier</option>
                             <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
                             <option value="autosurveillance">Autosurveillance</option>
+                            <option value="autosurveillance-pro">Autosurveillance Professionnel</option>
                         </select>
                     </div>
                     <input type="number" id="surveillance-price" value="0" class="discount-input" placeholder="Prix/mois" oninput="updateTotals()">
@@ -1242,11 +1250,34 @@
                         paymentSection.style.display = this.rentalMode[type] ? 'none' : 'block';
                     }
                     
+                    // Afficher/masquer ligne désinstallation
+                    document.getElementById('alarm-uninstall-line').style.display = this.rentalMode[type] ? 'flex' : 'none';
+                    
+                    // Modifier le texte de l'installation en location
+                    const installLine = document.getElementById('alarm-installation-line');
+                    if (this.rentalMode[type]) {
+                        installLine.querySelector('div:first-child').textContent = 'Installation, paramétrages, tests, mise en service & formation';
+                        document.getElementById('alarm-installation-display').textContent = 'Compris dans le forfait';
+                        document.getElementById('alarm-installation-qty').style.display = 'none';
+                        installLine.querySelector('label').style.display = 'none';
+                        document.getElementById('alarm-installation-offered').parentElement.style.display = 'none';
+                        document.getElementById('alarm-installation-price').style.display = 'none';
+                    } else {
+                        document.getElementById('alarm-installation-qty').style.display = 'inline-block';
+                        installLine.querySelector('label').style.display = 'inline';
+                        document.getElementById('alarm-installation-offered').parentElement.style.display = 'flex';
+                        document.getElementById('alarm-installation-price').style.display = 'inline-block';
+                        this.updateAlarmInstallationPrice();
+                    }
+                    
                     if (this.rentalMode[type]) {
                         this.globalPaymentMonths['alarm'] = 0;
                     } else {
                         this.globalPaymentMonths['alarm'] = 48;
                     }
+                    
+                    // Mettre à jour les prix de surveillance pour alarme
+                    this.updateSurveillancePrice();
                 } else if (type === 'camera') {
                     const paymentSection = document.getElementById('camera-payment-section');
                     if (paymentSection) {
@@ -1282,11 +1313,6 @@
                     } else {
                         this.globalPaymentMonths['camera'] = 48;
                     }
-                }
-                
-                // Mettre à jour les prix de surveillance pour alarme
-                if (type === 'alarm') {
-                    this.updateSurveillancePrice();
                 }
                 
                 this.updateTotals();
@@ -1460,12 +1486,16 @@
                             priceInput.value = 250; // Professionnel
                         } else if (surveillanceType === 'autosurveillance') {
                             priceInput.value = 100; // Particulier
+                        } else if (surveillanceType === 'autosurveillance-pro') {
+                            priceInput.value = 150; // Professionnel
                         }
                     } else {
                         // Prix en vente (mode normal)
                         if (this.selectedCentral === 'titane') {
                             if (surveillanceType === 'autosurveillance') {
                                 priceInput.value = 59;
+                            } else if (surveillanceType === 'autosurveillance-pro') {
+                                priceInput.value = 79;
                             } else if (surveillanceType === 'telesurveillance') {
                                 priceInput.value = 129;
                             } else if (surveillanceType === 'telesurveillance-pro') {
@@ -1484,6 +1514,8 @@
                                 priceInput.value = 129;
                             } else if (surveillanceType === 'autosurveillance') {
                                 priceInput.value = 59;
+                            } else if (surveillanceType === 'autosurveillance-pro') {
+                                priceInput.value = 79;
                             } else {
                                 priceInput.value = 0;
                             }
@@ -1691,6 +1723,7 @@ addProductLine(sectionId) {
                         <option value="telesurveillance">Télésurveillance Particulier (129 CHF)</option>
                         <option value="telesurveillance-pro">Télésurveillance Professionnel (159 CHF)</option>
                         <option value="autosurveillance">Autosurveillance (59 CHF)</option>
+                        <option value="autosurveillance-pro">Autosurveillance Professionnel (79 CHF)</option>
                     `;
                 } else {
                     surveillanceSelect.innerHTML = `
@@ -1698,6 +1731,7 @@ addProductLine(sectionId) {
                         <option value="telesurveillance">Télésurveillance Particulier</option>
                         <option value="telesurveillance-pro">Télésurveillance Professionnel</option>
                         <option value="autosurveillance">Autosurveillance</option>
+                        <option value="autosurveillance-pro">Autosurveillance Professionnel</option>
                     `;
                 }
                 
@@ -1804,13 +1838,18 @@ addProductLine(sectionId) {
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = parseFloat(document.getElementById('alarm-installation-price')?.value) || 690;
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    document.getElementById('alarm-installation-display').textContent = 
-                        installOffered ? 'OFFERT' : `${installTotal.toFixed(2)} CHF`;
+                    let installTotal = 0;
+                    if (!this.rentalMode['alarm']) {
+                        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                        const installPrice = parseFloat(document.getElementById('alarm-installation-price')?.value) || 690;
+                        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                        installTotal = installOffered ? 0 : installPrice;
+                        
+                        document.getElementById('alarm-installation-display').textContent = 
+                            installOffered ? 'OFFERT' : `${installTotal.toFixed(2)} CHF`;
+                    } else {
+                        document.getElementById('alarm-installation-display').textContent = 'Compris dans le forfait';
+                    }
                     
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
                     const totalInstallation = installTotal + otherInstallationTotal;
@@ -1838,7 +1877,7 @@ addProductLine(sectionId) {
                     const totalTTC = this.roundToFiveCents(totalHT * 1.081);
                     
                     document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('alarm-installation-total').textContent = `${totalInstallation.toFixed(2)} CHF`;
+                    document.getElementById('alarm-installation-total').textContent = this.rentalMode['alarm'] ? 'Compris dans le forfait' : `${totalInstallation.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
@@ -1846,6 +1885,9 @@ addProductLine(sectionId) {
                         const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                         
                         if (paymentMonths > 0) {
+                            const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+                            const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+                            
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
                             const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
                             const mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
@@ -2516,7 +2558,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFontSize(7);
                 doc.setTextColor(0, 0, 0);
                 doc.text('Qté', 50, yPos + 9);
-                doc.text('Désignation du matériel', 120, yPos + 9);
+                doc.text('Désignation du matériel', 90, yPos + 9);
                 doc.text('Prix uni. HT', 400, yPos + 9);
                 doc.text('Total HT', 480,yPos + 9);
                 yPos += 14;
@@ -2604,7 +2646,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     }
                 });
 
-                if (sectionId === 'alarm-installation') {
+                if (sectionId === 'alarm-installation' && !isRental) {
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
@@ -2647,6 +2689,40 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     
                     sectionTotal += installTotal;
                     yPos += 12;
+                } else if (sectionId === 'alarm-installation' && isRental) {
+                    // En location alarme, afficher comme pour les caméras
+                    lineCount++;
+                    if (lineCount % 2 === 0) {
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(40, yPos, 515, 12, 'F');
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.text('1', 55, yPos + 8);
+                    doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(0, 150, 0);
+                    doc.text('Compris dans le forfait', 395, yPos + 8);
+                    doc.text('Compris', 475, yPos + 8);
+                    doc.setTextColor(0, 0, 0);
+                    yPos += 12;
+                    
+                    // Ligne Désinstallation
+                    lineCount++;
+                    if (lineCount % 2 === 0) {
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(40, yPos, 515, 12, 'F');
+                    }
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.text('1', 55, yPos + 8);
+                    doc.text('Désinstallation facturée si durée inférieure à 12 mois', 90, yPos + 8);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('290.00', 405, yPos + 8);
+                    doc.text('290.00', 485, yPos + 8);
+                    yPos += 12;
                 }
 
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
@@ -2668,10 +2744,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 8);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 8);
-                doc.text('TVA 8.1%', 400, yPos + 20);
-                doc.text(tva.toFixed(2), 485, yPos + 20);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text(sectionTotal.toFixed(2), 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 24);
+                doc.text(tva.toFixed(2), 485, yPos + 24);
                 doc.text('Total T.T.C.', 400, yPos + 32);
                 doc.text(totalTTC.toFixed(2), 485, yPos + 32);
 
@@ -2691,7 +2767,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Service', 120, yPos + 9);
+                doc.text('Service', 90, yPos + 9);
                 doc.text('Prix', 400, yPos + 9);
                 doc.text('Total', 480, yPos + 9);
                 yPos += 14;
@@ -2737,6 +2813,8 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         serviceName = 'Télésurveillance Professionnel';
                     } else if (surveillanceType === 'autosurveillance') {
                         serviceName = 'Autosurveillance';
+                    } else if (surveillanceType === 'autosurveillance-pro') {
+                        serviceName = 'Autosurveillance Professionnel';
                     }
                     
                     doc.text(serviceName, 90, yPos + 8);
@@ -2766,6 +2844,8 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 if (!optionInterventionsGratuites && !optionInterventionsAnnee && !optionServiceCles) {
                     return yPos;
                 }
+                
+                yPos += 10; // Saut de ligne avant les options
                 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
@@ -2803,7 +2883,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
                 doc.text('Qté', 50, yPos + 10);
-                doc.text('Description', 120, yPos + 10);
+                doc.text('Description', 90, yPos + 10);
                 doc.text('Prix uni. HT', 400, yPos + 10);
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
@@ -2840,10 +2920,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 8);
-                doc.text('240.00', 485, yPos + 8);
-                doc.text('TVA 8.1%', 400, yPos + 20);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 20);
+                doc.text('Total H.T.', 400, yPos + 12);
+                doc.text('240.00', 485, yPos + 12);
+                doc.text('TVA 8.1%', 400, yPos + 24);
+                doc.text(adminTVA.toFixed(2), 485, yPos + 24);
                 doc.text('Total T.T.C.', 400, yPos + 32);
                 doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
 
@@ -2867,7 +2947,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
                 doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 120, yPos + 10);
+                doc.text('Désignation', 90, yPos + 10);
                 doc.text('Prix uni. HT', 400, yPos + 10);
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
@@ -2967,10 +3047,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.setTextColor(0, 0, 0);
                     doc.text('Total H.T.', 400, yPos + 9);
                     doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                    doc.text('TVA 8.1%', 400, yPos + 23);
-                    doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                    doc.text('Total T.T.C.', 400, yPos + 37);
-                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
+                    doc.text('TVA 8.1%', 400, yPos + 21);
+                    doc.text(installTVA.toFixed(2), 485, yPos + 21);
+                    doc.text('Total T.T.C.', 400, yPos + 35);
+                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
 
                     yPos += 42;
                 }
@@ -2990,7 +3070,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
                 doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 120, yPos + 10);
+                doc.text('Désignation', 90, yPos + 10);
                 doc.text('Prix uni. HT', 400, yPos + 10);
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
@@ -3046,10 +3126,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setTextColor(0, 0, 0);
                 doc.text('Total H.T.', 400, yPos + 9);
                 doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(installTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 37);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(installTVA.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 35);
+                doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
 
                 return yPos + 55;
             }
@@ -3182,7 +3262,8 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.setFontSize(8);
                     const serviceName = type === 'alarm' ? 
                         (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
-                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
+                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 
+                        document.getElementById('surveillance-type')?.value === 'autosurveillance-pro' ? 'Autosurveillance Pro' : 'Autosurveillance') : 
                         'Vision à distance';
                     
                     doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
@@ -3282,14 +3363,12 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFillColor(255, 255, 255);
                 doc.rect(50, 745, 200, 25, 'F');
                 doc.rect(350, 745, 200, 60, 'F');
-                doc.rect(50, 780, 200, 25, 'F');
 
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
                 doc.text(`NOM DU CLIENT : ${clientName}`, 60, 760);
-                doc.text('SIGNATURE DU CLIENT', 430, 735);
-                doc.text('DATE DE SIGNATURE :', 60, 795);
+                doc.text('SIGNATURE DU CLIENT', 430, 760);
             }
 
             exportQuote() {
