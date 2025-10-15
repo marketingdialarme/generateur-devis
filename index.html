@@ -1479,15 +1479,15 @@
                     const isRental = this.rentalMode['alarm'];
                     
                     if (isRental) {
-                        // Prix en location
-                        if (surveillanceType === 'telesurveillance') {
-                            priceInput.value = 200; // Particulier
-                        } else if (surveillanceType === 'telesurveillance-pro') {
-                            priceInput.value = 250; // Professionnel
-                        } else if (surveillanceType === 'autosurveillance') {
-                            priceInput.value = 100; // Particulier
+                        // Prix en location (identiques pour Titane et Jablotron)
+                        if (surveillanceType === 'autosurveillance') {
+                            priceInput.value = 100;
                         } else if (surveillanceType === 'autosurveillance-pro') {
-                            priceInput.value = 150; // Professionnel
+                            priceInput.value = 150;
+                        } else if (surveillanceType === 'telesurveillance') {
+                            priceInput.value = 200;
+                        } else if (surveillanceType === 'telesurveillance-pro') {
+                            priceInput.value = 250;
                         }
                     } else {
                         // Prix en vente (mode normal)
@@ -1507,17 +1507,19 @@
                             } else if (surveillanceType === 'telesurveillance-pro') {
                                 priceInput.value = 169;
                             } else {
+                                // Jablotron en vente ne propose pas d'autosurveillance
                                 priceInput.value = 0;
                             }
                         } else {
-                            if (surveillanceType === 'telesurveillance') {
-                                priceInput.value = 129;
-                            } else if (surveillanceType === 'autosurveillance') {
+                            // Aucune centrale sélectionnée - prix par défaut Titane
+                            if (surveillanceType === 'autosurveillance') {
                                 priceInput.value = 59;
                             } else if (surveillanceType === 'autosurveillance-pro') {
                                 priceInput.value = 79;
-                            } else {
-                                priceInput.value = 0;
+                            } else if (surveillanceType === 'telesurveillance') {
+                                priceInput.value = 129;
+                            } else if (surveillanceType === 'telesurveillance-pro') {
+                                priceInput.value = 159;
                             }
                         }
                     }
