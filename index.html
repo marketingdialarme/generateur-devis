@@ -2454,7 +2454,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('Qté', 50, yPos + 9);
                 doc.text('Désignation du matériel', 120, yPos + 9);
                 doc.text('Prix uni. HT', 400, yPos + 9);
-                doc.text('Total HT', 480, yPos + 9);
+                doc.text('Total HT', 480,yPos + 9);
                 yPos += 14;
 
                 const container = document.getElementById(`${sectionId}-products`);
@@ -3024,94 +3024,106 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         mensualiteInstallHT = 0;
                     }
                     
-                    const totalMensuelHT = mensualiteMatHT + mensualiteInstallHT + surveillanceMonthlyHT;
+                    const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
+                    const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
                     const totalMensuelTVA = totalMensuelHT * 0.081;
                     const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
 
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 110, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 110);
+                    // 🎨 RECTANGLE PRINCIPAL MODERNE - Gris clair avec angles arrondis
+                    doc.setFillColor(245, 245, 245);
+                    doc.roundedRect(40, yPos, 515, 95, 8, 8, 'F');
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
                     doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 15);
+                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
                     
+                    // Ligne 1 : Installation et matériel supp. + Télésurveillance
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
-                    doc.text(`Matériel: ${mensualiteMatHT.toFixed(2)} CHF HT/mois`, 50, yPos + 35);
-                    doc.text(`Installation: ${mensualiteInstallHT.toFixed(2)} CHF HT/mois`, 50, yPos + 50);
+                    const serviceName = type === 'alarm' ? 
+                        (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
+                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
+                        'Vision à distance';
                     
-                    if (surveillanceMonthlyHT > 0) {
-                        const serviceName = type === 'alarm' ? 
-                            (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 'Autosurveillance') : 
-                            'Vision à distance';
-                        doc.text(`${serviceName}: ${surveillanceMonthlyHT.toFixed(2)} CHF HT/mois`, 50, yPos + 65);
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 80);
-                    } else {
-                        doc.text(`Total mensualité HT: ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 65);
-                    }
+                    doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
                     
-                    doc.text(`TVA 8.1%: ${totalMensuelTVA.toFixed(2)} CHF`, 300, yPos + (surveillanceMonthlyHT > 0 ? 80 : 65));
+                    // Saut de ligne
+                    yPos += 15;
+                    
+                    // Nouvelle ligne : Total mensualité HT, TVA, Total TTC
+                    doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 35);
+                    doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 35);
+                    
+                    // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(420, yPos + 25, 120, 20, 5, 5, 'F');
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
-                    doc.text(`TOTAL MENSUALITÉ TTC: ${totalMensuelTTC.toFixed(2)} CHF/mois x ${monthsCount} mois`, 50, yPos + 100);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 38);
                     
-                    yPos += 115;
+                    yPos += 80;
                     
+                    // MONTANTS À RÉGLER COMPTANT
                     if (totalComptantHT > 0) {
-                        doc.setFillColor(200, 200, 200);
-                        doc.rect(40, yPos, 515, 55, 'F');
-                        doc.setDrawColor(0, 0, 0);
-                        doc.rect(40, yPos, 515, 55);
+                        // 🎨 RECTANGLE MODERNE - Gris clair avec angles arrondis
+                        doc.setFillColor(245, 245, 245);
+                        doc.roundedRect(40, yPos, 515, 50, 8, 8, 'F');
                         
                         doc.setFont('helvetica', 'bold');
                         doc.setFontSize(9);
-                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 15);
+                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
                         
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(8);
-                        doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+                        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 32);
                         const comptantTVA = totalComptantHT * 0.081;
                         const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
-                        doc.text(`TVA 8.1%: ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                        doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 32);
+                        
+                        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+                        doc.setFillColor(255, 255, 255);
+                        doc.roundedRect(420, yPos + 22, 120, 20, 5, 5, 'F');
                         
                         doc.setFont('helvetica', 'bold');
-                        doc.text(`Total TTC: ${comptantTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                        doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 35);
                         
-                        yPos += 60;
+                        yPos += 55;
                     }
                     
                 } else {
                     const totalTVA = totalComptantHT * 0.081;
                     const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
                     
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(40, yPos, 515, 55, 'F');
-                    doc.setDrawColor(0, 0, 0);
-                    doc.rect(40, yPos, 515, 55);
+                    // 🎨 RECTANGLE MODERNE - Gris clair avec angles arrondis
+                    doc.setFillColor(245, 245, 245);
+                    doc.roundedRect(40, yPos, 515, 50, 8, 8, 'F');
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9);
                     doc.setTextColor(0, 0, 0);
                     
                     if (isRental) {
-                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 15);
+                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
                     } else {
-                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 15);
+                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
                     }
                     
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
-                    doc.text(`Total HT: ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8.1%: ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
+                    doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 32);
+                    doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 32);
+                    
+                    // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(420, yPos + 22, 120, 20, 5, 5, 'F');
                     
                     doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC: ${totalTTC.toFixed(2)} CHF`, 400, yPos + 30);
+                    doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 35);
                     
-                    yPos += 60;
+                    yPos += 55;
                 }
 
                 if (!isRental && monthsCount > 0) {
