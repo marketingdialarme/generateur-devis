@@ -79,7 +79,7 @@
             { id: 38, name: "Modem 4G", price: 290.00, monthly48: 8, monthly36: 10, monthly24: 14  },
             { id: 39, name: "Moniteur Vidéo 22\"", price: 190.00, monthly48: 5, monthly36: 7, monthly24: 9  },
             { id: 40, name: "Moniteur Vidéo 28\" 4K", price: 460.00, monthly48: 12, monthly36: 15, monthly24: 22  },
-            { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00, monthly48: 23, monthly36: 16, monthly24: 13  },
+            { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23  },
             { id: 50, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00, monthly48: 25, monthly36: 32, monthly24: 46  },
             { id: 51, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00, monthly48: 35, monthly36: 45, monthly24: 64 },
             { id: 52, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00, monthly48: 43, monthly36: 54, monthly24: 78  },
@@ -878,9 +878,12 @@
                     </div>
                     <div class="form-group">
                         <label for="commercialCamera">Commercial</label>
-                        <select id="commercialCamera" onchange="handleCommercialSelectionCamera(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                            <option value="">Sélectionner un commercial</option>
-                        </select>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <select id="commercialCamera" onchange="handleCommercialSelectionCamera(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                                <option value="">Sélectionner un commercial</option>
+                            </select>
+                            <input type="text" id="commercialCamera-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1004,9 +1007,12 @@
                     </div>
                     <div class="form-group">
                         <label for="commercialFog">Commercial</label>
-                        <select id="commercialFog" onchange="handleCommercialSelectionFog(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                            <option value="">Sélectionner un commercial</option>
-                        </select>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <select id="commercialFog" onchange="handleCommercialSelectionFog(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                                <option value="">Sélectionner un commercial</option>
+                            </select>
+                            <input type="text" id="commercialFog-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1438,7 +1444,7 @@ addProductLine(sectionId) {
                 const lineId = 'line-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                 
                 productLine.innerHTML = `
-                    <div class="product-select-container" style="width: 100%;">
+                    <div class="product-select-container" style="width: 100%; position: relative;">
                         <select class="product-select" id="select-${lineId}" onchange="handleProductSelection(this)" data-section="${sectionId}">
                             <option value="">Sélectionner un produit</option>
                             ${availableProducts.map(product => {
@@ -1485,7 +1491,7 @@ addProductLine(sectionId) {
                         const backBtn = document.createElement('button');
                         backBtn.className = 'back-to-select-btn';
                         backBtn.innerHTML = '↩';
-                        backBtn.style.cssText = 'position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: #6c757d; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 12px;';
+                        backBtn.style.cssText = 'position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: #6c757d; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 12px; z-index: 10;';
                         backBtn.onclick = () => {
                             selectElement.style.display = 'block';
                             nameInput.style.display = 'none';
@@ -1499,7 +1505,6 @@ addProductLine(sectionId) {
                             }
                             this.updateTotals();
                         };
-                        selectContainer.style.position = 'relative';
                         selectContainer.appendChild(backBtn);
                     }
                 } else {
@@ -1555,18 +1560,18 @@ addProductLine(sectionId) {
 
             getProductPrice(product) {
                 if (!this.selectedCentral) {
-                    return product.price;
+                    return product.price || 0;
                 }
                 
-                if (this.selectedCentral === 'titane' && product.priceTitane) {
+                if (this.selectedCentral === 'titane' && product.priceTitane !== undefined) {
                     return product.priceTitane;
                 }
                 
-                if (this.selectedCentral === 'jablotron' && product.priceJablotron) {
+                if (this.selectedCentral === 'jablotron' && product.priceJablotron !== undefined) {
                     return product.priceJablotron;
                 }
                 
-                return product.price;
+                return product.price || 0;
             }
             
             detectSelectedCentral() {
@@ -1688,12 +1693,11 @@ addProductLine(sectionId) {
                 });
             }
 
-            calculateSectionTotal(sectionId, forPDF = false) {
+            calculateSectionTotal(sectionId) {
                 const container = document.getElementById(`${sectionId}-products`);
                 if (!container) return 0;
                 
                 let total = 0;
-                let totalWithoutDiscount = 0;
                 const productLines = container.querySelectorAll('.product-line');
                 
                 productLines.forEach(line => {
@@ -1704,9 +1708,11 @@ addProductLine(sectionId) {
                     const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
                     const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
                     
+                    if (isOffered) return;
+                    
                     let price = 0;
                     
-                    if (nameInput && nameInput.style.display !== 'none') {
+                    if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
                         price = parseFloat(priceInput?.value) || 0;
                     } else if (priceInput && priceInput.style.display !== 'none') {
                         price = parseFloat(priceInput.value) || 0;
@@ -1715,32 +1721,26 @@ addProductLine(sectionId) {
                     }
                     
                     let lineTotal = price * quantity;
-                    totalWithoutDiscount += lineTotal;
-                    
-                    if (!isOffered && (!forPDF || !this.kitOffered)) {
-                        total += lineTotal;
-                    }
+                    total += lineTotal;
                     
                     const priceDisplay = line.querySelector('.price-display');
-                    if (priceDisplay && !forPDF) {
-                        priceDisplay.textContent = isOffered ? 'OFFERT' : `${lineTotal.toFixed(2)} CHF`;
+                    if (priceDisplay) {
+                        priceDisplay.textContent = `${lineTotal.toFixed(2)} CHF`;
                     }
                 });
                 
-                if (!forPDF || !this.kitOffered) {
-                    const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
-                    const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                    
-                    if (discountValue > 0) {
-                        if (discountType === 'percent') {
-                            total = total * (1 - discountValue / 100);
-                        } else {
-                            total = Math.max(0, total - discountValue);
-                        }
+                const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
+                const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
+                
+                if (discountValue > 0) {
+                    if (discountType === 'percent') {
+                        total = total * (1 - discountValue / 100);
+                    } else {
+                        total = Math.max(0, total - discountValue);
                     }
                 }
                 
-                return forPDF && this.kitOffered ? { total, totalWithoutDiscount } : total;
+                return total;
             }
 
             updateTotals() {
@@ -1791,7 +1791,7 @@ addProductLine(sectionId) {
                         if (paymentMonths > 0) {
                             const mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', paymentMonths);
                             const mensualiteMatSuppHT = this.calculateSectionMonthlyPrice('alarm-installation', paymentMonths);
-                            const mensualiteInstallHT = this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
+                            const mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, paymentMonths));
                             const totalMensuelHT = mensualiteMatHT + mensualiteMatSuppHT + mensualiteInstallHT + surveillanceTotal;
                             const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
                             
@@ -1923,162 +1923,158 @@ addProductLine(sectionId) {
             }
 
 showKitSelector() {
-    // Créer la modal
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        animation: fadeIn 0.3s ease;
-    `;
-    
-    modal.innerHTML = `
-        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h2 style="margin: 0; color: #333;">📦 Sélectionner un kit prédéfini</h2>
-                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
-            </div>
-            
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #f4e600; margin-bottom: 15px;">🔷 Centrale Titane (690 CHF)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <button onclick="generator.applyKit('titane', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 2x Détecteur volumétrique<br>
-                            • 1x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
-                        </div>
-                    </button>
-                    <button onclick="generator.applyKit('titane', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 1x Détecteur volumétrique<br>
-                            • 3x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <div>
-                <h3 style="color: #333; margin-bottom: 15px;">🔶 Centrale Jablotron (990 CHF)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button onclick="generator.applyKit('jablotron', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 2x Détecteur volumétrique<br>
-                            • 1x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
-                        </div>
-                    </button>
-                    <button onclick="generator.applyKit('jablotron', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 1x Détecteur volumétrique<br>
-                            • 3x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; font-size: 14px; color: #6c757d;">
-                💡 <strong>Astuce :</strong> Le kit de base sera ajouté et marqué comme OFFERT automatiquement. Vous pourrez ensuite ajouter du matériel supplémentaire.
-            </p>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Style des boutons au survol
-    modal.querySelectorAll('button[onclick*="applyKit"]').forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'translateY(-3px) scale(1.02)';
-            btn.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
-        });
-        btn.addEventListener('mouseleave', () => {
-            btn.style.transform = 'translateY(0) scale(1)';
-            btn.style.boxShadow = 'none';
-        });
-    });
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2 style="margin: 0; color: #333;">📦 Sélectionner un kit prédéfini</h2>
+                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #f4e600; margin-bottom: 15px;">🔷 Centrale Titane (690 CHF)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <button onclick="generator.applyKit('titane', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
+                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
+                        <div style="font-size: 14px; text-align: left;">
+                            • 2x Détecteur volumétrique<br>
+                            • 1x Détecteur d'ouverture<br>
+                            • 1x Clavier<br>
+                            • 1x Sirène déportée
+                        </div>
+                    </button>
+                    <button onclick="generator.applyKit('titane', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
+                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
+                        <div style="font-size: 14px; text-align: left;">
+                            • 1x Détecteur volumétrique<br>
+                            • 3x Détecteur d'ouverture<br>
+                            • 1x Clavier<br>
+                            • 1x Sirène déportée
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="color: #333; margin-bottom: 15px;">🔶 Centrale Jablotron (990 CHF)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <button onclick="generator.applyKit('jablotron', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
+                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
+                        <div style="font-size: 14px; text-align: left;">
+                            • 2x Détecteur volumétrique<br>
+                            • 1x Détecteur d'ouverture<br>
+                            • 1x Clavier<br>
+                            • 1x Sirène déportée
+                        </div>
+                    </button>
+                    <button onclick="generator.applyKit('jablotron', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
+                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
+                        <div style="font-size: 14px; text-align: left;">
+                            • 1x Détecteur volumétrique<br>
+                            • 3x Détecteur d'ouverture<br>
+                            • 1x Clavier<br>
+                            • 1x Sirène déportée
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
+            <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; font-size: 14px; color: #6c757d;">
+                💡 <strong>Astuce :</strong> Le kit de base sera ajouté et marqué comme OFFERT automatiquement. Vous pourrez ensuite ajouter du matériel supplémentaire.
+            </p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelectorAll('button[onclick*="applyKit"]').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'translateY(-3px) scale(1.02)';
+            btn.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'translateY(0) scale(1)';
+            btn.style.boxShadow = 'none';
+        });
+    });
 }
 applyKit(centralType, kitType) {
-    const container = document.getElementById('alarm-material-products');
-    container.innerHTML = '';
-    
-    this.selectedCentral = centralType;
-    this.kitOffered = true;
-    
-    const config = CENTRALS_CONFIG[centralType];
-    if (!config) {
-        alert('Erreur: Configuration de centrale introuvable');
-        return;
-    }
-    
-    // Ajouter la centrale
-    this.addProductToContainer('alarm-material', config.id, 1, false);
-    
-    // Ajouter les produits du kit
-    const kit = config.kits[kitType];
-    if (kit && kit.products) {
-        kit.products.forEach(product => {
-            this.addProductToContainer('alarm-material', product.id, product.quantity, true);
-        });
-    }
-    
-    this.updateSurveillanceOptions(centralType);
-    this.updateTotals();
-    this.showNotification(`✅ ${config.name} + ${kit.name} ajouté avec succès!`);
+    const container = document.getElementById('alarm-material-products');
+    container.innerHTML = '';
+    
+    this.selectedCentral = centralType;
+    this.kitOffered = true;
+    
+    const config = CENTRALS_CONFIG[centralType];
+    if (!config) {
+        alert('Erreur: Configuration de centrale introuvable');
+        return;
+    }
+    
+    this.addProductToContainer('alarm-material', config.id, 1, false);
+    
+    const kit = config.kits[kitType];
+    if (kit && kit.products) {
+        kit.products.forEach(product => {
+            this.addProductToContainer('alarm-material', product.id, product.quantity, true);
+        });
+    }
+    
+    this.updateSurveillanceOptions(centralType);
+    this.updateTotals();
+    this.showNotification(`✅ ${config.name} + ${kit.name} ajouté avec succès!`);
 }
 addProductToContainer(sectionId, productId, quantity, isOffered) {
-    const container = document.getElementById(`${sectionId}-products`);
-    if (!container) return;
-    
-    const product = this.catalog[sectionId]?.find(p => p.id === productId);
-    if (!product) return;
-    
-    const price = this.getProductPrice(product);
-    const lineId = 'line-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    
-    const productLine = document.createElement('div');
-    productLine.className = 'product-line';
-    if (productId === 5 || productId === 6) {
-        productLine.classList.add('central-line');
-    }
-    
-    productLine.innerHTML = `
-        <div class="product-select-container" style="width: 100%;">
-            <select class="product-select" id="select-${lineId}" onchange="handleProductSelection(this)" data-section="${sectionId}">
-                <option value="${productId}" data-price="${price}" selected>${product.name} - ${price.toFixed(2)} CHF</option>
-            </select>
-        </div>
-        <input type="number" value="${quantity}" min="1" class="quantity-input" oninput="updateTotals()">
-        <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
-        <div class="checkbox-option" style="margin: 0;">
-            <input type="checkbox" class="offered-checkbox" ${isOffered ? 'checked' : ''} onchange="updateTotals()">
-            <label style="margin: 0; font-size: 12px;">OFFERT</label>
-        </div>
-        <div class="price-display">${isOffered ? 'OFFERT' : (price * quantity).toFixed(2) + ' CHF'}</div>
-        <button class="remove-btn" onclick="this.closest('.product-line').remove(); generator.detectSelectedCentral(); updateTotals();">×</button>
-    `;
-    
-    container.appendChild(productLine);
+    const container = document.getElementById(`${sectionId}-products`);
+    if (!container) return;
+    
+    const product = this.catalog[sectionId]?.find(p => p.id === productId);
+    if (!product) return;
+    
+    const price = this.getProductPrice(product);
+    const lineId = 'line-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
+    const productLine = document.createElement('div');
+    productLine.className = 'product-line';
+    if (productId === 5 || productId === 6) {
+        productLine.classList.add('central-line');
+    }
+    
+    productLine.innerHTML = `
+        <div class="product-select-container" style="width: 100%;">
+            <select class="product-select" id="select-${lineId}" onchange="handleProductSelection(this)" data-section="${sectionId}">
+                <option value="${productId}" data-price="${price}" selected>${product.name} - ${price.toFixed(2)} CHF</option>
+            </select>
+        </div>
+        <input type="number" value="${quantity}" min="1" class="quantity-input" oninput="updateTotals()">
+        <input type="number" value="${price}" min="0" step="0.01" class="price-input discount-input" style="display: none;" placeholder="Prix unitaire" oninput="updateTotals()">
+        <div class="checkbox-option" style="margin: 0;">
+            <input type="checkbox" class="offered-checkbox" ${isOffered ? 'checked' : ''} onchange="updateTotals()">
+            <label style="margin: 0; font-size: 12px;">OFFERT</label>
+        </div>
+        <div class="price-display">${isOffered ? 'OFFERT' : (price * quantity).toFixed(2) + ' CHF'}</div>
+        <button class="remove-btn" onclick="this.closest('.product-line').remove(); generator.detectSelectedCentral(); updateTotals();">×</button>
+    `;
+    
+    container.appendChild(productLine);
 }
 
 
@@ -2095,15 +2091,18 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     commercial = commercialSelect.value === 'autre' ? commercialCustom.value : commercialSelect.value;
                 } else if (type === 'camera') {
                     clientName = document.getElementById('clientNameCamera').value || 'Client non spécifié';
-                    commercial = document.getElementById('commercialCamera').value;
+                    const commercialSelect = document.getElementById('commercialCamera');
+                    const commercialCustom = document.getElementById('commercialCamera-custom');
+                    commercial = commercialSelect.value === 'autre' ? commercialCustom.value : commercialSelect.value;
                 } else if (type === 'fog') {
                     clientName = document.getElementById('clientNameFog').value || 'Client non spécifié';
-                    commercial = document.getElementById('commercialFog').value;
+                    const commercialSelect = document.getElementById('commercialFog');
+                    const commercialCustom = document.getElementById('commercialFog-custom');
+                    commercial = commercialSelect.value === 'autre' ? commercialCustom.value : commercialSelect.value;
                 }
     
                 commercial = commercial || 'Commercial non spécifié';
     
-                // En-tête
                 doc.setFillColor(244, 230, 0);
                 doc.rect(0, 0, 210, 40, 'F');
                 doc.setFontSize(24);
@@ -2112,12 +2111,11 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.setFontSize(12);
                 doc.text('Devis professionnel', 20, 30);
     
-                // Informations du devis
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(10);
                 doc.text(`Date: ${new Date().toLocaleDateString('fr-CH')}`, 150, 20);
                 doc.text(`Client: ${clientName}`, 20, 50);
-               doc.text(`Commercial: ${commercial}`, 20, 57);
+                doc.text(`Commercial: ${commercial}`, 20, 57);
     
                 let typeLabel = type === 'alarm' ? 'Alarme' : (type === 'camera' ? 'Caméra de surveillance' : 'Générateur de brouillard');
                 const isRental = this.rentalMode[type];
@@ -2125,7 +2123,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     
                 let yPosition = 75;
     
-                // Fonction helper pour ajouter une section
                 const addSection = (title, items, yPos) => {
                     doc.setFontSize(12);
                     doc.setFont(undefined, 'bold');
@@ -2148,7 +2145,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     return yPos + 5;
                 };
     
-                // Contenu spécifique selon le type
                 if (type === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     const installTotal = parseFloat(document.getElementById('alarm-installation-total').textContent);
@@ -2173,7 +2169,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         
         yPosition = addSection('📋 Récapitulatif', items, yPosition);
         
-        // Totaux
         doc.setDrawColor(200, 200, 200);
         doc.line(20, yPosition, 190, yPosition);
         yPosition += 7;
@@ -2188,7 +2183,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
         yPosition += 10;
         
-        // Mensualités si applicable
         if (!isRental && this.globalPaymentMonths['alarm'] > 0) {
             const monthlyAmount = document.getElementById('alarm-monthly-amount').textContent;
             const monthlyCount = document.getElementById('alarm-monthly-count').textContent;
@@ -2264,7 +2258,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPosition, { align: 'right' });
     }
     
-    // Pied de page
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -2274,7 +2267,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         doc.text('Dialarme - Devis généré automatiquement', 105, 295, { align: 'center' });
     }
     
-    // Sauvegarder
     const filename = `devis-${type}-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
     
