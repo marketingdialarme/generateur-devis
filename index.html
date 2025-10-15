@@ -715,8 +715,7 @@
 
             <div class="quote-section">
                 <h3>🛡️ 1. Kit de base 
-                    <button class="add-product-btn" onclick="showKitSelector()" title="Sélectionner un kit prédéfini">📦</button>
-                    <button class="add-product-btn" onclick="addProductLine('alarm-material')" title="Ajouter un produit">+</button>
+                    <button class="add-product-btn" onclick="showKitSelector()" title="Ajouter un kit prédéfini">+</button>
                 </h3>
                 <div id="alarm-material-products"></div>
                 <div class="discount-section">
@@ -1930,90 +1929,160 @@ showKitSelector() {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 10000;
-        animation: fadeIn 0.3s ease;
     `;
     
+    const selectKit = (btn, centralType, kitType) => {
+        // Désélectionner tous les autres boutons
+        modal.querySelectorAll('.kit-btn').forEach(b => {
+            b.style.background = 'white';
+            b.style.borderWidth = '2px';
+            const checkmark = b.querySelector('.checkmark');
+            if (checkmark) checkmark.remove();
+        });
+        
+        // Sélectionner le bouton cliqué
+        const isTitane = centralType === 'titane';
+        btn.style.background = isTitane ? '#fffef0' : '#f8f9fa';
+        btn.style.borderWidth = '3px';
+        
+        // Ajouter un checkmark
+        if (!btn.querySelector('.checkmark')) {
+            const checkmark = document.createElement('div');
+            checkmark.className = 'checkmark';
+            checkmark.innerHTML = '✓';
+            checkmark.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: ${isTitane ? '#f4e600' : '#6c757d'};
+                color: white;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 14px;
+                animation: scaleIn 0.2s ease;
+            `;
+            btn.appendChild(checkmark);
+        }
+        
+        // Appliquer le kit après un court délai
+        setTimeout(() => {
+            this.applyKit(centralType, kitType);
+            modal.remove();
+        }, 400);
+    };
+    
     modal.innerHTML = `
-        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h2 style="margin: 0; color: #333;">📦 Sélectionner un kit prédéfini</h2>
-                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
+        <style>
+            @keyframes scaleIn {
+                from { transform: scale(0); }
+                to { transform: scale(1); }
+            }
+        </style>
+        <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
+                <h2 style="margin: 0; color: #333; font-size: 20px;">Sélectionner un kit de base</h2>
+                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #e0e0e0; color: #666; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; line-height: 1; transition: all 0.2s;" onmouseover="this.style.background='#d0d0d0'" onmouseout="this.style.background='#e0e0e0'">×</button>
             </div>
             
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #f4e600; margin-bottom: 15px;">🔷 Centrale Titane (690 CHF)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <button onclick="generator.applyKit('titane', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 2x Détecteur volumétrique<br>
-                            • 1x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - 690 CHF</h3>
+                <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                    <button class="kit-btn" data-central="titane" data-kit="kit1"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Standard</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            2 Détecteurs volumétriques<br>
+                            1 Détecteur d'ouverture<br>
+                            1 Clavier + 1 Sirène
                         </div>
                     </button>
-                    <button onclick="generator.applyKit('titane', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #f4e600 0%, #e6d200 100%); border: 2px solid #d4c200; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 1x Détecteur volumétrique<br>
-                            • 3x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
+                    <button class="kit-btn" data-central="titane" data-kit="kit2"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Périmétrique</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            1 Détecteur volumétrique<br>
+                            3 Détecteurs d'ouverture<br>
+                            1 Clavier + 1 Sirène
                         </div>
                     </button>
                 </div>
             </div>
             
             <div>
-                <h3 style="color: #333; margin-bottom: 15px;">🔶 Centrale Jablotron (990 CHF)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button onclick="generator.applyKit('jablotron', 'kit1'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Standard</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 2x Détecteur volumétrique<br>
-                            • 1x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
+                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Jablotron - 990 CHF</h3>
+                <div style="display: flex; gap: 12px;">
+                    <button class="kit-btn" data-central="jablotron" data-kit="kit1"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Standard</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            2 Détecteurs volumétriques<br>
+                            1 Détecteur d'ouverture<br>
+                            1 Clavier + 1 Sirène
                         </div>
                     </button>
-                    <button onclick="generator.applyKit('jablotron', 'kit2'); this.closest('div[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 20px; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; border: 2px solid #495057; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 500; transition: transform 0.2s;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">📦 Kit Périmétrique</div>
-                        <div style="font-size: 14px; text-align: left;">
-                            • 1x Détecteur volumétrique<br>
-                            • 3x Détecteur d'ouverture<br>
-                            • 1x Clavier<br>
-                            • 1x Sirène déportée
+                    <button class="kit-btn" data-central="jablotron" data-kit="kit2"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Périmétrique</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            1 Détecteur volumétrique<br>
+                            3 Détecteurs d'ouverture<br>
+                            1 Clavier + 1 Sirène
                         </div>
                     </button>
                 </div>
             </div>
             
-            <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; font-size: 14px; color: #6c757d;">
-                💡 <strong>Astuce :</strong> Le kit de base sera ajouté et marqué comme OFFERT automatiquement. Vous pourrez ensuite ajouter du matériel supplémentaire.
-            </p>
+            <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-left: 3px solid #f4e600; border-radius: 4px;">
+                <p style="margin: 0; font-size: 13px; color: #666;">
+                    💡 Le kit sera automatiquement marqué comme OFFERT
+                </p>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove(); addProductLine('alarm-material')" 
+                        style="background: transparent; color: #666; border: 1px solid #ddd; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f8f9fa'; this.style.borderColor='#bbb'"
+                        onmouseout="this.style.background='transparent'; this.style.borderColor='#ddd'">
+                    ou ajouter un produit manuellement
+                </button>
+            </div>
         </div>
     `;
     
     document.body.appendChild(modal);
     
-    modal.querySelectorAll('button[onclick*="applyKit"]').forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'translateY(-3px) scale(1.02)';
-            btn.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+    // Ajouter les événements de clic sur les boutons de kit
+    modal.querySelectorAll('.kit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const centralType = btn.getAttribute('data-central');
+            const kitType = btn.getAttribute('data-kit');
+            selectKit(btn, centralType, kitType);
         });
-        btn.addEventListener('mouseleave', () => {
-            btn.style.transform = 'translateY(0) scale(1)';
-            btn.style.boxShadow = 'none';
-        });
+    });
+    
+    // Fermeture au clic sur le fond
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
     });
 }
 applyKit(centralType, kitType) {
