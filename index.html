@@ -2694,69 +2694,69 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
 
             createAdminFeesPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-                yPos += 15;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
+    yPos += 15;
 
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Description', 120, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
+    doc.setFillColor(244, 230, 0);
+    doc.rect(40, yPos, 515, 16, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Qté', 50, yPos + 10);
+    doc.text('Description', 120, yPos + 10);
+    doc.text('Prix uni. HT', 400, yPos + 10);
+    doc.text('Total HT', 480, yPos + 10);
+    yPos += 16;
 
-                const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
-                    { qty: 1, desc: 'Frais de dossier', price: 190 }
-                ];
+    const adminItems = [
+        { qty: 1, desc: 'Carte SIM + Activation', price: 50 },
+        { qty: 1, desc: 'Frais de dossier', price: 190 }
+    ];
 
-                adminItems.forEach(item => {
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setLineWidth(0.5);
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.text(item.qty.toString(), 55, yPos + 9);
-                    doc.text(item.desc, 90, yPos + 9);
-                    doc.text(item.price.toFixed(2), 405, yPos + 9);
-                    doc.text(item.price.toFixed(2), 485, yPos + 9);
-                    yPos += 14;
-                });
+    let lineCount = 0;
+    adminItems.forEach(item => {
+        lineCount++;
+        
+        // Alternance gris/blanc comme le kit de base
+        if (lineCount % 2 === 0) {
+            doc.setFillColor(245, 245, 245);
+            doc.rect(40, yPos, 515, 14, 'F');
+        }
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(0, 0, 0);
+        doc.text(item.qty.toString(), 55, yPos + 9);
+        doc.text(item.desc, 90, yPos + 9);
+        doc.text(item.price.toFixed(2), 405, yPos + 9);
+        doc.text(item.price.toFixed(2), 485, yPos + 9);
+        yPos += 14;
+    });
 
-                const adminTotalTTC = this.roundToFiveCents(240 * 1.081);
-                const adminTVA = adminTotalTTC - 240;
+    const adminTotalTTC = this.roundToFiveCents(240 * 1.081);
+    const adminTVA = adminTotalTTC - 240;
 
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(390, yPos, 165, 36, 'F');
 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text('240.00', 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 23);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 23);
-                doc.text('Total T.T.C.', 400, yPos + 37);
-                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 37);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('Total H.T.', 400, yPos + 8);
+    doc.text('240.00', 485, yPos + 8);
+    doc.text('TVA 8.1%', 400, yPos + 20);
+    doc.text(adminTVA.toFixed(2), 485, yPos + 20);
+    doc.text('Total T.T.C.', 400, yPos + 32);
+    doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
 
-                yPos += 50;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('Montant à régler à l\'installation', 40, yPos);
+    yPos += 44;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Montant à régler à l\'installation', 40, yPos);
 
-                return yPos + 15;
-            }
+    return yPos + 15;
+}
 
             createCameraInstallPDF(doc, yPos) {
                 doc.setFont('helvetica', 'bold');
@@ -2919,227 +2919,225 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
 
             createFinalSummaryPDF(doc, yPos, type, isRental) {
-                yPos += 15;
-                
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-                yPos += 16;
+    yPos += 15;
+    
+    doc.setFillColor(244, 230, 0);
+    doc.rect(40, yPos, 515, 16, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
+    yPos += 16;
 
-                let totalMensualitesHT = 0;
-                let totalComptantHT = 0;
-                let monthsCount = 0;
-                let surveillanceMonthlyHT = 0;
-                
-                if (type === 'alarm') {
-                    const materialTotal = this.calculateSectionTotal('alarm-material');
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-                    const totalInstallation = installTotal + otherInstallationTotal;
-                    
-                    const adminTotal = 240;
-                    
-                    const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
-                    
-                    const surveillanceType = document.getElementById('surveillance-type')?.value;
-                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-                    const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
-                    surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
-                    
-                    if (paymentMonths > 0) {
-                        totalMensualitesHT = materialTotal + totalInstallation;
-                        monthsCount = paymentMonths;
-                    } else {
-                        totalComptantHT = materialTotal + totalInstallation;
-                    }
-                    
-                    totalComptantHT += adminTotal;
-                    
-                } else if (type === 'camera') {
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                    const installPrice = this.calculateCameraInstallationPrice();
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const paymentMonths = this.globalPaymentMonths['camera'] || 0;
-                    
-                    if (paymentMonths > 0) {
-                        totalMensualitesHT = materialTotal + installTotal;
-                        monthsCount = paymentMonths;
-                    } else {
-                        totalComptantHT = materialTotal + installTotal;
-                    }
-                    
-                    if (!isRental) {
-                        const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-                        if (remoteAccess) {
-                            surveillanceMonthlyHT = 20;
-                        }
-                    }
-                } else if (type === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                    
-                    const installPrice = 490;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    const paymentMonths = this.globalPaymentMonths['fog'] || 0;
-                    
-                    if (paymentMonths > 0) {
-                        totalMensualitesHT = materialTotal;
-                        monthsCount = paymentMonths;
-                        
-                        totalComptantHT = installTotal;
-                    } else {
-                        totalComptantHT = materialTotal + installTotal;
-                    }
-                }
-
-                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    let mensualiteMatHT = 0;
-                    let mensualiteInstallHT = 0;
-                    
-                    if (type === 'alarm') {
-                        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                        
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-                        
-                        const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
-                        mensualiteMatHT += otherInstallMensualite;
-                    } else if (type === 'camera') {
-                        const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                        
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-                    } else if (type === 'fog') {
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
-                        mensualiteInstallHT = 0;
-                    }
-                    
-                    const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
-                    const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
-                    const totalMensuelTVA = totalMensuelHT * 0.081;
-                    const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
-
-                    // 🎨 RECTANGLE PRINCIPAL MODERNE - Gris clair avec angles arrondis
-                    doc.setFillColor(245, 245, 245);
-                    doc.roundedRect(40, yPos, 515, 95, 8, 8, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
-                    
-                    // Ligne 1 : Installation et matériel supp. + Télésurveillance
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    const serviceName = type === 'alarm' ? 
-                        (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
-                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
-                        'Vision à distance';
-                    
-                    doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
-                    
-                    // Saut de ligne
-                    yPos += 15;
-                    
-                    // Nouvelle ligne : Total mensualité HT, TVA, Total TTC
-                    doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 35);
-                    doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 35);
-                    
-                    // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-                    doc.setFillColor(255, 255, 255);
-                    doc.roundedRect(420, yPos + 25, 120, 20, 5, 5, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 38);
-                    
-                    yPos += 80;
-                    
-                    // MONTANTS À RÉGLER COMPTANT
-                    if (totalComptantHT > 0) {
-                        // 🎨 RECTANGLE MODERNE - Gris clair avec angles arrondis
-                        doc.setFillColor(245, 245, 245);
-                        doc.roundedRect(40, yPos, 515, 50, 8, 8, 'F');
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(9);
-                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
-                        
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
-                        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 32);
-                        const comptantTVA = totalComptantHT * 0.081;
-                        const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
-                        doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 32);
-                        
-                        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-                        doc.setFillColor(255, 255, 255);
-                        doc.roundedRect(420, yPos + 22, 120, 20, 5, 5, 'F');
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 35);
-                        
-                        yPos += 55;
-                    }
-                    
-                } else {
-                    const totalTVA = totalComptantHT * 0.081;
-                    const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
-                    
-                    // 🎨 RECTANGLE MODERNE - Gris clair avec angles arrondis
-                    doc.setFillColor(245, 245, 245);
-                    doc.roundedRect(40, yPos, 515, 50, 8, 8, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    if (isRental) {
-                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
-                    } else {
-                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 32);
-                    doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 32);
-                    
-                    // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
-                    doc.setFillColor(255, 255, 255);
-                    doc.roundedRect(420, yPos + 22, 120, 20, 5, 5, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 35);
-                    
-                    yPos += 55;
-                }
-
-                if (!isRental && monthsCount > 0) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0);
-                    yPos += 10;
-                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
-                    yPos += 12;
-                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
-                    yPos += 15;
-                }
-
-                return yPos;
+    let totalMensualitesHT = 0;
+    let totalComptantHT = 0;
+    let monthsCount = 0;
+    let surveillanceMonthlyHT = 0;
+    
+    if (type === 'alarm') {
+        const materialTotal = this.calculateSectionTotal('alarm-material');
+        
+        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+        const installPrice = this.calculateInstallationPrice(installQty);
+        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+        const installTotal = installOffered ? 0 : installPrice;
+        const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+        const totalInstallation = installTotal + otherInstallationTotal;
+        
+        const adminTotal = 240;
+        
+        const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
+        
+        const surveillanceType = document.getElementById('surveillance-type')?.value;
+        const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
+        const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
+        surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
+        
+        if (paymentMonths > 0) {
+            totalMensualitesHT = materialTotal + totalInstallation;
+            monthsCount = paymentMonths;
+        } else {
+            totalComptantHT = materialTotal + totalInstallation;
+        }
+        
+        totalComptantHT += adminTotal;
+        
+    } else if (type === 'camera') {
+        const materialTotal = this.calculateSectionTotal('camera-material');
+        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+        const installPrice = this.calculateCameraInstallationPrice();
+        const installTotal = installOffered ? 0 : installPrice;
+        const paymentMonths = this.globalPaymentMonths['camera'] || 0;
+        
+        if (paymentMonths > 0) {
+            totalMensualitesHT = materialTotal + installTotal;
+            monthsCount = paymentMonths;
+        } else {
+            totalComptantHT = materialTotal + installTotal;
+        }
+        
+        if (!isRental) {
+            const remoteAccess = document.getElementById('camera-remote-access')?.checked;
+            if (remoteAccess) {
+                surveillanceMonthlyHT = 20;
             }
+        }
+    } else if (type === 'fog') {
+        const materialTotal = this.calculateSectionTotal('fog-material');
+        const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+        
+        const installPrice = 490;
+        const installTotal = installOffered ? 0 : installPrice;
+        
+        const paymentMonths = this.globalPaymentMonths['fog'] || 0;
+        
+        if (paymentMonths > 0) {
+            totalMensualitesHT = materialTotal;
+            monthsCount = paymentMonths;
+            
+            totalComptantHT = installTotal;
+        } else {
+            totalComptantHT = materialTotal + installTotal;
+        }
+    }
 
+    if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
+        let mensualiteMatHT = 0;
+        let mensualiteInstallHT = 0;
+        
+        if (type === 'alarm') {
+            const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
+            const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
+            
+            mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
+            mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
+            
+            const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
+            mensualiteMatHT += otherInstallMensualite;
+        } else if (type === 'camera') {
+            const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
+            const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
+            
+            mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
+            mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
+        } else if (type === 'fog') {
+            mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
+            mensualiteInstallHT = 0;
+        }
+        
+        const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
+        const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
+        const totalMensuelTVA = totalMensuelHT * 0.081;
+        const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * 1.081);
+
+        // 🎨 RECTANGLE PRINCIPAL MODERNE - Hauteur réduite
+        doc.setFillColor(245, 245, 245);
+        doc.roundedRect(40, yPos, 515, 75, 8, 8, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
+        
+        // Ligne 1 : Installation et matériel supp. + Télésurveillance
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        const serviceName = type === 'alarm' ? 
+            (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
+            document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 'Autosurveillance') : 
+            'Vision à distance';
+        
+        doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
+        
+        // Ligne 2 : Total mensualité HT, TVA
+        doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 48);
+        doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 48);
+        
+        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(420, yPos + 38, 120, 20, 5, 5, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 51);
+        
+        yPos += 75;
+        
+        // SAUT DE LIGNE ENTRE LES 2 RECTANGLES
+        if (totalComptantHT > 0) {
+            yPos += 15;  // 🔥 SAUT DE LIGNE ICI
+            
+            // 🎨 RECTANGLE MODERNE - Hauteur réduite
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+            const comptantTVA = totalComptantHT * 0.081;
+            const comptantTTC = this.roundToFiveCents(totalComptantHT * 1.081);
+            doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
+            
+            // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 33);
+            
+            yPos += 50;
+        }
+        
+    } else {
+        const totalTVA = totalComptantHT * 0.081;
+        const totalTTC = this.roundToFiveCents(totalComptantHT * 1.081);
+        
+        // 🎨 RECTANGLE MODERNE - Hauteur réduite
+        doc.setFillColor(245, 245, 245);
+        doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        
+        if (isRental) {
+            doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
+        } else {
+            doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
+        }
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
+        doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
+        
+        // 🎨 RECTANGLE BLANC POUR TOTAL TTC - Angles arrondis
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
+        
+        yPos += 50;
+    }
+
+    if (!isRental && monthsCount > 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        yPos += 10;
+        doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
+        yPos += 12;
+        doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
+        yPos += 15;
+    }
+
+    return yPos;
+}
             createPDFFooter(doc, clientName) {
                 doc.setFillColor(51, 51, 51);
                 doc.rect(0, 720, 595, 122, 'F');
