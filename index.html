@@ -120,7 +120,6 @@
             4: 2580,  // 2 jours
             5: 3270,  // 2.5 jours
             6: 3870   // 3 jours
-            // Au-delà : calcul automatique (690 CHF par demi-journée)
         };
 
         // 🔧 INSTALLATION - PRIX MENSUELS (par nombre de demi-journées et durée)
@@ -131,10 +130,9 @@
             4: { 24: 119, 36: 83, 48: 65 },
             5: { 24: 151, 36: 106, 48: 83 },
             6: { 24: 179, 36: 125, 48: 98 }
-            // Au-delà : calcul automatique basé sur INSTALLATION_PRICES
         };
 
-        // 🔧 PRIX DE BASE D'UNE DEMI-JOURNÉE (pour calculs automatiques au-delà de 6)
+        // 🔧 PRIX DE BASE D'UNE DEMI-JOURNÉE
         const HALF_DAY_PRICE = 690;
         const HALF_DAY_MONTHLY_24 = 32;
         const HALF_DAY_MONTHLY_36 = 23;
@@ -148,15 +146,15 @@
 
         // 📄 FRAIS DE DOSSIER
         const ADMIN_FEES = {
-            simCard: 50.00,        // Carte SIM + Activation
-            processingFee: 190.00  // Frais de dossier
+            simCard: 50.00,
+            processingFee: 190.00
         };
 
         // 📹 CAMÉRA - INSTALLATION
-        const CAMERA_INSTALL_BASE_PRICE = 690.00; // Utilise la même logique qu'alarme
+        const CAMERA_INSTALL_BASE_PRICE = 690.00;
 
         // 📹 CAMÉRA - VISION À DISTANCE
-        const REMOTE_ACCESS_PRICE = 20.00; // CHF/mois
+        const REMOTE_ACCESS_PRICE = 20.00;
 
         // 💨 GÉNÉRATEUR DE BROUILLARD - INSTALLATION
         const FOG_INSTALL_PRICE = 490.00;
@@ -256,6 +254,14 @@
         
         // ============================================
         // ⭐⭐⭐ FIN DES CATALOGUES ET CONFIGURATION ⭐⭐⭐
+        // ============================================
+
+        // ============================================
+        // 📧 CONFIGURATION DE L'ENVOI EMAIL ET DRIVE
+        // ============================================
+        
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSjCeiH2_1K5LqLtNkhrGyRYkkQa1mNNhafXknlMlhxRIvqpeONSWAGkbywYO4Q_1Q/exec';
+        
         // ============================================
     </script>
 
@@ -731,6 +737,17 @@
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+            to { 
+                transform: translateX(400px); 
+                opacity: 0; 
+            }
         }
 
         @media (max-width: 768px) {
@@ -1903,7 +1920,6 @@
                     }
                 });
                 
-                // Appliquer la réduction sur le total APRÈS avoir calculé tous les produits
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
@@ -1913,7 +1929,7 @@
                         discountAmount = total * (discountValue / 100);
                         total = total - discountAmount;
                     } else {
-                        discountAmount = Math.min(discountValue, total); // Ne pas descendre en négatif
+                        discountAmount = Math.min(discountValue, total);
                         total = Math.max(0, total - discountValue);
                     }
                 }
@@ -1925,12 +1941,10 @@
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     
-                    // Calculer la réduction matériel
                     const materialDiscountType = document.getElementById('alarm-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('alarm-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
                     
-                    // Calculer le total avant réduction pour affichage
                     const materialContainer = document.getElementById('alarm-material-products');
                     if (materialContainer) {
                         const productLines = materialContainer.querySelectorAll('.product-line');
@@ -1967,7 +1981,6 @@
                     
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
                     
-                    // Calculer la réduction installation
                     const installDiscountType = document.getElementById('alarm-installation-discount-type')?.value || 'percent';
                     const installDiscountValue = parseFloat(document.getElementById('alarm-installation-discount-value')?.value) || 0;
                     let installTotalBeforeDiscount = installTotal;
@@ -2017,7 +2030,6 @@
                     const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2083,7 +2095,6 @@
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     
-                    // Calculer la réduction matériel caméra
                     const materialDiscountType = document.getElementById('camera-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('camera-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
@@ -2122,7 +2133,6 @@
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2179,7 +2189,6 @@
                 else if (this.currentTab === 'fog') {
                     const materialTotal = this.calculateSectionTotal('fog-material');
                     
-                    // Calculer la réduction matériel fog
                     const materialDiscountType = document.getElementById('fog-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('fog-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
@@ -2211,7 +2220,6 @@
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2354,34 +2362,6 @@ showKitSelector() {
             </div>
             
             <div style="margin-bottom: 25px;">
-                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - ${CENTRALS_CONFIG.titane.price.toFixed(2)} CHF</h3>
-                <div style="display: flex; gap: 12px; margin-bottom: 8px;">
-                    <button class="kit-btn" data-central="titane" data-kit="kit1"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            2 Détecteurs volumétriques<br>
-                            1 Détecteur d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                    <button class="kit-btn" data-central="titane" data-kit="kit2"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            1 Détecteur volumétrique<br>
-                            3 Détecteurs d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <div>
                 <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Jablotron - ${CENTRALS_CONFIG.jablotron.price.toFixed(2)} CHF</h3>
                 <div style="display: flex; gap: 12px;">
                     <button class="kit-btn" data-central="jablotron" data-kit="kit1"
@@ -2419,7 +2399,6 @@ showKitSelector() {
     
     document.body.appendChild(modal);
     
-    // Ajouter l'événement pour fermer le modal
     const closeBtn = modal.querySelector('#close-modal-btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeModal);
@@ -2464,7 +2443,7 @@ applyKit(centralType, kitType) {
     
     this.updateSurveillanceOptions(centralType);
     this.updateTotals();
-    this.showNotification(`✅ ${config.name} + ${kit.name} ajouté avec succès!`);
+    this.showNotification(`✅ ${config.name} + ${kit.name} ajouté avec succès!`, 'success');
 }
 
 addProductToContainer(sectionId, productId, quantity, isOffered) {
@@ -2502,25 +2481,30 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     container.appendChild(productLine);
 }
 
-            async saveToGoogleDrive(pdfBlob, filename, commercial) {
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHB_lGHXUT9WltpyWE_mtsVL-lxyS6FDK42HP5nZjxhzObJgMuSD2N8k4gQUPK_jQ/exec';
-                
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            async sendToEmailAndDrive(pdfBlob, filename, commercial, clientName) {
+                this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
                 
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
+                    
                     reader.onload = async function() {
                         const base64 = reader.result.split(',')[1];
                         
                         try {
+                            const payload = {
+                                pdfBase64: base64,
+                                filename: filename,
+                                commercial: commercial,
+                                clientName: clientName,
+                                timestamp: new Date().toISOString()
+                            };
+                            
+                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                            
                             if (isIOS || isSafari) {
                                 const formData = new FormData();
-                                formData.append('data', JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                }));
+                                formData.append('data', JSON.stringify(payload));
                                 
                                 const form = document.createElement('form');
                                 form.method = 'POST';
@@ -2531,11 +2515,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                 const input = document.createElement('input');
                                 input.type = 'hidden';
                                 input.name = 'data';
-                                input.value = JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                });
+                                input.value = JSON.stringify(payload);
                                 
                                 form.appendChild(input);
                                 document.body.appendChild(form);
@@ -2552,10 +2532,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                 form.submit();
                                 
                                 setTimeout(() => {
-                                    document.body.removeChild(form);
+                                    if (form.parentNode) document.body.removeChild(form);
                                 }, 2000);
                                 
-                                console.log('PDF envoyé à Google Drive (iOS/Safari)');
+                                console.log('✅ PDF envoyé (iOS/Safari)');
                                 resolve(true);
                                 
                             } else {
@@ -2563,80 +2543,28 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                     method: 'POST',
                                     mode: 'no-cors',
                                     headers: {
-                                        'Content-Type': 'text/plain',
+                                        'Content-Type': 'application/json',
                                     },
-                                    body: JSON.stringify({
-                                        pdfBase64: base64,
-                                        filename: filename,
-                                        commercial: commercial
-                                    })
+                                    body: JSON.stringify(payload)
                                 });
                                 
-                                console.log('PDF envoyé à Google Drive');
+                                console.log('✅ PDF envoyé par email et sauvegardé dans Drive');
                                 resolve(true);
                             }
-                        } catch (error) {
-                            console.error('Erreur lors de l\'envoi à Google Drive:', error);
                             
-                            if (isIOS || isSafari) {
-                                const params = encodeURIComponent(JSON.stringify({
-                                    pdfBase64: base64.substring(0, 100) + '...',
-                                    filename: filename,
-                                    commercial: commercial,
-                                    error: 'Upload depuis iOS'
-                                }));
-                                
-                                generator.showIOSUploadButton(pdfBlob, filename, commercial);
-                            }
+                        } catch (error) {
+                            console.error('❌ Erreur lors de l\'envoi:', error);
                             reject(error);
                         }
                     };
+                    
+                    reader.onerror = function(error) {
+                        console.error('❌ Erreur de lecture du fichier:', error);
+                        reject(error);
+                    };
+                    
                     reader.readAsDataURL(pdfBlob);
                 });
-            }
-            
-            showIOSUploadButton(pdfBlob, filename, commercial) {
-                const existingBtn = document.getElementById('ios-upload-btn');
-                if (existingBtn) existingBtn.remove();
-                
-                const uploadBtn = document.createElement('button');
-                uploadBtn.id = 'ios-upload-btn';
-                uploadBtn.className = 'btn btn-primary';
-                uploadBtn.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    padding: 15px 30px;
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 16px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-                `;
-                uploadBtn.innerHTML = '☁️ Réessayer l\'upload vers Drive';
-                
-                uploadBtn.onclick = () => {
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-                        .then(() => {
-                            this.showNotification('Upload réussi !');
-                            uploadBtn.remove();
-                        })
-                        .catch(() => {
-                            this.showNotification('Échec - Téléchargez manuellement');
-                        });
-                };
-                
-                document.body.appendChild(uploadBtn);
-                
-                setTimeout(() => {
-                    if (document.getElementById('ios-upload-btn')) {
-                        uploadBtn.remove();
-                    }
-                }, 30000);
             }
 
             generatePDF(type) {
@@ -2762,22 +2690,24 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
                     this.createPDFFooter(doc, clientName);
 
-                    this.showNotification('PDF généré avec succès!');
-                    
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-                    
                     const pdfBlob = doc.output('blob');
                     
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+                    // Téléchargement local
+                    doc.save(filename);
+                    
+                    // Notification initiale
+                    this.showNotification('✅ PDF généré localement', 'success', 2000);
+                    
+                    // Envoi par email et sauvegarde dans Drive
+                    this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName)
                         .then(() => {
-                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
+                            this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 4000);
                         })
                         .catch(error => {
-                            console.error('Erreur Google Drive:', error);
-                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
+                            console.error('Erreur lors de l\'envoi:', error);
+                            this.showNotification('⚠️ PDF généré, mais erreur d\'envoi email/Drive', 'warning', 4000);
                         });
-                    
-                    doc.save(filename);
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
@@ -2977,7 +2907,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos += 12;
                 }
 
-                // Appliquer la réduction
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
@@ -2991,7 +2920,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         sectionTotal = Math.max(0, sectionTotal - discountValue);
                     }
                     
-                    // Afficher la ligne de réduction dans le PDF
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
@@ -3659,28 +3587,68 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 linkElement.setAttribute('download', exportFileDefaultName);
                 linkElement.click();
                 
-                this.showNotification('Devis exporté avec succès!');
+                this.showNotification('Devis exporté avec succès!', 'success');
             }
 
-            showNotification(message) {
+            showNotification(message, type = 'success', duration = 3000) {
+                const existingNotifs = document.querySelectorAll('.dialarme-notification');
+                existingNotifs.forEach(n => n.remove());
+                
                 const notification = document.createElement('div');
+                notification.className = 'dialarme-notification';
+                
+                let bgColor = '#28a745';
+                let icon = '✅';
+                
+                if (type === 'info') {
+                    bgColor = '#17a2b8';
+                    icon = '📤';
+                }
+                if (type === 'warning') {
+                    bgColor = '#ffc107';
+                    icon = '⚠️';
+                }
+                if (type === 'error') {
+                    bgColor = '#dc3545';
+                    icon = '❌';
+                }
+                
                 notification.style.cssText = `
                     position: fixed;
                     top: 20px;
                     right: 20px;
-                    background: #28a745;
+                    background: ${bgColor};
                     color: white;
-                    padding: 15px 20px;
-                    border-radius: 5px;
+                    padding: 15px 25px;
+                    border-radius: 10px;
                     z-index: 10000;
                     animation: slideIn 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    max-width: 400px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
                 `;
-                notification.textContent = message;
+                
+                notification.innerHTML = `
+                    <span style="font-size: 18px;">${icon}</span>
+                    <span>${message}</span>
+                `;
+                
                 document.body.appendChild(notification);
 
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
+                if (duration > 0) {
+                    setTimeout(() => {
+                        notification.style.animation = 'slideOut 0.3s ease';
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 300);
+                    }, duration);
+                }
             }
         }
 
@@ -3780,7 +3748,36 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             console.log('📋 Catalogues disponibles:', Object.keys(generator.catalog));
             console.log('👥 Commerciaux disponibles:', COMMERCIALS_LIST.length);
             console.log('💰 Configuration des prix chargée');
+            console.log('📧 URL Google Script:', GOOGLE_SCRIPT_URL);
         });
     </script>
 </body>
-</html>
+</html>weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - ${CENTRALS_CONFIG.titane.price.toFixed(2)} CHF</h3>
+                <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                    <button class="kit-btn" data-central="titane" data-kit="kit1"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            2 Détecteurs volumétriques<br>
+                            1 Détecteur d'ouverture<br>
+                            1 Clavier + 1 Sirène
+                        </div>
+                    </button>
+                    <button class="kit-btn" data-central="titane" data-kit="kit2"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            1 Détecteur volumétrique<br>
+                            3 Détecteurs d'ouverture<br>
+                            1 Clavier + 1 Sirène
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-
