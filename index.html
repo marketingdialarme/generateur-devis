@@ -2482,94 +2482,107 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 }
 
             async sendToEmailAndDrive(pdfBlob, filename, commercial, clientName) {
-                this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async function() {
+            const base64 = reader.result.split(',')[1];
+            
+            try {
+                const payload = {
+                    pdfBase64: base64,
+                    filename: filename,
+                    commercial: commercial,
+                    clientName: clientName,
+                    timestamp: new Date().toISOString()
+                };
                 
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                
+                console.log('📱 Appareil:', { isIOS, isSafari });
+                console.log('📦 Taille PDF:', base64.length, 'caractères');
+                
+                if (isIOS || isSafari) {
+                    console.log('📤 Envoi via formulaire (iOS/Safari)');
                     
-                    reader.onload = async function() {
-                        const base64 = reader.result.split(',')[1];
-                        
-                        try {
-                            const payload = {
-                                pdfBase64: base64,
-                                filename: filename,
-                                commercial: commercial,
-                                clientName: clientName,
-                                timestamp: new Date().toISOString()
-                            };
-                            
-                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                            
-                            if (isIOS || isSafari) {
-                                const formData = new FormData();
-                                formData.append('data', JSON.stringify(payload));
-                                
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.action = GOOGLE_SCRIPT_URL;
-                                form.target = 'hidden_iframe';
-                                form.style.display = 'none';
-                                
-                                const input = document.createElement('input');
-                                input.type = 'hidden';
-                                input.name = 'data';
-                                input.value = JSON.stringify(payload);
-                                
-                                form.appendChild(input);
-                                document.body.appendChild(form);
-                                
-                                let iframe = document.getElementById('hidden_iframe');
-                                if (!iframe) {
-                                    iframe = document.createElement('iframe');
-                                    iframe.id = 'hidden_iframe';
-                                    iframe.name = 'hidden_iframe';
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                }
-                                
-                                form.submit();
-                                
-                                setTimeout(() => {
-                                    if (form.parentNode) document.body.removeChild(form);
-                                }, 2000);
-                                
-                                console.log('✅ PDF envoyé (iOS/Safari)');
-                                resolve(true);
-                                
-                            } else {
-                                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                                    method: 'POST',
-                                    mode: 'no-cors',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify(payload)
-                                });
-                                
-                                console.log('✅ PDF envoyé par email et sauvegardé dans Drive');
-                                resolve(true);
-                            }
-                            
-                        } catch (error) {
-                            console.error('❌ Erreur lors de l\'envoi:', error);
-                            reject(error);
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = GOOGLE_SCRIPT_URL;
+                    form.target = 'hidden_iframe';
+                    form.style.display = 'none';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'data';
+                    input.value = JSON.stringify(payload);
+                    
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    
+                    let iframe = document.getElementById('hidden_iframe');
+                    if (!iframe) {
+                        iframe = document.createElement('iframe');
+                        iframe.id = 'hidden_iframe';
+                        iframe.name = 'hidden_iframe';
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                    }
+                    
+                    let resolved = false;
+                    iframe.onload = function() {
+                        if (!resolved) {
+                            resolved = true;
+                            console.log('✅ Envoi probablement réussi (iframe chargée)');
+                            resolve(true);
                         }
                     };
                     
-                    reader.onerror = function(error) {
-                        console.error('❌ Erreur de lecture du fichier:', error);
-                        reject(error);
-                    };
+                    form.submit();
                     
-                    reader.readAsDataURL(pdfBlob);
-                });
+                    setTimeout(() => {
+                        if (!resolved) {
+                            resolved = true;
+                            console.log('⏱️ Timeout 5s - considéré comme envoyé');
+                            resolve(true);
+                        }
+                        if (form.parentNode) document.body.removeChild(form);
+                    }, 5000);
+                    
+                } else {
+                    console.log('📤 Envoi via fetch (desktop)');
+                    
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    console.log('✅ Fetch terminé');
+                    await new Promise(r => setTimeout(r, 1000));
+                    resolve(true);
+                }
+                
+            } catch (error) {
+                console.error('❌ Erreur envoi:', error);
+                reject(error);
+            }
+        };
+        
+        reader.onerror = function(error) {
+            console.error('❌ Erreur lecture fichier:', error);
+            reject(error);
+        };
+        
+        reader.readAsDataURL(pdfBlob);
+    });
+}
             }
 
-            generatePDF(type) {
-                const isRental = this.rentalMode[type];
-                let clientNameField, commercialField, commercialCustomField;
+            async generatePDF(type) {
+    const isRental = this.rentalMode[type];
+    let clientNameField, commercialField, commercialCustomField;
                 
                 if (type === 'alarm') {
                     clientNameField = 'clientName';
@@ -2692,7 +2705,17 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     const pdfBlob = doc.output('blob');
-                    
+                    this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
+        
+        try {
+            await this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
+            this.showNotification('✅ PDF envoyé avec succès!', 'success', 3000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+            console.error('Erreur envoi:', error);
+            this.showNotification('⚠️ Erreur d\'envoi, mais le PDF va se télécharger', 'warning', 3000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
                     // Téléchargement local
                     doc.save(filename);
                     
