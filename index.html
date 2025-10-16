@@ -2500,144 +2500,80 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         <button class="remove-btn" onclick="this.closest('.product-line').remove(); generator.detectSelectedCentral(); updateTotals();">×</button>
     `;
     
-    container.appendChild(productLine);
+                container.appendChild(productLine);
 }
 
-            async saveToGoogleDrive(pdfBlob, filename, commercial) {
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
-                
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                
+            // Utilitaire: convertir un Blob en Base64 (sans l'en-tête data:)
+            blobToBase64(blob) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = async function() {
-                        const base64 = reader.result.split(',')[1];
-                        
-                        try {
-                            if (isIOS || isSafari) {
-                                const formData = new FormData();
-                                formData.append('data', JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                }));
-                                
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.action = GOOGLE_SCRIPT_URL;
-                                form.target = 'hidden_iframe';
-                                form.style.display = 'none';
-                                
-                                const input = document.createElement('input');
-                                input.type = 'hidden';
-                                input.name = 'data';
-                                input.value = JSON.stringify({
-                                    pdfBase64: base64,
-                                    filename: filename,
-                                    commercial: commercial
-                                });
-                                
-                                form.appendChild(input);
-                                document.body.appendChild(form);
-                                
-                                let iframe = document.getElementById('hidden_iframe');
-                                if (!iframe) {
-                                    iframe = document.createElement('iframe');
-                                    iframe.id = 'hidden_iframe';
-                                    iframe.name = 'hidden_iframe';
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                }
-                                
-                                form.submit();
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(form);
-                                }, 2000);
-                                
-                                console.log('PDF envoyé à Google Drive (iOS/Safari)');
-                                resolve(true);
-                                
-                            } else {
-                                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                                    method: 'POST',
-                                    mode: 'no-cors',
-                                    headers: {
-                                        'Content-Type': 'text/plain',
-                                    },
-                                    body: JSON.stringify({
-                                        pdfBase64: base64,
-                                        filename: filename,
-                                        commercial: commercial
-                                    })
-                                });
-                                
-                                console.log('PDF envoyé à Google Drive');
-                                resolve(true);
-                            }
-                        } catch (error) {
-                            console.error('Erreur lors de l\'envoi à Google Drive:', error);
-                            
-                            if (isIOS || isSafari) {
-                                const params = encodeURIComponent(JSON.stringify({
-                                    pdfBase64: base64.substring(0, 100) + '...',
-                                    filename: filename,
-                                    commercial: commercial,
-                                    error: 'Upload depuis iOS'
-                                }));
-                                
-                                generator.showIOSUploadButton(pdfBlob, filename, commercial);
-                            }
-                            reject(error);
-                        }
+                    reader.onload = () => {
+                        const result = reader.result; // "data:application/pdf;base64,AAA..."
+                        const base64 = String(result).split(',')[1];
+                        resolve(base64);
                     };
-                    reader.readAsDataURL(pdfBlob);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
                 });
             }
-            
-            showIOSUploadButton(pdfBlob, filename, commercial) {
-                const existingBtn = document.getElementById('ios-upload-btn');
-                if (existingBtn) existingBtn.remove();
+
+            /**
+             * Enregistre le PDF dans Drive via Apps Script Web App (doPost)
+             * - pdfBlob: Blob du PDF (jsPDF/html2pdf, etc.)
+             * - filename: "Devis-2025-10-16.pdf"
+             * - commercial: n'importe quelle info métier à transmettre (string/objet)
+             * - options: { folderId?: string } (optionnel)
+             * Retourne: { ok, fileId, webViewLink }
+             */
+            async saveToGoogleDrive(pdfBlob, filename, commercial, options = {}) {
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
                 
-                const uploadBtn = document.createElement('button');
-                uploadBtn.id = 'ios-upload-btn';
-                uploadBtn.className = 'btn btn-primary';
-                uploadBtn.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    padding: 15px 30px;
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 50px;
-                    font-size: 16px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-                `;
-                uploadBtn.innerHTML = '☁️ Réessayer l\'upload vers Drive';
-                
-                uploadBtn.onclick = () => {
-                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
-                        .then(() => {
-                            this.showNotification('Upload réussi !');
-                            uploadBtn.remove();
-                        })
-                        .catch(() => {
-                            this.showNotification('Échec - Téléchargez manuellement');
+                try {
+                    // 1) Blob -> base64
+                    const base64 = await this.blobToBase64(pdfBlob);
+                    
+                    // 2) POST JSON vers Apps Script
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 60000); // sécurité 60s
+                    
+                    let res, data;
+                    try {
+                        res = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                filename,
+                                mimeType: 'application/pdf',
+                                base64,                 // <— clé attendue côté serveur
+                                commercial,             // <— tes métadonnées perso
+                                folderId: options.folderId || undefined
+                            })
                         });
-                };
-                
-                document.body.appendChild(uploadBtn);
-                
-                setTimeout(() => {
-                    if (document.getElementById('ios-upload-btn')) {
-                        uploadBtn.remove();
+                    } finally {
+                        clearTimeout(timeout);
                     }
-                }, 30000);
+                    
+                    // 3) Lire la réponse JSON de la Web App
+                    // (Apps Script renvoie du JSON si tu fais ContentService.JSON)
+                    try {
+                        data = await res.json();
+                    } catch {
+                        throw new Error("Réponse illisible (JSON) de la Web App.");
+                    }
+                    
+                    if (!res.ok || !data?.ok) {
+                        throw new Error(data?.error || `Upload échoué (HTTP ${res.status})`);
+                    }
+                    
+                    // Exemple de data: { ok: true, fileId: "...", webViewLink: "..." }
+                    console.log('✅ PDF sauvegardé sur Google Drive avec succès');
+                    return data;
+                    
+                } catch (error) {
+                    console.error('❌ Erreur lors de la sauvegarde sur Google Drive:', error);
+                    throw error;
+                }
             }
 
             generatePDF(type) {
