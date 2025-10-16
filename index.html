@@ -2386,7 +2386,8 @@ showKitSelector() {
                 <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Jablotron - ${CENTRALS_CONFIG.jablotron.price.toFixed(2)} CHF</h3>
                 <div style="display: flex; gap: 12px;">
                     <button class="kit-btn" data-central="jablotron" data-kit="kit1"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px;
+                            cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
                             onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
                             onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
                         <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
@@ -2500,7 +2501,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
         <button class="remove-btn" onclick="this.closest('.product-line').remove(); generator.detectSelectedCentral(); updateTotals();">×</button>
     `;
     
-                container.appendChild(productLine);
+    container.appendChild(productLine);
 }
 
             // Utilitaire: convertir un Blob en Base64 (sans l'en-tête data:)
@@ -2518,45 +2519,67 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             }
 
             /**
+             * 🚀 VERSION AMÉLIORÉE AVEC DEBUG VISUEL POUR IPAD
              * Enregistre le PDF dans Drive via Apps Script Web App (doPost)
-             * - pdfBlob: Blob du PDF (jsPDF/html2pdf, etc.)
-             * - filename: "Devis-2025-10-16.pdf"
-             * - commercial: n'importe quelle info métier à transmettre (string/objet)
-             * - options: { folderId?: string } (optionnel)
-             * Retourne: { ok, fileId, webViewLink }
              */
             async saveToGoogleDrive(pdfBlob, filename, commercial, options = {}) {
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
                 
+                // 🔔 AFFICHER UN INDICATEUR DE CHARGEMENT
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'drive-upload-status';
+                loadingDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    z-index: 99999;
+                    text-align: center;
+                    min-width: 300px;
+                `;
+                loadingDiv.innerHTML = `
+                    <div style="font-size: 16px; margin-bottom: 15px;">📤 Envoi vers Google Drive...</div>
+                    <div style="font-size: 12px; color: #666;" id="upload-progress">Préparation du fichier...</div>
+                `;
+                document.body.appendChild(loadingDiv);
+                
+                const updateStatus = (message, isError = false) => {
+                    const progressDiv = document.getElementById('upload-progress');
+                    if (progressDiv) {
+                        progressDiv.textContent = message;
+                        progressDiv.style.color = isError ? 'red' : '#666';
+                    }
+                    console.log(message);
+                };
+                
                 try {
-                    console.log('📤 Début de l\'envoi du PDF vers Google Drive...');
+                    updateStatus('Conversion du PDF en Base64...');
                     
                     // 1) Blob -> base64
                     const base64 = await this.blobToBase64(pdfBlob);
-                    console.log('✅ PDF converti en Base64');
+                    updateStatus(`Base64 créé (${Math.round(base64.length / 1024)} Ko)`);
                     
-                    // 2) Préparer les données
+                    // 2) Préparer les données (CORRECTION: UN SEUL base64)
                     const payload = {
-                        pdfBase64: base64,      // Compatibilité
+                        base64: base64,
                         filename: filename,
                         mimeType: 'application/pdf',
                         commercial: commercial,
                         folderId: options.folderId || undefined
                     };
                     
-                    console.log('📦 Payload préparé:', { 
-                        filename, 
-                        commercial, 
-                        base64Length: base64.length 
-                    });
+                    updateStatus('Envoi de la requête...');
                     
-                    // 3) POST vers Apps Script avec timeout
+                    // 3) POST vers Apps Script avec timeout LONG pour iPad
                     const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 60000);
+                    const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutes pour iPad
                     
                     let res;
                     try {
-                        console.log('🚀 Envoi de la requête...');
                         res = await fetch(GOOGLE_SCRIPT_URL, {
                             method: 'POST',
                             headers: { 
@@ -2565,18 +2588,24 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             signal: controller.signal,
                             body: JSON.stringify(payload)
                         });
-                        console.log('📨 Réponse reçue, statut:', res.status);
+                        updateStatus(`Réponse reçue (statut: ${res.status})`);
+                    } catch (fetchError) {
+                        clearTimeout(timeout);
+                        if (fetchError.name === 'AbortError') {
+                            throw new Error('⏱️ Timeout - La connexion est trop lente. Réessayez avec une meilleure connexion.');
+                        }
+                        throw new Error(`❌ Erreur réseau: ${fetchError.message}`);
                     } finally {
                         clearTimeout(timeout);
                     }
                     
                     // 4) Lire la réponse
+                    updateStatus('Lecture de la réponse...');
                     let responseText = '';
                     try {
                         responseText = await res.text();
-                        console.log('📄 Réponse texte:', responseText);
                     } catch (e) {
-                        console.warn('⚠️ Impossible de lire la réponse:', e);
+                        throw new Error('Impossible de lire la réponse du serveur');
                     }
                     
                     // 5) Parser la réponse JSON
@@ -2584,40 +2613,60 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     if (responseText) {
                         try {
                             data = JSON.parse(responseText);
-                            console.log('📊 Données parsées:', data);
                         } catch (e) {
-                            console.warn('⚠️ Réponse non-JSON:', e);
+                            // Réponse non-JSON, peut-être HTML d'erreur
+                            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+                                throw new Error('Le serveur a retourné une page HTML au lieu de JSON. Vérifiez l\'URL du script.');
+                            }
+                            throw new Error(`Réponse invalide: ${responseText.substring(0, 100)}`);
                         }
                     }
                     
                     // 6) Vérifier le succès
                     if (data && data.ok) {
-                        console.log('✅ PDF sauvegardé sur Google Drive avec succès !');
-                        if (data.fileId) console.log('📁 File ID:', data.fileId);
-                        if (data.webViewLink) console.log('🔗 Lien:', data.webViewLink);
+                        updateStatus('✅ Succès !');
+                        setTimeout(() => {
+                            if (loadingDiv.parentNode) loadingDiv.remove();
+                        }, 1500);
+                        
                         return data;
                     } else if (data && data.ok === false) {
-                        console.error('❌ Erreur du serveur:', data.error);
-                        throw new Error(data.error || 'Erreur inconnue du serveur Google Apps Script');
+                        throw new Error(data.error || 'Erreur inconnue du serveur');
                     } else {
                         // Pas de réponse claire
-                        console.warn('⚠️ Réponse inattendue du serveur');
-                        // On considère quand même que c'est envoyé si pas d'erreur HTTP
                         if (res.ok) {
-                            console.log('✅ PDF probablement envoyé (statut HTTP OK)');
-                            return { ok: true, message: 'PDF envoyé (confirmation non reçue)' };
+                            updateStatus('✅ Probablement envoyé');
+                            setTimeout(() => {
+                                if (loadingDiv.parentNode) loadingDiv.remove();
+                            }, 2000);
+                            return { ok: true, message: 'PDF probablement envoyé (confirmation non reçue)' };
                         } else {
                             throw new Error(`Erreur HTTP ${res.status}`);
                         }
                     }
                     
                 } catch (error) {
-                    if (error.name === 'AbortError') {
-                        console.error('❌ Timeout - Délai de 60s dépassé');
-                        throw new Error('Délai d\'attente dépassé pour l\'upload vers Google Drive');
-                    }
+                    // 🚨 AFFICHER L'ERREUR À L'UTILISATEUR
+                    updateStatus(`❌ ${error.message}`, true);
                     
-                    console.error('❌ Erreur lors de l\'envoi:', error);
+                    // Ajouter un bouton pour fermer
+                    setTimeout(() => {
+                        const closeBtn = document.createElement('button');
+                        closeBtn.textContent = 'Fermer';
+                        closeBtn.style.cssText = `
+                            margin-top: 15px;
+                            padding: 10px 20px;
+                            background: #dc3545;
+                            color: white;
+                            border: none;
+                            border-radius: 5px;
+                            cursor: pointer;
+                        `;
+                        closeBtn.onclick = () => loadingDiv.remove();
+                        loadingDiv.appendChild(closeBtn);
+                    }, 500);
+                    
+                    console.error('❌ Erreur complète:', error);
                     throw error;
                 }
             }
@@ -2751,13 +2800,14 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     
                     const pdfBlob = doc.output('blob');
                     
+                    // 🚀 ENVOI VERS GOOGLE DRIVE AVEC DEBUG VISUEL
                     this.saveToGoogleDrive(pdfBlob, filename, commercial)
                         .then(() => {
-                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
+                            this.showNotification('✅ PDF généré et sauvegardé sur Google Drive!');
                         })
                         .catch(error => {
                             console.error('Erreur Google Drive:', error);
-                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
+                            // NE PAS masquer l'erreur - elle est déjà affichée dans la popup
                         });
                     
                     doc.save(filename);
