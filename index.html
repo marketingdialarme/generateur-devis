@@ -27,6 +27,7 @@
             "Nassim Jaza",
             "Nora Sassi",
             "Rodolphe De Vito",
+            "Sabine Balducci",
             "Samir Ouhameni",
             "Thilan Curt",
             "Thomas Garcia",
@@ -1876,7 +1877,13 @@
                     const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
                     const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
                     
-                    if (isOffered) return;
+                    if (isOffered) {
+                        const priceDisplay = line.querySelector('.price-display');
+                        if (priceDisplay) {
+                            priceDisplay.textContent = 'OFFERT';
+                        }
+                        return;
+                    }
                     
                     let price = 0;
                     
@@ -1897,13 +1904,17 @@
                     }
                 });
                 
+                // Appliquer la réduction sur le total APRÈS avoir calculé tous les produits
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
+                let discountAmount = 0;
                 if (discountValue > 0) {
                     if (discountType === 'percent') {
-                        total = total * (1 - discountValue / 100);
+                        discountAmount = total * (discountValue / 100);
+                        total = total - discountAmount;
                     } else {
+                        discountAmount = Math.min(discountValue, total); // Ne pas descendre en négatif
                         total = Math.max(0, total - discountValue);
                     }
                 }
@@ -1914,6 +1925,33 @@
             updateTotals() {
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
+                    
+                    // Calculer la réduction matériel
+                    const materialDiscountType = document.getElementById('alarm-material-discount-type')?.value || 'percent';
+                    const materialDiscountValue = parseFloat(document.getElementById('alarm-material-discount-value')?.value) || 0;
+                    let materialTotalBeforeDiscount = 0;
+                    
+                    // Calculer le total avant réduction pour affichage
+                    const materialContainer = document.getElementById('alarm-material-products');
+                    if (materialContainer) {
+                        const productLines = materialContainer.querySelectorAll('.product-line');
+                        productLines.forEach(line => {
+                            const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
+                            const priceInput = line.querySelector('.price-input');
+                            const select = line.querySelector('.product-select');
+                            const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
+                            const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
+                            if (!isOffered) {
+                                let price = 0;
+                                if (priceInput && priceInput.style.display !== 'none') {
+                                    price = parseFloat(priceInput.value) || 0;
+                                } else if (selectedOption) {
+                                    price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                                }
+                                materialTotalBeforeDiscount += price * quantity;
+                            }
+                        });
+                    }
                     
                     let installTotal = 0;
                     if (!this.rentalMode['alarm']) {
@@ -1929,6 +1967,33 @@
                     }
                     
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
+                    
+                    // Calculer la réduction installation
+                    const installDiscountType = document.getElementById('alarm-installation-discount-type')?.value || 'percent';
+                    const installDiscountValue = parseFloat(document.getElementById('alarm-installation-discount-value')?.value) || 0;
+                    let installTotalBeforeDiscount = installTotal;
+                    
+                    const installContainer = document.getElementById('alarm-installation-products');
+                    if (installContainer) {
+                        const productLines = installContainer.querySelectorAll('.product-line');
+                        productLines.forEach(line => {
+                            const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
+                            const priceInput = line.querySelector('.price-input');
+                            const select = line.querySelector('.product-select');
+                            const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
+                            const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
+                            if (!isOffered) {
+                                let price = 0;
+                                if (priceInput && priceInput.style.display !== 'none') {
+                                    price = parseFloat(priceInput.value) || 0;
+                                } else if (selectedOption) {
+                                    price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                                }
+                                installTotalBeforeDiscount += price * quantity;
+                            }
+                        });
+                    }
+                    
                     const totalInstallation = installTotal + otherInstallationTotal;
                     
                     const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
@@ -1953,8 +2018,37 @@
                     const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    document.getElementById('alarm-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
-                    document.getElementById('alarm-installation-total').textContent = this.rentalMode['alarm'] ? 'Compris dans le forfait' : `${totalInstallation.toFixed(2)} CHF`;
+                    // Affichage avec détails de réduction
+                    let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
+                    if (materialDiscountValue > 0) {
+                        let discountAmount = 0;
+                        if (materialDiscountType === 'percent') {
+                            discountAmount = materialTotalBeforeDiscount * (materialDiscountValue / 100);
+                        } else {
+                            discountAmount = Math.min(materialDiscountValue, materialTotalBeforeDiscount);
+                        }
+                        const discountText = materialDiscountType === 'percent' 
+                            ? `${materialDiscountValue}%` 
+                            : `${materialDiscountValue.toFixed(2)} CHF`;
+                        materialDisplay = `${materialTotalBeforeDiscount.toFixed(2)} CHF - Réduction ${discountText} = ${materialTotal.toFixed(2)} CHF`;
+                    }
+                    
+                    let installDisplay = this.rentalMode['alarm'] ? 'Compris dans le forfait' : `${totalInstallation.toFixed(2)} CHF`;
+                    if (!this.rentalMode['alarm'] && installDiscountValue > 0) {
+                        let discountAmount = 0;
+                        if (installDiscountType === 'percent') {
+                            discountAmount = installTotalBeforeDiscount * (installDiscountValue / 100);
+                        } else {
+                            discountAmount = Math.min(installDiscountValue, installTotalBeforeDiscount);
+                        }
+                        const discountText = installDiscountType === 'percent' 
+                            ? `${installDiscountValue}%` 
+                            : `${installDiscountValue.toFixed(2)} CHF`;
+                        installDisplay = `${installTotalBeforeDiscount.toFixed(2)} CHF - Réduction ${discountText} = ${totalInstallation.toFixed(2)} CHF`;
+                    }
+                    
+                    document.getElementById('alarm-material-total').textContent = materialDisplay;
+                    document.getElementById('alarm-installation-total').textContent = installDisplay;
                     document.getElementById('alarm-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('alarm-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                     
@@ -1990,6 +2084,32 @@
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     
+                    // Calculer la réduction matériel caméra
+                    const materialDiscountType = document.getElementById('camera-material-discount-type')?.value || 'percent';
+                    const materialDiscountValue = parseFloat(document.getElementById('camera-material-discount-value')?.value) || 0;
+                    let materialTotalBeforeDiscount = 0;
+                    
+                    const materialContainer = document.getElementById('camera-material-products');
+                    if (materialContainer) {
+                        const productLines = materialContainer.querySelectorAll('.product-line');
+                        productLines.forEach(line => {
+                            const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
+                            const priceInput = line.querySelector('.price-input');
+                            const select = line.querySelector('.product-select');
+                            const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
+                            const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
+                            if (!isOffered) {
+                                let price = 0;
+                                if (priceInput && priceInput.style.display !== 'none') {
+                                    price = parseFloat(priceInput.value) || 0;
+                                } else if (selectedOption) {
+                                    price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                                }
+                                materialTotalBeforeDiscount += price * quantity;
+                            }
+                        });
+                    }
+                    
                     let installationTotal = 0;
                     if (!this.rentalMode['camera']) {
                         const installationPrice = this.calculateCameraInstallationPrice();
@@ -2003,7 +2123,22 @@
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    document.getElementById('camera-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
+                    // Affichage avec détails de réduction
+                    let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
+                    if (materialDiscountValue > 0) {
+                        let discountAmount = 0;
+                        if (materialDiscountType === 'percent') {
+                            discountAmount = materialTotalBeforeDiscount * (materialDiscountValue / 100);
+                        } else {
+                            discountAmount = Math.min(materialDiscountValue, materialTotalBeforeDiscount);
+                        }
+                        const discountText = materialDiscountType === 'percent' 
+                            ? `${materialDiscountValue}%` 
+                            : `${materialDiscountValue.toFixed(2)} CHF`;
+                        materialDisplay = `${materialTotalBeforeDiscount.toFixed(2)} CHF - Réduction ${discountText} = ${materialTotal.toFixed(2)} CHF`;
+                    }
+                    
+                    document.getElementById('camera-material-total').textContent = materialDisplay;
                     
                     if (this.rentalMode['camera']) {
                         document.getElementById('camera-installation-total').textContent = 'Compris dans le forfait';
@@ -2044,14 +2179,55 @@
                 
                 else if (this.currentTab === 'fog') {
                     const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
                     
+                    // Calculer la réduction matériel fog
+                    const materialDiscountType = document.getElementById('fog-material-discount-type')?.value || 'percent';
+                    const materialDiscountValue = parseFloat(document.getElementById('fog-material-discount-value')?.value) || 0;
+                    let materialTotalBeforeDiscount = 0;
+                    
+                    const materialContainer = document.getElementById('fog-material-products');
+                    if (materialContainer) {
+                        const productLines = materialContainer.querySelectorAll('.product-line');
+                        productLines.forEach(line => {
+                            const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
+                            const priceInput = line.querySelector('.price-input');
+                            const select = line.querySelector('.product-select');
+                            const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
+                            const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
+                            if (!isOffered) {
+                                let price = 0;
+                                if (priceInput && priceInput.style.display !== 'none') {
+                                    price = parseFloat(priceInput.value) || 0;
+                                } else if (selectedOption) {
+                                    price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+                                }
+                                materialTotalBeforeDiscount += price * quantity;
+                            }
+                        });
+                    }
+                    
+                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
                     const installationTotal = installationOffered ? 0 : FOG_INSTALL_PRICE;
                     
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
-                    document.getElementById('fog-material-total').textContent = `${materialTotal.toFixed(2)} CHF`;
+                    // Affichage avec détails de réduction
+                    let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
+                    if (materialDiscountValue > 0) {
+                        let discountAmount = 0;
+                        if (materialDiscountType === 'percent') {
+                            discountAmount = materialTotalBeforeDiscount * (materialDiscountValue / 100);
+                        } else {
+                            discountAmount = Math.min(materialDiscountValue, materialTotalBeforeDiscount);
+                        }
+                        const discountText = materialDiscountType === 'percent' 
+                            ? `${materialDiscountValue}%` 
+                            : `${materialDiscountValue.toFixed(2)} CHF`;
+                        materialDisplay = `${materialTotalBeforeDiscount.toFixed(2)} CHF - Réduction ${discountText} = ${materialTotal.toFixed(2)} CHF`;
+                    }
+                    
+                    document.getElementById('fog-material-total').textContent = materialDisplay;
                     document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
                     document.getElementById('fog-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
                     
@@ -2161,6 +2337,10 @@ showKitSelector() {
         }, 400);
     };
     
+    const closeModal = () => {
+        modal.remove();
+    };
+    
     modal.innerHTML = `
         <style>
             @keyframes scaleIn {
@@ -2171,7 +2351,7 @@ showKitSelector() {
         <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
                 <h2 style="margin: 0; color: #333; font-size: 20px;">Sélectionner un kit de base</h2>
-                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #e0e0e0; color: #666; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; line-height: 1; transition: all 0.2s;" onmouseover="this.style.background='#d0d0d0'" onmouseout="this.style.background='#e0e0e0'">×</button>
+                <button id="close-modal-btn" style="background: #e0e0e0; color: #666; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; line-height: 1; transition: all 0.2s;" onmouseover="this.style.background='#d0d0d0'" onmouseout="this.style.background='#e0e0e0'">×</button>
             </div>
             
             <div style="margin-bottom: 25px;">
@@ -2181,7 +2361,7 @@ showKitSelector() {
                             style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
                             onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
                             onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Standard</div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
                         <div style="font-size: 12px; color: #666; line-height: 1.6;">
                             2 Détecteurs volumétriques<br>
                             1 Détecteur d'ouverture<br>
@@ -2192,7 +2372,7 @@ showKitSelector() {
                             style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
                             onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
                             onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Périmétrique</div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
                         <div style="font-size: 12px; color: #666; line-height: 1.6;">
                             1 Détecteur volumétrique<br>
                             3 Détecteurs d'ouverture<br>
@@ -2209,7 +2389,7 @@ showKitSelector() {
                             style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
                             onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
                             onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Standard</div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
                         <div style="font-size: 12px; color: #666; line-height: 1.6;">
                             2 Détecteurs volumétriques<br>
                             1 Détecteur d'ouverture<br>
@@ -2220,7 +2400,7 @@ showKitSelector() {
                             style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
                             onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
                             onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit Périmétrique</div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
                         <div style="font-size: 12px; color: #666; line-height: 1.6;">
                             1 Détecteur volumétrique<br>
                             3 Détecteurs d'ouverture<br>
@@ -2235,19 +2415,16 @@ showKitSelector() {
                     💡 Le kit sera automatiquement marqué comme OFFERT
                 </p>
             </div>
-            
-            <div style="margin-top: 20px; text-align: center;">
-                <button onclick="this.closest('div[style*=\"position: fixed\"]').remove(); addProductLine('alarm-material')" 
-                        style="background: transparent; color: #666; border: 1px solid #ddd; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;"
-                        onmouseover="this.style.background='#f8f9fa'; this.style.borderColor='#bbb'"
-                        onmouseout="this.style.background='transparent'; this.style.borderColor='#ddd'">
-                    ou ajouter un produit manuellement
-                </button>
-            </div>
         </div>
     `;
     
     document.body.appendChild(modal);
+    
+    // Ajouter l'événement pour fermer le modal
+    const closeBtn = modal.querySelector('#close-modal-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
     
     modal.querySelectorAll('.kit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2259,7 +2436,7 @@ showKitSelector() {
     
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.remove();
+            closeModal();
         }
     });
 }
@@ -2643,7 +2820,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 const container = document.getElementById(`${sectionId}-products`);
                 const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
                 let sectionTotal = 0;
-                let sectionTotalWithOffert = 0;
+                let sectionTotalBeforeDiscount = 0;
                 let lineCount = 0;
                 
                 productLines.forEach(line => {
@@ -2690,7 +2867,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         }
                         
                         let lineTotal = price * qty;
-                        sectionTotalWithOffert += lineTotal;
+                        sectionTotalBeforeDiscount += lineTotal;
                         if (!isOffered) {
                             sectionTotal += lineTotal;
                         }
@@ -2765,6 +2942,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     }
                     
                     sectionTotal += installTotal;
+                    sectionTotalBeforeDiscount += installTotal;
                     yPos += 12;
                 } else if (sectionId === 'alarm-installation' && isRental) {
                     lineCount++;
@@ -2800,15 +2978,37 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos += 12;
                 }
 
+                // Appliquer la réduction
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
+                let discountAmount = 0;
                 if (discountValue > 0) {
                     if (discountType === 'percent') {
-                        sectionTotal = sectionTotal * (1 - discountValue / 100);
+                        discountAmount = sectionTotal * (discountValue / 100);
+                        sectionTotal = sectionTotal - discountAmount;
                     } else {
+                        discountAmount = Math.min(discountValue, sectionTotal);
                         sectionTotal = Math.max(0, sectionTotal - discountValue);
                     }
+                    
+                    // Afficher la ligne de réduction dans le PDF
+                    lineCount++;
+                    if (lineCount % 2 === 0) {
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(40, yPos, 515, 12, 'F');
+                    }
+                    
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(6);
+                    doc.setTextColor(200, 0, 0);
+                    const discountText = discountType === 'percent' 
+                        ? `Réduction ${discountValue}%` 
+                        : `Réduction ${discountValue.toFixed(2)} CHF`;
+                    doc.text(discountText, 90, yPos + 8);
+                    doc.text(`-${discountAmount.toFixed(2)}`, 485, yPos + 8);
+                    doc.setTextColor(0, 0, 0);
+                    yPos += 12;
                 }
 
                 const totalTTC = this.roundToFiveCents(sectionTotal * (1 + TVA_RATE));
