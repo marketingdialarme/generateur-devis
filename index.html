@@ -2545,8 +2545,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             },
                             signal: controller.signal,
                             body: JSON.stringify({
-                                pdfBase64: base64,      // <— Format attendu par le script existant
+                                base64: base64,         // <— Format principal (nouveau)
+                                pdfBase64: base64,      // <— Compatibilité (ancien)
                                 filename: filename,
+                                mimeType: 'application/pdf',
                                 commercial: commercial,
                                 folderId: options.folderId || undefined
                             })
@@ -2555,23 +2557,30 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         clearTimeout(timeout);
                     }
                     
-                    // 3) Vérifier le statut de la réponse
-                    if (!res.ok) {
-                        console.warn(`⚠️ Upload réponse HTTP ${res.status}`);
-                    }
-                    
-                    // 4) Essayer de lire la réponse JSON
+                    // 3) Lire la réponse JSON de la Web App
                     let data = null;
                     try {
-                        data = await res.json();
+                        const text = await res.text();
+                        if (text) {
+                            data = JSON.parse(text);
+                        }
                     } catch (e) {
-                        console.log('ℹ️ Pas de réponse JSON (normal en mode no-cors)');
+                        console.log('ℹ️ Réponse non-JSON ou vide:', e.message);
                     }
                     
-                    console.log('✅ PDF envoyé à Google Drive');
-                    
-                    // Retourner les données si disponibles, sinon un objet de succès basique
-                    return data || { ok: true, message: 'PDF envoyé avec succès' };
+                    // 4) Vérifier le succès
+                    if (data && data.ok) {
+                        console.log('✅ PDF sauvegardé sur Google Drive avec succès');
+                        console.log('📁 File ID:', data.fileId);
+                        console.log('🔗 Lien:', data.webViewLink);
+                        return data;
+                    } else if (data && !data.ok) {
+                        throw new Error(data.error || 'Erreur inconnue du serveur');
+                    } else {
+                        // Pas de réponse claire, mais pas d'erreur non plus
+                        console.log('✅ PDF envoyé à Google Drive (réponse non confirmée)');
+                        return { ok: true, message: 'PDF envoyé avec succès' };
+                    }
                     
                 } catch (error) {
                     // Si c'est une erreur d'abort (timeout)
