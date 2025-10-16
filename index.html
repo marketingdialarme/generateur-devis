@@ -120,6 +120,7 @@
             4: 2580,  // 2 jours
             5: 3270,  // 2.5 jours
             6: 3870   // 3 jours
+            // Au-delà : calcul automatique (690 CHF par demi-journée)
         };
 
         // 🔧 INSTALLATION - PRIX MENSUELS (par nombre de demi-journées et durée)
@@ -130,9 +131,10 @@
             4: { 24: 119, 36: 83, 48: 65 },
             5: { 24: 151, 36: 106, 48: 83 },
             6: { 24: 179, 36: 125, 48: 98 }
+            // Au-delà : calcul automatique basé sur INSTALLATION_PRICES
         };
 
-        // 🔧 PRIX DE BASE D'UNE DEMI-JOURNÉE
+        // 🔧 PRIX DE BASE D'UNE DEMI-JOURNÉE (pour calculs automatiques au-delà de 6)
         const HALF_DAY_PRICE = 690;
         const HALF_DAY_MONTHLY_24 = 32;
         const HALF_DAY_MONTHLY_36 = 23;
@@ -146,15 +148,15 @@
 
         // 📄 FRAIS DE DOSSIER
         const ADMIN_FEES = {
-            simCard: 50.00,
-            processingFee: 190.00
+            simCard: 50.00,        // Carte SIM + Activation
+            processingFee: 190.00  // Frais de dossier
         };
 
         // 📹 CAMÉRA - INSTALLATION
-        const CAMERA_INSTALL_BASE_PRICE = 690.00;
+        const CAMERA_INSTALL_BASE_PRICE = 690.00; // Utilise la même logique qu'alarme
 
         // 📹 CAMÉRA - VISION À DISTANCE
-        const REMOTE_ACCESS_PRICE = 20.00;
+        const REMOTE_ACCESS_PRICE = 20.00; // CHF/mois
 
         // 💨 GÉNÉRATEUR DE BROUILLARD - INSTALLATION
         const FOG_INSTALL_PRICE = 490.00;
@@ -252,16 +254,12 @@
             }
         };
         
-        // ⚠️ CONFIGURATION GOOGLE APPS SCRIPT
-        // Remplacez cette URL par votre propre URL de déploiement
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzeYnZTXJTKTNPBqnW1amGCO8CESYqqbgR2jW0ZeROf33g1zI5M06wTBspa2Q3dNQ-tcA/exec';
-        
         // ============================================
         // ⭐⭐⭐ FIN DES CATALOGUES ET CONFIGURATION ⭐⭐⭐
         // ============================================
     </script>
 
-    <style>
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -1905,6 +1903,7 @@
                     }
                 });
                 
+                // Appliquer la réduction sur le total APRÈS avoir calculé tous les produits
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
@@ -1914,7 +1913,7 @@
                         discountAmount = total * (discountValue / 100);
                         total = total - discountAmount;
                     } else {
-                        discountAmount = Math.min(discountValue, total);
+                        discountAmount = Math.min(discountValue, total); // Ne pas descendre en négatif
                         total = Math.max(0, total - discountValue);
                     }
                 }
@@ -1926,10 +1925,12 @@
                 if (this.currentTab === 'alarm') {
                     const materialTotal = this.calculateSectionTotal('alarm-material');
                     
+                    // Calculer la réduction matériel
                     const materialDiscountType = document.getElementById('alarm-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('alarm-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
                     
+                    // Calculer le total avant réduction pour affichage
                     const materialContainer = document.getElementById('alarm-material-products');
                     if (materialContainer) {
                         const productLines = materialContainer.querySelectorAll('.product-line');
@@ -1966,6 +1967,7 @@
                     
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
                     
+                    // Calculer la réduction installation
                     const installDiscountType = document.getElementById('alarm-installation-discount-type')?.value || 'percent';
                     const installDiscountValue = parseFloat(document.getElementById('alarm-installation-discount-value')?.value) || 0;
                     let installTotalBeforeDiscount = installTotal;
@@ -2015,6 +2017,7 @@
                     const totalHT = materialTotal + totalInstallation + adminTotal + testCycliqueTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
+                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2080,6 +2083,7 @@
                 } else if (this.currentTab === 'camera') {
                     const materialTotal = this.calculateSectionTotal('camera-material');
                     
+                    // Calculer la réduction matériel caméra
                     const materialDiscountType = document.getElementById('camera-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('camera-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
@@ -2118,6 +2122,7 @@
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
+                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2174,6 +2179,7 @@
                 else if (this.currentTab === 'fog') {
                     const materialTotal = this.calculateSectionTotal('fog-material');
                     
+                    // Calculer la réduction matériel fog
                     const materialDiscountType = document.getElementById('fog-material-discount-type')?.value || 'percent';
                     const materialDiscountValue = parseFloat(document.getElementById('fog-material-discount-value')?.value) || 0;
                     let materialTotalBeforeDiscount = 0;
@@ -2205,6 +2211,7 @@
                     const totalHT = materialTotal + installationTotal;
                     const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
                     
+                    // Affichage avec détails de réduction
                     let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
                     if (materialDiscountValue > 0) {
                         let discountAmount = 0;
@@ -2412,6 +2419,7 @@ showKitSelector() {
     
     document.body.appendChild(modal);
     
+    // Ajouter l'événement pour fermer le modal
     const closeBtn = modal.querySelector('#close-modal-btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeModal);
@@ -2494,14 +2502,11 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     container.appendChild(productLine);
 }
 
-            // ==========================================
-            // 🔧 FONCTION MODIFIÉE POUR iOS/iPad
-            // ==========================================
             async saveToGoogleDrive(pdfBlob, filename, commercial) {
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxdcCQ0OVeFAy6vn_U864VLK4GGBrbpZsryp9VO7w3vnT_NKBh4BcZ84em1V21dxSMa5w/exec';
+                
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                
-                console.log('📱 Détection appareil:', { isIOS, isSafari });
                 
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -2510,24 +2515,17 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         
                         try {
                             if (isIOS || isSafari) {
-                                // ✅ MÉTHODE SPÉCIALE POUR iOS/Safari
-                                console.log('📱 Utilisation de la méthode formulaire pour iOS');
+                                const formData = new FormData();
+                                formData.append('data', JSON.stringify({
+                                    pdfBase64: base64,
+                                    filename: filename,
+                                    commercial: commercial
+                                }));
                                 
-                                // Créer iframe caché si nécessaire
-                                let iframe = document.getElementById('upload_iframe');
-                                if (!iframe) {
-                                    iframe = document.createElement('iframe');
-                                    iframe.id = 'upload_iframe';
-                                    iframe.name = 'upload_iframe';
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                }
-                                
-                                // Créer formulaire
                                 const form = document.createElement('form');
                                 form.method = 'POST';
                                 form.action = GOOGLE_SCRIPT_URL;
-                                form.target = 'upload_iframe';
+                                form.target = 'hidden_iframe';
                                 form.style.display = 'none';
                                 
                                 const input = document.createElement('input');
@@ -2542,57 +2540,103 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                 form.appendChild(input);
                                 document.body.appendChild(form);
                                 
-                                // Soumettre le formulaire
+                                let iframe = document.getElementById('hidden_iframe');
+                                if (!iframe) {
+                                    iframe = document.createElement('iframe');
+                                    iframe.id = 'hidden_iframe';
+                                    iframe.name = 'hidden_iframe';
+                                    iframe.style.display = 'none';
+                                    document.body.appendChild(iframe);
+                                }
+                                
                                 form.submit();
                                 
-                                // Attendre un peu puis nettoyer
                                 setTimeout(() => {
                                     document.body.removeChild(form);
-                                    console.log('✅ Formulaire envoyé (iOS)');
-                                }, 1000);
+                                }, 2000);
                                 
+                                console.log('PDF envoyé à Google Drive (iOS/Safari)');
                                 resolve(true);
                                 
                             } else {
-                                // ✅ MÉTHODE STANDARD POUR PC/Android
-                                console.log('💻 Utilisation de fetch standard');
-                                
                                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                                     method: 'POST',
+                                    mode: 'no-cors',
                                     headers: {
-                                        'Content-Type': 'application/json',
+                                        'Content-Type': 'text/plain',
                                     },
                                     body: JSON.stringify({
                                         pdfBase64: base64,
                                         filename: filename,
                                         commercial: commercial
-                                    }),
-                                    redirect: 'follow'
+                                    })
                                 });
                                 
-                                console.log('✅ Réponse reçue:', response.status);
+                                console.log('PDF envoyé à Google Drive');
                                 resolve(true);
                             }
                         } catch (error) {
-                            console.error('❌ Erreur lors de l\'envoi:', error);
+                            console.error('Erreur lors de l\'envoi à Google Drive:', error);
                             
-                            // Sur iOS, on considère que c'est envoyé même si erreur
                             if (isIOS || isSafari) {
-                                console.log('ℹ️ iOS: Upload probablement réussi malgré l\'erreur');
-                                resolve(true);
-                            } else {
-                                reject(error);
+                                const params = encodeURIComponent(JSON.stringify({
+                                    pdfBase64: base64.substring(0, 100) + '...',
+                                    filename: filename,
+                                    commercial: commercial,
+                                    error: 'Upload depuis iOS'
+                                }));
+                                
+                                generator.showIOSUploadButton(pdfBlob, filename, commercial);
                             }
+                            reject(error);
                         }
                     };
-                    
-                    reader.onerror = (error) => {
-                        console.error('❌ Erreur de lecture du fichier:', error);
-                        reject(error);
-                    };
-                    
                     reader.readAsDataURL(pdfBlob);
                 });
+            }
+            
+            showIOSUploadButton(pdfBlob, filename, commercial) {
+                const existingBtn = document.getElementById('ios-upload-btn');
+                if (existingBtn) existingBtn.remove();
+                
+                const uploadBtn = document.createElement('button');
+                uploadBtn.id = 'ios-upload-btn';
+                uploadBtn.className = 'btn btn-primary';
+                uploadBtn.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    padding: 15px 30px;
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 50px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+                `;
+                uploadBtn.innerHTML = '☁️ Réessayer l\'upload vers Drive';
+                
+                uploadBtn.onclick = () => {
+                    this.saveToGoogleDrive(pdfBlob, filename, commercial)
+                        .then(() => {
+                            this.showNotification('Upload réussi !');
+                            uploadBtn.remove();
+                        })
+                        .catch(() => {
+                            this.showNotification('Échec - Téléchargez manuellement');
+                        });
+                };
+                
+                document.body.appendChild(uploadBtn);
+                
+                setTimeout(() => {
+                    if (document.getElementById('ios-upload-btn')) {
+                        uploadBtn.remove();
+                    }
+                }, 30000);
             }
 
             generatePDF(type) {
@@ -2718,22 +2762,22 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
                     this.createPDFFooter(doc, clientName);
 
+                    this.showNotification('PDF généré avec succès!');
+                    
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+                    
                     const pdfBlob = doc.output('blob');
                     
-                    // Télécharger localement
-                    doc.save(filename);
-                    this.showNotification('📥 PDF téléchargé localement!');
-                    
-                    // Essayer d'envoyer sur Google Drive
                     this.saveToGoogleDrive(pdfBlob, filename, commercial)
                         .then(() => {
-                            this.showNotification('☁️ PDF sauvegardé sur Google Drive!');
+                            this.showNotification('PDF généré et sauvegardé sur Google Drive!');
                         })
                         .catch(error => {
                             console.error('Erreur Google Drive:', error);
-                            this.showNotification('⚠️ PDF téléchargé (sauvegarde Drive en cours...)');
+                            this.showNotification('PDF généré (sauvegarde Drive échouée)');
                         });
+                    
+                    doc.save(filename);
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
@@ -2933,6 +2977,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     yPos += 12;
                 }
 
+                // Appliquer la réduction
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
                 
@@ -2946,6 +2991,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         sectionTotal = Math.max(0, sectionTotal - discountValue);
                     }
                     
+                    // Afficher la ligne de réduction dans le PDF
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
@@ -3628,7 +3674,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     border-radius: 5px;
                     z-index: 10000;
                     animation: slideIn 0.3s ease;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
                 `;
                 notification.textContent = message;
                 document.body.appendChild(notification);
@@ -3735,7 +3780,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             console.log('📋 Catalogues disponibles:', Object.keys(generator.catalog));
             console.log('👥 Commerciaux disponibles:', COMMERCIALS_LIST.length);
             console.log('💰 Configuration des prix chargée');
-            console.log('📱 Compatibilité iOS/iPad activée');
         });
     </script>
 </body>
