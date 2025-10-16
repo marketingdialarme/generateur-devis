@@ -2529,67 +2529,96 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5ehDpX2oQApL67S7MciOhFF1JIBvbvtypXfg7ijXVBSgz6clWvPrNEXww6_WtJIIVgw/exec';
                 
                 try {
+                    console.log('📤 Début de l\'envoi du PDF vers Google Drive...');
+                    
                     // 1) Blob -> base64
                     const base64 = await this.blobToBase64(pdfBlob);
+                    console.log('✅ PDF converti en Base64');
                     
-                    // 2) POST JSON vers Apps Script
+                    // 2) Préparer les données
+                    const payload = {
+                        base64: base64,
+                        pdfBase64: base64,      // Compatibilité
+                        filename: filename,
+                        mimeType: 'application/pdf',
+                        commercial: commercial,
+                        folderId: options.folderId || undefined
+                    };
+                    
+                    console.log('📦 Payload préparé:', { 
+                        filename, 
+                        commercial, 
+                        base64Length: base64.length 
+                    });
+                    
+                    // 3) POST vers Apps Script avec timeout
                     const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 60000); // sécurité 60s
+                    const timeout = setTimeout(() => controller.abort(), 60000);
                     
                     let res;
                     try {
+                        console.log('🚀 Envoi de la requête...');
                         res = await fetch(GOOGLE_SCRIPT_URL, {
                             method: 'POST',
                             headers: { 
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'text/plain;charset=utf-8'
                             },
                             signal: controller.signal,
-                            body: JSON.stringify({
-                                base64: base64,         // <— Format principal (nouveau)
-                                pdfBase64: base64,      // <— Compatibilité (ancien)
-                                filename: filename,
-                                mimeType: 'application/pdf',
-                                commercial: commercial,
-                                folderId: options.folderId || undefined
-                            })
+                            body: JSON.stringify(payload)
                         });
+                        console.log('📨 Réponse reçue, statut:', res.status);
                     } finally {
                         clearTimeout(timeout);
                     }
                     
-                    // 3) Lire la réponse JSON de la Web App
-                    let data = null;
+                    // 4) Lire la réponse
+                    let responseText = '';
                     try {
-                        const text = await res.text();
-                        if (text) {
-                            data = JSON.parse(text);
-                        }
+                        responseText = await res.text();
+                        console.log('📄 Réponse texte:', responseText);
                     } catch (e) {
-                        console.log('ℹ️ Réponse non-JSON ou vide:', e.message);
+                        console.warn('⚠️ Impossible de lire la réponse:', e);
                     }
                     
-                    // 4) Vérifier le succès
+                    // 5) Parser la réponse JSON
+                    let data = null;
+                    if (responseText) {
+                        try {
+                            data = JSON.parse(responseText);
+                            console.log('📊 Données parsées:', data);
+                        } catch (e) {
+                            console.warn('⚠️ Réponse non-JSON:', e);
+                        }
+                    }
+                    
+                    // 6) Vérifier le succès
                     if (data && data.ok) {
-                        console.log('✅ PDF sauvegardé sur Google Drive avec succès');
-                        console.log('📁 File ID:', data.fileId);
-                        console.log('🔗 Lien:', data.webViewLink);
+                        console.log('✅ PDF sauvegardé sur Google Drive avec succès !');
+                        if (data.fileId) console.log('📁 File ID:', data.fileId);
+                        if (data.webViewLink) console.log('🔗 Lien:', data.webViewLink);
                         return data;
-                    } else if (data && !data.ok) {
-                        throw new Error(data.error || 'Erreur inconnue du serveur');
+                    } else if (data && data.ok === false) {
+                        console.error('❌ Erreur du serveur:', data.error);
+                        throw new Error(data.error || 'Erreur inconnue du serveur Google Apps Script');
                     } else {
-                        // Pas de réponse claire, mais pas d'erreur non plus
-                        console.log('✅ PDF envoyé à Google Drive (réponse non confirmée)');
-                        return { ok: true, message: 'PDF envoyé avec succès' };
+                        // Pas de réponse claire
+                        console.warn('⚠️ Réponse inattendue du serveur');
+                        // On considère quand même que c'est envoyé si pas d'erreur HTTP
+                        if (res.ok) {
+                            console.log('✅ PDF probablement envoyé (statut HTTP OK)');
+                            return { ok: true, message: 'PDF envoyé (confirmation non reçue)' };
+                        } else {
+                            throw new Error(`Erreur HTTP ${res.status}`);
+                        }
                     }
                     
                 } catch (error) {
-                    // Si c'est une erreur d'abort (timeout)
                     if (error.name === 'AbortError') {
-                        console.error('❌ Timeout lors de l\'envoi à Google Drive');
-                        throw new Error('Délai d\'attente dépassé pour l\'upload');
+                        console.error('❌ Timeout - Délai de 60s dépassé');
+                        throw new Error('Délai d\'attente dépassé pour l\'upload vers Google Drive');
                     }
                     
-                    console.error('❌ Erreur lors de la sauvegarde sur Google Drive:', error);
+                    console.error('❌ Erreur lors de l\'envoi:', error);
                     throw error;
                 }
             }
