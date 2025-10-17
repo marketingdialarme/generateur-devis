@@ -3998,63 +3998,104 @@ async function testGoogleScriptConnection() {
     const scriptUrl = GOOGLE_SCRIPT_URL;
     const startTime = Date.now();
     
+    // Détecter l'appareil
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const deviceInfo = isIOS ? 'iPad/iPhone' : (isSafari ? 'Safari' : 'Autre navigateur');
+    
     try {
         console.log('🧪 Début test connexion...');
         console.log('📍 URL:', scriptUrl);
-                            });
+        console.log('📱 Appareil:', deviceInfo);
+        console.log('🌐 Online:', navigator.onLine);
+        
+        // Test 1 : Vérifier si on est en ligne
+        if (!navigator.onLine) {
+            throw new Error('Pas de connexion Internet');
+        }
+        
+        resultDiv.innerHTML = `
+            <div style="color: #17a2b8; font-weight: bold; margin-bottom: 10px;">
+                ⏳ Test en cours...
+            </div>
+            <div style="font-size: 12px; color: #666;">
+                <strong>Appareil :</strong> ${deviceInfo}<br>
+                <strong>Méthode :</strong> ${isIOS || isSafari ? 'Formulaire caché' : 'Fetch API'}<br>
+                <br>
+                📤 Envoi d'un email de test...
+            </div>
+        `;
+        
+        // Test 2 : Envoyer un vrai test
+        const testPayload = {
+            pdfBase64: 'JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAgL1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSIAogICAgPj4KICA+PgogIC9Db250ZW50cyA1IDAgUgo+PgplbmRvYmoKCjQgMCBvYmoKPDwKICAvVHlwZSAvRm9udAogIC9TdWJ0eXBlIC9UeXBlMQogIC9CYXNlRm9udCAvVGltZXMtUm9tYW4KPj4KZW5kb2JqCgo1IDAgb2JqICAlIHBhZ2UgY29udGVudAo8PAogIC9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCjcwIDUwIFRECi9GMSAxMiBUZgooVEVTVCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxMCAwMDAwMCBuIAowMDAwMDAwMDc5IDAwMDAwIG4gCjAwMDAwMDAxNzMgMDAwMDAgbiAKMDAwMDAwMDMwMSAwMDAwMCBuIAowMDAwMDAwMzgwIDAwMDAwIG4gCnRyYWlsZXIKPDwKICAvU2l6ZSA2CiAgL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQ5MgolJUVPRgo=',
+            filename: `TEST-iPad-${Date.now()}.pdf`,
+            commercial: `Test depuis ${deviceInfo}`,
+            clientName: 'TEST CONNEXION iPad',
+            timestamp: new Date().toISOString()
+        };
+        
+        if (isIOS || isSafari) {
+            // Méthode formulaire pour iOS/Safari
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = scriptUrl;
+            form.target = 'test_iframe';
+            form.style.display = 'none';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(testPayload);
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            
+            let iframe = document.getElementById('test_iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'test_iframe';
+                iframe.name = 'test_iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            
+            form.submit();
+            console.log('✅ Formulaire soumis (iOS/Safari)');
+            
+            setTimeout(() => {
+                if (form.parentNode) document.body.removeChild(form);
+            }, 2000);
+            
+        } else {
+            await fetch(scriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(testPayload)
+            });
+            console.log('✅ Fetch envoyé');
+        }
         
         const endTime = Date.now();
         const duration = endTime - startTime;
         
-        console.log('✅ Réponse reçue en', duration, 'ms');
-        console.log('📦 Response:', response);
-        
-        // Avec no-cors, on ne peut pas lire la réponse
-        // Mais si on arrive ici sans erreur, c'est bon signe
-        
         resultDiv.innerHTML = `
             <div style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                ✅ Test Réussi !
+                ✅ Test Envoyé !
             </div>
             <div style="font-size: 12px; color: #666;">
+                <strong>Appareil :</strong> ${deviceInfo}<br>
                 <strong>Durée :</strong> ${duration}ms<br>
-                <strong>URL :</strong> Accessible<br>
-                <strong>État :</strong> ${response.type === 'opaque' ? 'OK (no-cors)' : response.type}<br>
                 <br>
-                <em>Le script Google est accessible. 
-                L'envoi devrait fonctionner ! 🎉</em>
+                <div style="padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 5px;">
+                    <strong>⚠️ IMPORTANT :</strong><br>
+                    Vérifiez si un email est arrivé sur :<br>
+                    <strong style="color: #007bff;">devis.dialarme@gmail.com</strong><br>
+                    Objet : "TEST CONNEXION iPad"
+                </div>
             </div>
         `;
-        
-        // Test 3 : Envoyer un test payload minimal
-        console.log('📤 Test envoi données...');
-        
-        const testPayload = {
-            pdfBase64: 'VGVzdA==', // "Test" en base64
-            filename: 'test.pdf',
-            commercial: 'Test',
-            clientName: 'Test',
-            timestamp: new Date().toISOString()
-        };
-        
-        await fetch(scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'text/plain',
-            },
-            body: JSON.stringify(testPayload)
-        });
-        
-        console.log('✅ Test payload envoyé');
-        
-        setTimeout(() => {
-            resultDiv.innerHTML += `
-                <div style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 5px; font-size: 11px;">
-                    ℹ️ Vérifiez si un email de test est arrivé sur <strong>devis.dialarme@gmail.com</strong>
-                </div>
-            `;
-        }, 1000);
         
     } catch (error) {
         console.error('❌ Erreur test:', error);
@@ -4064,21 +4105,15 @@ async function testGoogleScriptConnection() {
                 ❌ Test Échoué
             </div>
             <div style="font-size: 12px; color: #666;">
-                <strong>Erreur :</strong><br>
-                ${error.message}<br>
-                <br>
-                <strong>Solutions :</strong><br>
-                • Vérifiez votre connexion Internet<br>
-                • Vérifiez l'URL du script Google<br>
-                • Testez depuis un ordinateur<br>
-                <br>
-                <strong>Détails techniques :</strong><br>
-                <code style="font-size: 10px; background: #f5f5f5; padding: 5px; display: block; margin-top: 5px; border-radius: 3px; word-break: break-all;">
-                ${error.stack || error.toString()}
-                </code>
+                <strong>Erreur :</strong> ${error.message}
             </div>
         `;
     }
+    
+    setTimeout(() => {
+        resultDiv.classList.remove('show');
+    }, 15000);
+}
     
     // Fermer automatiquement après 10 secondes
     setTimeout(() => {
