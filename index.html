@@ -885,15 +885,21 @@
                     <div>Carte SIM + Activation</div>
                     <input type="number" value="1" class="quantity-input" readonly>
                     <div></div>
-                    <div class="price-display">50.00 CHF HT</div>
-                    <div></div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="admin-simcard-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="admin-simcard-display">50.00 CHF HT</div>
                 </div>
                 <div class="product-line">
                     <div>Frais de dossier</div>
                     <input type="number" value="1" class="quantity-input" readonly>
                     <div></div>
-                    <div class="price-display">190.00 CHF HT</div>
-                    <div></div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="admin-processing-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="admin-processing-display">190.00 CHF HT</div>
                 </div>
                 <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">* Les frais de dossier se payent à l'installation</p>
             </div>
@@ -974,7 +980,7 @@
                 </div>
                 <div class="summary-item">
                     <span>Frais de dossier</span>
-                    <span>240.00 CHF HT</span>
+                    <span id="alarm-admin-total">240.00 CHF HT</span>
                 </div>
                 <div class="summary-item">
                     <span>Service de surveillance</span>
@@ -1385,9 +1391,9 @@
                     }
                     
                     document.getElementById('camera-remote-section').style.display = this.rentalMode[type] ? 'none' : 'block';
-                    document.getElementById('camera-maintenance-section').style.display = this.rentalMode[type] ? 'none' : 'block';
+                    document.getElementById('camera-maintenance-section').style.display = 'block'; // Toujours visible
                     document.getElementById('camera-remote-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
-                    document.getElementById('camera-maintenance-summary').style.display = this.rentalMode[type] ? 'none' : 'flex';
+                    document.getElementById('camera-maintenance-summary').style.display = 'flex'; // Toujours visible
                     
                     document.getElementById('camera-uninstall-line').style.display = this.rentalMode[type] ? 'flex' : 'none';
                     
@@ -2008,7 +2014,18 @@
                     
                     const totalInstallation = installTotal + otherInstallationTotal;
                     
-                    const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
+                    // NOUVEAU: Calcul des frais de dossier avec cases à cocher
+                    const simCardOffered = document.getElementById('admin-simcard-offered')?.checked || false;
+                    const processingOffered = document.getElementById('admin-processing-offered')?.checked || false;
+                    
+                    const simCardTotal = simCardOffered ? 0 : ADMIN_FEES.simCard;
+                    const processingTotal = processingOffered ? 0 : ADMIN_FEES.processingFee;
+                    const adminTotal = simCardTotal + processingTotal;
+                    
+                    // Mise à jour des affichages
+                    document.getElementById('admin-simcard-display').textContent = simCardOffered ? 'OFFERT' : `${ADMIN_FEES.simCard.toFixed(2)} CHF HT`;
+                    document.getElementById('admin-processing-display').textContent = processingOffered ? 'OFFERT' : `${ADMIN_FEES.processingFee.toFixed(2)} CHF HT`;
+                    document.getElementById('alarm-admin-total').textContent = adminTotal > 0 ? `${adminTotal.toFixed(2)} CHF HT` : 'OFFERT';
                     
                     const testCycliqueSelected = document.getElementById('test-cyclique-selected').checked;
                     const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price').value) || TEST_CYCLIQUE_DEFAULT_PRICE;
@@ -2389,6 +2406,34 @@ showKitSelector() {
                 </div>
             </div>
             
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - ${CENTRALS_CONFIG.titane.price.toFixed(2)} CHF</h3>
+                <div style="display: flex; gap: 12px;">
+                    <button class="kit-btn" data-central="titane" data-kit="kit1"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            2 Détecteurs volumétriques<br>
+                            1 Détecteur d'ouverture<br>
+                            1 Clavier + 1 Sirène
+                        </div>
+                    </button>
+                    <button class="kit-btn" data-central="titane" data-kit="kit2"
+                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
+                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                            1 Détecteur volumétrique<br>
+                            3 Détecteurs d'ouverture<br>
+                            1 Clavier + 1 Sirène
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
             <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-left: 3px solid #f4e600; border-radius: 4px;">
                 <p style="margin: 0; font-size: 13px; color: #666;">
                     💡 Le kit sera automatiquement marqué comme OFFERT
@@ -2680,11 +2725,15 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                 yPos += 15;
                             }
                         }
+                        // Toujours ajouter la section maintenance
+                        yPos = this.createMaintenancePDF(doc, yPos);
                     } else if (type === 'fog') {
                         if (this.hasSectionProducts('fog-material')) {
                             yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos, isRental);
                         }
                         yPos = this.createFogInstallPDF(doc, yPos);
+                        // Toujours ajouter la section maintenance
+                        yPos = this.createMaintenancePDF(doc, yPos);
                     }
 
                     yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
@@ -3090,12 +3139,17 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
 
+                const simCardOffered = document.getElementById('admin-simcard-offered')?.checked || false;
+                const processingOffered = document.getElementById('admin-processing-offered')?.checked || false;
+
                 const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: ADMIN_FEES.simCard },
-                    { qty: 1, desc: 'Frais de dossier', price: ADMIN_FEES.processingFee }
+                    { qty: 1, desc: 'Carte SIM + Activation', price: ADMIN_FEES.simCard, offered: simCardOffered },
+                    { qty: 1, desc: 'Frais de dossier', price: ADMIN_FEES.processingFee, offered: processingOffered }
                 ];
 
                 let lineCount = 0;
+                let adminTotal = 0;
+                
                 adminItems.forEach(item => {
                     lineCount++;
                     
@@ -3109,12 +3163,22 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.setTextColor(0, 0, 0);
                     doc.text(item.qty.toString(), 55, yPos + 9);
                     doc.text(item.desc, 90, yPos + 9);
-                    doc.text(item.price.toFixed(2), 405, yPos + 9);
-                    doc.text(item.price.toFixed(2), 485, yPos + 9);
+                    
+                    if (item.offered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 9);
+                        doc.text('OFFERT', 485, yPos + 9);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(0, 0, 0);
+                    } else {
+                        doc.text(item.price.toFixed(2), 405, yPos + 9);
+                        doc.text(item.price.toFixed(2), 485, yPos + 9);
+                        adminTotal += item.price;
+                    }
                     yPos += 14;
                 });
 
-                const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
                 const adminTotalTTC = this.roundToFiveCents(adminTotal * (1 + TVA_RATE));
                 const adminTVA = adminTotalTTC - adminTotal;
 
@@ -3334,6 +3398,45 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 return yPos + 55;
             }
 
+            // NOUVEAU: Fonction pour créer la section Maintenance dans le PDF
+            createMaintenancePDF(doc, yPos) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('MAINTENANCE ET GARANTIE', 40, yPos);
+                yPos += 15;
+
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Désignation', 90, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
+
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 14);
+                doc.line(80, yPos, 80, yPos + 14);
+                doc.line(390, yPos, 390, yPos + 14);
+                doc.line(470, yPos, 470, yPos + 14);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text('1', 55, yPos + 9);
+                doc.text('Assistance hotline, déplacement(s), matériels pièce(s), main d\'œuvre et support téléphonique', 90, yPos + 9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 150, 0);
+                doc.text('OFFERT', 405, yPos + 9);
+                doc.text('OFFERT', 485, yPos + 9);
+                doc.setTextColor(0, 0, 0);
+                yPos += 14;
+
+                return yPos + 15;
+            }
+
             createFinalSummaryPDF(doc, yPos, type, isRental) {
                 yPos += 15;
                 
@@ -3359,7 +3462,9 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
                     const totalInstallation = installTotal + otherInstallationTotal;
                     
-                    const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
+                    const simCardOffered = document.getElementById('admin-simcard-offered')?.checked || false;
+                    const processingOffered = document.getElementById('admin-processing-offered')?.checked || false;
+                    const adminTotal = (simCardOffered ? 0 : ADMIN_FEES.simCard) + (processingOffered ? 0 : ADMIN_FEES.processingFee);
                     
                     const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
                     
@@ -3751,219 +3856,5 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             console.log('📧 URL Google Script:', GOOGLE_SCRIPT_URL);
         });
     </script>
-    <style>
-    .test-button-container {
-        position: fixed;
-        bottom: 80px;
-        right: 20px;
-        z-index: 9999;
-    }
-    
-    .test-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        padding: 15px 25px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .test-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-    
-    .test-btn:active {
-        transform: translateY(0);
-    }
-    
-    .test-result {
-        position: fixed;
-        bottom: 140px;
-        right: 20px;
-        background: white;
-        border-radius: 10px;
-        padding: 15px 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        max-width: 300px;
-        z-index: 9998;
-        display: none;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-    
-    .test-result.show {
-        display: block;
-        animation: slideInRight 0.3s ease;
-    }
-    
-    @keyframes slideInRight {
-        from { transform: translateX(100px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-</style>
-
-<div class="test-button-container">
-    <button class="test-btn" onclick="testGoogleScriptConnection()">
-        🧪 Test Connexion
-    </button>
-</div>
-
-<div id="test-result" class="test-result"></div>
-
-<script>
-async function testGoogleScriptConnection() {
-    const resultDiv = document.getElementById('test-result');
-    resultDiv.className = 'test-result show';
-    resultDiv.innerHTML = '⏳ Test en cours...';
-    
-    const scriptUrl = GOOGLE_SCRIPT_URL;
-    const startTime = Date.now();
-    
-    try {
-        console.log('🧪 Début test connexion...');
-        console.log('📍 URL:', scriptUrl);
-        console.log('📱 User Agent:', navigator.userAgent);
-        console.log('🌐 Online:', navigator.onLine);
-        
-        // Test 1 : Vérifier si on est en ligne
-        if (!navigator.onLine) {
-            throw new Error('Pas de connexion Internet');
-        }
-        
-        // Test 2 : Fetch simple
-        const response = await fetch(scriptUrl, {
-            method: 'GET',
-            mode: 'no-cors'
-        });
-        
-        const endTime = Date.now();
-        const duration = endTime - startTime;
-        
-        console.log('✅ Réponse reçue en', duration, 'ms');
-        console.log('📦 Response:', response);
-        
-        // Avec no-cors, on ne peut pas lire la réponse
-        // Mais si on arrive ici sans erreur, c'est bon signe
-        
-        resultDiv.innerHTML = `
-            <div style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                ✅ Test Réussi !
-            </div>
-            <div style="font-size: 12px; color: #666;">
-                <strong>Durée :</strong> ${duration}ms<br>
-                <strong>URL :</strong> Accessible<br>
-                <strong>État :</strong> ${response.type === 'opaque' ? 'OK (no-cors)' : response.type}<br>
-                <br>
-                <em>Le script Google est accessible. 
-                L'envoi devrait fonctionner ! 🎉</em>
-            </div>
-        `;
-        
-        // Test 3 : Envoyer un test payload minimal
-        console.log('📤 Test envoi données...');
-        
-        const testPayload = {
-            pdfBase64: 'VGVzdA==', // "Test" en base64
-            filename: 'test.pdf',
-            commercial: 'Test',
-            clientName: 'Test',
-            timestamp: new Date().toISOString()
-        };
-        
-        await fetch(scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'text/plain',
-            },
-            body: JSON.stringify(testPayload)
-        });
-        
-        console.log('✅ Test payload envoyé');
-        
-        setTimeout(() => {
-            resultDiv.innerHTML += `
-                <div style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 5px; font-size: 11px;">
-                    ℹ️ Vérifiez si un email de test est arrivé sur <strong>devis.dialarme@gmail.com</strong>
-                </div>
-            `;
-        }, 1000);
-        
-    } catch (error) {
-        console.error('❌ Erreur test:', error);
-        
-        resultDiv.innerHTML = `
-            <div style="color: #dc3545; font-weight: bold; margin-bottom: 10px;">
-                ❌ Test Échoué
-            </div>
-            <div style="font-size: 12px; color: #666;">
-                <strong>Erreur :</strong><br>
-                ${error.message}<br>
-                <br>
-                <strong>Solutions :</strong><br>
-                • Vérifiez votre connexion Internet<br>
-                • Vérifiez l'URL du script Google<br>
-                • Testez depuis un ordinateur<br>
-                <br>
-                <strong>Détails techniques :</strong><br>
-                <code style="font-size: 10px; background: #f5f5f5; padding: 5px; display: block; margin-top: 5px; border-radius: 3px; word-break: break-all;">
-                ${error.stack || error.toString()}
-                </code>
-            </div>
-        `;
-    }
-    
-    // Fermer automatiquement après 10 secondes
-    setTimeout(() => {
-        resultDiv.classList.remove('show');
-    }, 10000);
-}
-
-// Test automatique au chargement (optionnel - décommentez si souhaité)
-/*
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        console.log('🔄 Test automatique au chargement...');
-        testGoogleScriptConnection();
-    }, 2000);
-});
-*/
-</script>
 </body>
-</html>weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - ${CENTRALS_CONFIG.titane.price.toFixed(2)} CHF</h3>
-                <div style="display: flex; gap: 12px; margin-bottom: 8px;">
-                    <button class="kit-btn" data-central="titane" data-kit="kit1"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            2 Détecteurs volumétriques<br>
-                            1 Détecteur d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                    <button class="kit-btn" data-central="titane" data-kit="kit2"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            1 Détecteur volumétrique<br>
-                            3 Détecteurs d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <div>
-                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-
+</html>
