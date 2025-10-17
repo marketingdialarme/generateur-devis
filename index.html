@@ -2713,7 +2713,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         yPos = this.createAdminFeesPDF(doc, yPos);
                         yPos = this.createServicesPDF(doc, yPos, isRental);
                         yPos = this.createOptionsAlarmPDF(doc, yPos);
-                    } else if (type === 'camera') {
+                    } if (type === 'camera') {
                         if (this.hasSectionProducts('camera-material')) {
                             yPos = this.createPDFSection(doc, 'MATERIEL', 'camera-material', yPos, isRental);
                         }
@@ -2728,11 +2728,14 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                                 yPos += 15;
                             }
                         }
+                        yPos = this.createMaintenancePDF(doc, yPos);
+                    }
                     } else if (type === 'fog') {
                         if (this.hasSectionProducts('fog-material')) {
                             yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos, isRental);
                         }
-                        yPos = this.createFogInstallPDF(doc, yPos);
+                       yPos = this.createFogInstallPDF(doc, yPos);
+                        yPos = this.createMaintenancePDF(doc, yPos);
                     }
 
                     yPos = this.createFinalSummaryPDF(doc, yPos, type, isRental);
@@ -3400,7 +3403,43 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 return yPos + 49;
             }
+            createMaintenancePDF(doc, yPos) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('MAINTENANCE ET GARANTIE', 40, yPos);
+                yPos += 15;
 
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Description', 90, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
+
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 14);
+                doc.line(80, yPos, 80, yPos + 14);
+                doc.line(390, yPos, 390, yPos + 14);
+                doc.line(470, yPos, 470, yPos + 14);
+    
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text('1', 55, yPos + 9);
+                doc.text('Assistance hotline, déplacement(s), matériels pièce(s), main d\'œuvre et support téléphonique', 90, yPos + 9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 150, 0);
+                doc.text('OFFERT', 405, yPos + 9);
+                doc.text('OFFERT', 485, yPos + 9);
+                doc.setTextColor(0, 0, 0);
+                yPos += 14;
+
+                return yPos + 15;
+            }
             createFinalSummaryPDF(doc, yPos, type, isRental) {
                 yPos += 15;
                 
