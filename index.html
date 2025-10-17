@@ -2782,16 +2782,20 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text(title, 40, yPos);
                 yPos += 12;
 
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                
+                doc.setFillColor(230, 230, 230);
+                doc.rect(390, yPos, 165, 36, 'F');
+                doc.rect(390, yPos, 165, 36);
+                doc.line(390, yPos + 12, 555, yPos + 12);
+                doc.line(390, yPos + 24, 555, yPos + 24);
+
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 9);
-                doc.text('Désignation du matériel', 90, yPos + 9);
-                doc.text('Prix uni. HT', 400, yPos + 9);
-                doc.text('Total HT', 480,yPos + 9);
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(sectionTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(tva.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 33);
+                doc.text(totalTTC.toFixed(2), 485, yPos + 33);
                 yPos += 14;
 
                 const container = document.getElementById(`${sectionId}-products`);
@@ -3193,16 +3197,19 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFillColor(230, 230, 230);
                 doc.rect(390, yPos, 165, 36, 'F');
+                doc.rect(390, yPos, 165, 36);
+                doc.line(390, yPos + 12, 555, yPos + 12);
+                doc.line(390, yPos + 24, 555, yPos + 24);
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 12);
-                doc.text(adminTotal.toFixed(2), 485, yPos + 12);
-                doc.text('TVA 8.1%', 400, yPos + 24);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 24);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(adminTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(adminTVA.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 33);
+                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 33);
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7);
@@ -3217,16 +3224,23 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('INSTALLATION', 40, yPos);
                 yPos += 15;
 
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 36, 'F');
+                doc.rect(390, yPos, 165, 36);
+                doc.line(390, yPos + 12, 555, yPos + 12);
+                doc.line(390, yPos + 24, 555, yPos + 24);
+
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(installTVA.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 33);
+                doc.text(installTotalTTC.toFixed(2), 485, yPos + 33);
+
+                yPos += 36;
 
                 if (isRental) {
                     doc.setDrawColor(0, 0, 0);
@@ -3338,16 +3352,23 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('INSTALLATION', 40, yPos);
                 yPos += 15;
 
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFillColor(200, 200, 200);
+                doc.rect(390, yPos, 165, 36, 'F');
+                doc.rect(390, yPos, 165, 36);
+                doc.line(390, yPos + 12, 555, yPos + 12);
+                doc.line(390, yPos + 24, 555, yPos + 24);
+
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(installTVA.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 33);
+                doc.text(installTotalTTC.toFixed(2), 485, yPos + 33);
+
+                return yPos + 49;
 
                 const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
                 
