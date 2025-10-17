@@ -2482,9 +2482,103 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 }
 
             async sendToEmailAndDrive(pdfBlob, filename, commercial, clientName) {
-                this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
-                
+               console.log('📤 Début sendToEmailAndDrive');
+                console.log('📄 Filename:', filename);
+                console.log('👤 Commercial:', commercial);
+                console.log('👤 Client:', clientName);
+    
                 return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+        
+                    reader.onload = async function() {
+                        const base64 = reader.result.split(',')[1];
+                        console.log('✅ PDF converti en base64 (taille:', base64.length, 'caractères)');
+            
+                        try {
+                            const payload = {
+                                pdfBase64: base64,
+                                filename: filename,
+                                commercial: commercial,
+                                clientName: clientName,
+                                timestamp: new Date().toISOString()
+                            };
+                
+                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                
+                            console.log('🔍 Détection appareil - iOS:', isIOS, '| Safari:', isSafari);
+                
+                            if (isIOS || isSafari) {
+                                console.log('📱 Utilisation méthode formulaire (iOS/Safari)');
+                    
+                                // Créer un formulaire caché
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = GOOGLE_SCRIPT_URL;
+                                form.target = 'hidden_iframe';
+                                form.style.display = 'none';
+                    
+                                // Envoyer les données au format attendu par le script Google
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'data';
+                                input.value = JSON.stringify(payload);
+                    
+                                form.appendChild(input);
+                                document.body.appendChild(form);
+                    
+                                // Créer ou récupérer l'iframe
+                                let iframe = document.getElementById('hidden_iframe');
+                                if (!iframe) {
+                                    iframe = document.createElement('iframe');
+                                    iframe.id = 'hidden_iframe';
+                                    iframe.name = 'hidden_iframe';
+                                    iframe.style.display = 'none';
+                                    document.body.appendChild(iframe);
+                                }
+                    
+                                console.log('✅ Formulaire créé, envoi en cours...');
+                               form.submit();
+                                console.log('✅ Formulaire soumis !');
+                    
+                                // Nettoyer après un délai
+                                setTimeout(() => {
+                                    if (form.parentNode) document.body.removeChild(form);
+                                    console.log('🧹 Formulaire nettoyé');
+                                }, 3000);
+                    
+                                resolve(true);
+                    
+                           } else {
+                                console.log('💻 Utilisation méthode fetch (Desktop)');
+                    
+                                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(payload)
+                                });
+                    
+                                console.log('✅ Fetch réponse:', response.type);
+                                resolve(true);
+                            }
+                
+                        } catch (error) {
+                            console.error('❌ Erreur lors de l\'envoi:', error);
+                            reject(error);
+                        }
+                    };
+        
+                    reader.onerror = function(error) {
+                        console.error('❌ Erreur de lecture du fichier:', error);
+                        reject(error);
+                    };
+        
+                    reader.readAsDataURL(pdfBlob);
+                });
+            }
                     const reader = new FileReader();
                     
                     reader.onload = async function() {
@@ -2703,16 +2797,14 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         // Envoyer SANS await pour ne pas bloquer
                         this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
     
-                        // Attendre 2 secondes pour laisser la requête partir
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        // Attendre 5 secondes pour laisser la requête partir complètement
+                        await new Promise(resolve => setTimeout(resolve, 5000));
     
-                        // Notification + Proposer le téléchargement manuellement
-                        this.showNotification('✅ PDF envoyé par email! Téléchargement disponible...', 'success', 5000);
+                        // Notification de succès
+                        this.showNotification('✅ PDF envoyé par email et sauvegardé !', 'success', 0);
     
-                        // Télécharger APRÈS le délai
-                        setTimeout(() => {
-                            doc.save(filename);
-                        }, 500);
+                        // Créer un bouton de téléchargement manuel au lieu de télécharger automatiquement
+                        this.showDownloadButton(doc, filename);
     
                     } else {
                         // ====== COMPORTEMENT NORMAL (Desktop/Android) ======
@@ -3613,7 +3705,62 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 
                 this.showNotification('Devis exporté avec succès!', 'success');
             }
-
+showDownloadButton(doc, filename) {
+    // Créer un bouton de téléchargement qui ne bloque pas la page
+    const downloadBtn = document.createElement('button');
+    downloadBtn.innerHTML = '📥 Télécharger le PDF';
+    downloadBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 18px 35px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        z-index: 10001;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        animation: pulseDownload 2s infinite;
+    `;
+    
+    // Ajouter l'animation CSS
+    if (!document.getElementById('download-btn-styles')) {
+        const style = document.createElement('style');
+        style.id = 'download-btn-styles';
+        style.textContent = `
+            @keyframes pulseDownload {
+                0%, 100% { transform: translateX(-50%) scale(1); }
+                50% { transform: translateX(-50%) scale(1.05); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    downloadBtn.onclick = () => {
+        doc.save(filename);
+        this.showNotification('📥 Téléchargement du PDF...', 'success', 2000);
+        setTimeout(() => {
+            downloadBtn.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => downloadBtn.remove(), 300);
+        }, 1000);
+    };
+    
+    document.body.appendChild(downloadBtn);
+    
+    // Auto-suppression après 30 secondes
+    setTimeout(() => {
+        if (downloadBtn.parentNode) {
+            downloadBtn.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (downloadBtn.parentNode) downloadBtn.remove();
+            }, 300);
+        }
+    }, 30000);
+}
             showNotification(message, type = 'success', duration = 3000) {
                 const existingNotifs = document.querySelectorAll('.dialarme-notification');
                 existingNotifs.forEach(n => n.remove());
