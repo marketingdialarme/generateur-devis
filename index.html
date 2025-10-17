@@ -2693,23 +2693,44 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     const pdfBlob = doc.output('blob');
 
-                    // Notification initiale
-                    this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
+                    // Détecter iOS/iPad
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-                    try {
-                        // IMPORTANT : D'ABORD envoyer par email (évite interruption sur iOS/iPad)
-                        await this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
-                        this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 3000);
+                    if (isIOS) {
+                        // ====== COMPORTEMENT SPÉCIAL iOS/iPad ======
+                        this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
     
-                        // ENSUITE : Téléchargement local (peut ouvrir nouvel onglet sur iOS)
-                        doc.save(filename);
+                        // Envoyer SANS await pour ne pas bloquer
+                        this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
     
-                    } catch (error) {
-                        console.error('Erreur lors de l\'envoi:', error);
-                        this.showNotification('⚠️ Erreur d\'envoi, mais téléchargement du PDF...', 'warning', 3000);
+                        // Attendre 2 secondes pour laisser la requête partir
+                        await new Promise(resolve => setTimeout(resolve, 2000));
     
-                        // Téléchargement local même en cas d'erreur
-                        doc.save(filename);
+                        // Notification + Proposer le téléchargement manuellement
+                        this.showNotification('✅ PDF envoyé par email! Téléchargement disponible...', 'success', 5000);
+    
+                        // Télécharger APRÈS le délai
+                        setTimeout(() => {
+                            doc.save(filename);
+                        }, 500);
+    
+                    } else {
+                        // ====== COMPORTEMENT NORMAL (Desktop/Android) ======
+                        this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
+    
+                        try {
+                            // Envoyer avec await
+                            await this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
+                            this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 3000);
+        
+                            // Téléchargement local
+                            doc.save(filename);
+        
+                        } catch (error) {
+                            console.error('Erreur lors de l\'envoi:', error);
+                            this.showNotification('⚠️ Erreur d\'envoi, mais téléchargement du PDF...', 'warning', 3000);
+                            doc.save(filename);
+                        }
                     }
 
                     } catch (error) {
