@@ -885,14 +885,22 @@
                     <div>Carte SIM + Activation</div>
                     <input type="number" value="1" class="quantity-input" readonly>
                     <div></div>
-                    <div class="price-display">50.00 CHF HT</div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="sim-card-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="sim-card-total">50.00 CHF HT</div>
                     <div></div>
                 </div>
                 <div class="product-line">
                     <div>Frais de dossier</div>
                     <input type="number" value="1" class="quantity-input" readonly>
                     <div></div>
-                    <div class="price-display">190.00 CHF HT</div>
+                    <div class="checkbox-option" style="margin: 0;">
+                        <input type="checkbox" id="processing-fee-offered" class="offered-checkbox" onchange="updateTotals()">
+                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
+                    </div>
+                    <div class="price-display" id="processing-fee-total">190.00 CHF HT</div>
                     <div></div>
                 </div>
                 <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">* Les frais de dossier se payent à l'installation</p>
@@ -2007,9 +2015,19 @@
                     }
                     
                     const totalInstallation = installTotal + otherInstallationTotal;
-                    
-                    const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
-                    
+
+                    // Frais de dossier avec gestion des cases OFFERT
+                    const simCardOffered = document.getElementById('sim-card-offered')?.checked || false;
+                    const processingFeeOffered = document.getElementById('processing-fee-offered')?.checked || false;
+
+                    const simCardTotal = simCardOffered ? 0 : ADMIN_FEES.simCard;
+                    const processingFeeTotal = processingFeeOffered ? 0 : ADMIN_FEES.processingFee;
+                    const adminTotal = simCardTotal + processingFeeTotal;
+
+                    // Mettre à jour l'affichage
+                    document.getElementById('sim-card-total').textContent = simCardOffered ? 'OFFERT' : '50.00 CHF HT';
+                    document.getElementById('processing-fee-total').textContent = processingFeeOffered ? 'OFFERT' : '190.00 CHF HT';
+
                     const testCycliqueSelected = document.getElementById('test-cyclique-selected').checked;
                     const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price').value) || TEST_CYCLIQUE_DEFAULT_PRICE;
                     const testCycliqueOffered = document.getElementById('test-cyclique-offered').checked;
@@ -3120,31 +3138,56 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('Total HT', 480, yPos + 10);
                 yPos += 16;
 
+                const simCardOffered = document.getElementById('sim-card-offered')?.checked || false;
+                const processingFeeOffered = document.getElementById('processing-fee-offered')?.checked || false;
+
                 const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: ADMIN_FEES.simCard },
-                    { qty: 1, desc: 'Frais de dossier', price: ADMIN_FEES.processingFee }
+                    { 
+                        qty: 1, 
+                        desc: 'Carte SIM + Activation', 
+                        price: ADMIN_FEES.simCard,
+                        offered: simCardOffered
+                    },
+                    { 
+                        qty: 1, 
+                        desc: 'Frais de dossier', 
+                        price: ADMIN_FEES.processingFee,
+                        offered: processingFeeOffered
+                    }
                 ];
 
                 let lineCount = 0;
+                let adminTotal = 0;
+    
                 adminItems.forEach(item => {
                     lineCount++;
-                    
+        
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
                         doc.rect(40, yPos, 515, 14, 'F');
                     }
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(7);
                     doc.setTextColor(0, 0, 0);
                     doc.text(item.qty.toString(), 55, yPos + 9);
                     doc.text(item.desc, 90, yPos + 9);
-                    doc.text(item.price.toFixed(2), 405, yPos + 9);
-                    doc.text(item.price.toFixed(2), 485, yPos + 9);
+        
+                    if (item.offered) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(0, 150, 0);
+                        doc.text('OFFERT', 405, yPos + 9);
+                        doc.text('OFFERT', 485, yPos + 9);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(item.price.toFixed(2), 405, yPos + 9);
+                        doc.text(item.price.toFixed(2), 485, yPos + 9);
+                        adminTotal += item.price;
+                    }
+        
                     yPos += 14;
                 });
 
-                const adminTotal = ADMIN_FEES.simCard + ADMIN_FEES.processingFee;
                 const adminTotalTTC = this.roundToFiveCents(adminTotal * (1 + TVA_RATE));
                 const adminTVA = adminTotalTTC - adminTotal;
 
@@ -3153,6 +3196,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
+                doc.setTextColor(0, 0, 0);
                 doc.text('Total H.T.', 400, yPos + 12);
                 doc.text(adminTotal.toFixed(2), 485, yPos + 12);
                 doc.text('TVA 8.1%', 400, yPos + 24);
@@ -3162,7 +3206,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
                 doc.text('Montant à régler à l\'installation', 50, yPos + 32);
 
                 return yPos + 50;
