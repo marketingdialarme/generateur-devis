@@ -2782,20 +2782,16 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text(title, 40, yPos);
                 yPos += 12;
 
-                doc.setFillColor(230, 230, 230);
-                doc.rect(390, yPos, 165, 36, 'F');
-                doc.rect(390, yPos, 165, 36);
-                doc.line(390, yPos + 12, 555, yPos + 12);
-                doc.line(390, yPos + 24, 555, yPos + 24);
-
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 14, 'F');
+    
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 21);
-                doc.text(tva.toFixed(2), 485, yPos + 21);
-                doc.text('Total T.T.C.', 400, yPos + 33);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 33);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 9);
+                doc.text('Désignation du matériel', 90, yPos + 9);
+                doc.text('Prix uni. HT', 400, yPos + 9);
+                doc.text('Total HT', 480, yPos + 9);
                 yPos += 14;
 
                 const container = document.getElementById(`${sectionId}-products`);
@@ -2803,19 +2799,19 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 let sectionTotal = 0;
                 let sectionTotalBeforeDiscount = 0;
                 let lineCount = 0;
-                
+    
                 productLines.forEach(line => {
                     const select = line.querySelector('.product-select');
                     const qtyInput = line.querySelector('.quantity-input');
                     const offeredCheckbox = line.querySelector('.offered-checkbox');
                     const priceInput = line.querySelector('.price-input');
-                    
+        
                     const isCentralLine = line.classList.contains('central-line');
                     const isKitLine = line.style.background === 'rgb(255, 251, 240)' || line.style.background === '#fffbf0';
-                    
+        
                     if ((select && select.value && qtyInput) || (isCentralLine && qtyInput) || (line.querySelector('.price-input') && qtyInput)) {
                         lineCount++;
-                        
+            
                         if (isKitLine) {
                             doc.setFillColor(255, 251, 240);
                             doc.rect(40, yPos, 515, 12, 'F');
@@ -2826,17 +2822,17 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                         const qty = parseFloat(qtyInput.value) || 0;
                         const isOffered = offeredCheckbox?.checked || false;
-                        
+            
                         let price = 0;
                         let productName = '';
-                        
+            
                         const selectedOption = select?.querySelector(`option[value="${select.value}"]`);
                         const nameInput = line.querySelector('.product-name-input');
-                        
+            
                         if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
                             productName = nameInput.value;
                             price = parseFloat(priceInput?.value) || 0;
-                        } else if (priceInput && priceInput.style.display !== 'none') {
+                       } else if (priceInput && priceInput.style.display !== 'none') {
                             price = parseFloat(priceInput.value) || 0;
                             productName = selectedOption?.text?.split(' - ')[0] || 'Produit personnalisé';
                         } else if (selectedOption) {
@@ -2846,7 +2842,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             productName = line.querySelector('div')?.textContent || '';
                             price = parseFloat(priceInput.value) || 0;
                         }
-                        
+            
                         let lineTotal = price * qty;
                         sectionTotalBeforeDiscount += lineTotal;
                         if (!isOffered) {
@@ -2857,16 +2853,16 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         doc.setFontSize(6);
                         doc.setTextColor(0, 0, 0);
                         doc.text(qty.toString(), 55, yPos + 8);
-                        
+            
                         const maxNameLength = 45;
                         const displayName = productName.length > maxNameLength 
                             ? productName.substring(0, maxNameLength - 3) + '...' 
                             : productName;
                         doc.text(displayName, 90, yPos + 8);
-                        
+            
                         doc.setTextColor(0, 0, 0);
                         doc.text(price.toFixed(2), 405, yPos + 8);
-                        
+            
                         if (isOffered) {
                             doc.setFont('helvetica', 'bold');
                             doc.setTextColor(0, 150, 0);
@@ -2887,12 +2883,12 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         doc.setFillColor(245, 245, 245);
                         doc.rect(40, yPos, 515, 12, 'F');
                     }
-                    
+        
                     const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
                     const installPrice = this.calculateInstallationPrice(installQty);
                     const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
                     const installTotal = installOffered ? 0 : installPrice;
-                    
+        
                     let daysText = '';
                     if (installQty === 1) daysText = ' (1/2 journée)';
                     else if (installQty === 2) daysText = ' (1 jour)';
@@ -2905,12 +2901,12 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         const halfDay = installQty % 2;
                         daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
                     }
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(6);
                     doc.text(installQty.toString(), 55, yPos + 8);
                     doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 8);
-                    
+        
                     if (installOffered) {
                         doc.setFont('helvetica', 'bold');
                         doc.setTextColor(0, 150, 0);
@@ -2921,7 +2917,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         doc.text(installPrice.toFixed(2), 405, yPos + 8);
                         doc.text(installTotal.toFixed(2), 485, yPos + 8);
                     }
-                    
+        
                     sectionTotal += installTotal;
                     sectionTotalBeforeDiscount += installTotal;
                     yPos += 12;
@@ -2931,7 +2927,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         doc.setFillColor(245, 245, 245);
                         doc.rect(40, yPos, 515, 12, 'F');
                     }
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(6);
                     doc.text('1', 55, yPos + 8);
@@ -2942,13 +2938,13 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.text('Compris', 475, yPos + 8);
                     doc.setTextColor(0, 0, 0);
                     yPos += 12;
-                    
+        
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
                         doc.rect(40, yPos, 515, 12, 'F');
                     }
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(6);
                     doc.text('1', 55, yPos + 8);
@@ -2961,7 +2957,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
                 const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                
+    
                 let discountAmount = 0;
                 if (discountValue > 0) {
                     if (discountType === 'percent') {
@@ -2971,13 +2967,13 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         discountAmount = Math.min(discountValue, sectionTotal);
                         sectionTotal = Math.max(0, sectionTotal - discountValue);
                     }
-                    
+        
                     lineCount++;
                     if (lineCount % 2 === 0) {
                         doc.setFillColor(245, 245, 245);
                         doc.rect(40, yPos, 515, 12, 'F');
                     }
-                    
+        
                     doc.setFont('helvetica', 'italic');
                     doc.setFontSize(6);
                     doc.setTextColor(200, 0, 0);
@@ -2995,15 +2991,18 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
 
                 doc.setFillColor(230, 230, 230);
                 doc.rect(390, yPos, 165, 36, 'F');
+                doc.rect(390, yPos, 165, 36);
+                doc.line(390, yPos + 12, 555, yPos + 12);
+                doc.line(390, yPos + 24, 555, yPos + 24);
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 12);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 12);
-                doc.text('TVA 8.1%', 400, yPos + 24);
-                doc.text(tva.toFixed(2), 485, yPos + 24);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 32);
+                doc.text('Total H.T.', 400, yPos + 9);
+                doc.text(sectionTotal.toFixed(2), 485, yPos + 9);
+                doc.text('TVA 8.1%', 400, yPos + 21);
+                doc.text(tva.toFixed(2), 485, yPos + 21);
+                doc.text('Total T.T.C.', 400, yPos + 33);
+                doc.text(totalTTC.toFixed(2), 485, yPos + 33);
 
                 yPos += 40;
 
