@@ -2349,53 +2349,83 @@ showKitSelector() {
     };
     
     modal.innerHTML = `
-        <style>
-            @keyframes scaleIn {
-                from { transform: scale(0); }
-                to { transform: scale(1); }
-            }
-        </style>
-        <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
-                <h2 style="margin: 0; color: #333; font-size: 20px;">Sélectionner un kit de base</h2>
-                <button id="close-modal-btn" style="background: #e0e0e0; color: #666; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; line-height: 1; transition: all 0.2s;" onmouseover="this.style.background='#d0d0d0'" onmouseout="this.style.background='#e0e0e0'">×</button>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Jablotron - ${CENTRALS_CONFIG.jablotron.price.toFixed(2)} CHF</h3>
-                <div style="display: flex; gap: 12px;">
-                    <button class="kit-btn" data-central="jablotron" data-kit="kit1"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            2 Détecteurs volumétriques<br>
-                            1 Détecteur d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                    <button class="kit-btn" data-central="jablotron" data-kit="kit2"
-                            style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
-                            onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
-                            onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
-                        <div style="font-size: 12px; color: #666; line-height: 1.6;">
-                            1 Détecteur volumétrique<br>
-                            3 Détecteurs d'ouverture<br>
-                            1 Clavier + 1 Sirène
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-left: 3px solid #f4e600; border-radius: 4px;">
-                <p style="margin: 0; font-size: 13px; color: #666;">
-                    💡 Le kit sera automatiquement marqué comme OFFERT
-                </p>
+    <style>
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+    </style>
+    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
+            <h2 style="margin: 0; color: #333; font-size: 20px;">Sélectionner un kit de base</h2>
+            <button id="close-modal-btn" style="background: #e0e0e0; color: #666; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; line-height: 1; transition: all 0.2s;" onmouseover="this.style.background='#d0d0d0'" onmouseout="this.style.background='#e0e0e0'">×</button>
+        </div>
+        
+        <!-- KITS JABLOTRON -->
+        <div style="margin-bottom: 25px;">
+            <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Jablotron - ${CENTRALS_CONFIG.jablotron.price.toFixed(2)} CHF</h3>
+            <div style="display: flex; gap: 12px;">
+                <button class="kit-btn" data-central="jablotron" data-kit="kit1"
+                        style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                        onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
+                        onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
+                    <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                        2 Détecteurs volumétriques<br>
+                        1 Détecteur d'ouverture<br>
+                        1 Clavier + 1 Sirène
+                    </div>
+                </button>
+                <button class="kit-btn" data-central="jablotron" data-kit="kit2"
+                        style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #6c757d; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                        onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(108,117,125,0.2)'; }"
+                        onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
+                    <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                        1 Détecteur volumétrique<br>
+                        3 Détecteurs d'ouverture<br>
+                        1 Clavier + 1 Sirène
+                    </div>
+                </button>
             </div>
         </div>
-    `;
+        
+        <!-- KITS TITANE -->
+        <div style="margin-bottom: 25px;">
+            <h3 style="color: #666; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Centrale Titane - ${CENTRALS_CONFIG.titane.price.toFixed(2)} CHF</h3>
+            <div style="display: flex; gap: 12px;">
+                <button class="kit-btn" data-central="titane" data-kit="kit1"
+                        style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                        onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                        onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 1</div>
+                    <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                        2 Détecteurs volumétriques<br>
+                        1 Détecteur d'ouverture<br>
+                        1 Clavier + 1 Sirène
+                    </div>
+                </button>
+                <button class="kit-btn" data-central="titane" data-kit="kit2"
+                        style="position: relative; flex: 1; padding: 15px; background: white; border: 2px solid #f4e600; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left;"
+                        onmouseover="if(!this.querySelector('.checkmark')) { this.style.background='#fffef0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(244,230,0,0.2)'; }"
+                        onmouseout="if(!this.querySelector('.checkmark')) { this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'; }">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Kit 2</div>
+                    <div style="font-size: 12px; color: #666; line-height: 1.6;">
+                        1 Détecteur volumétrique<br>
+                        3 Détecteurs d'ouverture<br>
+                        1 Clavier + 1 Sirène
+                    </div>
+                </button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-left: 3px solid #f4e600; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #666;">
+                💡 Le kit sera automatiquement marqué comme OFFERT
+            </p>
+        </div>
+    </div>
+`;
     
     document.body.appendChild(modal);
     
