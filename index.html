@@ -3214,26 +3214,21 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
             createCameraInstallPDF(doc, yPos, isRental) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
+               doc.text('INSTALLATION', 40, yPos);
                 yPos += 15;
 
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 36, 'F');
-                doc.rect(390, yPos, 165, 36);
-                doc.line(390, yPos + 12, 555, yPos + 12);
-                doc.line(390, yPos + 24, 555, yPos + 24);
-
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
                 doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 21);
-                doc.text(installTVA.toFixed(2), 485, yPos + 21);
-                doc.text('Total T.T.C.', 400, yPos + 33);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 33);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Désignation', 90, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
 
-                yPos += 36;
+                let installTotal = 0;
 
                 if (isRental) {
                     doc.setDrawColor(0, 0, 0);
@@ -3242,7 +3237,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.line(80, yPos, 80, yPos + 14);
                     doc.line(390, yPos, 390, yPos + 14);
                     doc.line(470, yPos, 470, yPos + 14);
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(7);
                     doc.text('1', 55, yPos + 9);
@@ -3253,7 +3248,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.text('Compris', 475, yPos + 9);
                     doc.setTextColor(0, 0, 0);
                     yPos += 14;
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFillColor(245, 245, 245);
                     doc.rect(40, yPos, 515, 14, 'F');
@@ -3261,7 +3256,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.line(80, yPos, 80, yPos + 14);
                     doc.line(390, yPos, 390, yPos + 14);
                     doc.line(470, yPos, 470, yPos + 14);
-                    
+        
                     doc.setFontSize(7);
                     doc.text('1', 55, yPos + 9);
                     doc.text('Désinstallation facturée si durée inférieure à 12 mois', 90, yPos + 9);
@@ -3271,11 +3266,10 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 } else {
                     const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
                     const installPrice = this.calculateCameraInstallationPrice();
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
+                   installTotal = installOffered ? 0 : installPrice;
+        
                     const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                    let description = '';
-                    
+        
                     let daysText = '';
                     if (installQty === 1) daysText = ' (1/2 journée)';
                     else if (installQty === 2) daysText = ' (1 jour)';
@@ -3288,7 +3282,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         const halfDay = installQty % 2;
                         daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
                     }
-                    description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
+                    const description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
 
                     doc.setDrawColor(0, 0, 0);
                     doc.setLineWidth(0.5);
@@ -3296,12 +3290,12 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.line(80, yPos, 80, yPos + 14);
                     doc.line(390, yPos, 390, yPos + 14);
                     doc.line(470, yPos, 470, yPos + 14);
-                    
+        
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(7);
                     doc.text('1', 55, yPos + 9);
                     doc.text(description, 90, yPos + 9);
-                    
+        
                     if (installOffered) {
                         doc.setFont('helvetica', 'bold');
                         doc.setTextColor(0, 150, 0);
@@ -3318,7 +3312,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     const installTVA = installTotalTTC - installTotal;
 
                     doc.setFillColor(200, 200, 200);
-                    doc.rect(390, yPos, 165, 42, 'F');
+                    doc.rect(390, yPos, 165, 36, 'F');
 
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
@@ -3327,14 +3321,14 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     doc.text(installTotal.toFixed(2), 485, yPos + 9);
                     doc.text('TVA 8.1%', 400, yPos + 21);
                     doc.text(installTVA.toFixed(2), 485, yPos + 21);
-                    doc.text('Total T.T.C.', 400, yPos + 35);
-                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
+                    doc.text('Total T.T.C.', 400, yPos + 33);
+                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 33);
 
-                    yPos += 42;
+                    yPos += 36;
                 }
 
                 return yPos + 15;
-            }
+}
 
             createFogInstallPDF(doc, yPos) {
                 doc.setFont('helvetica', 'bold');
@@ -3342,11 +3336,57 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text('INSTALLATION', 40, yPos);
                 yPos += 15;
 
+                doc.setFillColor(244, 230, 0);
+                doc.rect(40, yPos, 515, 16, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Qté', 50, yPos + 10);
+                doc.text('Désignation', 90, yPos + 10);
+                doc.text('Prix uni. HT', 400, yPos + 10);
+                doc.text('Total HT', 480, yPos + 10);
+                yPos += 16;
+
+                const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
+                const installTotal = installOffered ? 0 : FOG_INSTALL_PRICE;
+    
+                const description = 'Installation, paramétrages, tests, mise en service & formation';
+
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.rect(40, yPos, 515, 14);
+                doc.line(80, yPos, 80, yPos + 14);
+                doc.line(390, yPos, 390, yPos + 14);
+                doc.line(470, yPos, 470, yPos + 14);
+    
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text('1', 55, yPos + 9);
+                doc.text(description, 90, yPos + 9);
+    
+                if (installOffered) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(0, 150, 0);
+                    doc.text('OFFERT', 405, yPos + 9);
+                    doc.text('OFFERT', 485, yPos + 9);
+                } else {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(FOG_INSTALL_PRICE.toFixed(2), 405, yPos + 9);
+                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
+                }
+                yPos += 14;
+    
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7);
+                doc.setTextColor(100, 100, 100);
+                doc.text('* Installation uniquement au comptant (non mensualisée)', 90, yPos + 5);
+                yPos += 10;
+
+                const installTotalTTC = this.roundToFiveCents(installTotal * (1 + TVA_RATE));
+                const installTVA = installTotalTTC - installTotal;
+
                 doc.setFillColor(200, 200, 200);
                 doc.rect(390, yPos, 165, 36, 'F');
-                doc.rect(390, yPos, 165, 36);
-                doc.line(390, yPos + 12, 555, yPos + 12);
-                doc.line(390, yPos + 24, 555, yPos + 24);
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
@@ -3359,60 +3399,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 doc.text(installTotalTTC.toFixed(2), 485, yPos + 33);
 
                 return yPos + 49;
-
-                const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                
-                const description = 'Installation, paramétrages, tests, mise en service & formation';
-                
-                const installTotal = installOffered ? 0 : FOG_INSTALL_PRICE;
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('1', 55, yPos + 9);
-                doc.text(description, 90, yPos + 9);
-                
-                if (installOffered) {
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(FOG_INSTALL_PRICE.toFixed(2), 405, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                }
-                yPos += 14;
-                
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(7);
-                doc.setTextColor(100, 100, 100);
-                doc.text('* Installation uniquement au comptant (non mensualisée)', 90, yPos + 5);
-                yPos += 10;
-
-                const installTotalTTC = this.roundToFiveCents(installTotal * (1 + TVA_RATE));
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 21);
-                doc.text(installTVA.toFixed(2), 485, yPos + 21);
-                doc.text('Total T.T.C.', 400, yPos + 35);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
-
-                return yPos + 55;
             }
 
             createFinalSummaryPDF(doc, yPos, type, isRental) {
