@@ -2742,24 +2742,21 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     const pdfBlob = doc.output('blob');
                     
-                    const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-                    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                        try {
-                            await navigator.share({
-                                files: [pdfFile],
-                                title: filename,
-                                text: `Devis pour ${clientName}`,
-                            });
-                            // L'utilisateur a choisi une app (Mail, Drive, etc.)
-                        } catch (err) {
-                            console.error('Share failed', err);
-                        }
-                    } else {
-                        // Fallback : envoi au serveur (recommandé)
-                        await this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
-                    }
-
+                    // Téléchargement local
+                    doc.save(filename);
+                    
+                    // Notification initiale
+                    this.showNotification('✅ PDF généré localement', 'success', 2000);
+                    
+                    // Envoi par email et sauvegarde dans Drive
+                    this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName)
+                        .then(() => {
+                            this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 4000);
+                        })
+                        .catch(error => {
+                            console.error('Erreur lors de l\'envoi:', error);
+                            this.showNotification('⚠️ PDF généré, mais erreur d\'envoi email/Drive', 'warning', 4000);
+                        });
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
