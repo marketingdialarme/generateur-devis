@@ -2612,7 +2612,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 });
             }
 
-            generatePDF(type) {
+            async generatePDF(type) {
                 const isRental = this.rentalMode[type];
                 let clientNameField, commercialField, commercialCustomField;
                 
@@ -2742,21 +2742,35 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     const pdfBlob = doc.output('blob');
                     
-                    // Téléchargement local
+                    // 1) Envoi au serveur (email + Drive) AVANT toute ouverture/téléchargement
+                    try {
+                        await this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName);
+                        this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 4000);
+                    } catch (error) {
+                        console.error('Erreur lors de l\'envoi:', error);
+                        this.showNotification('⚠️ Échec de l\'envoi au serveur (voir console)', 'warning', 4000);
+                    }
+
+                    // 2) (Optionnel) Partage natif si disponible (utile sur iPad)
+                    try {
+                        const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+                        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                            await navigator.share({
+                                files: [pdfFile],
+                                title: filename,
+                                text: `Devis pour ${clientName}`,
+                            });
+                            // Si l'utilisateur partage via Mail/Drive, on peut s'arrêter ici.
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Partage natif indisponible/annulé, on continue vers le téléchargement local.', e);
+                    }
+
+                    // 3) Téléchargement local en dernier (sur iPad, l'ouverture ne bloquera plus l’envoi)
                     doc.save(filename);
-                    
-                    // Notification initiale
                     this.showNotification('✅ PDF généré localement', 'success', 2000);
-                    
-                    // Envoi par email et sauvegarde dans Drive
-                    this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName)
-                        .then(() => {
-                            this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 4000);
-                        })
-                        .catch(error => {
-                            console.error('Erreur lors de l\'envoi:', error);
-                            this.showNotification('⚠️ PDF généré, mais erreur d\'envoi email/Drive', 'warning', 4000);
-                        });
+
                     
                 } catch (error) {
                     console.error('Erreur PDF:', error);
