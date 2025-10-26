@@ -1,10 +1,10 @@
 /**
 * Script Google Apps Script pour Dialarme
 * Gère l'envoi d'emails et le stockage dans Google Drive
+* 
+* ⚠️ IMPORTANT: Ce fichier utilise config.gs pour la configuration
+* Assurez-vous que config.gs est présent dans le même projet
 */
-// ID du dossier principal dans Google Drive
-const MAIN_FOLDER_ID = '1BoUAYoJa6uING8-GKZo-ZEPhqql_7SkX';
-const EMAIL_DESTINATION = 'devis.dialarme@gmail.com';
 /**
 * Fonction principale appelée par le webhook
 */
@@ -129,7 +129,7 @@ function doGet(e) {
   // Sinon, retourner le status du script
   return createJsonResponse({
     status: 'Script Dialarme actif',
-    version: '2.0',
+    version: CONFIG.APP.VERSION,
     timestamp: new Date().toISOString(),
     endpoints: {
       post: 'Envoyer PDF avec données JSON (POST)',
@@ -155,13 +155,13 @@ Cordialement,
 Système Dialarme
 `;
 MailApp.sendEmail({
-to: EMAIL_DESTINATION,
+to: CONFIG.EMAIL.DESTINATION,
 subject: subject,
 body: body,
 attachments: [pdfBlob],
 name: 'Dialarme - Générateur de Devis'
 });
-Logger.log('Email envoyé avec succès à ' + EMAIL_DESTINATION);
+Logger.log('Email envoyé avec succès à ' + CONFIG.EMAIL.DESTINATION);
 return true;
 } catch (error) {
 Logger.log('Erreur lors de l\'envoi de l\'email: ' + error);
@@ -174,8 +174,7 @@ return false;
 function saveToDrive(pdfBlob, filename, commercial) {
 try {
 // Récupérer le dossier principal
-
-const mainFolder = DriveApp.getFolderById(MAIN_FOLDER_ID);
+const mainFolder = DriveApp.getFolderById(CONFIG.FOLDERS.DEVIS);
 // Chercher ou créer le dossier du commercial
 const commercialFolder = getOrCreateCommercialFolder(mainFolder, commercial);
 // Sauvegarder le fichier
@@ -212,13 +211,12 @@ return newFolder;
 function testScript() {
 try {
 // Test de création de dossiers
-
-const mainFolder = DriveApp.getFolderById(MAIN_FOLDER_ID);
+const mainFolder = DriveApp.getFolderById(CONFIG.FOLDERS.DEVIS);
 const testFolder = getOrCreateCommercialFolder(mainFolder, 'Test Commercial');
 Logger.log('Test réussi. Dossier: ' + testFolder.getName());
 // Test d'envoi d'email
 MailApp.sendEmail({
-to: EMAIL_DESTINATION,
+to: CONFIG.EMAIL.DESTINATION,
 subject: 'Test Dialarme Script',
 body: 'Ceci est un email de test du script Dialarme.'
 });
@@ -228,4 +226,27 @@ return 'Tests réussis';
 Logger.log('Erreur lors du test: ' + error);
 return 'Erreur: ' + error.toString();
 }
+}
+
+/**
+* Test manuel complet avec un PDF fictif
+* Simule l'envoi complet d'un devis (email + Drive)
+*/
+function testManual() {
+  const testData = {
+    pdfBase64: "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0=",
+    filename: "Test-Manual.pdf",
+    commercial: "Test Commercial",
+    clientName: "Test Client",
+    timestamp: new Date().toISOString()
+  };
+  
+  const e = {
+    parameter: {
+      data: JSON.stringify(testData)
+    }
+  };
+  
+  const result = doPost(e);
+  Logger.log("Résultat: " + result.getContent());
 }
