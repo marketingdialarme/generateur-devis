@@ -132,6 +132,7 @@ const commercial = data.commercial;
     const clientName = data.clientName || 'Client';
     const type = data.type || null; // Type de dossier (alarme, video)
     const produits = data.produits || []; // Liste des produits pour fiches techniques
+    const addCommercialOverlay = data.addCommercialOverlay || false; // Flag pour ajouter overlay commercial
     
     Logger.log('Validation - PDF présent: ' + (!!pdfBase64));
     Logger.log('Validation - Filename: ' + filename);
@@ -139,6 +140,7 @@ const commercial = data.commercial;
     Logger.log('Validation - Client: ' + clientName);
     Logger.log('Validation - Type: ' + type);
     Logger.log('Validation - Produits: ' + (produits.length > 0 ? produits.join(', ') : 'aucun'));
+    Logger.log('Validation - Overlay commercial: ' + addCommercialOverlay);
     
 if (!pdfBase64 || !filename || !commercial) {
       return createJsonResponse({
@@ -166,7 +168,7 @@ Utilities.base64Decode(pdfBase64),
       const assemblyStartTime = new Date();
       
       try {
-        const assemblyResult = assemblePdfDossier(quotePdfBlob, type, produits, filename);
+        const assemblyResult = assemblePdfDossier(quotePdfBlob, type, produits, filename, commercial, addCommercialOverlay);
         finalPdfBlob = assemblyResult.blob;
         assemblyInfo = assemblyResult.info;
         
@@ -379,9 +381,11 @@ return newFolder;
  * @param {string} type - Type de dossier (alarme, video)
  * @param {Array<string>} produits - Liste des noms de produits
  * @param {string} filename - Nom du fichier final
+ * @param {string} commercialName - Nom du commercial
+ * @param {boolean} addOverlay - Flag pour ajouter overlay commercial (optionnel)
  * @returns {Object} { blob: Blob, info: Object }
  */
-function assemblePdfDossier(quotePdfBlob, type, produits, filename) {
+function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialName, addOverlay) {
   Logger.log('🔧 === DÉBUT ASSEMBLAGE PDF ===');
   
   const blobsToMerge = [];
@@ -389,7 +393,8 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename) {
     baseDossier: 'Aucun',
     productsFound: 0,
     productsRequested: produits.length,
-    totalPages: 0
+    totalPages: 0,
+    overlayAdded: false
   };
   
   // 1. Récupérer le dossier de base selon le type
@@ -411,6 +416,27 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename) {
   Logger.log('📄 Étape 2: Ajout du devis généré');
   blobsToMerge.push(quotePdfBlob);
   Logger.log('✅ Devis ajouté');
+  
+  // 2.5. OPTIONNEL: Ajouter une page overlay avec les informations du commercial
+  // Cette page sera insérée en position 2 (après le dossier de base, avant les fiches)
+  if (addOverlay && commercialName) {
+    Logger.log('📝 Étape 2.5: Génération de l\'overlay commercial');
+    try {
+      const overlayBlob = createCommercialOverlayPdf(commercialName);
+      if (overlayBlob) {
+        blobsToMerge.push(overlayBlob);
+        assemblyInfo.overlayAdded = true;
+        Logger.log('✅ Overlay page avec informations commercial ajouté à la page 2');
+      } else {
+        Logger.log('⚠️ Impossible de créer l\'overlay commercial');
+      }
+    } catch (overlayError) {
+      Logger.log('⚠️ Erreur création overlay: ' + overlayError.message);
+      Logger.log('   → Assemblage continue sans overlay');
+    }
+  } else if (addOverlay && !commercialName) {
+    Logger.log('⚠️ Overlay demandé mais nom commercial manquant - ignoré');
+  }
   
   // 3. Rechercher et ajouter les fiches techniques des produits
   // ⚠️ IMPORTANT: Pour les dossiers ALARME, on ne cherche PAS de fiches techniques
@@ -906,6 +932,201 @@ function findAccessoryPdf() {
 }
 
 /**
+ * Crée un PDF overlay avec les informations du commercial
+ * 
+ * ⚠️ LIMITATION GOOGLE APPS SCRIPT:
+ * Google Apps Script ne fournit pas d'API native pour créer des PDFs dynamiques
+ * ou pour faire des overlays PDF. Cette fonction génère un simple PDF texte
+ * qui sera inséré comme page séparée dans le dossier.
+ * 
+ * @param {string} commercialName - Nom du commercial
+ * @returns {Blob|null} Le blob du PDF overlay ou null
+ */
+function createCommercialOverlayPdf(commercialName) {
+  try {
+    Logger.log('📝 Création du PDF overlay pour: ' + commercialName);
+    
+    // Récupérer les informations du commercial depuis CONFIG
+    const commercialInfo = getCommercialInfo(commercialName);
+    
+    if (!commercialInfo) {
+      Logger.log('⚠️ Commercial non trouvé dans CONFIG.COMMERCIAUX: ' + commercialName);
+      Logger.log('   → Utilisation des informations de base');
+    }
+    
+    // Préparer les données
+    const currentDate = Utilities.formatDate(new Date(), 'GMT+1', 'dd/MM/yyyy');
+    const phone = commercialInfo ? commercialInfo.phone : 'N/A';
+    const email = commercialInfo ? commercialInfo.email : 'N/A';
+    
+    Logger.log('   - Date: ' + currentDate);
+    Logger.log('   - Commercial: ' + commercialName);
+    Logger.log('   - Téléphone: ' + phone);
+    Logger.log('   - Email: ' + email);
+    
+    // Créer le contenu HTML pour conversion en PDF
+    // Google Apps Script peut convertir HTML en PDF via Google Docs API
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 40px;
+      background-color: #f8f9fa;
+    }
+    .overlay-container {
+      background-color: white;
+      border: 2px solid #0066cc;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: 50px auto;
+    }
+    .header {
+      text-align: center;
+      color: #0066cc;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      border-bottom: 3px solid #0066cc;
+      padding-bottom: 15px;
+    }
+    .info-section {
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #333;
+      display: inline-block;
+      width: 150px;
+    }
+    .info-value {
+      color: #555;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay-container">
+    <div class="header">
+      📋 INFORMATIONS COMMERCIAL
+    </div>
+    <div class="info-section">
+      <div><span class="info-label">📅 Date:</span> <span class="info-value">${currentDate}</span></div>
+      <div><span class="info-label">👤 Commercial:</span> <span class="info-value">${commercialName}</span></div>
+      <div><span class="info-label">📞 Téléphone:</span> <span class="info-value">${phone}</span></div>
+      <div><span class="info-label">📧 Email:</span> <span class="info-value">${email}</span></div>
+    </div>
+    <div class="footer">
+      Document généré automatiquement - Dialarme
+    </div>
+  </div>
+</body>
+</html>
+    `;
+    
+    // Convertir HTML en PDF via Google Docs
+    // Créer un document temporaire, le convertir en PDF, puis le supprimer
+    const tempDoc = DocumentApp.create('Temp_Overlay_' + new Date().getTime());
+    const docId = tempDoc.getId();
+    
+    try {
+      // Insérer le contenu HTML (limité, mais fonctionnel)
+      const body = tempDoc.getBody();
+      body.clear();
+      
+      // Ajouter le contenu formaté
+      body.appendParagraph('INFORMATIONS COMMERCIAL')
+        .setHeading(DocumentApp.ParagraphHeading.HEADING1)
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      
+      body.appendHorizontalRule();
+      
+      body.appendParagraph('📅 Date: ' + currentDate)
+        .setSpacingAfter(10);
+      
+      body.appendParagraph('👤 Commercial: ' + commercialName)
+        .setSpacingAfter(10);
+      
+      body.appendParagraph('📞 Téléphone: ' + phone)
+        .setSpacingAfter(10);
+      
+      body.appendParagraph('📧 Email: ' + email)
+        .setSpacingAfter(10);
+      
+      body.appendHorizontalRule();
+      
+      body.appendParagraph('Document généré automatiquement - Dialarme')
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+        .setFontSize(10);
+      
+      // Sauvegarder et fermer
+      tempDoc.saveAndClose();
+      
+      // Convertir en PDF
+      const pdfBlob = DriveApp.getFileById(docId).getAs('application/pdf');
+      pdfBlob.setName('Overlay_Commercial.pdf');
+      
+      // Supprimer le document temporaire
+      DriveApp.getFileById(docId).setTrashed(true);
+      
+      Logger.log('✅ Overlay PDF créé avec succès (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+      return pdfBlob;
+      
+    } catch (conversionError) {
+      // Nettoyer en cas d'erreur
+      try {
+        DriveApp.getFileById(docId).setTrashed(true);
+      } catch (cleanupError) {
+        Logger.log('⚠️ Erreur nettoyage document temporaire: ' + cleanupError.message);
+      }
+      throw conversionError;
+    }
+    
+  } catch (error) {
+    Logger.log('❌ Erreur création overlay PDF: ' + error.message);
+    Logger.log('   Stack: ' + error.stack);
+    return null;
+  }
+}
+
+/**
+ * Récupère les informations d'un commercial depuis CONFIG
+ * 
+ * @param {string} commercialName - Nom du commercial
+ * @returns {Object|null} Informations du commercial ou null
+ */
+function getCommercialInfo(commercialName) {
+  if (!CONFIG.COMMERCIAUX) {
+    Logger.log('⚠️ CONFIG.COMMERCIAUX n\'est pas défini');
+    return null;
+  }
+  
+  // CONFIG.COMMERCIAUX peut être un objet ou un tableau
+  if (Array.isArray(CONFIG.COMMERCIAUX)) {
+    // Format tableau
+    return CONFIG.COMMERCIAUX.find(function(c) {
+      return c.name === commercialName;
+    }) || null;
+  } else {
+    // Format objet
+    return CONFIG.COMMERCIAUX[commercialName] || null;
+  }
+}
+
+/**
  * Fusionne plusieurs PDFs en un seul
  * 
  * @param {Array<Blob>} blobsArray - Tableau de blobs PDF à fusionner
@@ -1303,6 +1524,70 @@ function testAlarmAssembly() {
   Logger.log('');
   Logger.log('Drive URL: ' + response.driveUrl);
   Logger.log('=== FIN TEST ALARME ===');
+  
+  return response;
+}
+
+/**
+ * Test de l'overlay commercial
+ * Vérifie que l'overlay avec les informations du commercial est bien ajouté
+ */
+function testCommercialOverlay() {
+  Logger.log('=== TEST OVERLAY COMMERCIAL ===');
+  
+  const testData = {
+    pdfBase64: "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0=",
+    filename: "Test-Overlay.pdf",
+    commercial: "Test Commercial",
+    clientName: "Test Client Overlay",
+    type: "video",
+    produits: [
+      "SOLAR 4G XL",
+      "DÔME NIGHT"
+    ],
+    addCommercialOverlay: true,  // ← Active l'overlay
+    timestamp: new Date().toISOString()
+  };
+  
+  Logger.log('Données de test:');
+  Logger.log('- Type: ' + testData.type);
+  Logger.log('- Commercial: ' + testData.commercial);
+  Logger.log('- Overlay activé: ' + testData.addCommercialOverlay);
+  Logger.log('');
+  
+  const e = {
+    parameter: {
+      data: JSON.stringify(testData)
+    }
+  };
+  
+  const result = doPost(e);
+  const response = JSON.parse(result.getContent());
+  
+  Logger.log('=== RÉSULTAT DU TEST ===');
+  Logger.log('Success: ' + response.success);
+  Logger.log('Message: ' + response.message);
+  Logger.log('');
+  
+  if (response.assembly) {
+    Logger.log('📊 Assembly Info:');
+    Logger.log('   - Dossier de base: ' + response.assembly.baseDossier);
+    Logger.log('   - Produits trouvés: ' + response.assembly.productsFound + '/' + response.assembly.productsRequested);
+    Logger.log('   - Overlay ajouté: ' + (response.assembly.overlayAdded ? 'Oui' : 'Non'));
+    Logger.log('   - Total: ' + response.assembly.totalPages);
+    Logger.log('');
+    
+    // Vérification
+    if (response.assembly.overlayAdded) {
+      Logger.log('✅ SUCCÈS: L\'overlay commercial a été ajouté');
+    } else {
+      Logger.log('❌ ERREUR: L\'overlay n\'a pas été ajouté alors qu\'il était demandé');
+    }
+  }
+  
+  Logger.log('');
+  Logger.log('Drive URL: ' + response.driveUrl);
+  Logger.log('=== FIN TEST OVERLAY ===');
   
   return response;
 }
