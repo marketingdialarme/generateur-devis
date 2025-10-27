@@ -97,38 +97,38 @@ function doPost(e) {
   Logger.log('=== Début de doPost ===');
   Logger.log('Timestamp: ' + startTime.toISOString());
   
-  try {
-    // Parser les données reçues
-    let data;
-    try {
+try {
+// Parser les données reçues
+let data;
+try {
       if (e.postData && e.postData.contents) {
         Logger.log('Données reçues via postData.contents');
-        data = JSON.parse(e.postData.contents);
+data = JSON.parse(e.postData.contents);
       } else if (e.parameter && e.parameter.data) {
         Logger.log('Données reçues via parameter.data');
-        data = JSON.parse(e.parameter.data);
+data = JSON.parse(e.parameter.data);
       } else if (e.parameters && e.parameters.data && e.parameters.data[0]) {
         Logger.log('Données reçues via parameters.data[0]');
         data = JSON.parse(e.parameters.data[0]);
-      } else {
+} else {
         Logger.log('Aucune donnée trouvée dans la requête');
         Logger.log('e.postData: ' + JSON.stringify(e.postData));
         Logger.log('e.parameter: ' + JSON.stringify(e.parameter));
         throw new Error('Aucune donnée reçue');
-      }
-    } catch (parseError) {
+}
+} catch (parseError) {
       Logger.log('❌ Erreur de parsing: ' + parseError);
       return createJsonResponse({
-        success: false,
+success: false,
         error: 'Erreur de parsing des données: ' + parseError.toString(),
         timestamp: new Date().toISOString()
       });
-    }
+}
     
     // Validation des données
-    const pdfBase64 = data.pdfBase64;
-    const filename = data.filename;
-    const commercial = data.commercial;
+const pdfBase64 = data.pdfBase64;
+const filename = data.filename;
+const commercial = data.commercial;
     const clientName = data.clientName || 'Client';
     const type = data.type || null; // Type de dossier (alarme, video)
     const produits = data.produits || []; // Liste des produits pour fiches techniques
@@ -140,9 +140,9 @@ function doPost(e) {
     Logger.log('Validation - Type: ' + type);
     Logger.log('Validation - Produits: ' + (produits.length > 0 ? produits.join(', ') : 'aucun'));
     
-    if (!pdfBase64 || !filename || !commercial) {
+if (!pdfBase64 || !filename || !commercial) {
       return createJsonResponse({
-        success: false,
+success: false,
         error: 'Données manquantes (PDF, nom de fichier ou commercial)',
         timestamp: new Date().toISOString()
       });
@@ -151,7 +151,7 @@ function doPost(e) {
     // Décoder le PDF du devis généré
     Logger.log('Décodage du PDF du devis...');
     const quotePdfBlob = Utilities.newBlob(
-      Utilities.base64Decode(pdfBase64),
+Utilities.base64Decode(pdfBase64),
       'application/pdf',
       'quote.pdf'
     );
@@ -188,7 +188,7 @@ function doPost(e) {
     const emailSent = sendEmailWithPDF(finalPdfBlob, filename, commercial, clientName, assemblyInfo);
     Logger.log('Email envoyé: ' + emailSent);
     
-    // 2. Sauvegarder dans Google Drive
+// 2. Sauvegarder dans Google Drive
     Logger.log('Sauvegarde dans Drive...');
     const driveUrl = saveToDrive(finalPdfBlob, filename, commercial, clientName, assemblyInfo);
     Logger.log('Drive URL: ' + driveUrl);
@@ -198,9 +198,9 @@ function doPost(e) {
     Logger.log('=== Fin de doPost (succès) - Durée: ' + duration + 's ===');
     
     const response = {
-      success: true,
-      emailSent: emailSent,
-      driveUrl: driveUrl,
+success: true,
+emailSent: emailSent,
+driveUrl: driveUrl,
       message: assemblyInfo 
         ? 'Dossier complet assemblé, envoyé par email et sauvegardé dans Drive' 
         : 'PDF envoyé par email et sauvegardé dans Drive',
@@ -217,12 +217,12 @@ function doPost(e) {
     
     return createJsonResponse(response);
     
-  } catch (error) {
+} catch (error) {
     Logger.log('❌ Erreur globale: ' + error.toString());
     Logger.log('Stack trace: ' + error.stack);
     
     return createJsonResponse({
-      success: false,
+success: false,
       error: error.toString(),
       errorStack: error.stack,
       timestamp: new Date().toISOString()
@@ -253,7 +253,7 @@ function doGet(e) {
     status: 'Script Dialarme actif',
     version: CONFIG.APP.VERSION,
     timestamp: new Date().toISOString(),
-    endpoints: {
+endpoints: {
       post: 'Envoyer PDF avec données JSON (POST)',
       get: 'Status et callback handler (GET)'
     }
@@ -416,14 +416,90 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename) {
   // ⚠️ IMPORTANT: Pour les dossiers ALARME, on ne cherche PAS de fiches techniques
   // Les dossiers alarme contiennent uniquement: [Base Alarme] + [Devis généré]
   const isAlarmDossier = type && type.toLowerCase().startsWith('alarme');
+  const isVideoDossier = type && (type.toLowerCase() === 'video' || type.toLowerCase() === 'vidéo');
   
   if (isAlarmDossier) {
     Logger.log('🚨 Dossier ALARME détecté – les fiches techniques produits sont IGNORÉES');
     Logger.log('   → Le dossier contiendra uniquement: Base Alarme + Devis');
     assemblyInfo.productsFound = 0;
     assemblyInfo.productsRequested = 0;
+  } else if (isVideoDossier) {
+    // 🎥 LOGIQUE SPÉCIFIQUE VIDÉO: Recherche détaillée avec déduplication et accessoires
+    Logger.log('🎥 Dossier VIDÉO détecté – recherche détaillée des fiches techniques');
+    Logger.log('🔍 Étape 3: Recherche des fiches techniques (' + produits.length + ' produits)');
+    
+    // Utiliser un Set pour éviter les doublons (basé sur le nom du fichier)
+    const foundProductFiles = new Map(); // Map<fileName, blob>
+    const productSearchResults = [];
+    
+    // Rechercher chaque produit
+    for (let i = 0; i < produits.length; i++) {
+      const productName = produits[i];
+      Logger.log('   [' + (i + 1) + '/' + produits.length + '] Recherche: ' + productName);
+      
+      try {
+        const result = findProductSheetByNameDetailed(productName);
+        if (result && result.blob) {
+          // Vérifier si ce fichier n'a pas déjà été ajouté (déduplication)
+          if (!foundProductFiles.has(result.fileName)) {
+            foundProductFiles.set(result.fileName, result.blob);
+            blobsToMerge.push(result.blob);
+            assemblyInfo.productsFound++;
+            productSearchResults.push({
+              searchTerm: productName,
+              fileName: result.fileName,
+              fileSize: result.fileSize,
+              found: true
+            });
+            Logger.log('   ✅ Trouvé: ' + result.fileName + ' (' + result.fileSize + ' KB)');
+          } else {
+            Logger.log('   ⚠️ Doublon ignoré: ' + result.fileName + ' (déjà ajouté)');
+            productSearchResults.push({
+              searchTerm: productName,
+              fileName: result.fileName,
+              duplicate: true
+            });
+          }
+        } else {
+          Logger.log('   ⚠️ Non trouvé: ' + productName);
+          productSearchResults.push({
+            searchTerm: productName,
+            found: false
+          });
+        }
+      } catch (error) {
+        Logger.log('   ❌ Erreur pour ' + productName + ': ' + error.message);
+        productSearchResults.push({
+          searchTerm: productName,
+          error: error.message
+        });
+      }
+    }
+    
+    Logger.log('📊 Récapitulatif produits: ' + assemblyInfo.productsFound + '/' + produits.length + ' fiches uniques trouvées');
+    
+    // 4. Rechercher et ajouter le PDF des accessoires (ONDULEURS - COFFRET - SWITCH)
+    Logger.log('🔌 Étape 4: Recherche du PDF accessoires');
+    try {
+      const accessoryResult = findAccessoryPdf();
+      if (accessoryResult && accessoryResult.blob) {
+        blobsToMerge.push(accessoryResult.blob);
+        Logger.log('   ✅ Accessoires ajouté: ' + accessoryResult.fileName + ' (' + accessoryResult.fileSize + ' KB)');
+        assemblyInfo.accessoryAdded = true;
+        assemblyInfo.accessoryFileName = accessoryResult.fileName;
+      } else {
+        Logger.log('   ℹ️ Aucun PDF accessoires trouvé (optionnel)');
+        assemblyInfo.accessoryAdded = false;
+      }
+    } catch (error) {
+      Logger.log('   ⚠️ Erreur recherche accessoires: ' + error.message);
+      assemblyInfo.accessoryAdded = false;
+    }
+    
+    // Stocker les résultats détaillés
+    assemblyInfo.productDetails = productSearchResults;
   } else {
-    // Pour les autres types (vidéo, etc.), on recherche les fiches techniques
+    // Pour les autres types, logique simple
     Logger.log('🔍 Étape 3: Recherche des fiches techniques (' + produits.length + ' produits)');
     for (let i = 0; i < produits.length; i++) {
       const productName = produits[i];
@@ -484,12 +560,21 @@ function getBaseDossierBlob(type) {
   let fileId = null;
   let configKey = null;
   
-  if (type === 'alarme') {
-    // Pour l'instant, utilise ALARME_TITANE par défaut
-    // TODO: Raffiner la logique pour choisir entre TITANE et JABLOTRON
+  // Normaliser le type pour la comparaison
+  const normalizedType = type ? type.toLowerCase().trim() : '';
+  
+  // Détection des types d'alarme
+  if (normalizedType === 'alarme' || normalizedType === 'alarme-titane' || normalizedType.startsWith('alarme')) {
+    // Par défaut, utilise ALARME_TITANE
     fileId = CONFIG.DOSSIERS.ALARME_TITANE;
     configKey = 'CONFIG.DOSSIERS.ALARME_TITANE';
-  } else if (type === 'video') {
+    
+    // Si spécifiquement Jablotron
+    if (normalizedType.includes('jablotron')) {
+      fileId = CONFIG.DOSSIERS.ALARME_JABLOTRON;
+      configKey = 'CONFIG.DOSSIERS.ALARME_JABLOTRON';
+    }
+  } else if (normalizedType === 'video' || normalizedType === 'vidéo') {
     fileId = CONFIG.DOSSIERS.VIDEO;
     configKey = 'CONFIG.DOSSIERS.VIDEO';
   }
@@ -515,9 +600,15 @@ function getBaseDossierBlob(type) {
  * @returns {string} Nom du dossier
  */
 function getBaseDossierName(type) {
-  if (type === 'alarme') {
+  const normalizedType = type ? type.toLowerCase().trim() : '';
+  
+  if (normalizedType === 'alarme' || normalizedType === 'alarme-titane' || normalizedType.startsWith('alarme')) {
+    // Par défaut Titane
+    if (normalizedType.includes('jablotron')) {
+      return 'Devis_ALARME_JABLOTRON.pdf';
+    }
     return 'Devis_ALARME_TITANE.pdf';
-  } else if (type === 'video') {
+  } else if (normalizedType === 'video' || normalizedType === 'vidéo') {
     return 'Devis_VIDÉO.pdf';
   }
   return 'Inconnu';
@@ -653,6 +744,163 @@ function findProductSheetByName(productName) {
     return null;
   } catch (error) {
     Logger.log('❌ Erreur findProductSheetByName(' + productName + '): ' + error.message);
+    return null;
+  }
+}
+
+/**
+ * Recherche une fiche technique de produit par nom avec détails
+ * Version détaillée qui retourne des informations complètes sur le fichier trouvé
+ * 
+ * @param {string} productName - Nom du produit à rechercher
+ * @returns {Object|null} { blob: Blob, fileName: string, fileSize: string } ou null
+ */
+function findProductSheetByNameDetailed(productName) {
+  try {
+    // Vérifier que le dossier des fiches techniques est configuré
+    if (!CONFIG.FOLDERS.TECH_SHEETS) {
+      Logger.log('❌ CONFIG.FOLDERS.TECH_SHEETS n\'est pas configuré');
+      throw new Error('Dossier des fiches techniques non configuré dans CONFIG');
+    }
+    
+    const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+    const files = techSheetsFolder.getFiles();
+    
+    // Normaliser le nom du produit pour la recherche (sans accents, minuscules)
+    const normalizedSearch = removeAccents(productName.toLowerCase().trim());
+    
+    // Première passe: recherche exacte/contient
+    while (files.hasNext()) {
+      const file = files.next();
+      const fileName = file.getName();
+      const normalizedFileName = removeAccents(fileName.toLowerCase());
+      
+      // Recherche flexible: contient le nom du produit
+      if (normalizedFileName.includes(normalizedSearch) || 
+          normalizedSearch.includes(normalizedFileName.replace('.pdf', '').replace(' - compressed', ''))) {
+        
+        // Vérifier la taille du fichier avant de le charger
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+        const fileSize = file.getSize();
+        
+        if (fileSize > MAX_FILE_SIZE) {
+          Logger.log('   ⚠️ Fichier trop volumineux (' + (fileSize / 1024 / 1024).toFixed(2) + ' MB) - ignoré');
+          continue;
+        }
+        
+        const blob = file.getBlob();
+        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        
+        return {
+          blob: blob,
+          fileName: fileName,
+          fileSize: fileSizeKB
+        };
+      }
+    }
+    
+    // Deuxième passe: recherche partielle (au moins 2 mots clés)
+    const files2 = techSheetsFolder.getFiles();
+    const searchWords = normalizedSearch.split(/[\s\-_]+/);
+    
+    while (files2.hasNext()) {
+      const file = files2.next();
+      const fileName = file.getName();
+      const normalizedFileName2 = removeAccents(fileName.toLowerCase());
+      
+      // Si au moins 2 mots clés correspondent
+      let matchCount = 0;
+      for (const word of searchWords) {
+        if (word.length > 2 && normalizedFileName2.includes(word)) {
+          matchCount++;
+        }
+      }
+      
+      if (matchCount >= Math.min(2, searchWords.length)) {
+        // Vérifier la taille du fichier avant de le charger
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+        const fileSize = file.getSize();
+        
+        if (fileSize > MAX_FILE_SIZE) {
+          Logger.log('   ⚠️ Fichier trop volumineux (' + (fileSize / 1024 / 1024).toFixed(2) + ' MB) - ignoré');
+          continue;
+        }
+        
+        const blob = file.getBlob();
+        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        
+        return {
+          blob: blob,
+          fileName: fileName,
+          fileSize: fileSizeKB
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    Logger.log('❌ Erreur findProductSheetByNameDetailed(' + productName + '): ' + error.message);
+    return null;
+  }
+}
+
+/**
+ * Recherche le PDF des accessoires (ONDULEURS - COFFRET - SWITCH)
+ * 
+ * @returns {Object|null} { blob: Blob, fileName: string, fileSize: string } ou null
+ */
+function findAccessoryPdf() {
+  try {
+    // Vérifier que le dossier des fiches techniques est configuré
+    if (!CONFIG.FOLDERS.TECH_SHEETS) {
+      Logger.log('❌ CONFIG.FOLDERS.TECH_SHEETS n\'est pas configuré');
+      throw new Error('Dossier des fiches techniques non configuré dans CONFIG');
+    }
+    
+    const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+    const files = techSheetsFolder.getFiles();
+    
+    // Termes de recherche pour le PDF accessoires
+    const accessoryKeywords = ['onduleur', 'coffret', 'switch'];
+    
+    while (files.hasNext()) {
+      const file = files.next();
+      const fileName = file.getName();
+      const normalizedFileName = removeAccents(fileName.toLowerCase());
+      
+      // Vérifier si le fichier contient au moins 2 des mots-clés accessoires
+      let keywordMatches = 0;
+      for (const keyword of accessoryKeywords) {
+        if (normalizedFileName.includes(keyword)) {
+          keywordMatches++;
+        }
+      }
+      
+      // Si au moins 2 mots-clés correspondent, c'est probablement le fichier accessoires
+      if (keywordMatches >= 2) {
+        // Vérifier la taille du fichier
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+        const fileSize = file.getSize();
+        
+        if (fileSize > MAX_FILE_SIZE) {
+          Logger.log('   ⚠️ Fichier accessoires trop volumineux (' + (fileSize / 1024 / 1024).toFixed(2) + ' MB) - ignoré');
+          continue;
+        }
+        
+        const blob = file.getBlob();
+        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        
+        return {
+          blob: blob,
+          fileName: fileName,
+          fileSize: fileSizeKB
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    Logger.log('❌ Erreur findAccessoryPdf(): ' + error.message);
     return null;
   }
 }
@@ -915,7 +1163,7 @@ function testRealProducts() {
  * Test d'assemblage avec de vrais produits vidéo
  */
 function testVideoAssembly() {
-  Logger.log('=== TEST ASSEMBLAGE VIDÉO ===');
+  Logger.log('=== TEST ASSEMBLAGE VIDÉO (avec déduplication et accessoires) ===');
   
   const testData = {
     pdfBase64: "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0=",
@@ -926,7 +1174,10 @@ function testVideoAssembly() {
     produits: [
       "SOLAR 4G XL",
       "DÔME NIGHT", 
-      "BULLET ZOOM"
+      "BULLET ZOOM",
+      "SOLAR 4G XL",  // Doublon intentionnel pour tester la déduplication
+      "NVR MODEM",
+      "MINI SOLAR"
     ],
     timestamp: new Date().toISOString()
   };
@@ -934,6 +1185,8 @@ function testVideoAssembly() {
   Logger.log('Données de test:');
   Logger.log('- Type: ' + testData.type);
   Logger.log('- Produits: ' + testData.produits.join(', '));
+  Logger.log('- Note: "SOLAR 4G XL" est listé 2 fois pour tester la déduplication');
+  Logger.log('');
   
   const e = {
     parameter: {
@@ -947,12 +1200,43 @@ function testVideoAssembly() {
   Logger.log('=== RÉSULTAT DU TEST ===');
   Logger.log('Success: ' + response.success);
   Logger.log('Message: ' + response.message);
+  Logger.log('');
   
   if (response.assembly) {
-    Logger.log('Assembly Info:');
-    Logger.log('- Dossier de base: ' + response.assembly.baseDossier);
-    Logger.log('- Produits trouvés: ' + response.assembly.productsFound + '/' + response.assembly.productsRequested);
-    Logger.log('- Total: ' + response.assembly.totalPages);
+    Logger.log('📊 Assembly Info:');
+    Logger.log('   - Dossier de base: ' + response.assembly.baseDossier);
+    Logger.log('   - Produits trouvés: ' + response.assembly.productsFound + '/' + response.assembly.productsRequested);
+    Logger.log('   - Accessoires ajouté: ' + (response.assembly.accessoryAdded ? 'Oui (' + response.assembly.accessoryFileName + ')' : 'Non'));
+    Logger.log('   - Total: ' + response.assembly.totalPages);
+    Logger.log('');
+    
+    // Vérifications
+    if (response.assembly.productsFound < testData.produits.length) {
+      Logger.log('✅ SUCCÈS: Déduplication fonctionnelle (6 produits demandés, ' + response.assembly.productsFound + ' uniques trouvés)');
+    }
+    
+    if (response.assembly.accessoryAdded) {
+      Logger.log('✅ SUCCÈS: PDF accessoires ajouté automatiquement');
+    } else {
+      Logger.log('ℹ️ INFO: Aucun PDF accessoires trouvé (normal si pas dans le dossier)');
+    }
+    
+    // Afficher les détails des produits si disponibles
+    if (response.assembly.productDetails) {
+      Logger.log('');
+      Logger.log('📋 Détails des recherches:');
+      response.assembly.productDetails.forEach(function(detail, index) {
+        if (detail.duplicate) {
+          Logger.log('   [' + (index + 1) + '] ' + detail.searchTerm + ' → Doublon ignoré (' + detail.fileName + ')');
+        } else if (detail.found) {
+          Logger.log('   [' + (index + 1) + '] ' + detail.searchTerm + ' → ✅ ' + detail.fileName + ' (' + detail.fileSize + ' KB)');
+        } else if (detail.error) {
+          Logger.log('   [' + (index + 1) + '] ' + detail.searchTerm + ' → ❌ Erreur: ' + detail.error);
+        } else {
+          Logger.log('   [' + (index + 1) + '] ' + detail.searchTerm + ' → ⚠️ Non trouvé');
+        }
+      });
+    }
   }
   
   Logger.log('Drive URL: ' + response.driveUrl);
@@ -1019,6 +1303,74 @@ function testAlarmAssembly() {
   Logger.log('');
   Logger.log('Drive URL: ' + response.driveUrl);
   Logger.log('=== FIN TEST ALARME ===');
+  
+  return response;
+}
+
+/**
+ * Test d'assemblage avec un dossier ALARME JABLOTRON
+ * Vérifie que le bon dossier de base est utilisé
+ */
+function testAlarmJablotronAssembly() {
+  Logger.log('=== TEST ASSEMBLAGE ALARME JABLOTRON (sans fiches techniques) ===');
+  
+  const testData = {
+    pdfBase64: "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0=",
+    filename: "Test-Alarm-Jablotron-Assembly.pdf",
+    commercial: "Test Commercial",
+    clientName: "Test Client Alarme Jablotron",
+    type: "alarme-jablotron",  // Type ALARME JABLOTRON
+    produits: [
+      "Detecteur XYZ",
+      "Sirene ABC",
+      "Centrale 123"
+    ],
+    timestamp: new Date().toISOString()
+  };
+  
+  Logger.log('Données de test:');
+  Logger.log('- Type: ' + testData.type + ' (doit utiliser JABLOTRON)');
+  Logger.log('- Produits envoyés: ' + testData.produits.join(', ') + ' (doivent être IGNORÉS)');
+  Logger.log('');
+  
+  const e = {
+    parameter: {
+      data: JSON.stringify(testData)
+    }
+  };
+  
+  const result = doPost(e);
+  const response = JSON.parse(result.getContent());
+  
+  Logger.log('=== RÉSULTAT DU TEST ===');
+  Logger.log('Success: ' + response.success);
+  Logger.log('Message: ' + response.message);
+  Logger.log('');
+  
+  if (response.assembly) {
+    Logger.log('📊 Assembly Info:');
+    Logger.log('   - Dossier de base: ' + response.assembly.baseDossier);
+    Logger.log('   - Produits trouvés: ' + response.assembly.productsFound + '/' + response.assembly.productsRequested);
+    Logger.log('   - Total: ' + response.assembly.totalPages);
+    Logger.log('');
+    
+    // Vérifications
+    if (response.assembly.baseDossier === 'Devis_ALARME_JABLOTRON.pdf') {
+      Logger.log('✅ SUCCÈS: Le bon dossier de base JABLOTRON a été utilisé');
+    } else {
+      Logger.log('❌ ERREUR: Dossier de base incorrect (attendu: JABLOTRON, reçu: ' + response.assembly.baseDossier + ')');
+    }
+    
+    if (response.assembly.productsFound === 0 && response.assembly.productsRequested === 0) {
+      Logger.log('✅ SUCCÈS: Les fiches techniques ont bien été ignorées');
+    } else {
+      Logger.log('❌ ERREUR: Des fiches techniques ont été recherchées');
+    }
+  }
+  
+  Logger.log('');
+  Logger.log('Drive URL: ' + response.driveUrl);
+  Logger.log('=== FIN TEST ALARME JABLOTRON ===');
   
   return response;
 }
