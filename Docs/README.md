@@ -271,11 +271,16 @@ Drive URL: https://drive.google.com/file/d/...
 
 ## 📚 Documentation complète
 
-Pour plus de détails sur le déploiement, consultez **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+| Document | Description |
+|----------|-------------|
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | Guide complet de déploiement du backend Google Apps Script |
+| **[UPDATE_INSTRUCTIONS.md](./UPDATE_INSTRUCTIONS.md)** | 📘 **Guide de mise à jour et maintenance** - Comment modifier les fichiers, ajouter des produits, gérer les commerciaux (sans connaissances en programmation) |
+| **[PDF_ASSEMBLY_GUIDE.md](./PDF_ASSEMBLY_GUIDE.md)** | Guide technique sur le système d'assemblage automatique des PDF |
+| **[ASSEMBLY_IMPLEMENTATION_SUMMARY.md](./ASSEMBLY_IMPLEMENTATION_SUMMARY.md)** | Résumé de l'implémentation du système d'assemblage |
 
 ---
 
-**Version actuelle**: 2.0  
+**Version actuelle**: 3.0  
 **Dernière mise à jour**: Octobre 2025  
 **Maintenu par**: Équipe Dialarme
 

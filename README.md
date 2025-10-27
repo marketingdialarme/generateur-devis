@@ -116,11 +116,18 @@ Modifier les catalogues dans `frontend/script.js`:
 2. Ouvrir votre projet
 3. "Exécutions" → Voir les logs
 
-## Documentation
+## 📚 Documentation
 
-- **Guide de déploiement complet**: `DEPLOYMENT_GUIDE.md`
-- **Tests et debugging**: Section debugging dans le guide
-- **Configuration avancée**: Section configuration dans le guide
+| Document | Description |
+|----------|-------------|
+| **[Docs/UPDATE_INSTRUCTIONS.md](./Docs/UPDATE_INSTRUCTIONS.md)** | 📘 **Guide de mise à jour et maintenance** - Comment modifier les fichiers, ajouter des produits, gérer les commerciaux |
+| **[Docs/DEPLOYMENT.md](./Docs/DEPLOYMENT.md)** | Guide complet de déploiement du backend Google Apps Script |
+| **[Docs/PDF_ASSEMBLY_GUIDE.md](./Docs/PDF_ASSEMBLY_GUIDE.md)** | Guide technique sur le système d'assemblage automatique des PDF |
+| **[Docs/README.md](./Docs/README.md)** | Documentation technique du backend |
+
+### 📝 Pour les non-développeurs
+
+Si vous voulez simplement **mettre à jour des fichiers PDF, ajouter un commercial ou modifier des paramètres**, consultez le **[Guide de mise à jour](./Docs/UPDATE_INSTRUCTIONS.md)** - aucune connaissance en programmation requise !
 
 ## Support
 
