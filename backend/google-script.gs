@@ -5,6 +5,90 @@
 * ⚠️ IMPORTANT: Ce fichier utilise config.gs pour la configuration
 * Assurez-vous que config.gs est présent dans le même projet
 */
+
+// ============================================================================
+// VALIDATION DE LA CONFIGURATION
+// ============================================================================
+
+/**
+ * Valide que toutes les entrées CONFIG nécessaires sont présentes
+ * À appeler au démarrage ou manuellement pour vérifier la configuration
+ * 
+ * @returns {Object} { valid: boolean, errors: Array<string> }
+ */
+function validateConfig() {
+  const errors = [];
+  
+  Logger.log('🔍 === VALIDATION DE LA CONFIGURATION ===');
+  
+  // Vérifier CONFIG existe
+  if (typeof CONFIG === 'undefined') {
+    errors.push('CONFIG n\'est pas défini - config.gs est-il présent ?');
+    Logger.log('❌ CONFIG n\'est pas défini');
+    return { valid: false, errors: errors };
+  }
+  
+  // Vérifier FOLDERS
+  if (!CONFIG.FOLDERS) {
+    errors.push('CONFIG.FOLDERS n\'est pas défini');
+  } else {
+    if (!CONFIG.FOLDERS.DEVIS) {
+      errors.push('CONFIG.FOLDERS.DEVIS n\'est pas défini');
+    }
+    if (!CONFIG.FOLDERS.TECH_SHEETS) {
+      errors.push('CONFIG.FOLDERS.TECH_SHEETS n\'est pas défini');
+    }
+  }
+  
+  // Vérifier DOSSIERS
+  if (!CONFIG.DOSSIERS) {
+    errors.push('CONFIG.DOSSIERS n\'est pas défini');
+  } else {
+    if (!CONFIG.DOSSIERS.ALARME_TITANE) {
+      errors.push('CONFIG.DOSSIERS.ALARME_TITANE n\'est pas défini');
+    }
+    if (!CONFIG.DOSSIERS.ALARME_JABLOTRON) {
+      errors.push('CONFIG.DOSSIERS.ALARME_JABLOTRON n\'est pas défini');
+    }
+    if (!CONFIG.DOSSIERS.VIDEO) {
+      errors.push('CONFIG.DOSSIERS.VIDEO n\'est pas défini');
+    }
+  }
+  
+  // Vérifier EMAIL
+  if (!CONFIG.EMAIL) {
+    errors.push('CONFIG.EMAIL n\'est pas défini');
+  } else {
+    if (!CONFIG.EMAIL.DESTINATION) {
+      errors.push('CONFIG.EMAIL.DESTINATION n\'est pas défini');
+    }
+  }
+  
+  // Vérifier APP
+  if (!CONFIG.APP) {
+    errors.push('CONFIG.APP n\'est pas défini');
+  }
+  
+  // Afficher les résultats
+  if (errors.length === 0) {
+    Logger.log('✅ Configuration valide - tous les paramètres sont présents');
+    Logger.log('   - CONFIG.FOLDERS.DEVIS: ' + CONFIG.FOLDERS.DEVIS);
+    Logger.log('   - CONFIG.FOLDERS.TECH_SHEETS: ' + CONFIG.FOLDERS.TECH_SHEETS);
+    Logger.log('   - CONFIG.EMAIL.DESTINATION: ' + CONFIG.EMAIL.DESTINATION);
+    return { valid: true, errors: [] };
+  } else {
+    Logger.log('❌ Configuration invalide - ' + errors.length + ' erreur(s):');
+    errors.forEach(function(error) {
+      Logger.log('   - ' + error);
+    });
+    return { valid: false, errors: errors };
+  }
+}
+
+// ============================================================================
+// FONCTIONS PRINCIPALES (doPost, doGet)
+// ============================================================================
+
 /**
 * Fonction principale appelée par le webhook
 */
@@ -180,6 +264,14 @@ function doGet(e) {
 */
 function sendEmailWithPDF(pdfBlob, filename, commercial, clientName, assemblyInfo) {
 try {
+// Vérifier que l'email de destination est configuré
+if (!CONFIG.EMAIL.DESTINATION) {
+  Logger.log('❌ CONFIG.EMAIL.DESTINATION n\'est pas configuré');
+  throw new Error('Email de destination non configuré dans CONFIG');
+}
+
+Logger.log('📧 Préparation de l\'email vers CONFIG.EMAIL.DESTINATION: ' + CONFIG.EMAIL.DESTINATION);
+
 const subject = `Nouveau devis Dialarme - ${clientName} - ${commercial}`;
 let body = `
 Bonjour,
@@ -212,7 +304,7 @@ body: body,
 attachments: [pdfBlob],
 name: 'Dialarme - Générateur de Devis'
 });
-Logger.log('Email envoyé avec succès à ' + CONFIG.EMAIL.DESTINATION);
+Logger.log('✅ Email envoyé avec succès à ' + CONFIG.EMAIL.DESTINATION);
 return true;
 } catch (error) {
 Logger.log('Erreur lors de l\'envoi de l\'email: ' + error);
@@ -225,8 +317,17 @@ return false;
 */
 function saveToDrive(pdfBlob, filename, commercial, clientName, assemblyInfo) {
 try {
+// Vérifier que le dossier principal est configuré
+if (!CONFIG.FOLDERS.DEVIS) {
+  Logger.log('❌ CONFIG.FOLDERS.DEVIS n\'est pas configuré');
+  throw new Error('Dossier principal DEVIS non configuré dans CONFIG');
+}
+
 // Récupérer le dossier principal
+Logger.log('📂 Accès au dossier principal depuis CONFIG.FOLDERS.DEVIS (ID: ' + CONFIG.FOLDERS.DEVIS + ')');
 const mainFolder = DriveApp.getFolderById(CONFIG.FOLDERS.DEVIS);
+Logger.log('✅ Dossier principal: ' + mainFolder.getName());
+
 // Chercher ou créer le dossier du commercial
 const commercialFolder = getOrCreateCommercialFolder(mainFolder, commercial);
 
@@ -381,20 +482,30 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename) {
  */
 function getBaseDossierBlob(type) {
   let fileId = null;
+  let configKey = null;
   
   if (type === 'alarme') {
     // Pour l'instant, utilise ALARME_TITANE par défaut
     // TODO: Raffiner la logique pour choisir entre TITANE et JABLOTRON
     fileId = CONFIG.DOSSIERS.ALARME_TITANE;
+    configKey = 'CONFIG.DOSSIERS.ALARME_TITANE';
   } else if (type === 'video') {
     fileId = CONFIG.DOSSIERS.VIDEO;
+    configKey = 'CONFIG.DOSSIERS.VIDEO';
   }
   
   if (!fileId) {
+    Logger.log('❌ Aucun dossier de base configuré pour le type: ' + type);
     return null;
   }
   
-  return getFileBlobById(fileId);
+  if (!configKey) {
+    Logger.log('❌ CONFIG key non définie pour le type: ' + type);
+    return null;
+  }
+  
+  Logger.log('📂 Chargement du dossier de base depuis ' + configKey + ' (ID: ' + fileId + ')');
+  return getFileBlobById(fileId, configKey);
 }
 
 /**
@@ -416,15 +527,35 @@ function getBaseDossierName(type) {
  * Récupère un fichier Drive par son ID et retourne le Blob
  * 
  * @param {string} fileId - ID du fichier Google Drive
+ * @param {string} configKey - (Optionnel) Nom de la clé CONFIG pour le logging
  * @returns {Blob} Le blob du fichier
  */
-function getFileBlobById(fileId) {
+function getFileBlobById(fileId, configKey) {
   try {
+    if (!fileId) {
+      const errorMsg = configKey 
+        ? 'ID de fichier manquant pour ' + configKey
+        : 'ID de fichier manquant';
+      Logger.log('❌ ' + errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    const logPrefix = configKey ? configKey + ' ' : '';
+    Logger.log('📥 Récupération du fichier ' + logPrefix + '(ID: ' + fileId + ')');
+    
     const file = DriveApp.getFileById(fileId);
-    return file.getBlob();
+    const blob = file.getBlob();
+    const fileName = file.getName();
+    const fileSize = (blob.getBytes().length / 1024).toFixed(2);
+    
+    Logger.log('✅ Fichier chargé: ' + fileName + ' (' + fileSize + ' KB)');
+    return blob;
   } catch (error) {
-    Logger.log('❌ Erreur getFileBlobById(' + fileId + '): ' + error.message);
-    throw new Error('Impossible de récupérer le fichier: ' + fileId);
+    const errorMsg = configKey 
+      ? 'Erreur lors du chargement de ' + configKey + ' (ID: ' + fileId + '): ' + error.message
+      : 'Erreur getFileBlobById(' + fileId + '): ' + error.message;
+    Logger.log('❌ ' + errorMsg);
+    throw new Error(errorMsg);
   }
 }
 
@@ -446,6 +577,13 @@ function removeAccents(str) {
  */
 function findProductSheetByName(productName) {
   try {
+    // Vérifier que le dossier des fiches techniques est configuré
+    if (!CONFIG.FOLDERS.TECH_SHEETS) {
+      Logger.log('❌ CONFIG.FOLDERS.TECH_SHEETS n\'est pas configuré');
+      throw new Error('Dossier des fiches techniques non configuré dans CONFIG');
+    }
+    
+    Logger.log('🔍 Recherche dans CONFIG.FOLDERS.TECH_SHEETS (ID: ' + CONFIG.FOLDERS.TECH_SHEETS + ')');
     const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
     const files = techSheetsFolder.getFiles();
     
