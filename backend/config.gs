@@ -28,10 +28,10 @@ const CONFIG = {
     DEVIS: '1BoUAYoJa6uING8-GKZo-ZEPhqql_7SkX',
     
     /**
-     * Dossier "Fiches techniques" - Contient tous les PDFs produits
-     * URL: https://drive.google.com/drive/u/1/folders/1d8TprEVWym_swFXaEaUZK90PShP5zcIs
+     * Dossier "Fiches techniques" - Contient tous les PDFs produits (COMPRESSÉS)
+     * URL: https://drive.google.com/drive/u/1/folders/1weDBc3uH8FXzrEET1oLrWajFoSstzQTx
      */
-    TECH_SHEETS: '1d8TprEVWym_swFXaEaUZK90PShP5zcIs'
+    TECH_SHEETS: '1weDBc3uH8FXzrEET1oLrWajFoSstzQTx'
   },
   
   // ==========================================================================

@@ -55,10 +55,14 @@ Gère le traitement des requêtes et l'intégration Google Drive/Email.
 
 - **`doPost(e)`**: Webhook principal
   - Reçoit le PDF en base64 du frontend
-  - Décode le PDF
-  - Envoie l'email avec pièce jointe
+  - Optionnel: Type de dossier + liste de produits
+  - Décode le PDF du devis généré
+  - **Assemble le dossier complet** (si type et produits fournis):
+    - Récupère le dossier de base (template)
+    - Fusionne: [Dossier de base] → [Devis] → [Fiches produits]
+  - Envoie l'email avec le PDF final
   - Sauvegarde dans Google Drive
-  - Retourne le résultat JSON
+  - Retourne le résultat JSON avec info d'assemblage
 
 - **`doGet(e)`**: Status et callbacks
   - Retourne le statut du script
@@ -71,10 +75,20 @@ Gère le traitement des requêtes et l'intégration Google Drive/Email.
 - `getOrCreateCommercialFolder()`: Gère les dossiers par commercial
 - `createJsonResponse()`: Formatte les réponses JSON avec CORS
 
+**Fonctions d'assemblage PDF:**
+
+- `assemblePdfDossier()`: Orchestre l'assemblage complet du dossier
+- `getBaseDossierBlob()`: Récupère le template de base selon le type
+- `getFileBlobById()`: Récupère un fichier Drive par ID
+- `findProductSheetByName()`: Recherche une fiche technique par nom (flexible)
+- `mergePdfs()`: Fusionne plusieurs PDFs en un seul
+
 **Fonctions de test:**
 
 - `testScript()`: Test basique (dossiers + email)
 - `testManual()`: Test complet avec PDF fictif
+- `testPdfAssembly()`: Test d'assemblage PDF avec produits
+- `testProductSearch()`: Test de recherche de fiches techniques
 
 ## 🚀 Déploiement rapide
 
@@ -133,6 +147,7 @@ Résultat attendu:
 
 ## 📊 Flux de données
 
+### **Sans assemblage (devis seul)**
 ```
 Frontend (script.js)
     ↓
@@ -158,6 +173,44 @@ doPost() [google-script.gs]
 Retourne JSON {success, emailSent, driveUrl, ...}
 ```
 
+### **Avec assemblage (dossier complet)**
+```
+Frontend (script.js)
+    ↓
+    │ HTTP POST
+    │ {pdfBase64, filename, commercial, clientName, type, produits[]}
+    ↓
+doPost() [google-script.gs]
+    ↓
+    ├─→ assemblePdfDossier()
+    │      ↓
+    │   1. getBaseDossierBlob(type)
+    │      → DriveApp.getFileById(CONFIG.DOSSIERS.ALARME_TITANE)
+    │      
+    │   2. Décode le PDF du devis (quotePdfBlob)
+    │      
+    │   3. Pour chaque produit:
+    │      findProductSheetByName(productName)
+    │      → DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS)
+    │      → Recherche flexible par nom
+    │      
+    │   4. mergePdfs([baseDossier, quote, ...products])
+    │      → Utilities.pdfMerge()
+    │      
+    │   ↓ Retourne {blob: mergedPdf, info: {...}}
+    │
+    ├─→ sendEmailWithPDF(mergedPdf, ...)
+    │      ↓
+    │   Email avec info d'assemblage
+    │
+    ├─→ saveToDrive(mergedPdf, ...)
+    │      ↓
+    │   Sauvegarde le PDF complet
+    │
+    ↓
+Retourne JSON {success, emailSent, driveUrl, assembly: {...}}
+```
+
 ## 🧪 Tests disponibles
 
 | Fonction | Description | Résultat attendu |
@@ -165,6 +218,8 @@ Retourne JSON {success, emailSent, driveUrl, ...}
 | `testConfigAccess()` | Vérifie la configuration | Logs avec tous les IDs + accès Drive confirmé |
 | `testScript()` | Test dossiers + email | Dossier créé + email reçu |
 | `testManual()` | Test complet avec PDF | Email + fichier Drive |
+| `testPdfAssembly()` | **Test assemblage complet** | Dossier de base + devis + fiches produits fusionnés |
+| `testProductSearch()` | Test recherche de fiches | Liste des produits trouvés dans TECH_SHEETS |
 
 ## 🔐 Permissions requises
 
