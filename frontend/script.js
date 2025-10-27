@@ -247,7 +247,7 @@
         // 📧 CONFIGURATION DE L'ENVOI EMAIL ET DRIVE
         // ============================================
         
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgLIrg9t5nmzZihzM8kCH7q0wLfHbcXajRQrsWKfoZGvEUmFK6HqY0YaIrn1nQeg6b/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPG1IzaHrk666uZL-8GXGa7T3WIX9sNwJWBUf5rwyC-5BYu-hWnwSuPPpbItCj6VRf/exec';
         
         // ============================================
 
@@ -1541,13 +1541,47 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 // Convert PDF to base64
                 const base64 = await this.blobToBase64(pdfBlob);
                 
+                // Collect products for assembly
+                const products = this.collectProductsForAssembly();
+                
+                // Determine quote type for assembly
+                let quoteType = null;
+                let centralType = null;
+                
+                if (this.currentTab === 'alarm') {
+                    quoteType = 'alarme';  // Always 'alarme' for alarm quotes
+                    // Add separate field for central type
+                    if (this.selectedCentral === 'jablotron') {
+                        centralType = 'jablotron';
+                        console.log('✅ Alarm quote with Jablotron central');
+                    } else {
+                        centralType = 'titane';  // Default to Titane
+                        console.log('✅ Alarm quote with Titane central');
+                    }
+                } else if (this.currentTab === 'camera') {
+                    quoteType = 'video';
+                } else if (this.currentTab === 'fog') {
+                    quoteType = null; // Fog doesn't have assembly yet
+                }
+                
                 const payload = {
                     pdfBase64: base64,
                     filename: filename,
                     commercial: commercial,
                     clientName: clientName,
+                    type: quoteType,
+                    centralType: centralType,  // NEW: separate field for Titane vs Jablotron
+                    produits: products,
+                    addCommercialOverlay: false,
                     timestamp: new Date().toISOString()
                 };
+                
+                console.log('📦 Assembly parameters (ACTUAL PAYLOAD):', {
+                    type: quoteType,
+                    centralType: centralType,
+                    productsCount: products.length,
+                    products: products
+                });
                 
                 // Detect browser/device
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1623,6 +1657,77 @@ success: true,
                     };
                     reader.readAsDataURL(blob);
                 });
+            }
+            
+            /**
+             * Collect product names from all sections for backend assembly
+             * Returns an array of product names
+             * 
+             * Note: Reads directly from DOM (like PDF generation does)
+             */
+            collectProductsForAssembly() {
+                const products = [];
+                
+                console.log('🔍 DEBUG - Collecting products from DOM for tab:', this.currentTab);
+                
+                // Get the active tab content (using ID, not class)
+                const activeTab = document.getElementById(`${this.currentTab}-tab`);
+                if (!activeTab) {
+                    console.log('❌ No active tab found for:', `${this.currentTab}-tab`);
+                    return products;
+                }
+                console.log('✅ Active tab found:', activeTab.id);
+                
+                // Find all product lines in the active tab
+                const productLines = activeTab.querySelectorAll('.product-line');
+                console.log(`🔍 Found ${productLines.length} product lines in DOM`);
+                
+                productLines.forEach((line, index) => {
+                    // Get the product select dropdown
+                    const select = line.querySelector('.product-select');
+                    if (!select) {
+                        console.log(`  Line ${index}: No select found`);
+                        return;
+                    }
+                    
+                    // Get selected product name
+                    const selectedOption = select.options[select.selectedIndex];
+                    const productName = selectedOption ? selectedOption.text : '';
+                    
+                    // Get quantity
+                    const quantityInput = line.querySelector('.quantity-input');
+                    const quantity = quantityInput ? parseFloat(quantityInput.value) || 0 : 0;
+                    
+                    // Check if offered
+                    const offeredCheckbox = line.querySelector('.offered-checkbox');
+                    const isOffered = offeredCheckbox ? offeredCheckbox.checked : false;
+                    
+                    console.log(`  Line ${index}:`, {
+                        name: productName,
+                        quantity: quantity,
+                        offered: isOffered
+                    });
+                    
+                    // Only add if: has name, has quantity, and not offered
+                    if (productName && 
+                        productName.trim() !== '' && 
+                        productName !== 'Sélectionner un produit' &&
+                        quantity > 0 && 
+                        !isOffered) {
+                        // Clean product name: remove price (everything after " - " if it contains "CHF")
+                        let cleanName = productName.trim();
+                        if (cleanName.includes(' CHF')) {
+                            cleanName = cleanName.split(' - ').slice(0, -1).join(' - ');
+                        }
+                        products.push(cleanName);
+                        console.log(`    ✅ Added: ${cleanName}${cleanName !== productName ? ' (cleaned from: ' + productName + ')' : ''}`);
+                    } else {
+                        console.log(`    ⏭️ Skipped (${isOffered ? 'offered' : 'no quantity or invalid name'})`);
+                    }
+                });
+                
+                console.log('🔍 Products collected for assembly:', products);
+                return products;
             }
             
             /**

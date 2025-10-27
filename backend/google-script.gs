@@ -131,6 +131,7 @@ const filename = data.filename;
 const commercial = data.commercial;
     const clientName = data.clientName || 'Client';
     const type = data.type || null; // Type de dossier (alarme, video)
+    const centralType = data.centralType || null; // Type de centrale (titane, jablotron)
     const produits = data.produits || []; // Liste des produits pour fiches techniques
     const addCommercialOverlay = data.addCommercialOverlay || false; // Flag pour ajouter overlay commercial
     
@@ -139,6 +140,7 @@ const commercial = data.commercial;
     Logger.log('Validation - Commercial: ' + commercial);
     Logger.log('Validation - Client: ' + clientName);
     Logger.log('Validation - Type: ' + type);
+    Logger.log('Validation - Central Type: ' + (centralType || 'N/A'));
     Logger.log('Validation - Produits: ' + (produits.length > 0 ? produits.join(', ') : 'aucun'));
     Logger.log('Validation - Overlay commercial: ' + addCommercialOverlay);
     
@@ -168,7 +170,7 @@ Utilities.base64Decode(pdfBase64),
       const assemblyStartTime = new Date();
       
       try {
-        const assemblyResult = assemblePdfDossier(quotePdfBlob, type, produits, filename, commercial, addCommercialOverlay);
+        const assemblyResult = assemblePdfDossier(quotePdfBlob, type, produits, filename, commercial, addCommercialOverlay, centralType);
         finalPdfBlob = assemblyResult.blob;
         assemblyInfo = assemblyResult.info;
         
@@ -383,9 +385,10 @@ return newFolder;
  * @param {string} filename - Nom du fichier final
  * @param {string} commercialName - Nom du commercial
  * @param {boolean} addOverlay - Flag pour ajouter overlay commercial (optionnel)
+ * @param {string} centralType - Type de centrale pour alarmes (titane, jablotron)
  * @returns {Object} { blob: Blob, info: Object }
  */
-function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialName, addOverlay) {
+function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialName, addOverlay, centralType) {
   Logger.log('🔧 === DÉBUT ASSEMBLAGE PDF ===');
   
   const blobsToMerge = [];
@@ -398,12 +401,12 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialNa
   };
   
   // 1. Récupérer le dossier de base selon le type
-  Logger.log('📁 Étape 1: Récupération du dossier de base (type: ' + type + ')');
+  Logger.log('📁 Étape 1: Récupération du dossier de base (type: ' + type + ', central: ' + (centralType || 'N/A') + ')');
   try {
-    const baseDossierBlob = getBaseDossierBlob(type);
+    const baseDossierBlob = getBaseDossierBlob(type, centralType);
     if (baseDossierBlob) {
       blobsToMerge.push(baseDossierBlob);
-      assemblyInfo.baseDossier = getBaseDossierName(type);
+      assemblyInfo.baseDossier = getBaseDossierName(type, centralType);
       Logger.log('✅ Dossier de base ajouté: ' + assemblyInfo.baseDossier);
     } else {
       Logger.log('⚠️ Aucun dossier de base pour le type: ' + type);
@@ -580,25 +583,29 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialNa
  * Récupère le blob du dossier de base selon le type
  * 
  * @param {string} type - Type de dossier (alarme, video)
+ * @param {string} centralType - Type de centrale (titane, jablotron) pour les alarmes
  * @returns {Blob|null} Le blob du dossier ou null
  */
-function getBaseDossierBlob(type) {
+function getBaseDossierBlob(type, centralType) {
   let fileId = null;
   let configKey = null;
   
   // Normaliser le type pour la comparaison
   const normalizedType = type ? type.toLowerCase().trim() : '';
+  const normalizedCentralType = centralType ? centralType.toLowerCase().trim() : '';
   
   // Détection des types d'alarme
   if (normalizedType === 'alarme' || normalizedType === 'alarme-titane' || normalizedType.startsWith('alarme')) {
-    // Par défaut, utilise ALARME_TITANE
-    fileId = CONFIG.DOSSIERS.ALARME_TITANE;
-    configKey = 'CONFIG.DOSSIERS.ALARME_TITANE';
-    
-    // Si spécifiquement Jablotron
-    if (normalizedType.includes('jablotron')) {
+    // Utiliser centralType pour déterminer Titane vs Jablotron
+    if (normalizedCentralType === 'jablotron') {
       fileId = CONFIG.DOSSIERS.ALARME_JABLOTRON;
       configKey = 'CONFIG.DOSSIERS.ALARME_JABLOTRON';
+      Logger.log('   → Utilisation du dossier Jablotron (centralType: ' + centralType + ')');
+    } else {
+      // Par défaut, utilise ALARME_TITANE
+      fileId = CONFIG.DOSSIERS.ALARME_TITANE;
+      configKey = 'CONFIG.DOSSIERS.ALARME_TITANE';
+      Logger.log('   → Utilisation du dossier Titane (default ou centralType: ' + centralType + ')');
     }
   } else if (normalizedType === 'video' || normalizedType === 'vidéo') {
     fileId = CONFIG.DOSSIERS.VIDEO;
@@ -623,14 +630,16 @@ function getBaseDossierBlob(type) {
  * Récupère le nom du dossier de base selon le type
  * 
  * @param {string} type - Type de dossier
+ * @param {string} centralType - Type de centrale (titane, jablotron) pour les alarmes
  * @returns {string} Nom du dossier
  */
-function getBaseDossierName(type) {
+function getBaseDossierName(type, centralType) {
   const normalizedType = type ? type.toLowerCase().trim() : '';
+  const normalizedCentralType = centralType ? centralType.toLowerCase().trim() : '';
   
   if (normalizedType === 'alarme' || normalizedType === 'alarme-titane' || normalizedType.startsWith('alarme')) {
-    // Par défaut Titane
-    if (normalizedType.includes('jablotron')) {
+    // Utiliser centralType pour déterminer Titane vs Jablotron
+    if (normalizedCentralType === 'jablotron') {
       return 'Devis_ALARME_JABLOTRON.pdf';
     }
     return 'Devis_ALARME_TITANE.pdf';
