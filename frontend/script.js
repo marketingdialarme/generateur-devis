@@ -255,10 +255,10 @@
         class DialarmeFinalGenerator {
             
             constructor() {
-                // Feature flag for PDF merging method
-                // Disable pdf-lib on iOS - use backend assembly instead (proven to work)
+                // Feature flag for PDF merging method  
+                // Enable pdf-lib for ALL devices (synchronous XHR works on iOS)
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                this.USE_PDF_LIB_MERGING = !isIOS; // Desktop: pdf-lib, iOS: backend assembly
+                this.USE_PDF_LIB_MERGING = true; // PDF merging with pdf-lib enabled by default
                 
                 // Create visible debug console for mobile
                 this.createMobileDebugConsole();
