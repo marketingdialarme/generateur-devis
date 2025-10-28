@@ -263,19 +263,20 @@
                 debugPanel.id = 'mobile-debug-console';
                 debugPanel.style.cssText = `
                     position: fixed;
-                    top: 0;
+                    bottom: 0;
                     left: 0;
                     right: 0;
-                    max-height: 200px;
+                    max-height: 250px;
                     overflow-y: auto;
-                    background: rgba(0, 0, 0, 0.9);
+                    background: rgba(0, 0, 0, 0.95);
                     color: #00ff00;
                     font-family: monospace;
-                    font-size: 11px;
-                    padding: 10px;
-                    z-index: 999999;
-                    border-bottom: 2px solid #00ff00;
-                    display: none;
+                    font-size: 10px;
+                    padding: 8px;
+                    z-index: 9999999;
+                    border-top: 3px solid #00ff00;
+                    display: block;
+                    pointer-events: auto;
                 `;
                 document.body.appendChild(debugPanel);
                 
@@ -326,23 +327,31 @@
                 
                 // Add toggle button
                 const toggleBtn = document.createElement('button');
-                toggleBtn.textContent = '🐛';
+                toggleBtn.textContent = '🐛 DEBUG';
                 toggleBtn.style.cssText = `
                     position: fixed;
-                    top: 10px;
+                    bottom: 10px;
                     right: 10px;
-                    z-index: 1000000;
+                    z-index: 99999999;
                     background: #00ff00;
-                    border: none;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    font-size: 20px;
+                    border: 2px solid #000;
+                    padding: 8px 12px;
+                    border-radius: 5px;
+                    font-size: 14px;
+                    font-weight: bold;
                     cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(0,255,0,0.5);
                 `;
+                let isMinimized = false;
                 toggleBtn.onclick = () => {
-                    this.debugPanel.style.display = 
-                        this.debugPanel.style.display === 'none' ? 'block' : 'none';
+                    isMinimized = !isMinimized;
+                    if (isMinimized) {
+                        this.debugPanel.style.maxHeight = '40px';
+                        toggleBtn.textContent = '🐛 SHOW';
+                    } else {
+                        this.debugPanel.style.maxHeight = '250px';
+                        toggleBtn.textContent = '🐛 HIDE';
+                    }
                 };
                 document.body.appendChild(toggleBtn);
                 
