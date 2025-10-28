@@ -1705,39 +1705,37 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     try {
                         console.log(`🔄 Tentative ${attempt}/${MAX_RETRIES}`);
                         
-                        // Utiliser la méthode appropriée selon le navigateur
-                        if (isIOS || isSafari) {
-                            console.log('🍎 Envoi via formulaire (iOS/Safari)...');
-                            const result = await this.sendViaFormSubmit(payload, 15000);
-                            console.log('✅ Réponse reçue:', result);
-                            return result;
-                        } else {
-                            console.log('🚀 Envoi via fetch (navigateur moderne)...');
-                            
-                            // Créer l'URL avec les données
-                            const formData = new FormData();
-                            formData.append('data', JSON.stringify(payload));
-                            
-                            // Envoi via fetch en no-cors
-                            await fetch(GOOGLE_SCRIPT_URL, {
-                                method: 'POST',
-                                body: formData,
-                                mode: 'no-cors'
-                            });
-                            
-                            console.log('✅ Requête envoyée au serveur');
-                            
-                            // Attendre que le serveur traite
-                            await this.sleep(6000);
-                            
-                            console.log('✅ Délai d\'attente terminé - PDF normalement envoyé');
-                            
-                            return {
-                                success: true,
-                                message: 'PDF envoyé (vérifiez votre email)',
-                                assumed: true
-                            };
-                        }
+                        // UTILISER LA MÊME MÉTHODE POUR TOUS LES NAVIGATEURS
+                        console.log('🚀 Envoi via fetch (méthode universelle)...');
+                        
+                        // Créer les données
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
+                        
+                        console.log('📡 Envoi au serveur Google Apps Script...');
+                        
+                        // Envoi via fetch en no-cors
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            body: formData,
+                            mode: 'no-cors'
+                        });
+                        
+                        console.log('✅ Requête envoyée au serveur');
+                        console.log('⏳ Attente de 8 secondes pour traitement...');
+                        
+                        // Attendre que le serveur traite
+                        await this.sleep(8000);
+                        
+                        console.log('✅ Traitement terminé');
+                        console.log('📧 Vérifiez email: devis.dialarme@gmail.com');
+                        console.log('📁 Vérifiez Google Drive');
+                        
+                        return {
+                            success: true,
+                            message: 'PDF envoyé - Vérifiez votre email',
+                            assumed: true
+                        };
                         
                     } catch (error) {
                         console.warn(`⚠️ Tentative ${attempt} échouée:`, error.message);
