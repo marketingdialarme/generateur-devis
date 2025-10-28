@@ -297,7 +297,8 @@ Utilities.base64Decode(pdfBase64),
         totalPages: 'N/A',
         overlayAdded: true
       };
-    } else if (type && produits.length > 0) {
+    } else if (type) {
+      // ALWAYS assemble if type is provided (alarm needs base document even with 0 products)
       Logger.log('🔧 Assemblage du dossier complet avec ' + produits.length + ' produit(s)...');
       const assemblyStartTime = new Date();
       
