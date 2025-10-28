@@ -258,6 +258,9 @@
                 // Feature flag for PDF merging method
                 this.USE_PDF_LIB_MERGING = true; // PDF merging with pdf-lib enabled by default
                 
+                // Create visible debug console for mobile
+                this.createMobileDebugConsole();
+                
                 this.catalog = {
                     'alarm-material': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
@@ -2356,6 +2359,61 @@ throw error;
                     console.error('❌ Error fetching base document via backend:', error);
                     throw error;
                 }
+            }
+
+            /**
+             * Create a visible debug console for mobile devices
+             */
+            createMobileDebugConsole() {
+                // Create debug container
+                const debugDiv = document.createElement('div');
+                debugDiv.id = 'mobile-debug';
+                debugDiv.style.cssText = `
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    background: rgba(0, 0, 0, 0.9);
+                    color: #00ff00;
+                    font-family: monospace;
+                    font-size: 10px;
+                    padding: 10px;
+                    z-index: 99999;
+                    border-top: 2px solid #00ff00;
+                `;
+                document.body.appendChild(debugDiv);
+                
+                // Override console methods
+                const originalLog = console.log;
+                const originalError = console.error;
+                const originalWarn = console.warn;
+                
+                const addToDebug = (msg, color = '#00ff00') => {
+                    const line = document.createElement('div');
+                    line.style.color = color;
+                    line.textContent = msg;
+                    debugDiv.appendChild(line);
+                    debugDiv.scrollTop = debugDiv.scrollHeight;
+                };
+                
+                console.log = function(...args) {
+                    originalLog.apply(console, args);
+                    addToDebug(args.join(' '), '#00ff00');
+                };
+                
+                console.error = function(...args) {
+                    originalError.apply(console, args);
+                    addToDebug('ERROR: ' + args.join(' '), '#ff0000');
+                };
+                
+                console.warn = function(...args) {
+                    originalWarn.apply(console, args);
+                    addToDebug('WARN: ' + args.join(' '), '#ffaa00');
+                };
+                
+                addToDebug('📱 Mobile Debug Console Ready', '#00ff00');
             }
 
             /**
