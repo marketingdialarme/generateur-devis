@@ -255,6 +255,8 @@
         class DialarmeFinalGenerator {
             
             constructor() {
+                // Feature flag for PDF merging method
+                this.USE_PDF_LIB_MERGING = true; // PDF merging with pdf-lib enabled by default
                 
                 this.catalog = {
                     'alarm-material': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
@@ -1575,6 +1577,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     centralType: centralType,  // NEW: separate field for Titane vs Jablotron
                     produits: products,
                     addCommercialOverlay: false,
+                    mergedByFrontend: this.USE_PDF_LIB_MERGING,  // NEW: flag to tell backend PDF is already merged
                     timestamp: new Date().toISOString()
                 };
                 
@@ -1950,6 +1953,559 @@ throw error;
                     }, 12000);
                 });
             }
+
+            /**
+             * NEW FUNCTION: Assemble PDF using pdf-lib (client-side merging)
+             * This function will merge the generated quote with base documents and product sheets
+             * Returns a single merged PDF blob ready to send to backend
+             */
+            async assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName) {
+                console.log('🔧 Starting PDF assembly with pdf-lib...');
+                
+                try {
+                    // Check if pdf-lib is available
+                    if (typeof PDFLib === 'undefined') {
+                        throw new Error('pdf-lib library not loaded');
+                    }
+
+                    // Determine quote type and central type
+                    let quoteType = null;
+                    let centralType = null;
+                    
+                    if (this.currentTab === 'alarm') {
+                        quoteType = 'alarme';
+                        centralType = this.selectedCentral === 'jablotron' ? 'jablotron' : 'titane';
+                    } else if (this.currentTab === 'camera') {
+                        quoteType = 'video';
+                    } else if (this.currentTab === 'fog') {
+                        quoteType = null; // Fog doesn't have assembly yet
+                    }
+                    
+                    // Collect products for assembly
+                    const products = this.collectProductsForAssembly();
+                    
+                    console.log('📋 Assembly parameters:', {
+                        quoteType,
+                        centralType,
+                        productsCount: products.length,
+                        products: products
+                    });
+
+                    if (quoteType === 'alarme') {
+                        return await this.assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType);
+                    } else if (quoteType === 'video') {
+                        return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products);
+                    } else {
+                        console.log('⚠️ No assembly needed for this quote type, returning original PDF');
+                        return pdfBlob;
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error in PDF assembly with pdf-lib:', error);
+                    // Return original PDF as fallback
+                    console.log('⚠️ Falling back to original PDF');
+                    return pdfBlob;
+                }
+            }
+
+            /**
+             * Assemble alarm PDF: Base document with generated quote REPLACING page 6 + Commercial overlay at page 2
+             */
+            async assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType) {
+                console.log('🚨 Assembling alarm PDF with central type:', centralType);
+                
+                try {
+                    // 1. Fetch base document (Titane or Jablotron)
+                    const baseDocBlob = await this.fetchBaseDocument('alarme', centralType);
+                    if (!baseDocBlob) {
+                        throw new Error('Could not fetch base document');
+                    }
+                    
+                    // 2. Load base document
+                    const basePdf = await PDFLib.PDFDocument.load(await baseDocBlob.arrayBuffer());
+                    const basePageCount = basePdf.getPageCount();
+                    
+                    console.log('✅ Base document loaded:', basePageCount, 'pages');
+                    
+                    // 3. Load generated quote
+                    const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
+                    const quotePageCount = quotePdf.getPageCount();
+                    
+                    console.log('✅ Generated quote loaded:', quotePageCount, 'page(s)');
+                    
+                    // 4. Create new PDF document
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    
+                    // 5. Add pages 1-5 from base document
+                    for (let i = 0; i < 5 && i < basePageCount; i++) {
+                        const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
+                        pdfDoc.addPage(copiedPage);
+                    }
+                    
+                    console.log('✅ Base document pages 1-5 added');
+                    
+                    // 6. INSERT generated quote as NEW page 6 (original page 6 becomes page 7)
+                    const [quotePage] = await pdfDoc.copyPages(quotePdf, [0]);
+                    pdfDoc.addPage(quotePage);
+                    
+                    console.log('✅ Generated quote inserted as page 6');
+                    
+                    // 7. Add remaining pages from base document (original pages 6-11 become pages 7-12)
+                    if (basePageCount > 5) {
+                        for (let i = 5; i < basePageCount; i++) {
+                            const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
+                            pdfDoc.addPage(copiedPage);
+                        }
+                        console.log('✅ Base document pages 6-' + basePageCount + ' added (now pages 7-' + (basePageCount + 1) + ')');
+                    }
+                    
+                    console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
+                    console.log('   - Base document pages: 1-5, 7-' + (basePageCount + 1));
+                    console.log('   - Generated quote: page 6');
+                    
+                    // 8. Add commercial overlay to page 2 (index 1)
+                    await this.addCommercialOverlay(pdfDoc, commercial, 1);
+                    
+                    // 9. Generate final PDF
+                    const mergedPdfBytes = await pdfDoc.save();
+                    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                    
+                    console.log('✅ Alarm PDF assembly completed');
+                    console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
+                    console.log('📄 Final page count:', pdfDoc.getPageCount(), 'pages');
+                    
+                    return mergedPdfBlob;
+                    
+                } catch (error) {
+                    console.error('❌ Error assembling alarm PDF:', error);
+                    throw error;
+                }
+            }
+
+            /**
+             * Assemble video PDF: Base document + Generated quote + Product sheets + Accessories
+             */
+            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
+                console.log('📹 Assembling video PDF with', products.length, 'products');
+                
+                try {
+                    // 1. Fetch base document
+                    const baseDocBlob = await this.fetchBaseDocument('video');
+                    if (!baseDocBlob) {
+                        throw new Error('Could not fetch base document');
+                    }
+                    
+                    // 2. Load base document
+                    const basePdf = await PDFLib.PDFDocument.load(await baseDocBlob.arrayBuffer());
+                    
+                    // 3. Create new PDF document
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    
+                    // 4. Add base document pages
+                    const basePages = await pdfDoc.copyPages(basePdf, basePdf.getPageIndices());
+                    basePages.forEach(page => pdfDoc.addPage(page));
+                    
+                    console.log('✅ Base document added:', basePages.length, 'pages');
+                    
+                    // 5. Add generated quote
+                    const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
+                    const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
+                    quotePages.forEach(page => pdfDoc.addPage(page));
+                    
+                    console.log('✅ Generated quote added');
+                    
+                    // 6. Add product sheets for each product
+                    let productSheetsAdded = 0;
+                    for (const productName of products) {
+                        try {
+                            console.log('📥 Fetching product sheet for:', productName);
+                            const productBlob = await this.fetchProductSheet(productName);
+                            if (productBlob) {
+                                const productPdf = await PDFLib.PDFDocument.load(await productBlob.arrayBuffer());
+                                const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
+                                productPages.forEach(page => pdfDoc.addPage(page));
+                                console.log('✅ Product sheet added:', productName);
+                                productSheetsAdded++;
+                            }
+                        } catch (error) {
+                            console.warn('⚠️ Could not add product sheet for:', productName, error.message);
+                        }
+                    }
+                    
+                    console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
+                    
+                    // 7. Add accessories sheet
+                    try {
+                        console.log('📥 Fetching accessories sheet...');
+                        const accessoriesBlob = await this.fetchAccessoriesSheet();
+                        if (accessoriesBlob) {
+                            const accessoriesPdf = await PDFLib.PDFDocument.load(await accessoriesBlob.arrayBuffer());
+                            const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
+                            accessoriesPages.forEach(page => pdfDoc.addPage(page));
+                            console.log('✅ Accessories sheet added');
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Could not add accessories sheet:', error.message);
+                    }
+                    
+                    // 8. Add commercial overlay to page 2 (index 1)
+                    await this.addCommercialOverlay(pdfDoc, commercial, 1);
+                    
+                    console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
+                    
+                    // 9. Generate final PDF
+                    const mergedPdfBytes = await pdfDoc.save();
+                    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                    
+                    console.log('✅ Video PDF assembly completed');
+                    console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
+                    console.log('📄 Final page count:', pdfDoc.getPageCount(), 'pages');
+                    
+                    return mergedPdfBlob;
+                    
+                } catch (error) {
+                    console.error('❌ Error assembling video PDF:', error);
+                    throw error;
+                }
+            }
+
+            /**
+             * Fetch product sheet from backend by product name
+             */
+            async fetchProductSheet(productName) {
+                console.log('📥 Fetching product sheet for:', productName);
+                
+                try {
+                    const payload = {
+                        action: 'fetchProductSheet',
+                        productName: productName
+                    };
+                    
+                    const formData = new FormData();
+                    formData.append('data', JSON.stringify(payload));
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Backend request failed: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.pdfBase64) {
+                        console.warn('⚠️ Product sheet not found:', productName);
+                        return null;
+                    }
+                    
+                    // Convert base64 back to blob
+                    const binaryString = atob(result.pdfBase64);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    
+                    console.log('✅ Product sheet fetched:', blob.size, 'bytes');
+                    
+                    return blob;
+                    
+                } catch (error) {
+                    console.error('❌ Error fetching product sheet:', error);
+                    return null;
+                }
+            }
+
+            /**
+             * Fetch accessories sheet from backend
+             */
+            async fetchAccessoriesSheet() {
+                console.log('📥 Fetching accessories sheet...');
+                
+                try {
+                    const payload = {
+                        action: 'fetchAccessoriesSheet'
+                    };
+                    
+                    const formData = new FormData();
+                    formData.append('data', JSON.stringify(payload));
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Backend request failed: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.pdfBase64) {
+                        console.warn('⚠️ Accessories sheet not found');
+                        return null;
+                    }
+                    
+                    // Convert base64 back to blob
+                    const binaryString = atob(result.pdfBase64);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    
+                    console.log('✅ Accessories sheet fetched:', blob.size, 'bytes');
+                    
+                    return blob;
+                    
+                } catch (error) {
+                    console.error('❌ Error fetching accessories sheet:', error);
+                    return null;
+                }
+            }
+
+            /**
+             * Fetch base document from Google Drive via backend
+             * CORS doesn't allow direct fetch from browser, so we use the backend
+             */
+            async fetchBaseDocument(quoteType, centralType = null) {
+                console.log('📥 Fetching base document via backend for:', quoteType, centralType);
+                
+                try {
+                    let fileId = null;
+                    
+                    if (quoteType === 'alarme') {
+                        if (centralType === 'jablotron') {
+                            fileId = '1NsVNGcTTIGqZNzNZbPxHbBseaHF_WigS'; // ALARME_JABLOTRON
+                        } else {
+                            fileId = '1yQeOxjlzHIN6H0p_rAiVw5TQNLlggRit'; // ALARME_TITANE
+                        }
+                    } else if (quoteType === 'video') {
+                        fileId = '1_ZzXmMgL4ZFrzp4yAmMT1vG2T7gKqM6r'; // VIDEO
+                    }
+                    
+                    if (!fileId) {
+                        throw new Error('No file ID found for quote type: ' + quoteType);
+                    }
+                    
+                    // Request base document from backend
+                    const payload = {
+                        action: 'fetchBaseDocument',
+                        fileId: fileId,
+                        quoteType: quoteType,
+                        centralType: centralType
+                    };
+                    
+                    console.log('📤 Requesting base document from backend...');
+                    
+                    const formData = new FormData();
+                    formData.append('data', JSON.stringify(payload));
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Backend request failed: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.pdfBase64) {
+                        throw new Error(result.message || 'Failed to fetch base document');
+                    }
+                    
+                    // Convert base64 back to blob
+                    const binaryString = atob(result.pdfBase64);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    
+                    console.log('✅ Base document fetched from backend:', blob.size, 'bytes');
+                    
+                    return blob;
+                    
+                } catch (error) {
+                    console.error('❌ Error fetching base document via backend:', error);
+                    throw error;
+                }
+            }
+
+            /**
+             * Add commercial overlay to page 2
+             * Date: Positioned on the same line as "Le" (top-right area)
+             * Name/Phone/Email: Text INSIDE the existing yellow box (no new box drawn)
+             */
+            async addCommercialOverlay(pdfDoc, commercialName, pageIndex) {
+                console.log('📝 Adding commercial overlay to page', pageIndex + 1);
+                
+                try {
+                    // Get commercial info
+                    const commercialInfo = this.getCommercialInfo(commercialName);
+                    
+                    // Get the target page
+                    const pages = pdfDoc.getPages();
+                    if (pageIndex >= pages.length) {
+                        console.warn('⚠️ Page index out of range:', pageIndex);
+                        return;
+                    }
+                    
+                    const page = pages[pageIndex];
+                    const { width, height } = page.getSize();
+                    
+                    // Load font
+                    const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                    const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                    
+                    // === 1. ADD DATE (On same line as "Carouge. le") ===
+                    // Position date to align horizontally with "Carouge. le" text
+                    const currentDate = new Date().toLocaleDateString('fr-CH');
+                    const dateText = currentDate;
+                    const dateFontSize = 11;
+                    const dateX = width - 139; // Moved left 6px more
+                    const dateY = height - 155; // Aligned with "Carouge. le"
+                    
+                    page.drawText(dateText, {
+                        x: dateX,
+                        y: dateY,
+                        size: dateFontSize,
+                        font: helveticaFont,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                    
+                    console.log('✅ Date added on "Le" line:', dateText);
+                    
+                    // === 2. ADD TEXT INSIDE EXISTING YELLOW BOX (Bottom-right) ===
+                    // NOTE: Yellow box already exists on page 2 - we just add text inside it
+                    // Typical yellow box position: bottom-right corner
+                    const boxStartX = width - 185; // Moved more to the right
+                    const boxStartY = 110; // Moved up 30px more
+                    
+                    // Add text inside the EXISTING yellow box (no rectangle drawn)
+                    const textPadding = 8;
+                    const lineHeight = 15;
+                    let textY = boxStartY + 58; // Start from top of the yellow box area
+                    
+                    // Commercial name (bold)
+                    page.drawText(commercialName, {
+                        x: boxStartX + textPadding,
+                        y: textY,
+                        size: 10,
+                        font: helveticaBold,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                    
+                    textY -= lineHeight;
+                    
+                    // Phone
+                    page.drawText(`Tel: ${commercialInfo.phone}`, {
+                        x: boxStartX + textPadding,
+                        y: textY,
+                        size: 9,
+                        font: helveticaFont,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                    
+                    textY -= lineHeight;
+                    
+                    // Email
+                    page.drawText(commercialInfo.email, {
+                        x: boxStartX + textPadding,
+                        y: textY,
+                        size: 8,
+                        font: helveticaFont,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                    
+                    console.log('✅ Commercial info added inside existing yellow box on page', pageIndex + 1);
+                    console.log('   - Name:', commercialName);
+                    console.log('   - Phone:', commercialInfo.phone);
+                    console.log('   - Email:', commercialInfo.email);
+                    
+                } catch (error) {
+                    console.error('❌ Error adding commercial overlay:', error);
+                    // Don't throw - this is not critical
+                }
+            }
+
+            /**
+             * Get commercial information from config
+             */
+            getCommercialInfo(commercialName) {
+                // Commercial info mapping based on config.gs
+                const commercialData = {
+                    'Anabelle': { phone: '06 XX XX XX XX', email: 'anabelle@dialarme.fr' },
+                    'Test Commercial': { phone: '06 00 00 00 00', email: 'test@dialarme.fr' },
+                    'Arnaud Bloch': { phone: '06 XX XX XX XX', email: 'arnaud.bloch@dialarme.fr' },
+                    'Yann Mamet': { phone: '06 XX XX XX XX', email: 'yann.mamet@dialarme.fr' },
+                    'Maxime Legrand': { phone: '06 XX XX XX XX', email: 'maxime.legrand@dialarme.fr' },
+                    'Gérald Guenard': { phone: '06 XX XX XX XX', email: 'gerald.guenard@dialarme.fr' },
+                    'François Ribeiro': { phone: '06 XX XX XX XX', email: 'francois.ribeiro@dialarme.fr' },
+                    'Thomas Lefevre': { phone: '06 XX XX XX XX', email: 'thomas.lefevre@dialarme.fr' },
+                    'Nicolas Dub': { phone: '06 XX XX XX XX', email: 'nicolas.dub@dialarme.fr' },
+                    'Julien Auge': { phone: '06 XX XX XX XX', email: 'julien.auge@dialarme.fr' },
+                    'Guillaume Marmey': { phone: '06 XX XX XX XX', email: 'guillaume.marmey@dialarme.fr' },
+                    'Dylan Morel': { phone: '06 XX XX XX XX', email: 'dylan.morel@dialarme.fr' },
+                    'Baptiste Laude': { phone: '06 XX XX XX XX', email: 'baptiste.laude@dialarme.fr' },
+                    'Clement Faivre': { phone: '06 XX XX XX XX', email: 'clement.faivre@dialarme.fr' },
+                    'Alexis Delamare': { phone: '06 XX XX XX XX', email: 'alexis.delamare@dialarme.fr' },
+                    'Clement Sorel': { phone: '06 XX XX XX XX', email: 'clement.sorel@dialarme.fr' },
+                    'Laurent Rochard': { phone: '06 XX XX XX XX', email: 'laurent.rochard@dialarme.fr' }
+                };
+                
+                // Return commercial data or default values
+                return commercialData[commercialName] || {
+                    phone: '06 XX XX XX XX',
+                    email: 'commercial@dialarme.fr'
+                };
+            }
+
+            /**
+             * TEST FUNCTION: Test pdf-lib functionality
+             * This function can be called from console to test pdf-lib merging
+             */
+            async testPdfLibMerging() {
+                console.log('🧪 Testing pdf-lib functionality...');
+                
+                try {
+                    // Check if pdf-lib is available
+                    if (typeof PDFLib === 'undefined') {
+                        console.error('❌ pdf-lib library not loaded');
+                        return false;
+                    }
+                    
+                    console.log('✅ pdf-lib library is available');
+                    
+                    // Create a simple test PDF
+                    const { jsPDF } = window.jspdf;
+                    const testDoc = new jsPDF('portrait', 'pt', 'a4');
+                    testDoc.text('Test PDF for pdf-lib merging', 40, 40);
+                    const testPdfBlob = testDoc.output('blob');
+                    
+                    console.log('✅ Test PDF created:', testPdfBlob.size, 'bytes');
+                    
+                    // Test pdf-lib merging
+                    const mergedBlob = await this.assemblePdfWithLibrary(testPdfBlob, 'test.pdf', 'Test Commercial', 'Test Client');
+                    
+                    console.log('✅ PDF merging test completed');
+                    console.log('📄 Original size:', testPdfBlob.size, 'bytes');
+                    console.log('📄 Merged size:', mergedBlob.size, 'bytes');
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ pdf-lib test failed:', error);
+                    return false;
+                }
+            }
             
             /**
              * Helper pour les delays
@@ -1958,7 +2514,7 @@ throw error;
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
 
-            generatePDF(type) {
+            async generatePDF(type) {
                 const isRental = this.rentalMode[type];
                 let clientNameField, commercialField, commercialCustomField;
                 
@@ -2094,8 +2650,24 @@ throw error;
                     // Notification initiale
                     this.showNotification('✅ PDF généré localement', 'success', 2000);
                     
+                    // Choose PDF processing method based on feature flag
+                    let finalPdfBlob = pdfBlob;
+                    
+                    if (this.USE_PDF_LIB_MERGING) {
+                        console.log('🔧 Using pdf-lib for PDF assembly...');
+                        try {
+                            finalPdfBlob = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName);
+                            console.log('✅ PDF assembly completed with pdf-lib');
+                        } catch (error) {
+                            console.error('❌ PDF assembly failed, using original PDF:', error);
+                            finalPdfBlob = pdfBlob; // Fallback to original
+                        }
+                    } else {
+                        console.log('📤 Using backend assembly (existing method)...');
+                    }
+                    
                     // Envoi par email et sauvegarde dans Drive
-                    this.sendToEmailAndDrive(pdfBlob, filename, commercial, clientName)
+                    this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName)
                         .then((result) => {
                             if (result && result.assumed) {
                                 // Success assumed (normal pour certains navigateurs)
@@ -3138,8 +3710,30 @@ throw error;
             if (generator) generator.updateSurveillancePrice();
         }
 
-        function generatePDF(type) {
-            if (generator) generator.generatePDF(type);
+        async function generatePDF(type) {
+            if (generator) await generator.generatePDF(type);
+        }
+
+        // Test function for pdf-lib (can be called from console)
+        async function testPdfLib() {
+            if (generator) {
+                return await generator.testPdfLibMerging();
+            } else {
+                console.error('❌ Generator not initialized');
+                return false;
+            }
+        }
+
+        // Toggle feature flag for testing (can be called from console)
+        function togglePdfLibMerging() {
+            if (generator) {
+                generator.USE_PDF_LIB_MERGING = !generator.USE_PDF_LIB_MERGING;
+                console.log('🔧 PDF Assembly Method:', generator.USE_PDF_LIB_MERGING ? 'pdf-lib (NEW)' : 'Backend (EXISTING)');
+                return generator.USE_PDF_LIB_MERGING;
+            } else {
+                console.error('❌ Generator not initialized');
+                return false;
+            }
         }
 
         function exportQuote() {
@@ -3206,4 +3800,7 @@ throw error;
             console.log('👥 Commerciaux disponibles:', COMMERCIALS_LIST.length);
             console.log('💰 Configuration des prix chargée');
             console.log('📧 URL Google Script:', GOOGLE_SCRIPT_URL);
+            console.log('🔧 PDF Assembly Method:', generator.USE_PDF_LIB_MERGING ? 'pdf-lib (NEW)' : 'Backend (EXISTING)');
+            console.log('🧪 Test pdf-lib: Run testPdfLib() in console');
+            console.log('🔄 Toggle method: Run togglePdfLibMerging() in console');
         });
