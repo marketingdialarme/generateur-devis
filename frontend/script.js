@@ -2022,18 +2022,25 @@ throw error;
             }
             
             /**
-             * Méthode traditionnelle avec formulaire HTML
+             * Méthode iframe - fonctionne sur iOS même avec bloqueurs de popup
              */
             async sendViaTraditionalForm(payload) {
-                console.log('📋 Envoi via formulaire HTML traditionnel...');
+                console.log('📋 Envoi via iframe (méthode iOS-compatible)...');
                 
                 return new Promise((resolve) => {
-                    // Créer un formulaire invisible
+                    // Créer un iframe invisible
+                    const iframe = document.createElement('iframe');
+                    iframe.name = 'upload_iframe_' + Date.now();
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    // Créer un formulaire ciblant l'iframe
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = GOOGLE_SCRIPT_URL;
-                    form.target = '_blank';
+                    form.target = iframe.name;
                     form.style.display = 'none';
+                    form.enctype = 'application/x-www-form-urlencoded';
                     
                     const input = document.createElement('input');
                     input.type = 'hidden';
@@ -2043,27 +2050,30 @@ throw error;
                     form.appendChild(input);
                     document.body.appendChild(form);
                     
+                    console.log('📡 Soumission du formulaire vers iframe...');
+                    
                     // Soumettre
                     form.submit();
                     
-                    console.log('✅ Formulaire soumis');
-                    console.log('⚠️ Vérifiez votre email dans 10 secondes');
+                    console.log('✅ Formulaire soumis vers iframe');
+                    console.log('⏳ Attente de 12 secondes pour traitement backend...');
                     
-                    // Nettoyer après 2 secondes
+                    // Attendre que le backend traite
                     setTimeout(() => {
-                        if (form.parentNode) {
-                            document.body.removeChild(form);
-                        }
-                    }, 2000);
-                    
-                    // Assumer le succès après 10 secondes
-                    setTimeout(() => {
+                        console.log('✅ Traitement terminé');
+                        console.log('📧 Vérifiez votre email à devis.dialarme@gmail.com');
+                        console.log('📁 Vérifiez Google Drive');
+                        
+                        // Nettoyer
+                        if (form.parentNode) document.body.removeChild(form);
+                        if (iframe.parentNode) document.body.removeChild(iframe);
+                        
                         resolve({
                             success: true,
-                            message: 'PDF envoyé (vérifiez votre email)',
+                            message: 'PDF envoyé - Vérifiez votre email',
                             assumed: true
                         });
-                    }, 10000);
+                    }, 12000);
                 });
             }
             
