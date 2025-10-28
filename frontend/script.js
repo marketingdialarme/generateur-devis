@@ -2477,6 +2477,21 @@ throw error;
                     const page = pages[pageIndex];
                     const { width, height } = page.getSize();
                     
+                    // Remove annotations/form fields that block text (Titane has white rectangles on page 2)
+                    // This only runs when pdf-lib is assembling, safe for all devices
+                    try {
+                        const annots = page.node.get(PDFLib.PDFName.of('Annots'));
+                        if (annots) {
+                            page.node.delete(PDFLib.PDFName.of('Annots'));
+                            console.log('✅ Removed page annotations (fixes Titane white rectangle issue)');
+                        } else {
+                            console.log('ℹ️ No annotations to remove (Jablotron is clean)');
+                        }
+                    } catch (annotError) {
+                        console.warn('⚠️ Could not remove annotations:', annotError.message);
+                        // Non-critical, continue anyway
+                    }
+                    
                     // Load font
                     const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                     const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
