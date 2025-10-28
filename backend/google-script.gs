@@ -256,6 +256,7 @@ const commercial = data.commercial;
     const produits = data.produits || []; // Liste des produits pour fiches techniques
     const addCommercialOverlay = data.addCommercialOverlay || false; // Flag pour ajouter overlay commercial
     const mergedByFrontend = data.mergedByFrontend || false; // Flag to indicate PDF is already merged by frontend
+    const frontendAssemblyInfo = data.frontendAssemblyInfo || null; // Assembly info from frontend (if merged by pdf-lib)
     
     Logger.log('Validation - PDF présent: ' + (!!pdfBase64));
     Logger.log('Validation - Filename: ' + filename);
@@ -290,13 +291,31 @@ Utilities.base64Decode(pdfBase64),
     // Skip assembly if PDF is already merged by frontend (pdf-lib)
     if (mergedByFrontend) {
       Logger.log('✅ PDF already merged by frontend (pdf-lib) - skipping backend assembly');
-      assemblyInfo = {
-        baseDossier: 'Merged by frontend',
-        productsFound: produits.length,
-        productsRequested: produits.length,
-        totalPages: 'N/A',
-        overlayAdded: true
-      };
+      
+      // Use assembly info from frontend if provided, otherwise use defaults
+      if (frontendAssemblyInfo) {
+        Logger.log('📦 Using assembly info from frontend:');
+        Logger.log('   - Base dossier: ' + frontendAssemblyInfo.baseDossier);
+        Logger.log('   - Products found: ' + frontendAssemblyInfo.productsFound);
+        Logger.log('   - Total pages: ' + frontendAssemblyInfo.totalPages);
+        
+        assemblyInfo = {
+          baseDossier: frontendAssemblyInfo.baseDossier,
+          productsFound: frontendAssemblyInfo.productsFound,
+          productsRequested: produits.length,
+          totalPages: frontendAssemblyInfo.totalPages,
+          overlayAdded: frontendAssemblyInfo.overlayAdded || true
+        };
+      } else {
+        Logger.log('⚠️ No assembly info from frontend, using defaults');
+        assemblyInfo = {
+          baseDossier: 'Merged by frontend',
+          productsFound: produits.length,
+          productsRequested: produits.length,
+          totalPages: 'N/A',
+          overlayAdded: true
+        };
+      }
     } else if (type) {
       // ALWAYS assemble if type is provided (alarm needs base document even with 0 products)
       Logger.log('🔧 Assemblage du dossier complet avec ' + produits.length + ' produit(s)...');

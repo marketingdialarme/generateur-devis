@@ -1535,7 +1535,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
     container.appendChild(productLine);
 }
 
-            async sendToEmailAndDrive(pdfBlob, filename, commercial, clientName) {
+            async sendToEmailAndDrive(pdfBlob, filename, commercial, clientName, assemblyInfo = null) {
                 this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
                 
                 const MAX_RETRIES = 1; // Une seule tentative suffit
@@ -1583,6 +1583,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     produits: products,
                     addCommercialOverlay: false,
                     mergedByFrontend: this.USE_PDF_LIB_MERGING,  // NEW: flag to tell backend PDF is already merged
+                    frontendAssemblyInfo: assemblyInfo,  // NEW: assembly info from frontend pdf-lib merge
                     timestamp: new Date().toISOString()
                 };
                 
@@ -2008,14 +2009,14 @@ throw error;
                         return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products);
                                 } else {
                         console.log('⚠️ No assembly needed for this quote type, returning original PDF');
-                        return pdfBlob;
+                        return { blob: pdfBlob, info: null };
                     }
                     
                 } catch (error) {
                     console.error('❌ Error in PDF assembly with pdf-lib:', error);
                     // Return original PDF as fallback
                     console.log('⚠️ Falling back to original PDF');
-                    return pdfBlob;
+                    return { blob: pdfBlob, info: null };
                 }
             }
 
@@ -2083,11 +2084,23 @@ throw error;
                     const mergedPdfBytes = await pdfDoc.save();
                     const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
                     
+                    const totalPages = pdfDoc.getPageCount();
+                    const baseDossierName = centralType === 'jablotron' ? 'Devis_ALARME_JABLOTRON.pdf' : 'Devis_ALARME_TITANE.pdf';
+                    
                     console.log('✅ Alarm PDF assembly completed');
                     console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
-                    console.log('📄 Final page count:', pdfDoc.getPageCount(), 'pages');
+                    console.log('📄 Final page count:', totalPages, 'pages');
                     
-                    return mergedPdfBlob;
+                    // Return blob and assembly info
+                    return {
+                        blob: mergedPdfBlob,
+                        info: {
+                            baseDossier: baseDossierName,
+                            productsFound: 0, // Alarm doesn't include product sheets
+                            totalPages: totalPages,
+                            overlayAdded: true
+                        }
+                    };
                     
                 } catch (error) {
                     console.error('❌ Error assembling alarm PDF:', error);
@@ -2170,11 +2183,22 @@ throw error;
                     const mergedPdfBytes = await pdfDoc.save();
                     const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
                     
+                    const totalPages = pdfDoc.getPageCount();
+                    
                     console.log('✅ Video PDF assembly completed');
                     console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
-                    console.log('📄 Final page count:', pdfDoc.getPageCount(), 'pages');
+                    console.log('📄 Final page count:', totalPages, 'pages');
                     
-                    return mergedPdfBlob;
+                    // Return blob and assembly info
+                    return {
+                        blob: mergedPdfBlob,
+                        info: {
+                            baseDossier: 'Devis_VIDÉO.pdf',
+                            productsFound: productSheetsAdded,
+                            totalPages: totalPages,
+                            overlayAdded: true
+                        }
+                    };
                     
                 } catch (error) {
                     console.error('❌ Error assembling video PDF:', error);
@@ -2783,6 +2807,7 @@ throw error;
                     
                     // Choose PDF processing method based on feature flag
                     let finalPdfBlob = pdfBlob;
+                    let assemblyInfo = null;
                     
                     if (this.USE_PDF_LIB_MERGING) {
                         console.log('🔧 Using pdf-lib for PDF assembly...');
@@ -2792,21 +2817,27 @@ throw error;
                         });
                         try {
                             console.log('⏳ Starting assembly...');
-                            finalPdfBlob = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName);
+                            const assemblyResult = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName);
+                            finalPdfBlob = assemblyResult.blob;
+                            assemblyInfo = assemblyResult.info;
                             console.log('✅ PDF assembly completed with pdf-lib');
                             console.log('📄 Final PDF size:', finalPdfBlob.size, 'bytes');
+                            if (assemblyInfo) {
+                                console.log('📦 Assembly info:', assemblyInfo);
+                            }
                         } catch (error) {
                             console.error('❌ PDF assembly failed, using original PDF:', error);
                             console.error('❌ Error details:', error.message);
                             console.error('❌ Error stack:', error.stack);
                             finalPdfBlob = pdfBlob; // Fallback to original
+                            assemblyInfo = null;
                         }
                     } else {
                         console.log('📤 Using backend assembly (existing method)...');
                     }
                     
                     // Envoi par email et sauvegarde dans Drive
-                    this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName)
+                    this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName, assemblyInfo)
                         .then((result) => {
                             if (result && result.assumed) {
                                 // Success assumed (normal pour certains navigateurs)
