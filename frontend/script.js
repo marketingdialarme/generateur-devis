@@ -1926,100 +1926,77 @@ throw error;
 }
             
             /**
-             * Envoi optimisé pour iOS/Safari avec méthode fetch redirect
+             * Envoi optimisé pour iOS/Safari - utilise navigator.sendBeacon
              */
             async sendViaFormSubmit(payload, timeoutMs) {
-                console.log('📤 Méthode iOS/Safari - Tentative avec fetch redirect...');
+                console.log('📤 iOS/Safari - Tentative 1: navigator.sendBeacon()...');
                 
+                // Méthode 1: sendBeacon (conçu pour mobile, toujours envoyé même si page ferme)
+                if (navigator.sendBeacon) {
+                    try {
+                        const blob = new Blob([JSON.stringify({ data: JSON.stringify(payload) })], { 
+                            type: 'application/x-www-form-urlencoded' 
+                        });
+                        
+                        const sent = navigator.sendBeacon(GOOGLE_SCRIPT_URL, blob);
+                        
+                        if (sent) {
+                            console.log('✅ Beacon envoyé avec succès!');
+                            console.log('⏳ Attente de 10 secondes pour traitement...');
+                            
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            
+                            console.log('✅ Traitement terminé');
+                            console.log('📧 Vérifiez email: devis.dialarme@gmail.com');
+                            console.log('📁 Vérifiez Google Drive');
+                            
+                            return {
+                                success: true,
+                                message: 'PDF envoyé via beacon - Vérifiez email',
+                                assumed: true
+                            };
+                        } else {
+                            console.warn('⚠️ Beacon refusé, essai fetch...');
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur beacon:', error.message);
+                    }
+                }
+                
+                // Méthode 2: Fetch classique
+                console.log('📤 iOS/Safari - Tentative 2: fetch no-cors...');
                 try {
-                    // Préparer les données
                     const formData = new FormData();
                     formData.append('data', JSON.stringify(payload));
                     
-                    // Créer une promesse avec timeout
-                    const fetchPromise = fetch(GOOGLE_SCRIPT_URL, {
+                    await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         body: formData,
-                        redirect: 'follow',  // Important pour iOS - suit les redirections
-                        mode: 'no-cors'      // Nécessaire pour Apps Script
+                        mode: 'no-cors',
+                        credentials: 'omit'
                     });
                     
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Timeout')), timeoutMs)
-                    );
+                    console.log('✅ Fetch envoyé');
+                    console.log('⏳ Attente de 10 secondes...');
                     
-                    // Attendre fetch ou timeout
-                    await Promise.race([fetchPromise, timeoutPromise]);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
                     
-                    console.log('✅ Requête envoyée avec succès (mode no-cors)');
-                    console.log('⏳ Attente de 8 secondes pour traitement serveur...');
-                    
-                    // Attendre que le serveur traite (en mode no-cors on ne peut pas lire la réponse)
-                    await new Promise(resolve => setTimeout(resolve, 8000));
-                    
-                    console.log('✅ Traitement terminé - Vérifiez votre email');
+                    console.log('✅ Traitement terminé');
+                    console.log('📧 Vérifiez email: devis.dialarme@gmail.com');
                     
                     return {
                         success: true,
-                        message: 'PDF envoyé avec succès (vérifiez votre email)',
+                        message: 'PDF envoyé via fetch - Vérifiez email',
                         assumed: true
                     };
                     
                 } catch (error) {
-                    console.error('❌ Erreur méthode fetch:', error.message);
-                    console.log('🔄 Tentative de fallback avec image beacon...');
-                    
-                    // Fallback: utiliser une image beacon (méthode ultra-compatible iOS)
-                    return this.sendViaImageBeacon(payload, timeoutMs);
-                }
-            }
-            
-            /**
-             * Fallback ultime: Image beacon method (fonctionne toujours sur iOS)
-             */
-            async sendViaImageBeacon(payload, timeoutMs) {
-                console.log('📡 Envoi via image beacon (méthode fallback iOS)...');
-                
-                try {
-                    // Encoder les données en base64 pour URL
-                    const dataStr = JSON.stringify(payload);
-                    const dataB64 = btoa(unescape(encodeURIComponent(dataStr)));
-                    
-                    // Tronquer si trop long (limite URL)
-                    if (dataB64.length > 8000) {
-                        console.warn('⚠️ Données trop volumineuses pour image beacon');
-                        // Utiliser FormData POST traditionnel
-                        return this.sendViaTraditionalForm(payload);
-                    }
-                    
-                    // Créer une requête GET avec les données
-                    const url = `${GOOGLE_SCRIPT_URL}?data=${encodeURIComponent(dataB64)}&method=beacon`;
-                    
-                    // Utiliser fetch en GET (plus compatible iOS)
-                    await fetch(url, {
-                        method: 'GET',
-                        mode: 'no-cors'
-                    });
-                    
-                    console.log('✅ Image beacon envoyée');
-                    console.log('⏳ Attente de 8 secondes pour traitement...');
-                    
-                    await new Promise(resolve => setTimeout(resolve, 8000));
-                    
-                    console.log('✅ Envoi terminé - Vérifiez votre email');
-                    
-                    return {
-                        success: true,
-                        message: 'PDF envoyé (vérifiez votre email)',
-                        assumed: true
-                    };
-                    
-                } catch (error) {
-                    console.error('❌ Erreur image beacon:', error.message);
-                    // Dernier fallback
+                    console.error('❌ Erreur fetch:', error.message);
+                    console.log('🔄 Tentative iframe...');
                     return this.sendViaTraditionalForm(payload);
                 }
             }
+            
             
             /**
              * Méthode iframe - fonctionne sur iOS même avec bloqueurs de popup
