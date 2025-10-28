@@ -41,19 +41,19 @@ const CONFIG = {
   DOSSIERS: {
     /**
      * Modèle de base pour les devis Alarme Titane (COMPRESSED)
-     * Fichier: Devis_ALARME_TITANE.pdf
+     * Fichier: Devis_ALARME_TITANE_compressed.pdf
      */
     ALARME_TITANE: '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S',
     
     /**
      * Modèle de base pour les devis Alarme Jablotron (COMPRESSED)
-     * Fichier: Devis_ALARME_JABLOTRON.pdf
+     * Fichier: Devis_ALARME_JABLOTRON_compressed.pdf
      */
     ALARME_JABLOTRON: '1enFlLv9q681uGBSwdRu43r8Co2nWytFf',
     
     /**
      * Modèle de base pour les devis Vidéosurveillance (COMPRESSED)
-     * Fichier: Devis_VIDÉO.pdf
+     * Fichier: Devis_VIDÉO_compressed.pdf
      */
     VIDEO: '15daREPnmbS1T76DLUpUxBLWahWIyq_cn'
   },
