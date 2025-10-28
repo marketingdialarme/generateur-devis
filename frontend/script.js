@@ -1623,7 +1623,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             // Ignorer l'erreur - le send peut réussir même avec erreur CORS
                         }
                         
-                        console.log('✅ Requête envoyée au serveur');
+                            console.log('✅ Requête envoyée au serveur');
                         console.log('⏳ Attente de 8 secondes pour traitement...');
                         
                         // Attendre que le serveur traite
@@ -1634,12 +1634,12 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                         console.log('📁 Vérifiez Google Drive');
                         
                         return {
-                            success: true,
+success: true,
                             message: 'PDF envoyé - Vérifiez votre email',
                             assumed: true
                         };
                         
-                    } catch (error) {
+} catch (error) {
                         console.warn(`⚠️ Tentative ${attempt} échouée:`, error.message);
                         
                         if (attempt === MAX_RETRIES) {
@@ -1995,7 +1995,7 @@ throw error;
                         return await this.assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType);
                     } else if (quoteType === 'video') {
                         return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products);
-                    } else {
+                                } else {
                         console.log('⚠️ No assembly needed for this quote type, returning original PDF');
                         return pdfBlob;
                     }
@@ -2181,37 +2181,53 @@ throw error;
                         productName: productName
                     };
                     
-                    const formData = new FormData();
-                    formData.append('data', JSON.stringify(payload));
-                    
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData,
-                        mode: 'cors'
+                    // Use XMLHttpRequest for iOS compatibility
+                    return new Promise((resolve, reject) => {
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
+                        
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, true);
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    
+                                    if (!result.success || !result.pdfBase64) {
+                                        console.warn('⚠️ Product sheet not found:', productName);
+                                        resolve(null);
+                                        return;
+                                    }
+                                    
+                                    // Convert base64 back to blob
+                                    const binaryString = atob(result.pdfBase64);
+                                    const bytes = new Uint8Array(binaryString.length);
+                                    for (let i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                                    
+                                    console.log('✅ Product sheet fetched via XHR:', blob.size, 'bytes');
+                                    resolve(blob);
+                                    
+                                } catch (error) {
+                                    console.error('❌ Error parsing product sheet response:', error);
+                                    resolve(null);
+                                }
+                            } else {
+                                console.error('❌ Backend request failed:', xhr.status);
+                                resolve(null);
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            console.error('❌ XHR request failed for product sheet');
+                            resolve(null);
+                        };
+                        
+                        xhr.send(formData);
                     });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Backend request failed: ${response.status}`);
-                    }
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success || !result.pdfBase64) {
-                        console.warn('⚠️ Product sheet not found:', productName);
-                        return null;
-                    }
-                    
-                    // Convert base64 back to blob
-                    const binaryString = atob(result.pdfBase64);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: 'application/pdf' });
-                    
-                    console.log('✅ Product sheet fetched:', blob.size, 'bytes');
-                    
-                    return blob;
                     
                 } catch (error) {
                     console.error('❌ Error fetching product sheet:', error);
@@ -2230,37 +2246,53 @@ throw error;
                         action: 'fetchAccessoriesSheet'
                     };
                     
-                    const formData = new FormData();
-                    formData.append('data', JSON.stringify(payload));
-                    
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData,
-                        mode: 'cors'
+                    // Use XMLHttpRequest for iOS compatibility
+                    return new Promise((resolve, reject) => {
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
+                        
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, true);
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    
+                                    if (!result.success || !result.pdfBase64) {
+                                        console.warn('⚠️ Accessories sheet not found');
+                                        resolve(null);
+                                        return;
+                                    }
+                                    
+                                    // Convert base64 back to blob
+                                    const binaryString = atob(result.pdfBase64);
+                                    const bytes = new Uint8Array(binaryString.length);
+                                    for (let i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                                    
+                                    console.log('✅ Accessories sheet fetched via XHR:', blob.size, 'bytes');
+                                    resolve(blob);
+                                    
+                                } catch (error) {
+                                    console.error('❌ Error parsing accessories sheet response:', error);
+                                    resolve(null);
+                                }
+                            } else {
+                                console.error('❌ Backend request failed:', xhr.status);
+                                resolve(null);
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            console.error('❌ XHR request failed for accessories sheet');
+                            resolve(null);
+                        };
+                        
+                        xhr.send(formData);
                     });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Backend request failed: ${response.status}`);
-                    }
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success || !result.pdfBase64) {
-                        console.warn('⚠️ Accessories sheet not found');
-                        return null;
-                    }
-                    
-                    // Convert base64 back to blob
-                    const binaryString = atob(result.pdfBase64);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: 'application/pdf' });
-                    
-                    console.log('✅ Accessories sheet fetched:', blob.size, 'bytes');
-                    
-                    return blob;
                     
                 } catch (error) {
                     console.error('❌ Error fetching accessories sheet:', error);
@@ -2300,38 +2332,51 @@ throw error;
                         centralType: centralType
                     };
                     
-                    console.log('📤 Requesting base document from backend...');
+                    console.log('📤 Requesting base document from backend via XHR (iOS-compatible)...');
                     
-                    const formData = new FormData();
-                    formData.append('data', JSON.stringify(payload));
-                    
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData,
-                        mode: 'cors'
+                    // Use XMLHttpRequest instead of fetch for iOS compatibility
+                    return new Promise((resolve, reject) => {
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
+                        
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, true); // Async for base document fetching
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    
+                                    if (!result.success || !result.pdfBase64) {
+                                        reject(new Error(result.message || 'Failed to fetch base document'));
+                                        return;
+                                    }
+                                    
+                                    // Convert base64 back to blob
+                                    const binaryString = atob(result.pdfBase64);
+                                    const bytes = new Uint8Array(binaryString.length);
+                                    for (let i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                                    
+                                    console.log('✅ Base document fetched via XHR:', blob.size, 'bytes');
+                                    resolve(blob);
+                                    
+                                } catch (error) {
+                                    reject(new Error('Failed to parse backend response: ' + error.message));
+                                }
+                            } else {
+                                reject(new Error(`Backend request failed: ${xhr.status}`));
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            reject(new Error('XHR request failed'));
+                        };
+                        
+                        xhr.send(formData);
                     });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Backend request failed: ${response.status}`);
-                    }
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success || !result.pdfBase64) {
-                        throw new Error(result.message || 'Failed to fetch base document');
-                    }
-                    
-                    // Convert base64 back to blob
-                    const binaryString = atob(result.pdfBase64);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: 'application/pdf' });
-                    
-                    console.log('✅ Base document fetched from backend:', blob.size, 'bytes');
-                    
-                    return blob;
                     
                 } catch (error) {
                     console.error('❌ Error fetching base document via backend:', error);
