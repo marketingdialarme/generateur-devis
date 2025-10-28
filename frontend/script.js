@@ -256,10 +256,9 @@
             
             constructor() {
                 // Feature flag for PDF merging method  
-                // Enable pdf-lib ONLY on iOS (where backend assembly has issues)
-                // Desktop/Android use faster backend assembly
+                // Enable pdf-lib for ALL devices (synchronous XHR works on iOS)
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                this.USE_PDF_LIB_MERGING = isIOS; // Frontend merging only on iOS for speed optimization
+                this.USE_PDF_LIB_MERGING = true; // PDF merging with pdf-lib enabled by default
                 
                 // Create visible debug console for mobile
                 this.createMobileDebugConsole();
