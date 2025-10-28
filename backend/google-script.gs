@@ -125,6 +125,127 @@ success: false,
       });
 }
     
+    // Check if this is a fetchBaseDocument request
+    if (data.action === 'fetchBaseDocument') {
+      Logger.log('📥 Request to fetch base document');
+      Logger.log('  - File ID: ' + data.fileId);
+      Logger.log('  - Quote Type: ' + data.quoteType);
+      Logger.log('  - Central Type: ' + (data.centralType || 'N/A'));
+      
+      try {
+        const file = DriveApp.getFileById(data.fileId);
+        const pdfBlob = file.getBlob();
+        const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+        
+        Logger.log('✅ Base document fetched: ' + file.getName() + ' (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+        
+        return createJsonResponse({
+          success: true,
+          pdfBase64: pdfBase64,
+          filename: file.getName(),
+          message: 'Base document fetched successfully'
+        });
+      } catch (error) {
+        Logger.log('❌ Error fetching base document: ' + error);
+        return createJsonResponse({
+          success: false,
+          message: 'Error fetching base document: ' + error.toString()
+        });
+      }
+    }
+    
+    // Check if this is a fetchProductSheet request
+    if (data.action === 'fetchProductSheet') {
+      Logger.log('📥 Request to fetch product sheet');
+      Logger.log('  - Product Name: ' + data.productName);
+      
+      try {
+        const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+        const productPdf = findProductPdf(data.productName, techSheetsFolder);
+        
+        if (!productPdf) {
+          Logger.log('⚠️ Product sheet not found for: ' + data.productName);
+          return createJsonResponse({
+            success: false,
+            message: 'Product sheet not found: ' + data.productName
+          });
+        }
+        
+        const pdfBlob = productPdf.getBlob();
+        const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+        
+        Logger.log('✅ Product sheet fetched: ' + productPdf.getName() + ' (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+        
+        return createJsonResponse({
+          success: true,
+          pdfBase64: pdfBase64,
+          filename: productPdf.getName(),
+          message: 'Product sheet fetched successfully'
+        });
+      } catch (error) {
+        Logger.log('❌ Error fetching product sheet: ' + error);
+        return createJsonResponse({
+          success: false,
+          message: 'Error fetching product sheet: ' + error.toString()
+        });
+      }
+    }
+    
+    // Check if this is a fetchAccessoriesSheet request
+    if (data.action === 'fetchAccessoriesSheet') {
+      Logger.log('📥 Request to fetch accessories sheet');
+      
+      try {
+        const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+        
+        // Search for accessories sheet (typically named "ONDULEURS - COFFRET - SWITCH")
+        const files = techSheetsFolder.getFilesByName('ONDULEURS - COFFRET - SWITCH - compressed.pdf');
+        
+        if (!files.hasNext()) {
+          // Try alternative names
+          const filesAlt = techSheetsFolder.getFilesByName('ONDULEURS - COFFRET - SWITCH.pdf');
+          if (!filesAlt.hasNext()) {
+            Logger.log('⚠️ Accessories sheet not found');
+            return createJsonResponse({
+              success: false,
+              message: 'Accessories sheet not found'
+            });
+          }
+          const accessoriesFile = filesAlt.next();
+          const pdfBlob = accessoriesFile.getBlob();
+          const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+          
+          Logger.log('✅ Accessories sheet fetched: ' + accessoriesFile.getName() + ' (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+          
+          return createJsonResponse({
+            success: true,
+            pdfBase64: pdfBase64,
+            filename: accessoriesFile.getName(),
+            message: 'Accessories sheet fetched successfully'
+          });
+        }
+        
+        const accessoriesFile = files.next();
+        const pdfBlob = accessoriesFile.getBlob();
+        const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+        
+        Logger.log('✅ Accessories sheet fetched: ' + accessoriesFile.getName() + ' (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+        
+        return createJsonResponse({
+          success: true,
+          pdfBase64: pdfBase64,
+          filename: accessoriesFile.getName(),
+          message: 'Accessories sheet fetched successfully'
+        });
+      } catch (error) {
+        Logger.log('❌ Error fetching accessories sheet: ' + error);
+        return createJsonResponse({
+          success: false,
+          message: 'Error fetching accessories sheet: ' + error.toString()
+        });
+      }
+    }
+    
     // Validation des données
 const pdfBase64 = data.pdfBase64;
 const filename = data.filename;
@@ -134,6 +255,7 @@ const commercial = data.commercial;
     const centralType = data.centralType || null; // Type de centrale (titane, jablotron)
     const produits = data.produits || []; // Liste des produits pour fiches techniques
     const addCommercialOverlay = data.addCommercialOverlay || false; // Flag pour ajouter overlay commercial
+    const mergedByFrontend = data.mergedByFrontend || false; // Flag to indicate PDF is already merged by frontend
     
     Logger.log('Validation - PDF présent: ' + (!!pdfBase64));
     Logger.log('Validation - Filename: ' + filename);
@@ -165,7 +287,17 @@ Utilities.base64Decode(pdfBase64),
     let finalPdfBlob = quotePdfBlob;
     let assemblyInfo = null;
     
-    if (type && produits.length > 0) {
+    // Skip assembly if PDF is already merged by frontend (pdf-lib)
+    if (mergedByFrontend) {
+      Logger.log('✅ PDF already merged by frontend (pdf-lib) - skipping backend assembly');
+      assemblyInfo = {
+        baseDossier: 'Merged by frontend',
+        productsFound: produits.length,
+        productsRequested: produits.length,
+        totalPages: 'N/A',
+        overlayAdded: true
+      };
+    } else if (type && produits.length > 0) {
       Logger.log('🔧 Assemblage du dossier complet avec ' + produits.length + ' produit(s)...');
       const assemblyStartTime = new Date();
       
