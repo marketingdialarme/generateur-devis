@@ -2016,7 +2016,9 @@ throw error;
                 
                 try {
                     // 1. Fetch base document (Titane or Jablotron)
+                    console.log('📥 Step 1: Fetching base document...');
                     const baseDocBlob = await this.fetchBaseDocument('alarme', centralType);
+                    console.log('📥 Base document fetch result:', baseDocBlob ? `${baseDocBlob.size} bytes` : 'NULL');
                     if (!baseDocBlob) {
                         throw new Error('Could not fetch base document');
                     }
@@ -2672,11 +2674,19 @@ throw error;
                     
                     if (this.USE_PDF_LIB_MERGING) {
                         console.log('🔧 Using pdf-lib for PDF assembly...');
+                        console.log('📱 Device info:', {
+                            isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+                            userAgent: navigator.userAgent
+                        });
                         try {
+                            console.log('⏳ Starting assembly...');
                             finalPdfBlob = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName);
                             console.log('✅ PDF assembly completed with pdf-lib');
+                            console.log('📄 Final PDF size:', finalPdfBlob.size, 'bytes');
                         } catch (error) {
                             console.error('❌ PDF assembly failed, using original PDF:', error);
+                            console.error('❌ Error details:', error.message);
+                            console.error('❌ Error stack:', error.stack);
                             finalPdfBlob = pdfBlob; // Fallback to original
                         }
                     } else {
