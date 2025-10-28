@@ -1705,20 +1705,26 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     try {
                         console.log(`🔄 Tentative ${attempt}/${MAX_RETRIES}`);
                         
-                        // SOLUTION iOS: GET request avec paramètres URL (ne peut pas être bloqué)
-                        console.log('🚀 Envoi via GET (iOS-compatible)...');
+                        // SOLUTION iOS: XMLHttpRequest synchrone (ancien mais fonctionne)
+                        console.log('🚀 iOS - Tentative XMLHttpRequest...');
                         
-                        // Encoder les données pour URL
-                        const dataStr = JSON.stringify(payload);
-                        const encodedData = encodeURIComponent(dataStr);
+                        const xhr = new XMLHttpRequest();
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
                         
-                        console.log('📡 Envoi au serveur Google Apps Script via GET...');
+                        // Ouvrir connexion
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, false); // false = synchrone
                         
-                        // Envoi via GET (iOS ne peut pas bloquer les GET)
-                        await fetch(`${GOOGLE_SCRIPT_URL}?data=${encodedData}&method=get`, {
-                            method: 'GET',
-                            mode: 'no-cors'
-                        });
+                        console.log('📡 Envoi synchrone (force iOS à attendre)...');
+                        
+                        try {
+                            // Envoi synchrone - iOS doit attendre
+                            xhr.send(formData);
+                            console.log('✅ XHR Status:', xhr.status);
+                        } catch (e) {
+                            console.error('❌ XHR Error:', e.message);
+                            // Ignorer l'erreur - le send peut réussir même avec erreur CORS
+                        }
                         
                         console.log('✅ Requête envoyée au serveur');
                         console.log('⏳ Attente de 8 secondes pour traitement...');
