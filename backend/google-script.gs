@@ -737,8 +737,8 @@ function assemblePdfDossier(quotePdfBlob, type, produits, filename, commercialNa
   // Tenter la fusion (retournera le devis principal si fusion impossible)
   const mergedBlob = mergePdfs(blobsToMerge, filename);
   assemblyInfo.totalPages = blobsToMerge.length + ' fichiers';
-  assemblyInfo.blobs = blobsToMerge; // Garder tous les blobs pour sauvegarde multiple si nécessaire
-  assemblyInfo.useMultiFile = true;   // Indiquer qu'il faut sauvegarder en multiple
+  assemblyInfo.blobs = blobsToMerge; // Garder tous les blobs pour référence
+  assemblyInfo.useMultiFile = false;   // TOUJOURS sauvegarder en UN SEUL fichier
   
   Logger.log('✅ Assemblage terminé: ' + filename);
   Logger.log('✅ === FIN ASSEMBLAGE PDF ===');
