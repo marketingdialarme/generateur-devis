@@ -2367,6 +2367,26 @@ throw error;
              * Create a visible debug console for mobile devices
              */
             createMobileDebugConsole() {
+                // Create toggle button
+                const toggleBtn = document.createElement('button');
+                toggleBtn.textContent = '×';
+                toggleBtn.style.cssText = `
+                    position: fixed;
+                    bottom: 205px;
+                    right: 10px;
+                    width: 40px;
+                    height: 40px;
+                    background: red;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    font-size: 30px;
+                    cursor: pointer;
+                    z-index: 100000;
+                    line-height: 1;
+                `;
+                document.body.appendChild(toggleBtn);
+                
                 // Create debug container
                 const debugDiv = document.createElement('div');
                 debugDiv.id = 'mobile-debug';
@@ -2386,6 +2406,17 @@ throw error;
                     border-top: 2px solid #00ff00;
                 `;
                 document.body.appendChild(debugDiv);
+                
+                // Toggle: click X to hide console
+                toggleBtn.onclick = () => {
+                    if (debugDiv.style.display === 'none') {
+                        debugDiv.style.display = 'block';
+                        toggleBtn.style.display = 'block';
+                    } else {
+                        debugDiv.style.display = 'none';
+                        toggleBtn.style.display = 'none';
+                    }
+                };
                 
                 // Override console methods
                 const originalLog = console.log;
