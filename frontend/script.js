@@ -1607,42 +1607,48 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     try {
                         console.log(`🔄 Tentative ${attempt}/${MAX_RETRIES}`);
                         
-                        // SOLUTION iOS: XMLHttpRequest synchrone (ancien mais fonctionne)
-                        console.log('🚀 iOS - Tentative XMLHttpRequest...');
+                        // SOLUTION iOS: XMLHttpRequest ASYNCHRONE avec timeout long (synchrone ne marche pas avec gros PDFs)
+                        console.log('🚀 iOS - Tentative XMLHttpRequest ASYNC...');
                         
-                        const xhr = new XMLHttpRequest();
-                        const formData = new FormData();
-                        formData.append('data', JSON.stringify(payload));
-                        
-                        // Ouvrir connexion
-                        xhr.open('POST', GOOGLE_SCRIPT_URL, false); // false = synchrone
-                        
-                        console.log('📡 Envoi synchrone (force iOS à attendre)...');
-                        
-                        try {
-                            // Envoi synchrone - iOS doit attendre
+                        return new Promise((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            const formData = new FormData();
+                            formData.append('data', JSON.stringify(payload));
+                            
+                            // Ouvrir connexion ASYNCHRONE avec timeout de 30 secondes
+                            xhr.open('POST', GOOGLE_SCRIPT_URL, true); // true = ASYNC
+                            xhr.timeout = 30000; // 30 secondes pour gros PDFs
+                            
+                            xhr.onload = () => {
+                                console.log('✅ XHR Status:', xhr.status);
+                                if (xhr.status === 200) {
+                                    console.log('✅ Requête réussie');
+                                    console.log('📧 Email envoyé à: devis.dialarme@gmail.com');
+                                    console.log('📁 PDF sauvegardé dans Drive');
+                                    resolve({
+                                        success: true,
+                                        message: 'PDF envoyé - Vérifiez votre email',
+                                        assumed: false
+                                    });
+                                } else {
+                                    console.warn('⚠️ Status non-200:', xhr.status);
+                                    reject(new Error('HTTP ' + xhr.status));
+                                }
+                            };
+                            
+                            xhr.onerror = () => {
+                                console.error('❌ XHR Network Error');
+                                reject(new Error('Network error'));
+                            };
+                            
+                            xhr.ontimeout = () => {
+                                console.error('❌ XHR Timeout (30s)');
+                                reject(new Error('Timeout'));
+                            };
+                            
+                            console.log('📡 Envoi async (timeout 30s)...');
                             xhr.send(formData);
-                            console.log('✅ XHR Status:', xhr.status);
-                        } catch (e) {
-                            console.error('❌ XHR Error:', e.message);
-                            // Ignorer l'erreur - le send peut réussir même avec erreur CORS
-                        }
-                        
-                            console.log('✅ Requête envoyée au serveur');
-                        console.log('⏳ Attente de 8 secondes pour traitement...');
-                        
-                        // Attendre que le serveur traite
-                        await this.sleep(8000);
-                        
-                        console.log('✅ Traitement terminé');
-                        console.log('📧 Vérifiez email: devis.dialarme@gmail.com');
-                        console.log('📁 Vérifiez Google Drive');
-                        
-                        return {
-success: true,
-                            message: 'PDF envoyé - Vérifiez votre email',
-                            assumed: true
-                        };
+                        });
                         
 } catch (error) {
                         console.warn(`⚠️ Tentative ${attempt} échouée:`, error.message);
