@@ -1705,19 +1705,18 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     try {
                         console.log(`🔄 Tentative ${attempt}/${MAX_RETRIES}`);
                         
-                        // UTILISER LA MÊME MÉTHODE POUR TOUS LES NAVIGATEURS
-                        console.log('🚀 Envoi via fetch (méthode universelle)...');
+                        // SOLUTION iOS: GET request avec paramètres URL (ne peut pas être bloqué)
+                        console.log('🚀 Envoi via GET (iOS-compatible)...');
                         
-                        // Créer les données
-                        const formData = new FormData();
-                        formData.append('data', JSON.stringify(payload));
+                        // Encoder les données pour URL
+                        const dataStr = JSON.stringify(payload);
+                        const encodedData = encodeURIComponent(dataStr);
                         
-                        console.log('📡 Envoi au serveur Google Apps Script...');
+                        console.log('📡 Envoi au serveur Google Apps Script via GET...');
                         
-                        // Envoi via fetch en no-cors
-                        await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            body: formData,
+                        // Envoi via GET (iOS ne peut pas bloquer les GET)
+                        await fetch(`${GOOGLE_SCRIPT_URL}?data=${encodedData}&method=get`, {
+                            method: 'GET',
                             mode: 'no-cors'
                         });
                         

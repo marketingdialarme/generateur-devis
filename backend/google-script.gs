@@ -246,10 +246,43 @@ function createJsonResponse(data) {
 * Fonction GET pour tester le script et gérer les callbacks
 */
 function doGet(e) {
+  Logger.log('=== Début de doGet ===');
+  Logger.log('Timestamp: ' + new Date().toISOString());
+  
   // Si c'est un callback de confirmation
   if (e.parameter && e.parameter.callback) {
     Logger.log('Callback reçu: ' + e.parameter.callback);
     return HtmlService.createHtmlOutput('<!DOCTYPE html><html><body><script>window.parent.postMessage({type:"upload_success",data:' + e.parameter.callback + '},"*");window.close();</script></body></html>');
+  }
+  
+  // NOUVEAU: Traitement des données via GET (pour iOS)
+  if (e.parameter && e.parameter.data && e.parameter.method === 'get') {
+    Logger.log('📱 Requête GET avec données reçue (iOS)');
+    
+    try {
+      // Parser les données JSON
+      const data = JSON.parse(e.parameter.data);
+      Logger.log('✅ Données parsées avec succès');
+      
+      // Créer un objet e simulé pour doPost
+      const simulatedPost = {
+        postData: {
+          contents: JSON.stringify(data),
+          type: 'application/json'
+        }
+      };
+      
+      // Appeler doPost avec les données simulées
+      Logger.log('🔄 Redirection vers doPost...');
+      return doPost(simulatedPost);
+      
+    } catch (error) {
+      Logger.log('❌ Erreur parsing données GET: ' + error.message);
+      return createJsonResponse({
+        success: false,
+        error: 'Erreur parsing données: ' + error.message
+      });
+    }
   }
   
   // Sinon, retourner le status du script
@@ -257,9 +290,10 @@ function doGet(e) {
     status: 'Script Dialarme actif',
     version: CONFIG.APP.VERSION,
     timestamp: new Date().toISOString(),
-endpoints: {
+    endpoints: {
       post: 'Envoyer PDF avec données JSON (POST)',
-      get: 'Status et callback handler (GET)'
+      get: 'Status et callback handler (GET)',
+      'get-data': 'Envoyer PDF avec données via GET (iOS)'
     }
   });
 }
