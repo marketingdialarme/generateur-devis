@@ -253,7 +253,106 @@
 
         // Classe principale du générateur
         class DialarmeFinalGenerator {
+            
+            /**
+             * Create a visible debug console for mobile debugging
+             */
+            createDebugConsole() {
+                // Create debug panel
+                const debugPanel = document.createElement('div');
+                debugPanel.id = 'mobile-debug-console';
+                debugPanel.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    background: rgba(0, 0, 0, 0.9);
+                    color: #00ff00;
+                    font-family: monospace;
+                    font-size: 11px;
+                    padding: 10px;
+                    z-index: 999999;
+                    border-bottom: 2px solid #00ff00;
+                    display: none;
+                `;
+                document.body.appendChild(debugPanel);
+                
+                this.debugPanel = debugPanel;
+                this.debugLogs = [];
+                
+                // Override console.log, console.error, console.warn
+                const originalLog = console.log;
+                const originalError = console.error;
+                const originalWarn = console.warn;
+                
+                const addToDebug = (message, type = 'log') => {
+                    const color = type === 'error' ? '#ff0000' : type === 'warn' ? '#ffaa00' : '#00ff00';
+                    const time = new Date().toLocaleTimeString();
+                    this.debugLogs.push({time, message, type, color});
+                    
+                    // Keep only last 50 messages
+                    if (this.debugLogs.length > 50) {
+                        this.debugLogs.shift();
+                    }
+                    
+                    // Update display
+                    this.debugPanel.innerHTML = this.debugLogs.map(log => 
+                        `<div style="color: ${log.color}; margin-bottom: 3px;">[${log.time}] ${log.message}</div>`
+                    ).join('');
+                    
+                    // Show panel
+                    this.debugPanel.style.display = 'block';
+                    
+                    // Auto-scroll to bottom
+                    this.debugPanel.scrollTop = this.debugPanel.scrollHeight;
+                };
+                
+                console.log = (...args) => {
+                    originalLog.apply(console, args);
+                    addToDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'log');
+                };
+                
+                console.error = (...args) => {
+                    originalError.apply(console, args);
+                    addToDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'error');
+                };
+                
+                console.warn = (...args) => {
+                    originalWarn.apply(console, args);
+                    addToDebug(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '), 'warn');
+                };
+                
+                // Add toggle button
+                const toggleBtn = document.createElement('button');
+                toggleBtn.textContent = '🐛';
+                toggleBtn.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    z-index: 1000000;
+                    background: #00ff00;
+                    border: none;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    font-size: 20px;
+                    cursor: pointer;
+                `;
+                toggleBtn.onclick = () => {
+                    this.debugPanel.style.display = 
+                        this.debugPanel.style.display === 'none' ? 'block' : 'none';
+                };
+                document.body.appendChild(toggleBtn);
+                
+                console.log('🐛 Debug console initialized');
+            }
+            
             constructor() {
+                // Create visible debug console for mobile debugging
+                this.createDebugConsole();
+                
                 this.catalog = {
                     'alarm-material': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
