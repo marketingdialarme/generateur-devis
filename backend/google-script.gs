@@ -266,6 +266,8 @@ const commercial = data.commercial;
     Logger.log('Validation - Central Type: ' + (centralType || 'N/A'));
     Logger.log('Validation - Produits: ' + (produits.length > 0 ? produits.join(', ') : 'aucun'));
     Logger.log('Validation - Overlay commercial: ' + addCommercialOverlay);
+    Logger.log('Validation - Merged by frontend: ' + mergedByFrontend);
+    Logger.log('Validation - Frontend assembly info: ' + (frontendAssemblyInfo ? JSON.stringify(frontendAssemblyInfo) : 'null'));
     
 if (!pdfBase64 || !filename || !commercial) {
       return createJsonResponse({

@@ -1591,8 +1591,17 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     type: quoteType,
                     centralType: centralType,
                     productsCount: products.length,
-                    products: products
+                    products: products,
+                    mergedByFrontend: this.USE_PDF_LIB_MERGING,
+                    frontendAssemblyInfo: assemblyInfo
                 });
+                
+                if (assemblyInfo) {
+                    console.log('📋 Frontend assembly info being sent to backend:');
+                    console.log('   - baseDossier:', assemblyInfo.baseDossier);
+                    console.log('   - productsFound:', assemblyInfo.productsFound);
+                    console.log('   - totalPages:', assemblyInfo.totalPages);
+                }
                 
                 // Detect browser/device
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -2823,7 +2832,12 @@ throw error;
                             console.log('✅ PDF assembly completed with pdf-lib');
                             console.log('📄 Final PDF size:', finalPdfBlob.size, 'bytes');
                             if (assemblyInfo) {
-                                console.log('📦 Assembly info:', assemblyInfo);
+                                console.log('📦 Assembly info:', JSON.stringify(assemblyInfo, null, 2));
+                                console.log('   - baseDossier:', assemblyInfo.baseDossier);
+                                console.log('   - productsFound:', assemblyInfo.productsFound);
+                                console.log('   - totalPages:', assemblyInfo.totalPages);
+                            } else {
+                                console.warn('⚠️ No assembly info returned!');
                             }
                         } catch (error) {
                             console.error('❌ PDF assembly failed, using original PDF:', error);
