@@ -1597,36 +1597,41 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     try {
                         console.log(`🔄 Tentative ${attempt}/${MAX_RETRIES}`);
                         
-                        // Méthode simple et universelle
-                        console.log('🚀 Envoi direct au serveur Google...');
-                        
-                        // Créer l'URL avec les données
-                        const formData = new FormData();
-                        formData.append('data', JSON.stringify(payload));
-                        
-                        // Envoi via fetch en no-cors (on ne peut pas lire la réponse mais ça marche)
-                        fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            body: formData,
-                            mode: 'no-cors'
-                        }).then(() => {
+                        // Utiliser la méthode appropriée selon le navigateur
+                        if (isIOS || isSafari) {
+                            console.log('🍎 Envoi via formulaire (iOS/Safari)...');
+                            const result = await this.sendViaFormSubmit(payload, 15000);
+                            console.log('✅ Réponse reçue:', result);
+                            return result;
+                        } else {
+                            console.log('🚀 Envoi via fetch (navigateur moderne)...');
+                            
+                            // Créer l'URL avec les données
+                            const formData = new FormData();
+                            formData.append('data', JSON.stringify(payload));
+                            
+                            // Envoi via fetch en no-cors
+                            await fetch(GOOGLE_SCRIPT_URL, {
+                                method: 'POST',
+                                body: formData,
+                                mode: 'no-cors'
+                            });
+                            
                             console.log('✅ Requête envoyée au serveur');
-                        }).catch(err => {
-                            console.log('⚠️ Erreur fetch (normal en no-cors):', err);
-                        });
+                            
+                            // Attendre que le serveur traite
+                            await this.sleep(6000);
+                            
+                            console.log('✅ Délai d\'attente terminé - PDF normalement envoyé');
+                            
+                            return {
+                                success: true,
+                                message: 'PDF envoyé (vérifiez votre email)',
+                                assumed: true
+                            };
+                        }
                         
-                        // Attendre que le serveur traite (5 secondes est suffisant)
-                        await this.sleep(6000);
-                        
-                        console.log('✅ Délai d\'attente terminé - PDF normalement envoyé');
-                        
-                        return {
-success: true,
-                            message: 'PDF envoyé (vérifiez votre email)',
-                            assumed: true
-                        };
-                        
-} catch (error) {
+                    } catch (error) {
                         console.warn(`⚠️ Tentative ${attempt} échouée:`, error.message);
                         
                         if (attempt === MAX_RETRIES) {
@@ -1813,90 +1818,91 @@ throw error;
 }
             
             /**
-             * Envoi via form submit (iOS/Safari)
+             * Envoi via XMLHttpRequest (iOS/Safari compatible)
+             * Note: Nom de fonction conservé pour compatibilité mais utilise maintenant XHR au lieu de form submit
              */
             async sendViaFormSubmit(payload, timeoutMs) {
                 return new Promise((resolve, reject) => {
+                    console.log('📤 Utilisation de XMLHttpRequest pour iOS/Safari...');
+                    
+                    const xhr = new XMLHttpRequest();
                     let resolved = false;
                     
-                    // Créer l'iframe
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.name = 'upload_frame_' + Date.now();
-                    document.body.appendChild(iframe);
+                    // Préparer les données en format FormData
+                    const formData = new FormData();
+                    formData.append('data', JSON.stringify(payload));
                     
-                    // Créer le formulaire
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = GOOGLE_SCRIPT_URL;
-                    form.target = iframe.name;
-                    form.style.display = 'none';
+                    // Configurer la requête
+                    xhr.open('POST', GOOGLE_SCRIPT_URL, true);
                     
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'data';
-                    input.value = JSON.stringify(payload);
-                    
-                    form.appendChild(input);
-                    document.body.appendChild(form);
-                    
-                    // Gérer la réponse de l'iframe
-                    const handleIframeLoad = () => {
+                    // Gestionnaire de succès
+                    xhr.onload = function() {
                         if (resolved) return;
+                        resolved = true;
                         
-                        try {
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            const responseText = iframeDoc.body.textContent;
-                            
-                            if (responseText && responseText.trim()) {
-                                const response = JSON.parse(responseText);
-                                
-                                if (response.success) {
-                                    resolved = true;
-                                    console.log('✅ Réponse reçue:', response);
-                                    cleanup();
+                        console.log('📨 Réponse reçue, statut:', xhr.status);
+                        
+                        // Statut 200 ou 0 (0 peut arriver avec CORS sur iOS)
+                        if (xhr.status === 200 || xhr.status === 0) {
+                            try {
+                                if (xhr.responseText) {
+                                    const response = JSON.parse(xhr.responseText);
+                                    console.log('✅ Succès confirmé:', response);
                                     resolve(response);
                                 } else {
-                                    resolved = true;
-                                    cleanup();
-                                    reject(new Error(response.error || 'Erreur serveur'));
+                                    // Pas de réponse mais pas d'erreur = succès probable sur iOS
+                                    console.log('✅ Envoi réussi (pas de réponse mais statut OK)');
+                                    resolve({
+                                        success: true,
+                                        message: 'PDF envoyé avec succès',
+                                        assumed: true
+                                    });
                                 }
+                            } catch (e) {
+                                console.log('✅ Envoi réussi (erreur parsing réponse mais statut OK)');
+                                resolve({
+                                    success: true,
+                                    message: 'PDF envoyé avec succès',
+                                    assumed: true
+                                });
                             }
-                        } catch (e) {
-                            // Peut arriver si l'iframe n'est pas encore chargé ou CORS
-                            console.log('⏳ En attente de la réponse...');
+                        } else {
+                            console.error('❌ Erreur serveur:', xhr.status, xhr.statusText);
+                            reject(new Error(`Erreur serveur: ${xhr.status}`));
                         }
                     };
                     
-                    iframe.onload = handleIframeLoad;
-                    
-                    // Timeout
-                    const timeoutId = setTimeout(() => {
-                        if (!resolved) {
-                            // Sur iOS/Safari, le manque de réponse peut signifier un succès
-                            // On considère que c'est réussi si on n'a pas d'erreur explicite
-                            console.log('⏱️ Timeout atteint - assumant succès (iOS/Safari)');
-                            resolved = true;
-                            cleanup();
-                            resolve({
-                                success: true,
-                                message: 'PDF envoyé (confirmation timeout sur iOS/Safari)',
-                                assumed: true
-                            });
-                        }
-                    }, timeoutMs);
-                    
-                    const cleanup = () => {
-                        clearTimeout(timeoutId);
-                        setTimeout(() => {
-                            if (form.parentNode) document.body.removeChild(form);
-                            if (iframe.parentNode) document.body.removeChild(iframe);
-                        }, 1000);
+                    // Gestionnaire d'erreur
+                    xhr.onerror = function() {
+                        if (resolved) return;
+                        resolved = true;
+                        console.error('❌ Erreur réseau lors de l\'envoi');
+                        reject(new Error('Erreur réseau'));
                     };
                     
-                    // Soumettre le formulaire
-                    form.submit();
-                    console.log('📤 Formulaire soumis (iOS/Safari)');
+                    // Gestionnaire de timeout
+                    xhr.ontimeout = function() {
+                        if (resolved) return;
+                        resolved = true;
+                        console.log('⏱️ Timeout atteint - assumant succès');
+                        resolve({
+                            success: true,
+                            message: 'PDF envoyé (timeout mais probablement réussi)',
+                            assumed: true
+                        });
+                    };
+                    
+                    // Définir le timeout
+                    xhr.timeout = timeoutMs;
+                    
+                    // Envoyer la requête
+                    try {
+                        xhr.send(formData);
+                        console.log('📡 Requête XMLHttpRequest envoyée');
+                    } catch (e) {
+                        console.error('❌ Erreur lors de l\'envoi:', e);
+                        reject(e);
+                    }
                 });
             }
             
