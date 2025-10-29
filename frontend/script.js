@@ -1443,7 +1443,9 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
                 
                 const MAX_RETRIES = 1; // Une seule tentative suffit
-                const TIMEOUT_MS = 120000; // 120 seconds - iOS Safari needs more time for large merged PDFs
+                // Video quotes are much larger (product sheets + accessories) - need more time on iOS
+                const isVideoQuote = this.currentTab === 'camera';
+                const TIMEOUT_MS = isVideoQuote ? 240000 : 120000; // 240s for video, 120s for alarm
                 
                 // Vérifier que l'URL est configurée
                 if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === '') {
@@ -1513,6 +1515,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 
                 console.log('📱 Détection appareil:', {isIOS, isSafari, isMobile, isDesktop, userAgent: navigator.userAgent});
                 console.log('📦 Taille du payload:', JSON.stringify(payload).length, 'bytes');
+                console.log('⏱️ Timeout configuré:', (TIMEOUT_MS / 1000) + 's', '(Type:', isVideoQuote ? 'Vidéo' : 'Alarme', ')');
                 
                 // Méthode avec retry
                 for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -1527,9 +1530,9 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             const formData = new FormData();
                             formData.append('data', JSON.stringify(payload));
                             
-                            // Ouvrir connexion ASYNCHRONE avec timeout de 120 secondes
+                            // Ouvrir connexion ASYNCHRONE avec timeout adapté au type de devis
                             xhr.open('POST', GOOGLE_SCRIPT_URL, true); // true = ASYNC
-                            xhr.timeout = 120000; // 120 secondes - iOS Safari est plus lent pour uploader les gros PDFs
+                            xhr.timeout = isVideoQuote ? 240000 : 120000; // 240s pour vidéo (gros PDFs), 120s pour alarme
                             
                             xhr.onload = () => {
                                 console.log('✅ XHR Status:', xhr.status);
