@@ -2017,170 +2017,133 @@ throw error;
                 }
             }
 
-            /**
-             * Assemble video PDF: Base document + Generated quote + Product sheets + Accessories
-             * iOS: Uses individual fetches to avoid 60s synchronous XHR timeout
-             * Desktop: Uses batch fetching for faster performance
-             */
-            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
-                console.log('📹 Assembling video PDF with', products.length, 'products');
-                
-                try {
-                    // Detect iOS - synchronous XHR has 60s timeout limit
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                /**
+                 * Assemble video PDF: Base document + Generated quote + Product sheets + Accessories
+                 * Note: Accessories sheet is skipped on iOS due to timeout limitations
+                 */
+                async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
+                    console.log('📹 Assembling video PDF with', products.length, 'products');
                     
-                    let documents;
-                    
-                    if (isIOS) {
-                        // iOS: Fetch individually to stay within 60s timeout per request
-                        // Batch fetch with many products exceeds 60s synchronous XHR timeout
-                        console.log('📱 iOS detected - using individual fetches to avoid timeout');
-                        console.log('   Batch fetch would exceed 60s limit with', products.length, 'products');
+                    try {
+                        // Detect iOS
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                         
-                        // 1. Fetch base document
-                        console.log('📄 [1/3] Fetching base document...');
-                        const baseBlob = await this.fetchBaseDocument('video', null);
-                        if (!baseBlob) {
-                            throw new Error('Could not fetch base document');
+                        // Use batch fetch for all devices
+                        console.log('⚡ Using batch fetch for documents...');
+                        if (isIOS) {
+                            console.log('📱 iOS detected - accessories will be skipped to avoid timeout');
                         }
                         
-                        // 2. Fetch product sheets individually
-                        console.log('📦 [2/3] Fetching', products.length, 'product sheets individually...');
-                        const productBlobs = [];
-                        for (let i = 0; i < products.length; i++) {
-                            const productName = products[i];
-                            console.log(`   [${i + 1}/${products.length}] Fetching: ${productName}`);
-                            const productBlob = await this.fetchProductSheet(productName);
-                            if (productBlob) {
-                                productBlobs.push({
-                                    name: productName,
-                                    blob: productBlob
-                                });
-                                console.log(`   ✅ Fetched: ${productName}`);
-                            } else {
-                                console.warn(`   ⚠️ Not found: ${productName}`);
-                            }
-                        }
-                        
-                        // 3. Fetch accessories sheet
-                        console.log('🔌 [3/3] Fetching accessories sheet...');
-                        const accessoriesBlob = await this.fetchAccessoriesSheet();
-                        
-                        documents = {
-                            base: baseBlob,
-                            products: productBlobs,
-                            accessories: accessoriesBlob
-                        };
-                        
-                        console.log('✅ iOS individual fetch completed:', {
-                            base: baseBlob ? (baseBlob.size / 1024 / 1024).toFixed(2) + ' MB' : 'missing',
-                            products: productBlobs.length + '/' + products.length,
-                            accessories: accessoriesBlob ? 'found' : 'missing'
-                        });
-                    } else {
-                        // Desktop: Use batch fetch (faster, no timeout issues)
-                        console.log('⚡ Desktop detected - using batch fetch for faster performance...');
-                        documents = await this.fetchAllDocumentsInBatch('video', null, products);
+                        const documents = await this.fetchAllDocumentsInBatch('video', null, products);
                         
                         if (!documents.base) {
                             throw new Error('Could not fetch base document');
                         }
-                    }
-                    
-                    // 2. Load base document
-                    const basePdf = await PDFLib.PDFDocument.load(await documents.base.arrayBuffer());
-                    const basePageCount = basePdf.getPageCount();
-                    console.log('✅ Base document loaded:', basePageCount, 'pages');
-                    
-                    // 3. Create new PDF document
-                    const pdfDoc = await PDFLib.PDFDocument.create();
-                    
-                    // 4. Add pages 1-5 from base document
-                    for (let i = 0; i < 5 && i < basePageCount; i++) {
-                        const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
-                        pdfDoc.addPage(copiedPage);
-                    }
-                    console.log('✅ Base document pages 1-5 added');
-                    
-                    // 5. Add generated quote as page 6
-                    const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
-                    const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
-                    quotePages.forEach(page => pdfDoc.addPage(page));
-                    console.log('✅ Generated quote inserted as page 6');
-                    
-                    // 6. Add product sheets
-                    let productSheetsAdded = 0;
-                    if (documents.products) {
-                        for (const product of documents.products) {
-                            if (product.blob) {
-                                try {
-                                    const productPdf = await PDFLib.PDFDocument.load(await product.blob.arrayBuffer());
-                                    const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
-                                    productPages.forEach(page => pdfDoc.addPage(page));
-                                    console.log('✅ Product sheet added:', product.name);
-                                    productSheetsAdded++;
-                                } catch (error) {
-                                    console.warn('⚠️ Could not add product sheet for:', product.name, error.message);
-                                }
-                            } else {
-                                console.warn('⚠️ Product sheet not found:', product.name);
-                            }
+                        
+                        // Skip accessories on iOS (timeout issue)
+                        if (isIOS && documents.accessories) {
+                            console.log('⚠️ Removing accessories on iOS to prevent timeout');
+                            documents.accessories = null;
                         }
-                    }
-                    console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
-                    
-                    // 7. Add accessories sheet
-                    if (documents.accessories) {
-                        try {
-                            const accessoriesPdf = await PDFLib.PDFDocument.load(await documents.accessories.arrayBuffer());
-                            const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
-                            accessoriesPages.forEach(page => pdfDoc.addPage(page));
-                            console.log('✅ Accessories sheet added');
-                        } catch (error) {
-                            console.warn('⚠️ Could not add accessories sheet:', error.message);
-                        }
-                    }
-                    
-                    // 8. Add remaining pages from base document (original pages 6-end)
-                    if (basePageCount > 5) {
-                        for (let i = 5; i < basePageCount; i++) {
+                        
+                        console.log('✅ Documents fetched via batch');
+                        
+                        // 2. Load base document
+                        const basePdf = await PDFLib.PDFDocument.load(await documents.base.arrayBuffer());
+                        const basePageCount = basePdf.getPageCount();
+                        console.log('✅ Base document loaded:', basePageCount, 'pages');
+                        
+                        // 3. Create new PDF document
+                        const pdfDoc = await PDFLib.PDFDocument.create();
+                        
+                        // 4. Add pages 1-5 from base document
+                        for (let i = 0; i < 5 && i < basePageCount; i++) {
                             const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
                             pdfDoc.addPage(copiedPage);
                         }
-                        console.log('✅ Base document pages 6-' + basePageCount + ' added (now pages ' + (pdfDoc.getPageCount() - (basePageCount - 5) + 1) + '-' + pdfDoc.getPageCount() + ')');
-                    }
-                    
-                    // 9. Add commercial overlay to page 2 (index 1)
-                    await this.addCommercialOverlay(pdfDoc, commercial, 1);
-                    
-                    console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
-                    
-                    // 10. Generate final PDF
-                    const mergedPdfBytes = await pdfDoc.save();
-                    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-                    
-                    const totalPages = pdfDoc.getPageCount();
-                    
-                    console.log('✅ Video PDF assembly completed');
-                    console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
-                    console.log('📄 Final page count:', totalPages, 'pages');
-                    
-                    // Return blob and assembly info
-                    return {
-                        blob: mergedPdfBlob,
-                        info: {
-                            baseDossier: 'Devis_VIDÉO.pdf',
-                            productsFound: productSheetsAdded,
-                            totalPages: totalPages,
-                            overlayAdded: true
+                        console.log('✅ Base document pages 1-5 added');
+                        
+                        // 5. Add generated quote as page 6
+                        const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
+                        const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
+                        quotePages.forEach(page => pdfDoc.addPage(page));
+                        console.log('✅ Generated quote inserted as page 6');
+                        
+                        // 6. Add product sheets
+                        let productSheetsAdded = 0;
+                        if (documents.products) {
+                            for (const product of documents.products) {
+                                if (product.blob) {
+                                    try {
+                                        const productPdf = await PDFLib.PDFDocument.load(await product.blob.arrayBuffer());
+                                        const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
+                                        productPages.forEach(page => pdfDoc.addPage(page));
+                                        console.log('✅ Product sheet added:', product.name);
+                                        productSheetsAdded++;
+                                    } catch (error) {
+                                        console.warn('⚠️ Could not add product sheet for:', product.name, error.message);
+                                    }
+                                } else {
+                                    console.warn('⚠️ Product sheet not found:', product.name);
+                                }
+                            }
                         }
-                    };
-                    
-                } catch (error) {
-                    console.error('❌ Error assembling video PDF:', error);
-                    throw error;
+                        console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
+                        
+                        // 7. Add accessories sheet (desktop only)
+                        if (documents.accessories) {
+                            try {
+                                const accessoriesPdf = await PDFLib.PDFDocument.load(await documents.accessories.arrayBuffer());
+                                const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
+                                accessoriesPages.forEach(page => pdfDoc.addPage(page));
+                                console.log('✅ Accessories sheet added');
+                            } catch (error) {
+                                console.warn('⚠️ Could not add accessories sheet:', error.message);
+                            }
+                        } else if (isIOS) {
+                            console.log('⚠️ Accessories skipped (iOS limitation)');
+                        }
+                        
+                        // 8. Add remaining pages from base document (original pages 6-end)
+                        if (basePageCount > 5) {
+                            for (let i = 5; i < basePageCount; i++) {
+                                const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
+                                pdfDoc.addPage(copiedPage);
+                            }
+                            console.log('✅ Base document pages 6-' + basePageCount + ' added (now pages ' + (pdfDoc.getPageCount() - (basePageCount - 5) + 1) + '-' + pdfDoc.getPageCount() + ')');
+                        }
+                        
+                        // 9. Add commercial overlay to page 2 (index 1)
+                        await this.addCommercialOverlay(pdfDoc, commercial, 1);
+                        
+                        console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
+                        
+                        // 10. Generate final PDF
+                        const mergedPdfBytes = await pdfDoc.save();
+                        const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                        
+                        const totalPages = pdfDoc.getPageCount();
+                        
+                        console.log('✅ Video PDF assembly completed');
+                        console.log('📄 Final PDF size:', mergedPdfBlob.size, 'bytes');
+                        console.log('📄 Final page count:', totalPages, 'pages');
+                        
+                        // Return blob and assembly info
+                        return {
+                            blob: mergedPdfBlob,
+                            info: {
+                                baseDossier: 'Devis_VIDÉO.pdf',
+                                productsFound: productSheetsAdded,
+                                totalPages: totalPages,
+                                overlayAdded: true
+                            }
+                        };
+                        
+                    } catch (error) {
+                        console.error('❌ Error assembling video PDF:', error);
+                        throw error;
+                    }
                 }
-            }
 
             /**
              * Fetch product sheet from backend by product name
