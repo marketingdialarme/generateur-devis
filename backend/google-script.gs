@@ -160,10 +160,9 @@ success: false,
       Logger.log('  - Product Name: ' + data.productName);
       
       try {
-        const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
-        const productPdf = findProductPdf(data.productName, techSheetsFolder);
+        const productSheet = findProductSheetByNameDetailed(data.productName);
         
-        if (!productPdf) {
+        if (!productSheet || !productSheet.blob) {
           Logger.log('⚠️ Product sheet not found for: ' + data.productName);
           return createJsonResponse({
             success: false,
@@ -171,15 +170,14 @@ success: false,
           });
         }
         
-        const pdfBlob = productPdf.getBlob();
-        const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+        const pdfBase64 = Utilities.base64Encode(productSheet.blob.getBytes());
         
-        Logger.log('✅ Product sheet fetched: ' + productPdf.getName() + ' (' + (pdfBlob.getBytes().length / 1024).toFixed(2) + ' KB)');
+        Logger.log('✅ Product sheet fetched: ' + productSheet.fileName + ' (' + productSheet.fileSize + ' KB)');
         
         return createJsonResponse({
           success: true,
           pdfBase64: pdfBase64,
-          filename: productPdf.getName(),
+          filename: productSheet.fileName,
           message: 'Product sheet fetched successfully'
         });
       } catch (error) {
@@ -278,24 +276,21 @@ success: false,
           Logger.log('📦 Fetching ' + data.productNames.length + ' product sheets...');
           result.documents.products = [];
           
-          const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
-          
           for (let i = 0; i < data.productNames.length; i++) {
             const productName = data.productNames[i];
             Logger.log('  [' + (i + 1) + '/' + data.productNames.length + '] Searching: ' + productName);
             
             try {
-              const productPdf = findProductPdf(productName, techSheetsFolder);
+              const productSheet = findProductSheetByNameDetailed(productName);
               
-              if (productPdf) {
-                const productBlob = productPdf.getBlob();
+              if (productSheet && productSheet.blob) {
                 result.documents.products.push({
                   name: productName,
-                  pdfBase64: Utilities.base64Encode(productBlob.getBytes()),
-                  filename: productPdf.getName(),
-                  size: (productBlob.getBytes().length / 1024).toFixed(2) + ' KB'
+                  pdfBase64: Utilities.base64Encode(productSheet.blob.getBytes()),
+                  filename: productSheet.fileName,
+                  size: productSheet.fileSize + ' KB'
                 });
-                Logger.log('  ✅ Found: ' + productPdf.getName());
+                Logger.log('  ✅ Found: ' + productSheet.fileName);
               } else {
                 Logger.log('  ⚠️ Not found: ' + productName);
                 result.documents.products.push({
