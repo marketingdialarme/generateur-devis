@@ -2032,20 +2032,24 @@ throw error;
                     
                     // 2. Load base document
                     const basePdf = await PDFLib.PDFDocument.load(await documents.base.arrayBuffer());
+                    const basePageCount = basePdf.getPageCount();
+                    console.log('✅ Base document loaded:', basePageCount, 'pages');
                     
                     // 3. Create new PDF document
                     const pdfDoc = await PDFLib.PDFDocument.create();
                     
-                    // 4. Add base document pages
-                    const basePages = await pdfDoc.copyPages(basePdf, basePdf.getPageIndices());
-                    basePages.forEach(page => pdfDoc.addPage(page));
-                    console.log('✅ Base document added:', basePages.length, 'pages');
+                    // 4. Add pages 1-5 from base document
+                    for (let i = 0; i < 5 && i < basePageCount; i++) {
+                        const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
+                        pdfDoc.addPage(copiedPage);
+                    }
+                    console.log('✅ Base document pages 1-5 added');
                     
-                    // 5. Add generated quote
+                    // 5. Add generated quote as page 6
                     const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
                     const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
                     quotePages.forEach(page => pdfDoc.addPage(page));
-                    console.log('✅ Generated quote added');
+                    console.log('✅ Generated quote inserted as page 6');
                     
                     // 6. Add product sheets (already fetched in batch)
                     let productSheetsAdded = 0;
@@ -2080,12 +2084,21 @@ throw error;
                         }
                     }
                     
-                    // 8. Add commercial overlay to page 2 (index 1)
+                    // 8. Add remaining pages from base document (original pages 6-end)
+                    if (basePageCount > 5) {
+                        for (let i = 5; i < basePageCount; i++) {
+                            const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
+                            pdfDoc.addPage(copiedPage);
+                        }
+                        console.log('✅ Base document pages 6-' + basePageCount + ' added (now pages ' + (pdfDoc.getPageCount() - (basePageCount - 5) + 1) + '-' + pdfDoc.getPageCount() + ')');
+                    }
+                    
+                    // 9. Add commercial overlay to page 2 (index 1)
                     await this.addCommercialOverlay(pdfDoc, commercial, 1);
                     
                     console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
                     
-                    // 9. Generate final PDF
+                    // 10. Generate final PDF
                     const mergedPdfBytes = await pdfDoc.save();
                     const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
                     
