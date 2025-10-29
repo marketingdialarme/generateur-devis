@@ -2941,19 +2941,18 @@ throw error;
                         console.log('📤 Using backend assembly (existing method)...');
                     }
                     
-                    // Download merged PDF locally (or fallback if assembly failed)
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = URL.createObjectURL(finalPdfBlob);
-                    downloadLink.download = filename;
-                    downloadLink.click();
-                    URL.revokeObjectURL(downloadLink.href);
-                    
-                    // Notification initiale
-                    this.showNotification('✅ PDF généré localement', 'success', 2000);
-                    
-                    // Envoi par email et sauvegarde dans Drive
+                    // Envoi par email et sauvegarde dans Drive (FIRST - before download on iOS)
                     this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName, assemblyInfo)
                         .then((result) => {
+                            // Download merged PDF locally AFTER upload succeeds (iOS compatibility)
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = URL.createObjectURL(finalPdfBlob);
+                            downloadLink.download = filename;
+                            downloadLink.click();
+                            
+                            // Revoke URL after a short delay to ensure download starts
+                            setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
+                            
                             if (result && result.assumed) {
                                 // Success assumed (normal pour certains navigateurs)
                                 this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!\n(Vérifiez votre email pour confirmation)', 'success', 5000);
@@ -2964,6 +2963,14 @@ throw error;
                         })
                         .catch(error => {
                             console.error('Erreur lors de l\'envoi:', error);
+                            
+                            // Even if upload fails, download locally
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = URL.createObjectURL(finalPdfBlob);
+                            downloadLink.download = filename;
+                            downloadLink.click();
+                            setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
+                            
                             this.showNotification('⚠️ Erreur d\'envoi. Vérifiez votre email pour voir si le PDF est arrivé.', 'warning', 5000);
                         });
                     
