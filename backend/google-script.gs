@@ -246,6 +246,125 @@ success: false,
       }
     }
     
+    // Check if this is a fetchAllDocuments request (BATCH FETCH - NEW)
+    if (data.action === 'fetchAllDocuments') {
+      Logger.log('📦 Batch request - fetching all documents at once');
+      Logger.log('  - Quote type: ' + data.quoteType);
+      Logger.log('  - Central type: ' + (data.centralType || 'N/A'));
+      Logger.log('  - Products: ' + (data.productNames ? data.productNames.length : 0));
+      Logger.log('  - Include accessories: ' + data.includeAccessories);
+      
+      try {
+        const result = {
+          success: true,
+          documents: {}
+        };
+        
+        // 1. Fetch base document if requested
+        if (data.baseDocumentId) {
+          Logger.log('📄 Fetching base document (ID: ' + data.baseDocumentId + ')');
+          const baseFile = DriveApp.getFileById(data.baseDocumentId);
+          const baseBlob = baseFile.getBlob();
+          result.documents.base = {
+            pdfBase64: Utilities.base64Encode(baseBlob.getBytes()),
+            filename: baseFile.getName(),
+            size: (baseBlob.getBytes().length / 1024).toFixed(2) + ' KB'
+          };
+          Logger.log('✅ Base document: ' + result.documents.base.filename + ' (' + result.documents.base.size + ')');
+        }
+        
+        // 2. Fetch product sheets if requested
+        if (data.productNames && data.productNames.length > 0) {
+          Logger.log('📦 Fetching ' + data.productNames.length + ' product sheets...');
+          result.documents.products = [];
+          
+          const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+          
+          for (let i = 0; i < data.productNames.length; i++) {
+            const productName = data.productNames[i];
+            Logger.log('  [' + (i + 1) + '/' + data.productNames.length + '] Searching: ' + productName);
+            
+            try {
+              const productPdf = findProductPdf(productName, techSheetsFolder);
+              
+              if (productPdf) {
+                const productBlob = productPdf.getBlob();
+                result.documents.products.push({
+                  name: productName,
+                  pdfBase64: Utilities.base64Encode(productBlob.getBytes()),
+                  filename: productPdf.getName(),
+                  size: (productBlob.getBytes().length / 1024).toFixed(2) + ' KB'
+                });
+                Logger.log('  ✅ Found: ' + productPdf.getName());
+              } else {
+                Logger.log('  ⚠️ Not found: ' + productName);
+                result.documents.products.push({
+                  name: productName,
+                  notFound: true
+                });
+              }
+            } catch (error) {
+              Logger.log('  ❌ Error: ' + productName + ' - ' + error.message);
+              result.documents.products.push({
+                name: productName,
+                error: error.message
+              });
+            }
+          }
+          
+          const foundCount = result.documents.products.filter(function(p) { return p.pdfBase64; }).length;
+          Logger.log('📊 Products fetched: ' + foundCount + '/' + data.productNames.length);
+        }
+        
+        // 3. Fetch accessories sheet if requested
+        if (data.includeAccessories) {
+          Logger.log('🔌 Fetching accessories sheet...');
+          try {
+            const techSheetsFolder = DriveApp.getFolderById(CONFIG.FOLDERS.TECH_SHEETS);
+            const files = techSheetsFolder.getFilesByName('ONDULEURS - COFFRET - SWITCH - compressed.pdf');
+            
+            if (files.hasNext()) {
+              const accessoriesFile = files.next();
+              const accessoriesBlob = accessoriesFile.getBlob();
+              result.documents.accessories = {
+                pdfBase64: Utilities.base64Encode(accessoriesBlob.getBytes()),
+                filename: accessoriesFile.getName(),
+                size: (accessoriesBlob.getBytes().length / 1024).toFixed(2) + ' KB'
+              };
+              Logger.log('✅ Accessories: ' + result.documents.accessories.filename + ' (' + result.documents.accessories.size + ')');
+            } else {
+              // Try without "compressed" suffix
+              const filesAlt = techSheetsFolder.getFilesByName('ONDULEURS - COFFRET - SWITCH.pdf');
+              if (filesAlt.hasNext()) {
+                const accessoriesFile = filesAlt.next();
+                const accessoriesBlob = accessoriesFile.getBlob();
+                result.documents.accessories = {
+                  pdfBase64: Utilities.base64Encode(accessoriesBlob.getBytes()),
+                  filename: accessoriesFile.getName(),
+                  size: (accessoriesBlob.getBytes().length / 1024).toFixed(2) + ' KB'
+                };
+                Logger.log('✅ Accessories: ' + result.documents.accessories.filename + ' (' + result.documents.accessories.size + ')');
+              } else {
+                Logger.log('⚠️ Accessories sheet not found');
+              }
+            }
+          } catch (error) {
+            Logger.log('❌ Error fetching accessories: ' + error.message);
+          }
+        }
+        
+        Logger.log('✅ Batch fetch completed successfully');
+        return createJsonResponse(result);
+        
+      } catch (error) {
+        Logger.log('❌ Batch fetch error: ' + error);
+        return createJsonResponse({
+          success: false,
+          message: 'Batch fetch error: ' + error.toString()
+        });
+      }
+    }
+    
     // Validation des données
 const pdfBase64 = data.pdfBase64;
 const filename = data.filename;

@@ -2036,24 +2036,23 @@ throw error;
                 console.log('🚨 Assembling alarm PDF with central type:', centralType);
                 
                 try {
-                    // 1. Fetch base document (Titane or Jablotron)
-                    console.log('📥 Step 1: Fetching base document...');
-                    const baseDocBlob = await this.fetchBaseDocument('alarme', centralType);
-                    console.log('📥 Base document fetch result:', baseDocBlob ? `${baseDocBlob.size} bytes` : 'NULL');
-                    if (!baseDocBlob) {
+                    // 1. BATCH FETCH base document (faster than synchronous fetch)
+                    console.log('⚡ Using batch fetch for faster performance...');
+                    const documents = await this.fetchAllDocumentsInBatch('alarme', centralType, []);
+                    
+                    if (!documents.base) {
                         throw new Error('Could not fetch base document');
                     }
+                    console.log('✅ Base document fetched:', documents.base.size, 'bytes');
                     
                     // 2. Load base document
-                    const basePdf = await PDFLib.PDFDocument.load(await baseDocBlob.arrayBuffer());
+                    const basePdf = await PDFLib.PDFDocument.load(await documents.base.arrayBuffer());
                     const basePageCount = basePdf.getPageCount();
-                    
                     console.log('✅ Base document loaded:', basePageCount, 'pages');
                     
                     // 3. Load generated quote
                     const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
                     const quotePageCount = quotePdf.getPageCount();
-                    
                     console.log('✅ Generated quote loaded:', quotePageCount, 'page(s)');
                     
                     // 4. Create new PDF document
@@ -2064,13 +2063,11 @@ throw error;
                         const [copiedPage] = await pdfDoc.copyPages(basePdf, [i]);
                         pdfDoc.addPage(copiedPage);
                     }
-                    
                     console.log('✅ Base document pages 1-5 added');
                     
                     // 6. INSERT generated quote as NEW page 6 (original page 6 becomes page 7)
                     const [quotePage] = await pdfDoc.copyPages(quotePdf, [0]);
                     pdfDoc.addPage(quotePage);
-                    
                     console.log('✅ Generated quote inserted as page 6');
                     
                     // 7. Add remaining pages from base document (original pages 6-11 become pages 7-12)
@@ -2119,19 +2116,22 @@ throw error;
 
             /**
              * Assemble video PDF: Base document + Generated quote + Product sheets + Accessories
+             * UPDATED: Uses batch fetching for faster performance
              */
             async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
                 console.log('📹 Assembling video PDF with', products.length, 'products');
                 
                 try {
-                    // 1. Fetch base document
-                    const baseDocBlob = await this.fetchBaseDocument('video');
-                    if (!baseDocBlob) {
+                    // 1. BATCH FETCH all documents at once (base + all products + accessories)
+                    console.log('⚡ Using batch fetch - fetching all documents in one request...');
+                    const documents = await this.fetchAllDocumentsInBatch('video', null, products);
+                    
+                    if (!documents.base) {
                         throw new Error('Could not fetch base document');
                     }
                     
                     // 2. Load base document
-                    const basePdf = await PDFLib.PDFDocument.load(await baseDocBlob.arrayBuffer());
+                    const basePdf = await PDFLib.PDFDocument.load(await documents.base.arrayBuffer());
                     
                     // 3. Create new PDF document
                     const pdfDoc = await PDFLib.PDFDocument.create();
@@ -2139,48 +2139,45 @@ throw error;
                     // 4. Add base document pages
                     const basePages = await pdfDoc.copyPages(basePdf, basePdf.getPageIndices());
                     basePages.forEach(page => pdfDoc.addPage(page));
-                    
                     console.log('✅ Base document added:', basePages.length, 'pages');
                     
                     // 5. Add generated quote
                     const quotePdf = await PDFLib.PDFDocument.load(await pdfBlob.arrayBuffer());
                     const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
                     quotePages.forEach(page => pdfDoc.addPage(page));
-                    
                     console.log('✅ Generated quote added');
                     
-                    // 6. Add product sheets for each product
+                    // 6. Add product sheets (already fetched in batch)
                     let productSheetsAdded = 0;
-                    for (const productName of products) {
-                        try {
-                            console.log('📥 Fetching product sheet for:', productName);
-                            const productBlob = await this.fetchProductSheet(productName);
-                            if (productBlob) {
-                                const productPdf = await PDFLib.PDFDocument.load(await productBlob.arrayBuffer());
-                                const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
-                                productPages.forEach(page => pdfDoc.addPage(page));
-                                console.log('✅ Product sheet added:', productName);
-                                productSheetsAdded++;
+                    if (documents.products) {
+                        for (const product of documents.products) {
+                            if (product.blob) {
+                                try {
+                                    const productPdf = await PDFLib.PDFDocument.load(await product.blob.arrayBuffer());
+                                    const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
+                                    productPages.forEach(page => pdfDoc.addPage(page));
+                                    console.log('✅ Product sheet added:', product.name);
+                                    productSheetsAdded++;
+                                } catch (error) {
+                                    console.warn('⚠️ Could not add product sheet for:', product.name, error.message);
+                                }
+                            } else {
+                                console.warn('⚠️ Product sheet not found:', product.name);
                             }
-                        } catch (error) {
-                            console.warn('⚠️ Could not add product sheet for:', productName, error.message);
                         }
                     }
-                    
                     console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
                     
-                    // 7. Add accessories sheet
-                    try {
-                        console.log('📥 Fetching accessories sheet...');
-                        const accessoriesBlob = await this.fetchAccessoriesSheet();
-                        if (accessoriesBlob) {
-                            const accessoriesPdf = await PDFLib.PDFDocument.load(await accessoriesBlob.arrayBuffer());
+                    // 7. Add accessories sheet (already fetched in batch)
+                    if (documents.accessories) {
+                        try {
+                            const accessoriesPdf = await PDFLib.PDFDocument.load(await documents.accessories.arrayBuffer());
                             const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
                             accessoriesPages.forEach(page => pdfDoc.addPage(page));
                             console.log('✅ Accessories sheet added');
+                        } catch (error) {
+                            console.warn('⚠️ Could not add accessories sheet:', error.message);
                         }
-                    } catch (error) {
-                        console.warn('⚠️ Could not add accessories sheet:', error.message);
                     }
                     
                     // 8. Add commercial overlay to page 2 (index 1)
@@ -2323,6 +2320,154 @@ throw error;
                 } catch (error) {
                     console.error('❌ Error fetching accessories sheet:', error);
                     return null;
+                }
+            }
+
+            /**
+             * NEW: Batch fetch all documents at once (faster than individual fetches)
+             * Fetches base document, all product sheets, and accessories in one network call
+             * Uses async XHR for iOS compatibility (same method as upload)
+             * 
+             * @param {string} quoteType - 'alarme' or 'video'
+             * @param {string} centralType - 'titane' or 'jablotron' (for alarms)
+             * @param {Array<string>} productNames - Array of product names to fetch
+             * @returns {Object} { base: Blob, products: Array, accessories: Blob }
+             */
+            async fetchAllDocumentsInBatch(quoteType, centralType, productNames) {
+                console.log('📦 Batch fetching all documents at once...');
+                console.log('   - Quote type:', quoteType);
+                console.log('   - Central type:', centralType || 'N/A');
+                console.log('   - Products:', productNames ? productNames.length : 0);
+                
+                try {
+                    // Determine base document ID
+                    let baseDocumentId = null;
+                    if (quoteType === 'alarme') {
+                        if (centralType === 'jablotron') {
+                            baseDocumentId = '1enFlLv9q681uGBSwdRu43r8Co2nWytFf'; // ALARME_JABLOTRON
+                        } else {
+                            baseDocumentId = '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S'; // ALARME_TITANE
+                        }
+                    } else if (quoteType === 'video') {
+                        baseDocumentId = '15daREPnmbS1T76DLUpUxBLWahWIyq_cn'; // VIDEO
+                    }
+                    
+                    const payload = {
+                        action: 'fetchAllDocuments',
+                        quoteType: quoteType,
+                        centralType: centralType,
+                        baseDocumentId: baseDocumentId,
+                        productNames: productNames || [],
+                        includeAccessories: quoteType === 'video'
+                    };
+                    
+                    console.log('📤 Sending batch request via ASYNC XHR (iOS-compatible)...');
+                    const startTime = performance.now();
+                    
+                    // Use ASYNC XHR (same as upload method - works on iOS!)
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
+                        
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, true); // ASYNC - non-blocking
+                        xhr.timeout = 90000; // 90 seconds for batch fetch
+                        
+                        xhr.onload = () => {
+                            const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                            console.log('✅ Batch request completed in', elapsed, 's - Status:', xhr.status);
+                            
+                            if (xhr.status === 200) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    
+                                    if (!result.success) {
+                                        throw new Error(result.message || 'Batch fetch failed');
+                                    }
+                                    
+                                    // Convert base64 strings back to blobs
+                                    const documents = {};
+                                    
+                                    // Convert base document
+                                    if (result.documents.base) {
+                                        const baseBinary = atob(result.documents.base.pdfBase64);
+                                        const baseBytes = new Uint8Array(baseBinary.length);
+                                        for (let i = 0; i < baseBinary.length; i++) {
+                                            baseBytes[i] = baseBinary.charCodeAt(i);
+                                        }
+                                        documents.base = new Blob([baseBytes], { type: 'application/pdf' });
+                                        console.log('✅ Base:', result.documents.base.filename, result.documents.base.size);
+                                    }
+                                    
+                                    // Convert product sheets
+                                    if (result.documents.products) {
+                                        documents.products = [];
+                                        let successCount = 0;
+                                        
+                                        result.documents.products.forEach(product => {
+                                            if (product.pdfBase64) {
+                                                const productBinary = atob(product.pdfBase64);
+                                                const productBytes = new Uint8Array(productBinary.length);
+                                                for (let i = 0; i < productBinary.length; i++) {
+                                                    productBytes[i] = productBinary.charCodeAt(i);
+                                                }
+                                                documents.products.push({
+                                                    name: product.name,
+                                                    blob: new Blob([productBytes], { type: 'application/pdf' }),
+                                                    filename: product.filename
+                                                });
+                                                successCount++;
+                                            } else {
+                                                documents.products.push({
+                                                    name: product.name,
+                                                    blob: null,
+                                                    notFound: true
+                                                });
+                                            }
+                                        });
+                                        
+                                        console.log('✅ Products:', successCount + '/' + result.documents.products.length);
+                                    }
+                                    
+                                    // Convert accessories
+                                    if (result.documents.accessories && result.documents.accessories.pdfBase64) {
+                                        const accessoriesBinary = atob(result.documents.accessories.pdfBase64);
+                                        const accessoriesBytes = new Uint8Array(accessoriesBinary.length);
+                                        for (let i = 0; i < accessoriesBinary.length; i++) {
+                                            accessoriesBytes[i] = accessoriesBinary.charCodeAt(i);
+                                        }
+                                        documents.accessories = new Blob([accessoriesBytes], { type: 'application/pdf' });
+                                        console.log('✅ Accessories:', result.documents.accessories.size);
+                                    }
+                                    
+                                    console.log('✅ Batch fetch successful - all documents ready for assembly');
+                                    resolve(documents);
+                                    
+                                } catch (parseError) {
+                                    console.error('❌ Error parsing batch response:', parseError);
+                                    reject(parseError);
+                                }
+                            } else {
+                                reject(new Error('Batch request failed: ' + xhr.status));
+                            }
+                        };
+                        
+                        xhr.onerror = () => {
+                            console.error('❌ Batch request network error');
+                            reject(new Error('Network error during batch fetch'));
+                        };
+                        
+                        xhr.ontimeout = () => {
+                            console.error('❌ Batch request timeout (90s exceeded)');
+                            reject(new Error('Batch fetch timeout'));
+                        };
+                        
+                        xhr.send(formData);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error in batch fetch:', error);
+                    throw error;
                 }
             }
 
