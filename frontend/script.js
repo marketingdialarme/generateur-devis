@@ -2249,43 +2249,58 @@ throw error;
                         action: 'fetchAccessoriesSheet'
                     };
                     
-                    // Use SYNCHRONOUS XMLHttpRequest for iOS compatibility
-                    const formData = new FormData();
-                    formData.append('data', JSON.stringify(payload));
-                    
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', GOOGLE_SCRIPT_URL, false); // FALSE = SYNCHRONOUS (required for iOS)
-                    
-                    try {
-                        xhr.send(formData);
+                    // Use ASYNC XMLHttpRequest with longer timeout (works on iOS for large files)
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        const formData = new FormData();
+                        formData.append('data', JSON.stringify(payload));
                         
-                        if (xhr.status === 200) {
-                            const result = JSON.parse(xhr.responseText);
-                            
-                            if (!result.success || !result.pdfBase64) {
-                                console.warn('⚠️ Accessories sheet not found');
-                                return null;
+                        xhr.open('POST', GOOGLE_SCRIPT_URL, true); // TRUE = ASYNC
+                        xhr.timeout = 120000; // 120 seconds timeout for large accessories PDF
+                        
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    
+                                    if (!result.success || !result.pdfBase64) {
+                                        console.warn('⚠️ Accessories sheet not found');
+                                        resolve(null);
+                                        return;
+                                    }
+                                    
+                                    // Convert base64 back to blob
+                                    const binaryString = atob(result.pdfBase64);
+                                    const bytes = new Uint8Array(binaryString.length);
+                                    for (let i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                                    
+                                    console.log('✅ Accessories sheet fetched:', blob.size, 'bytes');
+                                    resolve(blob);
+                                } catch (error) {
+                                    console.error('❌ Error parsing accessories response:', error);
+                                    reject(error);
+                                }
+                            } else {
+                                console.error('❌ Backend request failed:', xhr.status);
+                                resolve(null);
                             }
-                            
-                            // Convert base64 back to blob
-                            const binaryString = atob(result.pdfBase64);
-                            const bytes = new Uint8Array(binaryString.length);
-                            for (let i = 0; i < binaryString.length; i++) {
-                                bytes[i] = binaryString.charCodeAt(i);
-                            }
-                            const blob = new Blob([bytes], { type: 'application/pdf' });
-                            
-                            console.log('✅ Accessories sheet fetched via synchronous XHR:', blob.size, 'bytes');
-                            return blob;
-                            
-                        } else {
-                            console.error('❌ Backend request failed:', xhr.status);
-                            return null;
-                        }
-                    } catch (error) {
-                        console.error('❌ XHR Error for accessories sheet:', error);
-                        return null;
-                    }
+                        };
+                        
+                        xhr.onerror = () => {
+                            console.error('❌ Network error fetching accessories sheet');
+                            resolve(null); // Don't fail entire process, just skip accessories
+                        };
+                        
+                        xhr.ontimeout = () => {
+                            console.error('❌ Timeout fetching accessories sheet (120s exceeded)');
+                            resolve(null); // Don't fail entire process, just skip accessories
+                        };
+                        
+                        xhr.send(formData);
+                    });
                     
                 } catch (error) {
                     console.error('❌ Error fetching accessories sheet:', error);
