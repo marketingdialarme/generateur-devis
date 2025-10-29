@@ -1443,7 +1443,7 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                 this.showNotification('📤 Envoi du PDF en cours...', 'info', 0);
                 
                 const MAX_RETRIES = 1; // Une seule tentative suffit
-                const TIMEOUT_MS = 15000; // 15 seconds - le backend répond en ~5s
+                const TIMEOUT_MS = 120000; // 120 seconds - iOS Safari needs more time for large merged PDFs
                 
                 // Vérifier que l'URL est configurée
                 if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === '') {
@@ -1527,9 +1527,9 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                             const formData = new FormData();
                             formData.append('data', JSON.stringify(payload));
                             
-                            // Ouvrir connexion ASYNCHRONE avec timeout de 30 secondes
+                            // Ouvrir connexion ASYNCHRONE avec timeout de 120 secondes
                             xhr.open('POST', GOOGLE_SCRIPT_URL, true); // true = ASYNC
-                            xhr.timeout = 30000; // 30 secondes pour gros PDFs
+                            xhr.timeout = 120000; // 120 secondes - iOS Safari est plus lent pour uploader les gros PDFs
                             
                             xhr.onload = () => {
                                 console.log('✅ XHR Status:', xhr.status);
@@ -2491,14 +2491,16 @@ throw error;
                 `;
                 document.body.appendChild(debugDiv);
                 
-                // Toggle: click X to hide console
+                // Toggle: click button to show/hide console
                 toggleBtn.onclick = () => {
                     if (debugDiv.style.display === 'none') {
                         debugDiv.style.display = 'block';
-                        toggleBtn.style.display = 'block';
+                        toggleBtn.textContent = '×';
+                        toggleBtn.style.background = 'red';
                     } else {
                         debugDiv.style.display = 'none';
-                        toggleBtn.style.display = 'none';
+                        toggleBtn.textContent = '📱';
+                        toggleBtn.style.background = '#007bff';
                     }
                 };
                 
