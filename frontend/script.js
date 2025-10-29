@@ -2905,12 +2905,6 @@ throw error;
                     const filename = `Devis-${quoteNumber}-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
                     const pdfBlob = doc.output('blob');
                     
-                    // Téléchargement local
-                    doc.save(filename);
-                    
-                    // Notification initiale
-                    this.showNotification('✅ PDF généré localement', 'success', 2000);
-                    
                     // Choose PDF processing method based on feature flag
                     let finalPdfBlob = pdfBlob;
                     let assemblyInfo = null;
@@ -2946,6 +2940,16 @@ throw error;
                     } else {
                         console.log('📤 Using backend assembly (existing method)...');
                     }
+                    
+                    // Download merged PDF locally (or fallback if assembly failed)
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(finalPdfBlob);
+                    downloadLink.download = filename;
+                    downloadLink.click();
+                    URL.revokeObjectURL(downloadLink.href);
+                    
+                    // Notification initiale
+                    this.showNotification('✅ PDF généré localement', 'success', 2000);
                     
                     // Envoi par email et sauvegarde dans Drive
                     this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName, assemblyInfo)
