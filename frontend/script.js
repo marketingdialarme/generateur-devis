@@ -2562,91 +2562,42 @@ throw error;
                         centralType: centralType
                     };
                     
-                    // Detect iOS - use async XHR to avoid 60s synchronous timeout
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    console.log('📤 Requesting base document from backend via SYNCHRONOUS XHR (iOS-compatible)...');
+                    
+                    // Use SYNCHRONOUS XMLHttpRequest for iOS compatibility (only way that works on iOS)
                     const formData = new FormData();
                     formData.append('data', JSON.stringify(payload));
                     
-                    if (isIOS) {
-                        // iOS: Use ASYNC XHR with 120s timeout (synchronous has hard 60s limit)
-                        console.log('📤 Requesting base document via ASYNC XHR (iOS - 120s timeout)...');
-                        return new Promise((resolve, reject) => {
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('POST', GOOGLE_SCRIPT_URL, true); // ASYNC
-                            xhr.timeout = 120000; // 120 seconds
-                            
-                            xhr.onload = () => {
-                                if (xhr.status === 200) {
-                                    try {
-                                        const result = JSON.parse(xhr.responseText);
-                                        
-                                        if (!result.success || !result.pdfBase64) {
-                                            reject(new Error(result.message || 'Failed to fetch base document'));
-                                            return;
-                                        }
-                                        
-                                        // Convert base64 back to blob
-                                        const binaryString = atob(result.pdfBase64);
-                                        const bytes = new Uint8Array(binaryString.length);
-                                        for (let i = 0; i < binaryString.length; i++) {
-                                            bytes[i] = binaryString.charCodeAt(i);
-                                        }
-                                        const blob = new Blob([bytes], { type: 'application/pdf' });
-                                        
-                                        console.log('✅ Base document fetched via async XHR:', blob.size, 'bytes');
-                                        resolve(blob);
-                                    } catch (error) {
-                                        reject(error);
-                                    }
-                                } else {
-                                    reject(new Error(`Backend request failed: ${xhr.status}`));
-                                }
-                            };
-                            
-                            xhr.onerror = () => {
-                                reject(new Error('Network error fetching base document'));
-                            };
-                            
-                            xhr.ontimeout = () => {
-                                reject(new Error('Timeout (120s) fetching base document'));
-                            };
-                            
-                            xhr.send(formData);
-                        });
-                    } else {
-                        // Desktop: Use SYNC XHR (faster, no issues)
-                        console.log('📤 Requesting base document via SYNCHRONOUS XHR (Desktop)...');
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', GOOGLE_SCRIPT_URL, false); // SYNCHRONOUS
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', GOOGLE_SCRIPT_URL, false); // FALSE = SYNCHRONOUS (required for iOS)
+                    
+                    try {
+                        xhr.send(formData);
                         
-                        try {
-                            xhr.send(formData);
+                        if (xhr.status === 200) {
+                            const result = JSON.parse(xhr.responseText);
                             
-                            if (xhr.status === 200) {
-                                const result = JSON.parse(xhr.responseText);
-                                
-                                if (!result.success || !result.pdfBase64) {
-                                    throw new Error(result.message || 'Failed to fetch base document');
-                                }
-                                
-                                // Convert base64 back to blob
-                                const binaryString = atob(result.pdfBase64);
-                                const bytes = new Uint8Array(binaryString.length);
-                                for (let i = 0; i < binaryString.length; i++) {
-                                    bytes[i] = binaryString.charCodeAt(i);
-                                }
-                                const blob = new Blob([bytes], { type: 'application/pdf' });
-                                
-                                console.log('✅ Base document fetched via synchronous XHR:', blob.size, 'bytes');
-                                return blob;
-                                
-                            } else {
-                                throw new Error(`Backend request failed: ${xhr.status}`);
+                            if (!result.success || !result.pdfBase64) {
+                                throw new Error(result.message || 'Failed to fetch base document');
                             }
-                        } catch (error) {
-                            console.error('❌ XHR Error:', error);
-                            throw error;
+                            
+                            // Convert base64 back to blob
+                            const binaryString = atob(result.pdfBase64);
+                            const bytes = new Uint8Array(binaryString.length);
+                            for (let i = 0; i < binaryString.length; i++) {
+                                bytes[i] = binaryString.charCodeAt(i);
+                            }
+                            const blob = new Blob([bytes], { type: 'application/pdf' });
+                            
+                            console.log('✅ Base document fetched via synchronous XHR:', blob.size, 'bytes');
+                            return blob;
+                            
+                        } else {
+                            throw new Error(`Backend request failed: ${xhr.status}`);
                         }
+                    } catch (error) {
+                        console.error('❌ XHR Error:', error);
+                        throw error;
                     }
                     
                 } catch (error) {
