@@ -2331,109 +2331,88 @@ throw error;
                         includeAccessories: quoteType === 'video'
                     };
                     
-                    console.log('📤 Sending batch request via ASYNC XHR (iOS-compatible)...');
+                    console.log('📤 Sending batch request via SYNCHRONOUS XHR (iOS-compatible)...');
                     const startTime = performance.now();
                     
-                    // Use ASYNC XHR (same as upload method - works on iOS!)
-                    return new Promise((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        const formData = new FormData();
-                        formData.append('data', JSON.stringify(payload));
+                    // Use SYNCHRONOUS XHR for fetching documents (required for iOS)
+                    const xhr = new XMLHttpRequest();
+                    const formData = new FormData();
+                    formData.append('data', JSON.stringify(payload));
+                    
+                    xhr.open('POST', GOOGLE_SCRIPT_URL, false); // FALSE = SYNCHRONOUS (required for iOS)
+                    xhr.send(formData);
+                    
+                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                    console.log('✅ Batch request completed in', elapsed, 's - Status:', xhr.status);
+                    
+                    if (xhr.status === 200) {
+                        const result = JSON.parse(xhr.responseText);
                         
-                        xhr.open('POST', GOOGLE_SCRIPT_URL, true); // ASYNC - non-blocking
-                        xhr.timeout = 90000; // 90 seconds for batch fetch
+                        if (!result.success) {
+                            throw new Error(result.message || 'Batch fetch failed');
+                        }
                         
-                        xhr.onload = () => {
-                            const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-                            console.log('✅ Batch request completed in', elapsed, 's - Status:', xhr.status);
-                            
-                            if (xhr.status === 200) {
-                                try {
-                                    const result = JSON.parse(xhr.responseText);
-                                    
-                                    if (!result.success) {
-                                        throw new Error(result.message || 'Batch fetch failed');
-                                    }
-                                    
-                                    // Convert base64 strings back to blobs
-                                    const documents = {};
-                                    
-                                    // Convert base document
-                                    if (result.documents.base) {
-                                        const baseBinary = atob(result.documents.base.pdfBase64);
-                                        const baseBytes = new Uint8Array(baseBinary.length);
-                                        for (let i = 0; i < baseBinary.length; i++) {
-                                            baseBytes[i] = baseBinary.charCodeAt(i);
-                                        }
-                                        documents.base = new Blob([baseBytes], { type: 'application/pdf' });
-                                        console.log('✅ Base:', result.documents.base.filename, result.documents.base.size);
-                                    }
-                                    
-                                    // Convert product sheets
-                                    if (result.documents.products) {
-                                        documents.products = [];
-                                        let successCount = 0;
-                                        
-                                        result.documents.products.forEach(product => {
-                                            if (product.pdfBase64) {
-                                                const productBinary = atob(product.pdfBase64);
-                                                const productBytes = new Uint8Array(productBinary.length);
-                                                for (let i = 0; i < productBinary.length; i++) {
-                                                    productBytes[i] = productBinary.charCodeAt(i);
-                                                }
-                                                documents.products.push({
-                                                    name: product.name,
-                                                    blob: new Blob([productBytes], { type: 'application/pdf' }),
-                                                    filename: product.filename
-                                                });
-                                                successCount++;
-                                            } else {
-                                                documents.products.push({
-                                                    name: product.name,
-                                                    blob: null,
-                                                    notFound: true
-                                                });
-                                            }
-                                        });
-                                        
-                                        console.log('✅ Products:', successCount + '/' + result.documents.products.length);
-                                    }
-                                    
-                                    // Convert accessories
-                                    if (result.documents.accessories && result.documents.accessories.pdfBase64) {
-                                        const accessoriesBinary = atob(result.documents.accessories.pdfBase64);
-                                        const accessoriesBytes = new Uint8Array(accessoriesBinary.length);
-                                        for (let i = 0; i < accessoriesBinary.length; i++) {
-                                            accessoriesBytes[i] = accessoriesBinary.charCodeAt(i);
-                                        }
-                                        documents.accessories = new Blob([accessoriesBytes], { type: 'application/pdf' });
-                                        console.log('✅ Accessories:', result.documents.accessories.size);
-                                    }
-                                    
-                                    console.log('✅ Batch fetch successful - all documents ready for assembly');
-                                    resolve(documents);
-                                    
-                                } catch (parseError) {
-                                    console.error('❌ Error parsing batch response:', parseError);
-                                    reject(parseError);
-                                }
-                            } else {
-                                reject(new Error('Batch request failed: ' + xhr.status));
+                        // Convert base64 strings back to blobs
+                        const documents = {};
+                        
+                        // Convert base document
+                        if (result.documents.base) {
+                            const baseBinary = atob(result.documents.base.pdfBase64);
+                            const baseBytes = new Uint8Array(baseBinary.length);
+                            for (let i = 0; i < baseBinary.length; i++) {
+                                baseBytes[i] = baseBinary.charCodeAt(i);
                             }
-                        };
+                            documents.base = new Blob([baseBytes], { type: 'application/pdf' });
+                            console.log('✅ Base:', result.documents.base.filename, result.documents.base.size);
+                        }
                         
-                        xhr.onerror = () => {
-                            console.error('❌ Batch request network error');
-                            reject(new Error('Network error during batch fetch'));
-                        };
+                        // Convert product sheets
+                        if (result.documents.products) {
+                            documents.products = [];
+                            let successCount = 0;
+                            
+                            result.documents.products.forEach(product => {
+                                if (product.pdfBase64) {
+                                    const productBinary = atob(product.pdfBase64);
+                                    const productBytes = new Uint8Array(productBinary.length);
+                                    for (let i = 0; i < productBinary.length; i++) {
+                                        productBytes[i] = productBinary.charCodeAt(i);
+                                    }
+                                    documents.products.push({
+                                        name: product.name,
+                                        blob: new Blob([productBytes], { type: 'application/pdf' }),
+                                        filename: product.filename
+                                    });
+                                    successCount++;
+                                } else {
+                                    documents.products.push({
+                                        name: product.name,
+                                        blob: null,
+                                        notFound: true
+                                    });
+                                }
+                            });
+                            
+                            console.log('✅ Products:', successCount + '/' + result.documents.products.length);
+                        }
                         
-                        xhr.ontimeout = () => {
-                            console.error('❌ Batch request timeout (90s exceeded)');
-                            reject(new Error('Batch fetch timeout'));
-                        };
+                        // Convert accessories
+                        if (result.documents.accessories && result.documents.accessories.pdfBase64) {
+                            const accessoriesBinary = atob(result.documents.accessories.pdfBase64);
+                            const accessoriesBytes = new Uint8Array(accessoriesBinary.length);
+                            for (let i = 0; i < accessoriesBinary.length; i++) {
+                                accessoriesBytes[i] = accessoriesBinary.charCodeAt(i);
+                            }
+                            documents.accessories = new Blob([accessoriesBytes], { type: 'application/pdf' });
+                            console.log('✅ Accessories:', result.documents.accessories.size);
+                        }
                         
-                        xhr.send(formData);
-                    });
+                        console.log('✅ Batch fetch successful - all documents ready for assembly');
+                        return documents;
+                        
+                    } else {
+                        throw new Error('Batch request failed: ' + xhr.status);
+                    }
                     
                 } catch (error) {
                     console.error('❌ Error in batch fetch:', error);
