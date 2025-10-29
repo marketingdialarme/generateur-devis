@@ -2019,18 +2019,72 @@ throw error;
 
             /**
              * Assemble video PDF: Base document + Generated quote + Product sheets + Accessories
-             * UPDATED: Uses batch fetching for faster performance
+             * iOS: Uses individual fetches to avoid 60s synchronous XHR timeout
+             * Desktop: Uses batch fetching for faster performance
              */
             async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
                 console.log('📹 Assembling video PDF with', products.length, 'products');
                 
                 try {
-                    // 1. BATCH FETCH all documents at once (base + all products + accessories)
-                    console.log('⚡ Using batch fetch - fetching all documents in one request...');
-                    const documents = await this.fetchAllDocumentsInBatch('video', null, products);
+                    // Detect iOS - synchronous XHR has 60s timeout limit
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                     
-                    if (!documents.base) {
-                        throw new Error('Could not fetch base document');
+                    let documents;
+                    
+                    if (isIOS) {
+                        // iOS: Fetch individually to stay within 60s timeout per request
+                        // Batch fetch with many products exceeds 60s synchronous XHR timeout
+                        console.log('📱 iOS detected - using individual fetches to avoid timeout');
+                        console.log('   Batch fetch would exceed 60s limit with', products.length, 'products');
+                        
+                        // 1. Fetch base document
+                        console.log('📄 [1/3] Fetching base document...');
+                        const baseBlob = await this.fetchBaseDocument('video', null);
+                        if (!baseBlob) {
+                            throw new Error('Could not fetch base document');
+                        }
+                        
+                        // 2. Fetch product sheets individually
+                        console.log('📦 [2/3] Fetching', products.length, 'product sheets individually...');
+                        const productBlobs = [];
+                        for (let i = 0; i < products.length; i++) {
+                            const productName = products[i];
+                            console.log(`   [${i + 1}/${products.length}] Fetching: ${productName}`);
+                            const productBlob = await this.fetchProductSheet(productName);
+                            if (productBlob) {
+                                productBlobs.push({
+                                    name: productName,
+                                    blob: productBlob
+                                });
+                                console.log(`   ✅ Fetched: ${productName}`);
+                            } else {
+                                console.warn(`   ⚠️ Not found: ${productName}`);
+                            }
+                        }
+                        
+                        // 3. Fetch accessories sheet
+                        console.log('🔌 [3/3] Fetching accessories sheet...');
+                        const accessoriesBlob = await this.fetchAccessoriesSheet();
+                        
+                        documents = {
+                            base: baseBlob,
+                            products: productBlobs,
+                            accessories: accessoriesBlob
+                        };
+                        
+                        console.log('✅ iOS individual fetch completed:', {
+                            base: baseBlob ? (baseBlob.size / 1024 / 1024).toFixed(2) + ' MB' : 'missing',
+                            products: productBlobs.length + '/' + products.length,
+                            accessories: accessoriesBlob ? 'found' : 'missing'
+                        });
+                    } else {
+                        // Desktop: Use batch fetch (faster, no timeout issues)
+                        console.log('⚡ Desktop detected - using batch fetch for faster performance...');
+                        documents = await this.fetchAllDocumentsInBatch('video', null, products);
+                        
+                        if (!documents.base) {
+                            throw new Error('Could not fetch base document');
+                        }
                     }
                     
                     // 2. Load base document
@@ -2054,7 +2108,7 @@ throw error;
                     quotePages.forEach(page => pdfDoc.addPage(page));
                     console.log('✅ Generated quote inserted as page 6');
                     
-                    // 6. Add product sheets (already fetched in batch)
+                    // 6. Add product sheets
                     let productSheetsAdded = 0;
                     if (documents.products) {
                         for (const product of documents.products) {
@@ -2075,7 +2129,7 @@ throw error;
                     }
                     console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
                     
-                    // 7. Add accessories sheet (already fetched in batch)
+                    // 7. Add accessories sheet
                     if (documents.accessories) {
                         try {
                             const accessoriesPdf = await PDFLib.PDFDocument.load(await documents.accessories.arrayBuffer());
