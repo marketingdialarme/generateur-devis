@@ -28,7 +28,6 @@
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('alarm', this)">🚨 Alarme</button>
             <button class="nav-tab" onclick="showTab('camera', this)">📹 Caméra de surveillance</button>
-            <button class="nav-tab" onclick="showTab('fog', this)">💨 Générateur de brouillard</button>
         </div>
 
 <!-- TAB ALARME -->
@@ -369,110 +368,6 @@
 
             <div class="action-buttons">
                 <button class="btn btn-primary" onclick="generatePDF('camera')">📄 Générer le PDF</button>
-            </div>
-        </div>
-
-        <!-- TAB FOG -->
-        <div id="fog-tab" class="tab-content">
-            <div class="form-section">
-                <h3>📋 Informations Client</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="clientNameFog">Nom du client</label>
-                        <input type="text" id="clientNameFog" placeholder="Nom complet du client">
-                    </div>
-                    <div class="form-group">
-                        <label for="commercialFog">Commercial</label>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <select id="commercialFog" onchange="handleCommercialSelectionFog(this)" style="padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
-                                <option value="">Sélectionner un commercial</option>
-                            </select>
-                            <input type="text" id="commercialFog-custom" placeholder="Entrez le nom du commercial" style="display: none; padding: 12px 15px; border: 2px solid #007bff; border-radius: 8px; font-size: 14px; background: #f0f8ff;">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="quote-section">
-                <h3>💨 1. Matériel <button class="add-product-btn" onclick="addProductLine('fog-material')">+</button></h3>
-                <div id="fog-material-products"></div>
-                <div class="discount-section">
-                    <label>Réduction:</label>
-                    <select id="fog-material-discount-type">
-                        <option value="percent">%</option>
-                        <option value="amount">CHF</option>
-                    </select>
-                    <input type="number" id="fog-material-discount-value" placeholder="0" min="0" class="discount-input" oninput="updateTotals()">
-                </div>
-            </div>
-
-            <div class="quote-section">
-                <h3>🔧 2. Installation</h3>
-                <div class="product-line">
-                    <div>Installation, paramétrages, tests, mise en service & formation</div>
-                    <div>
-                        <input type="number" value="1" class="quantity-input" readonly style="background: #f0f0f0;">
-                    </div>
-                    <div class="checkbox-option" style="margin: 0;">
-                        <input type="checkbox" id="fog-installation-offered" class="offered-checkbox" onchange="updateTotals()">
-                        <label style="margin: 0; font-size: 12px;">OFFERT</label>
-                    </div>
-                    <div class="price-display" id="fog-installation-price">490.00 CHF</div>
-                    <div></div>
-                </div>
-                <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">* Installation uniquement au comptant (pas de mensualités)</p>
-            </div>
-
-            <div class="quote-section" id="fog-maintenance-section">
-                <h3>🔧 3. Maintenance et garantie</h3>
-                <div class="product-line">
-                    <div>Assistance hotline, déplacement(s), matériels pièce(s), main d'œuvre et support téléphonique</div>
-                    <input type="number" value="1" class="quantity-input" readonly>
-                    <div></div>
-                    <div class="price-display"><span class="free-label">OFFERT</span></div>
-                    <div></div>
-                </div>
-            </div>
-
-            <div class="quote-section" id="fog-payment-section">
-                <h3>💳 4. Mode de paiement</h3>
-                <div class="payment-options" id="fog-global-payment">
-                    <div class="payment-option" data-months="0" onclick="selectGlobalPayment(this, 'fog')">Comptant</div>
-                    <div class="payment-option" data-months="24" onclick="selectGlobalPayment(this, 'fog')">24 mois</div>
-                    <div class="payment-option" data-months="36" onclick="selectGlobalPayment(this, 'fog')">36 mois</div>
-                    <div class="payment-option active" data-months="48" onclick="selectGlobalPayment(this, 'fog')">48 mois</div>
-                </div>
-            </div>
-
-            <div class="quote-summary">
-                <h3>📊 Récapitulatif du devis</h3>
-                <div class="summary-item">
-                    <span>Matériel</span>
-                    <span id="fog-material-total">0.00 CHF</span>
-                </div>
-                <div class="summary-item">
-                    <span>Installation</span>
-                    <span id="fog-installation-total">490.00 CHF</span>
-                </div>
-                <div class="summary-item" id="fog-maintenance-summary">
-                    <span>Maintenance</span>
-                    <span>OFFERT</span>
-                </div>
-                <div class="summary-item">
-                    <span>TOTAL HT</span>
-                    <span id="fog-total-ht">490.00 CHF</span>
-                </div>
-                <div class="summary-item">
-                    <span>TOTAL TTC</span>
-                    <span id="fog-total-ttc">529.67 CHF</span>
-                </div>
-                <div class="monthly-payment" id="fog-monthly-payment" style="display: none;">
-                    <strong>Mensualités: <span id="fog-monthly-amount">0 CHF</span> x <span id="fog-monthly-count">0</span> mois</strong>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="generatePDF('fog')">📄 Générer le PDF</button>
             </div>
         </div>
     </div>

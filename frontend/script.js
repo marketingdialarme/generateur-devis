@@ -78,20 +78,6 @@
             { id: 27, name: "Caméra de comptage", price: 860.00, monthly48: 22, monthly36: 28, monthly24: 40 }
         ];
         
-        // 💨 CATALOGUE GÉNÉRATEUR DE BROUILLARD
-        const CATALOG_FOG_MATERIAL = [
-            { id: 105, name: "Générateur de brouillard", price: 2990.00 },
-            { id: 103, name: "Cartouche supplémentaire HY3", price: 990.00 },
-            { id: 107, name: "Clavier", price: 390.00, monthly: 9 },
-            { id: 108, name: "Détecteur d'ouverture", price: 190.00, monthly: 5 },
-            { id: 106, name: "Détecteur volumétrique", price: 240.00, monthly: 6 },
-            { id: 102, name: "Remplissage cartouche", price: 390.00 },
-            { id: 100, name: "Support mural articulé", price: 390.00, monthly: 9 },
-            { id: 101, name: "Support mural fixe", price: 290.00, monthly: 7 },
-            { id: 109, name: "Télécommande", price: 240.00, monthly: 6 },
-            { id: 99, name: "Autre", price: 0.00, isCustom: true }
-        ];
-
         // ============================================
         // 💰 CONFIGURATION DES PRIX ET TARIFS
         // ============================================
@@ -142,9 +128,6 @@
 
         // 📹 CAMÉRA - VISION À DISTANCE
         const REMOTE_ACCESS_PRICE = 20.00;
-
-        // 💨 GÉNÉRATEUR DE BROUILLARD - INSTALLATION
-        const FOG_INSTALL_PRICE = 490.00;
 
         // 🔔 TEST CYCLIQUE
         const TEST_CYCLIQUE_DEFAULT_PRICE = 0.00;
@@ -266,8 +249,7 @@
                 this.catalog = {
                     'alarm-material': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
                     'alarm-installation': CATALOG_ALARM_PRODUCTS.sort((a, b) => a.name.localeCompare(b.name)),
-                    'camera-material': CATALOG_CAMERA_MATERIAL.sort((a, b) => a.name.localeCompare(b.name)),
-                    'fog-material': CATALOG_FOG_MATERIAL
+                    'camera-material': CATALOG_CAMERA_MATERIAL.sort((a, b) => a.name.localeCompare(b.name))
                 };
 
                 this.currentTab = 'alarm';
@@ -275,21 +257,17 @@
                     'alarm-material': { paymentMonths: 0 },
                     'alarm-installation': { paymentMonths: 0 },
                     'camera-material': { paymentMonths: 0 },
-                    'camera-installation': { paymentMonths: 0 },
-                    'fog-material': { paymentMonths: 0 },
-                    'fog-installation': { paymentMonths: 0 }
+                    'camera-installation': { paymentMonths: 0 }
                 };
 
                 this.globalPaymentMonths = {
                     'alarm': 48,
-                    'camera': 48,
-                    'fog': 48
+                    'camera': 48
                 };
 
                 this.rentalMode = {
                     'alarm': false,
-                    'camera': false,
-                    'fog': false
+                    'camera': false
                 };
 
                 this.selectedCentral = null;
@@ -306,7 +284,7 @@
             }
 
             populateCommercials() {
-                const selectIds = ['commercial', 'commercialCamera', 'commercialFog'];
+                const selectIds = ['commercial', 'commercialCamera'];
                 selectIds.forEach(selectId => {
                     const select = document.getElementById(selectId);
                     if (select) {
@@ -510,10 +488,6 @@
                             monthlyPrice = product.monthly36;
                         } else if (months === 24 && product.monthly24 !== undefined) {
                             monthlyPrice = product.monthly24;
-                        }
-                    } else if (sectionId === 'fog-material') {
-                        if (product.monthly !== undefined) {
-                            monthlyPrice = product.monthly;
                         }
                     }
                     
@@ -1211,80 +1185,10 @@
                     document.getElementById('camera-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
                     document.getElementById('camera-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
                 }
-                
-                else if (this.currentTab === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    
-                    const materialDiscountType = document.getElementById('fog-material-discount-type')?.value || 'percent';
-                    const materialDiscountValue = parseFloat(document.getElementById('fog-material-discount-value')?.value) || 0;
-                    let materialTotalBeforeDiscount = 0;
-                    
-                    const materialContainer = document.getElementById('fog-material-products');
-                    if (materialContainer) {
-                        const productLines = materialContainer.querySelectorAll('.product-line');
-                        productLines.forEach(line => {
-                            const quantity = parseFloat(line.querySelector('.quantity-input')?.value) || 0;
-                            const priceInput = line.querySelector('.price-input');
-                            const select = line.querySelector('.product-select');
-                            const selectedOption = select?.querySelector(`option[value="${select?.value}"]`);
-                            const isOffered = line.querySelector('.offered-checkbox')?.checked || false;
-                            if (!isOffered) {
-                                let price = 0;
-                                if (priceInput && priceInput.style.display !== 'none') {
-                                    price = parseFloat(priceInput.value) || 0;
-                                } else if (selectedOption) {
-                                    price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                                }
-                                materialTotalBeforeDiscount += price * quantity;
-                            }
-                        });
-                    }
-                    
-                    const installationOffered = document.getElementById('fog-installation-offered')?.checked;
-                    const installationTotal = installationOffered ? 0 : FOG_INSTALL_PRICE;
-                    
-                    const totalHT = materialTotal + installationTotal;
-                    const totalTTC = this.roundToFiveCents(totalHT * (1 + TVA_RATE));
-                    
-                    let materialDisplay = `${materialTotal.toFixed(2)} CHF`;
-                    if (materialDiscountValue > 0) {
-                        let discountAmount = 0;
-                        if (materialDiscountType === 'percent') {
-                            discountAmount = materialTotalBeforeDiscount * (materialDiscountValue / 100);
-                        } else {
-                            discountAmount = Math.min(materialDiscountValue, materialTotalBeforeDiscount);
-                        }
-                        const discountText = materialDiscountType === 'percent' 
-                            ? `${materialDiscountValue}%` 
-                            : `${materialDiscountValue.toFixed(2)} CHF`;
-                        materialDisplay = `${materialTotalBeforeDiscount.toFixed(2)} CHF - Réduction ${discountText} = ${materialTotal.toFixed(2)} CHF`;
-                    }
-                    
-                    document.getElementById('fog-material-total').textContent = materialDisplay;
-                    document.getElementById('fog-installation-total').textContent = `${installationTotal.toFixed(2)} CHF`;
-                    document.getElementById('fog-installation-price').textContent = installationOffered ? 'OFFERT' : `${installationTotal.toFixed(2)} CHF`;
-                    
-                    const paymentMonths = this.globalPaymentMonths['fog'] || 0;
-                    
-                    if (paymentMonths > 0) {
-                        const mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', paymentMonths);
-                        const totalMensuelHT = mensualiteMatHT;
-                        const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * (1 + TVA_RATE));
-                        
-                        document.getElementById('fog-monthly-amount').textContent = totalMensuelTTC.toFixed(2);
-                        document.getElementById('fog-monthly-count').textContent = paymentMonths;
-                        document.getElementById('fog-monthly-payment').style.display = 'block';
-                    } else {
-                        document.getElementById('fog-monthly-payment').style.display = 'none';
-                    }
-                    
-                    document.getElementById('fog-total-ht').textContent = `${totalHT.toFixed(2)} CHF`;
-                    document.getElementById('fog-total-ttc').textContent = `${totalTTC.toFixed(2)} CHF`;
-                }
             }
 
             selectPayment(element, sectionId) {
-                const tabType = sectionId.startsWith('alarm') ? 'alarm' : (sectionId.startsWith('camera') ? 'camera' : 'fog');
+                const tabType = sectionId.startsWith('alarm') ? 'alarm' : 'camera';
                 if (this.rentalMode[tabType]) return;
                 
                 const parent = element.closest('.payment-options');
@@ -1569,8 +1473,6 @@ addProductToContainer(sectionId, productId, quantity, isOffered) {
                     }
                 } else if (this.currentTab === 'camera') {
                     quoteType = 'video';
-                } else if (this.currentTab === 'fog') {
-                    quoteType = null; // Fog doesn't have assembly yet
                 }
                 
                 const payload = {
@@ -1998,8 +1900,6 @@ throw error;
                         centralType = this.selectedCentral === 'jablotron' ? 'jablotron' : 'titane';
                     } else if (this.currentTab === 'camera') {
                         quoteType = 'video';
-                    } else if (this.currentTab === 'fog') {
-                        quoteType = null; // Fog doesn't have assembly yet
                     }
                     
                     // Collect products for assembly
@@ -2835,10 +2735,6 @@ throw error;
                     clientNameField = 'clientNameCamera';
                     commercialField = 'commercialCamera';
                     commercialCustomField = 'commercialCamera-custom';
-                } else if (type === 'fog') {
-                    clientNameField = 'clientNameFog';
-                    commercialField = 'commercialFog';
-                    commercialCustomField = 'commercialFog-custom';
                 }
                 
                 const clientName = document.getElementById(clientNameField)?.value || 'Client';
@@ -2882,8 +2778,6 @@ throw error;
                     } else {
                         if (type === 'camera') {
                             title = 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE';
-                        } else if (type === 'fog') {
-                            title = 'OFFRE DE PARTENARIAT GÉNÉRATEUR DE BROUILLARD';
                         } else {
                             title = 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
                         }
@@ -2936,13 +2830,6 @@ throw error;
                                 yPos += 15;
                             }
                         }
-                        // Toujours ajouter la section maintenance
-                        yPos = this.createMaintenancePDF(doc, yPos);
-                    } else if (type === 'fog') {
-                        if (this.hasSectionProducts('fog-material')) {
-                            yPos = this.createPDFSection(doc, 'MATERIEL', 'fog-material', yPos, isRental);
-                        }
-                        yPos = this.createFogInstallPDF(doc, yPos);
                         // Toujours ajouter la section maintenance
                         yPos = this.createMaintenancePDF(doc, yPos);
                     }
@@ -3576,81 +3463,6 @@ throw error;
                 return yPos + 15;
             }
 
-            createFogInstallPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                
-                const description = 'Installation, paramétrages, tests, mise en service & formation';
-                
-                const installTotal = installOffered ? 0 : FOG_INSTALL_PRICE;
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('1', 55, yPos + 9);
-                doc.text(description, 90, yPos + 9);
-                
-                if (installOffered) {
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('OFFERT', 405, yPos + 9);
-                    doc.text('OFFERT', 485, yPos + 9);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(FOG_INSTALL_PRICE.toFixed(2), 405, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                }
-                yPos += 14;
-                
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(7);
-                doc.setTextColor(100, 100, 100);
-                doc.text('* Installation uniquement au comptant (non mensualisée)', 90, yPos + 5);
-                yPos += 10;
-
-                const installTotalTTC = this.roundToFiveCents(installTotal * (1 + TVA_RATE));
-                const installTVA = installTotalTTC - installTotal;
-
-                doc.setFillColor(200, 200, 200);
-                doc.rect(390, yPos, 165, 42, 'F');
-                doc.rect(390, yPos, 165, 42);
-                doc.line(390, yPos + 14, 555, yPos + 14);
-                doc.line(390, yPos + 28, 555, yPos + 28);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Total H.T.', 400, yPos + 9);
-                doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                doc.text('TVA 8.1%', 400, yPos + 21);
-                doc.text(installTVA.toFixed(2), 485, yPos + 21);
-                doc.text('Total T.T.C.', 400, yPos + 35);
-                doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
-
-                return yPos + 55;
-            }
-
             // NOUVEAU: Fonction pour créer la section Maintenance dans le PDF
             createMaintenancePDF(doc, yPos) {
                 doc.setFont('helvetica', 'bold');
@@ -3760,22 +3572,6 @@ throw error;
                             surveillanceMonthlyHT = REMOTE_ACCESS_PRICE;
                         }
                     }
-                } else if (type === 'fog') {
-                    const materialTotal = this.calculateSectionTotal('fog-material');
-                    const installOffered = document.getElementById('fog-installation-offered')?.checked || false;
-                    
-                    const installTotal = installOffered ? 0 : FOG_INSTALL_PRICE;
-                    
-                    const paymentMonths = this.globalPaymentMonths['fog'] || 0;
-                    
-                    if (paymentMonths > 0) {
-                        totalMensualitesHT = materialTotal;
-                        monthsCount = paymentMonths;
-                        
-                        totalComptantHT = installTotal;
-                    } else {
-                        totalComptantHT = materialTotal + installTotal;
-                    }
                 }
 
                 if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
@@ -3797,9 +3593,6 @@ throw error;
                         
                         mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
                         mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-                    } else if (type === 'fog') {
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('fog-material', monthsCount);
-                        mensualiteInstallHT = 0;
                     }
                     
                     const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
@@ -4102,17 +3895,6 @@ throw error;
 
         function handleCommercialSelectionCamera(selectElement) {
             const customInput = document.getElementById('commercialCamera-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        function handleCommercialSelectionFog(selectElement) {
-            const customInput = document.getElementById('commercialFog-custom');
             if (selectElement.value === 'autre') {
                 customInput.style.display = 'block';
                 customInput.focus();
