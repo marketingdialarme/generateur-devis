@@ -300,3 +300,111 @@ export async function findAccessoriesPdf(): Promise<{
   }
 }
 
+/**
+ * Google Drive Service Class
+ * Provides a clean interface for all Drive operations
+ */
+class GoogleDriveService {
+  /**
+   * Upload a PDF to Google Drive
+   */
+  async uploadPDF(
+    fileBuffer: Buffer,
+    fileName: string,
+    folderId: string
+  ): Promise<{
+    id: string;
+    name: string;
+    webViewLink: string;
+    webContentLink: string;
+  }> {
+    return uploadFileToDrive(fileBuffer, fileName, 'application/pdf', folderId);
+  }
+  
+  /**
+   * Download a file from Google Drive by ID
+   */
+  async downloadFile(fileId: string): Promise<Buffer> {
+    return downloadFileFromDrive(fileId);
+  }
+  
+  /**
+   * Find and download a file by name in a folder
+   */
+  async findAndDownloadFile(folderId: string, fileName: string): Promise<Buffer | null> {
+    try {
+      const drive = getDriveClient();
+      
+      // Normalize search term
+      const normalizedSearch = fileName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      
+      // Search for files containing the file name
+      const searchResponse = await drive.files.list({
+        q: `'${folderId}' in parents and trashed=false and mimeType='application/pdf'`,
+        fields: 'files(id, name)',
+        spaces: 'drive',
+      });
+      
+      const files = searchResponse.data.files || [];
+      
+      // Find best match
+      for (const file of files) {
+        if (!file.name || !file.id) continue;
+        
+        const normalizedFileName = file.name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        
+        if (
+          normalizedFileName.includes(normalizedSearch) ||
+          normalizedSearch.includes(normalizedFileName.replace('.pdf', '').replace(' - compressed', ''))
+        ) {
+          // Download the file
+          return await this.downloadFile(file.id);
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error finding file ${fileName}:`, error);
+      return null;
+    }
+  }
+  
+  /**
+   * Get or create a commercial folder
+   */
+  async getOrCreateCommercialFolder(commercialName: string): Promise<string> {
+    return getOrCreateCommercialFolder(commercialName);
+  }
+  
+  /**
+   * Find product sheet
+   */
+  async findProductSheet(productName: string): Promise<{
+    fileId: string;
+    fileName: string;
+    buffer: Buffer;
+  } | null> {
+    return findProductSheet(productName);
+  }
+  
+  /**
+   * Find accessories PDF
+   */
+  async findAccessoriesPdf(): Promise<{
+    fileId: string;
+    fileName: string;
+    buffer: Buffer;
+  } | null> {
+    return findAccessoriesPdf();
+  }
+}
+
+// Export singleton instance
+export const googleDriveService = new GoogleDriveService();
+

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Dialarme Quote Generator",
-  description: "Professional PDF quote generator for Dialarme - Alarm systems, video surveillance, and security solutions",
-  keywords: ["Dialarme", "quote generator", "PDF", "alarm systems", "video surveillance"],
+  title: "Dialarme - Générateur de Devis",
+  description: "Générateur de devis professionnel pour Dialarme - Systèmes d'alarme, vidéosurveillance et solutions de sécurité",
+  keywords: ["Dialarme", "générateur de devis", "PDF", "systèmes d'alarme", "vidéosurveillance"],
 };
 
 export default function RootLayout({
@@ -17,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={inter.className}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

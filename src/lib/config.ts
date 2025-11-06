@@ -18,20 +18,31 @@ export interface CommercialInfo {
 }
 
 export interface AppConfig {
-  folders: {
-    devis: string;
-    techSheets: string;
+  google: {
+    drive: {
+      folders: {
+        devis: string;
+        techSheets: string;
+        productSheets: string;
+        titane: string;
+        jablotron: string;
+        video: string;
+      };
+      baseDocuments: {
+        alarmTitane: string;
+        alarmJablotron: string;
+        video: string;
+        accessories: string;
+      };
+    };
   };
-  templates: {
-    alarmeTitane: string;
-    alarmeJablotron: string;
-    video: string;
-  };
-  commercials: Record<string, CommercialInfo>;
   email: {
     from: string;
-    destination: string;
+    recipients: {
+      internal: string;
+    };
   };
+  commercials: Record<string, CommercialInfo>;
   app: {
     name: string;
     version: string;
@@ -43,40 +54,78 @@ export interface AppConfig {
  * Main configuration object
  * Values are loaded from environment variables
  */
-export const CONFIG: AppConfig = {
+export const config: AppConfig = {
   // ==========================================================================
-  // MAIN FOLDERS
+  // GOOGLE DRIVE CONFIGURATION
   // ==========================================================================
-  folders: {
-    /**
-     * Main "Devis" folder - Contains subfolders per commercial
-     */
-    devis: process.env.DRIVE_FOLDER_DEVIS || '',
-    
-    /**
-     * "Technical Sheets" folder - Contains all product PDFs (COMPRESSED)
-     */
-    techSheets: process.env.DRIVE_FOLDER_TECH_SHEETS || '',
+  google: {
+    drive: {
+      folders: {
+        /**
+         * Main "Devis" folder - Contains subfolders per commercial
+         */
+        devis: process.env.GOOGLE_DRIVE_FOLDER_DEVIS || '',
+        
+        /**
+         * "Technical Sheets" folder - Contains all product PDFs
+         */
+        techSheets: process.env.GOOGLE_DRIVE_FOLDER_TECH_SHEETS || '',
+        
+        /**
+         * "Product Sheets" folder - Contains product specification PDFs
+         */
+        productSheets: process.env.GOOGLE_DRIVE_FOLDER_PRODUCT_SHEETS || process.env.GOOGLE_DRIVE_FOLDER_TECH_SHEETS || '',
+        
+        /**
+         * Titane alarm quotes folder
+         */
+        titane: process.env.GOOGLE_DRIVE_FOLDER_TITANE || '',
+        
+        /**
+         * Jablotron alarm quotes folder
+         */
+        jablotron: process.env.GOOGLE_DRIVE_FOLDER_JABLOTRON || '',
+        
+        /**
+         * Video surveillance quotes folder
+         */
+        video: process.env.GOOGLE_DRIVE_FOLDER_VIDEO || '',
+      },
+      baseDocuments: {
+        /**
+         * Base template for Titane Alarm quotes
+         * File ID: 12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S
+         */
+        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S',
+        
+        /**
+         * Base template for Jablotron Alarm quotes
+         * File ID: 1enFlLv9q681uGBSwdRu43r8Co2nWytFf
+         */
+        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1enFlLv9q681uGBSwdRu43r8Co2nWytFf',
+        
+        /**
+         * Base template for Video surveillance quotes
+         * File ID: 15daREPnmbS1T76DLUpUxBLWahWIyq_cn
+         */
+        video: process.env.GOOGLE_DRIVE_FILE_VIDEO || '15daREPnmbS1T76DLUpUxBLWahWIyq_cn',
+        
+        /**
+         * Accessories sheet (ONDULEURS - COFFRET - SWITCH)
+         */
+        accessories: process.env.GOOGLE_DRIVE_FILE_ACCESSORIES || '',
+      },
+    },
   },
   
   // ==========================================================================
-  // BASE TEMPLATE FILES (PDF Templates)
+  // EMAIL CONFIGURATION
   // ==========================================================================
-  templates: {
-    /**
-     * Base template for Titane Alarm quotes (COMPRESSED)
-     */
-    alarmeTitane: process.env.DRIVE_FILE_ALARME_TITANE || '',
-    
-    /**
-     * Base template for Jablotron Alarm quotes (COMPRESSED)
-     */
-    alarmeJablotron: process.env.DRIVE_FILE_ALARME_JABLOTRON || '',
-    
-    /**
-     * Base template for Video surveillance quotes (COMPRESSED)
-     */
-    video: process.env.DRIVE_FILE_VIDEO || '',
+  email: {
+    from: process.env.EMAIL_FROM || 'devis@dialarme.fr',
+    recipients: {
+      internal: process.env.EMAIL_INTERNAL || 'devis.dialarme@gmail.com',
+    },
   },
   
   // ==========================================================================
@@ -86,98 +135,76 @@ export const CONFIG: AppConfig = {
     'Anabelle': {
       phone: '06 XX XX XX XX',
       email: 'anabelle@dialarme.fr',
-      folder: undefined, // Set in Drive if needed
     },
     'Test Commercial': {
       phone: '06 00 00 00 00',
       email: 'test@dialarme.fr',
-      folder: undefined,
     },
     'Arnaud Bloch': {
       phone: '06 XX XX XX XX',
       email: 'arnaud.bloch@dialarme.fr',
-      folder: undefined,
     },
     'Yann Mamet': {
       phone: '06 XX XX XX XX',
       email: 'yann.mamet@dialarme.fr',
-      folder: undefined,
     },
     'Maxime Legrand': {
       phone: '06 XX XX XX XX',
       email: 'maxime.legrand@dialarme.fr',
-      folder: undefined,
     },
     'Gérald Guenard': {
       phone: '06 XX XX XX XX',
       email: 'gerald.guenard@dialarme.fr',
-      folder: undefined,
     },
     'François Ribeiro': {
       phone: '06 XX XX XX XX',
       email: 'francois.ribeiro@dialarme.fr',
-      folder: undefined,
     },
     'Thomas Lefevre': {
       phone: '06 XX XX XX XX',
       email: 'thomas.lefevre@dialarme.fr',
-      folder: undefined,
     },
     'Nicolas Dub': {
       phone: '06 XX XX XX XX',
       email: 'nicolas.dub@dialarme.fr',
-      folder: undefined,
     },
     'Julien Auge': {
       phone: '06 XX XX XX XX',
       email: 'julien.auge@dialarme.fr',
-      folder: undefined,
     },
     'Guillaume Marmey': {
       phone: '06 XX XX XX XX',
       email: 'guillaume.marmey@dialarme.fr',
-      folder: undefined,
     },
     'Dylan Morel': {
       phone: '06 XX XX XX XX',
       email: 'dylan.morel@dialarme.fr',
-      folder: undefined,
     },
     'Baptiste Laude': {
       phone: '06 XX XX XX XX',
       email: 'baptiste.laude@dialarme.fr',
-      folder: undefined,
     },
     'Clement Faivre': {
       phone: '06 XX XX XX XX',
       email: 'clement.faivre@dialarme.fr',
-      folder: undefined,
     },
     'Alexis Delamare': {
       phone: '06 XX XX XX XX',
       email: 'alexis.delamare@dialarme.fr',
-      folder: undefined,
     },
     'Clement Sorel': {
       phone: '06 XX XX XX XX',
       email: 'clement.sorel@dialarme.fr',
-      folder: undefined,
     },
     'Laurent Rochard': {
       phone: '06 XX XX XX XX',
       email: 'laurent.rochard@dialarme.fr',
-      folder: undefined,
     },
   },
   
   // ==========================================================================
-  // GENERAL PARAMETERS
+  // APPLICATION PARAMETERS
   // ==========================================================================
-  email: {
-    from: process.env.EMAIL_FROM || 'devis@dialarme.fr',
-    destination: process.env.EMAIL_DESTINATION || 'devis.dialarme@gmail.com',
-  },
-  
   app: {
     name: 'Générateur Dialarme',
     version: '2.0',
@@ -193,21 +220,21 @@ export const CONFIG: AppConfig = {
  * Get commercial information by name
  */
 export function getCommercialInfo(commercialName: string): CommercialInfo | null {
-  return CONFIG.commercials[commercialName] || null;
+  return config.commercials[commercialName] || null;
 }
 
 /**
  * Check if commercial exists in configuration
  */
 export function commercialExists(commercialName: string): boolean {
-  return commercialName in CONFIG.commercials;
+  return commercialName in config.commercials;
 }
 
 /**
  * Get list of all commercials
  */
 export function getAllCommercials(): string[] {
-  return Object.keys(CONFIG.commercials);
+  return Object.keys(config.commercials);
 }
 
 /**
@@ -217,30 +244,39 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check folders
-  if (!CONFIG.folders.devis) {
-    errors.push('DRIVE_FOLDER_DEVIS is not configured');
+  if (!config.google.drive.folders.devis) {
+    errors.push('GOOGLE_DRIVE_FOLDER_DEVIS is not configured');
   }
-  if (!CONFIG.folders.techSheets) {
-    errors.push('DRIVE_FOLDER_TECH_SHEETS is not configured');
+  if (!config.google.drive.folders.techSheets) {
+    errors.push('GOOGLE_DRIVE_FOLDER_TECH_SHEETS is not configured');
+  }
+  if (!config.google.drive.folders.titane) {
+    errors.push('GOOGLE_DRIVE_FOLDER_TITANE is not configured');
+  }
+  if (!config.google.drive.folders.jablotron) {
+    errors.push('GOOGLE_DRIVE_FOLDER_JABLOTRON is not configured');
+  }
+  if (!config.google.drive.folders.video) {
+    errors.push('GOOGLE_DRIVE_FOLDER_VIDEO is not configured');
   }
   
-  // Check templates
-  if (!CONFIG.templates.alarmeTitane) {
-    errors.push('DRIVE_FILE_ALARME_TITANE is not configured');
+  // Check base documents
+  if (!config.google.drive.baseDocuments.alarmTitane) {
+    errors.push('GOOGLE_DRIVE_FILE_ALARME_TITANE is not configured');
   }
-  if (!CONFIG.templates.alarmeJablotron) {
-    errors.push('DRIVE_FILE_ALARME_JABLOTRON is not configured');
+  if (!config.google.drive.baseDocuments.alarmJablotron) {
+    errors.push('GOOGLE_DRIVE_FILE_ALARME_JABLOTRON is not configured');
   }
-  if (!CONFIG.templates.video) {
-    errors.push('DRIVE_FILE_VIDEO is not configured');
+  if (!config.google.drive.baseDocuments.video) {
+    errors.push('GOOGLE_DRIVE_FILE_VIDEO is not configured');
   }
   
   // Check email
-  if (!CONFIG.email.from) {
+  if (!config.email.from) {
     errors.push('EMAIL_FROM is not configured');
   }
-  if (!CONFIG.email.destination) {
-    errors.push('EMAIL_DESTINATION is not configured');
+  if (!config.email.recipients.internal) {
+    errors.push('EMAIL_INTERNAL is not configured');
   }
   
   return {
@@ -258,13 +294,13 @@ export function getTemplateFileId(
 ): string | null {
   if (quoteType === 'alarme') {
     if (centralType === 'jablotron') {
-      return CONFIG.templates.alarmeJablotron;
+      return config.google.drive.baseDocuments.alarmJablotron;
     }
-    return CONFIG.templates.alarmeTitane;
+    return config.google.drive.baseDocuments.alarmTitane;
   }
   
   if (quoteType === 'video') {
-    return CONFIG.templates.video;
+    return config.google.drive.baseDocuments.video;
   }
   
   return null;
@@ -291,3 +327,5 @@ export function getTemplateName(
   return 'Unknown';
 }
 
+// Export legacy CONFIG for backward compatibility
+export const CONFIG = config;
