@@ -5,7 +5,7 @@
  * This replaces the collectProductsForAssembly function from script.js
  */
 
-import { ProductLineData } from './quote-generator';
+import { ProductLineData } from '@/components/ProductLine';
 
 /**
  * Collect product names for backend assembly

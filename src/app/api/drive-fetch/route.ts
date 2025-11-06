@@ -30,7 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.log('✅ [API] Document fetched:', fileBuffer.length, 'bytes');
     
     // Return the PDF as ArrayBuffer
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(Buffer.from(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

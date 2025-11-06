@@ -292,7 +292,7 @@ function createProductSection(
   // Product lines
   let lineCount = 0;
   productLines.forEach(line => {
-    if (!line.productId) return;
+    if (!line.product) return;
 
     lineCount++;
 
@@ -302,7 +302,20 @@ function createProductSection(
       doc.rect(40, yPos, 515, 12, 'F');
     }
 
-    const lineTotal = line.price * line.quantity;
+    // Calculate price based on product type
+    const product = line.product;
+    let unitPrice = 0;
+    if (product.isCustom && line.customPrice !== undefined) {
+      unitPrice = line.customPrice;
+    } else if (product.price !== undefined) {
+      unitPrice = product.price;
+    } else if (product.priceTitane !== undefined) {
+      unitPrice = product.priceTitane;
+    } else if (product.priceJablotron !== undefined) {
+      unitPrice = product.priceJablotron;
+    }
+    
+    const lineTotal = unitPrice * line.quantity;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
@@ -313,16 +326,17 @@ function createProductSection(
 
     // Product name (truncate if too long)
     const maxNameLength = 45;
-    const displayName = line.productName.length > maxNameLength
-      ? line.productName.substring(0, maxNameLength - 3) + '...'
-      : line.productName;
+    const productName = product.isCustom && line.customName ? line.customName : product.name;
+    const displayName = productName.length > maxNameLength
+      ? productName.substring(0, maxNameLength - 3) + '...'
+      : productName;
     doc.text(displayName, 90, yPos + 8);
 
     // Unit price
-    doc.text(line.price.toFixed(2), 405, yPos + 8);
+    doc.text(unitPrice.toFixed(2), 405, yPos + 8);
 
     // Total or OFFERT
-    if (line.isOffered) {
+    if (line.offered) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 150, 0);
       doc.text('OFFERT', 485, yPos + 8);
@@ -735,11 +749,11 @@ function createFinalSummary(
     
     const serviceName = type === 'alarm' ? 'Surveillance' : 'Vision à distance';
     const serviceAmount = type === 'alarm' 
-      ? (totals as AlarmTotals).monthly.surveillanceHT 
-      : (totals as CameraTotals).monthly.remoteAccessHT;
+      ? (totals as AlarmTotals).monthly?.surveillanceHT || 0
+      : (totals as CameraTotals).monthly?.remoteAccessHT || 0;
     
     doc.text(
-      `Installation et matériel supp. = ${totals.monthly.installationHT.toFixed(2)} CHF HT   |   ${serviceName} = ${serviceAmount.toFixed(2)} CHF HT`,
+      `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
       50,
       yPos + 35
     );

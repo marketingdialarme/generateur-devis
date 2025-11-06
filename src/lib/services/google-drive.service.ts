@@ -84,7 +84,7 @@ export async function uploadFileToDrive(
 export async function getOrCreateCommercialFolder(commercialName: string): Promise<string> {
   try {
     const drive = getDriveClient();
-    const parentFolderId = CONFIG.folders.devis;
+    const parentFolderId = CONFIG.google.drive.folders.devis;
     
     if (!parentFolderId) {
       throw new Error('DEVIS folder ID not configured');
@@ -160,7 +160,7 @@ export async function findProductSheet(productName: string): Promise<{
 } | null> {
   try {
     const drive = getDriveClient();
-    const techSheetsFolderId = CONFIG.folders.techSheets;
+    const techSheetsFolderId = CONFIG.google.drive.folders.techSheets;
     
     if (!techSheetsFolderId) {
       throw new Error('TECH_SHEETS folder ID not configured');
@@ -251,7 +251,7 @@ export async function findAccessoriesPdf(): Promise<{
 } | null> {
   try {
     const drive = getDriveClient();
-    const techSheetsFolderId = CONFIG.folders.techSheets;
+    const techSheetsFolderId = CONFIG.google.drive.folders.techSheets;
     
     if (!techSheetsFolderId) {
       throw new Error('TECH_SHEETS folder ID not configured');

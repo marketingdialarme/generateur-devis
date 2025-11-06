@@ -12,9 +12,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { googleDriveService } from '@/lib/services/google-drive.service';
-import { emailService } from '@/lib/services/email.service';
-import { databaseService } from '@/lib/services/database.service';
+import { uploadFileToDrive } from '@/lib/services/google-drive.service';
+import { sendQuoteEmail } from '@/lib/services/email.service';
+import { logQuote } from '@/lib/services/database.service';
 import { config } from '@/lib/config';
 
 interface SendQuoteRequest {
@@ -123,9 +123,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
         throw new Error(`Invalid quote type: ${type}`);
       }
       
-      driveResult = await googleDriveService.uploadPDF(
+      driveResult = await uploadFileToDrive(
         pdfBuffer,
         filename,
+        'application/pdf',
         folderId
       );
       
@@ -150,15 +151,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     let emailSent = false;
     
     try {
-      await emailService.sendQuoteEmail({
-        to: config.email.recipients.internal,
+      await sendQuoteEmail({
         clientName,
         commercial,
-        quoteType: type,
-        centralType,
-        driveLink: driveResult.webViewLink,
-        pdfBuffer,
-        filename
+        fileName: filename,
+        pdfBuffer
       });
       
       emailSent = true;
@@ -174,15 +171,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     let logged = false;
     
     try {
-      await databaseService.logQuote({
-        clientName,
+      await logQuote({
+        client_name: clientName,
         commercial,
-        quoteType: type,
-        centralType,
+        quote_type: type,
+        central_type: centralType,
         products: produits || [],
-        driveFileId: driveResult.id,
-        driveLink: driveResult.webViewLink,
-        timestamp: new Date(timestamp)
+        products_count: (produits || []).length,
+        file_name: filename,
+        drive_url: driveResult.webViewLink,
+        email_sent: emailSent
       });
       
       logged = true;

@@ -59,9 +59,9 @@ export async function logQuote(quoteData: Omit<QuoteLog, 'id' | 'created_at'>): 
   try {
     const client = getSupabaseClient();
     
-    const { data, error } = await client
+    const { data, error } = await (client
       .from('quotes')
-      .insert([
+      .insert as any)([
         {
           client_name: quoteData.client_name,
           commercial: quoteData.commercial,
@@ -125,7 +125,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select('commercial')
       .gte('created_at', oneMonthAgo.toISOString());
     
-    const commercialsCount = (commercialsData || []).reduce((acc, item) => {
+    const commercialsCount = (commercialsData || []).reduce((acc, item: any) => {
       acc[item.commercial] = (acc[item.commercial] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -142,7 +142,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .gte('created_at', oneMonthAgo.toISOString());
     
     const productsCount: Record<string, number> = {};
-    (productsData || []).forEach((item) => {
+    (productsData || []).forEach((item: any) => {
       if (Array.isArray(item.products)) {
         item.products.forEach((product: string) => {
           productsCount[product] = (productsCount[product] || 0) + 1;
@@ -161,7 +161,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select('quote_type')
       .gte('created_at', oneMonthAgo.toISOString());
     
-    const typeCount = (typeData || []).reduce((acc, item) => {
+    const typeCount = (typeData || []).reduce((acc, item: any) => {
       acc[item.quote_type] = (acc[item.quote_type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);

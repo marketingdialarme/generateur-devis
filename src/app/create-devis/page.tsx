@@ -23,7 +23,14 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE } from '@/lib/quote-generator';
+import { ProductLineData } from '@/components/ProductLine';
+import { ProductSection } from '@/components/ProductSection';
+import { CommercialSelector } from '@/components/CommercialSelector';
+import { ServicesSection } from '@/components/ServicesSection';
+import { OptionsSection } from '@/components/OptionsSection';
+import { PaymentSelector } from '@/components/PaymentSelector';
+import { detectCentralType, calculateCameraInstallation, toCalcFormat } from '@/lib/product-line-adapter';
 
 // Commercial list
 const COMMERCIALS_LIST = [
@@ -55,15 +62,15 @@ export default function CreateDevisPage() {
   const [customCommercial, setCustomCommercial] = useState('');
   const [showCustomCommercial, setShowCustomCommercial] = useState(false);
   
-  // Product lines state (simplified for now - will integrate ProductSection components)
-  const [alarmMaterialLines, setAlarmMaterialLines] = useState<any[]>([]);
-  const [alarmInstallationLines, setAlarmInstallationLines] = useState<any[]>([]);
-  const [cameraMaterialLines, setCameraMaterialLines] = useState<any[]>([]);
+  // Product lines state - now using ProductLineData type
+  const [alarmMaterialLines, setAlarmMaterialLines] = useState<ProductLineData[]>([]);
+  const [alarmInstallationLines, setAlarmInstallationLines] = useState<ProductLineData[]>([]);
+  const [cameraMaterialLines, setCameraMaterialLines] = useState<ProductLineData[]>([]);
   
   // Discounts state
-  const [alarmMaterialDiscount, setAlarmMaterialDiscount] = useState({ type: 'percent' as const, value: 0 });
-  const [alarmInstallationDiscount, setAlarmInstallationDiscount] = useState({ type: 'percent' as const, value: 0 });
-  const [cameraMaterialDiscount, setCameraMaterialDiscount] = useState({ type: 'percent' as const, value: 0 });
+  const [alarmMaterialDiscount, setAlarmMaterialDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
+  const [alarmInstallationDiscount, setAlarmInstallationDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
+  const [cameraMaterialDiscount, setCameraMaterialDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   
   // Installation state
   const [alarmInstallationQty, setAlarmInstallationQty] = useState(1);
@@ -71,12 +78,18 @@ export default function CreateDevisPage() {
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
   
+  // Auto-calculate camera installation price: 690 + (cameras × 140)
+  const cameraInstallationPrice = useMemo(() => {
+    return calculateCameraInstallation(cameraMaterialLines);
+  }, [cameraMaterialLines]);
+  
   // Admin fees state
   const [simcardOffered, setSimcardOffered] = useState(false);
   const [processingOffered, setProcessingOffered] = useState(false);
   
   // Services state
   const [testCycliqueSelected, setTestCycliqueSelected] = useState(true);
+  const [testCycliquePrice, setTestCycliquePrice] = useState(0);
   const [testCycliqueOffered, setTestCycliqueOffered] = useState(true);
   const [surveillanceType, setSurveillanceType] = useState('');
   const [surveillancePrice, setSurveillancePrice] = useState(0);
@@ -104,12 +117,14 @@ export default function CreateDevisPage() {
   
   // Kit modal state
   const [showKitModal, setShowKitModal] = useState(false);
-  const [selectedCentral, setSelectedCentral] = useState<'titane' | 'jablotron' | null>(null);
+  
+  // Auto-detect selected central from product lines
+  const selectedCentral = useMemo(() => {
+    return detectCentralType(alarmMaterialLines);
+  }, [alarmMaterialLines]);
   
   // Apply kit function
   const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2') => {
-    setSelectedCentral(centralType);
-    
     const centralProduct = CATALOG_ALARM_PRODUCTS.find(p => 
       centralType === 'jablotron' ? p.id === 5 : p.id === 6
     );
@@ -130,7 +145,7 @@ export default function CreateDevisPage() {
     
     const kitProducts = kitType === 'kit1' ? kit1Products : kit2Products;
     
-    const newLines: MaterialLine[] = [];
+    const newLines: ProductLineData[] = [];
     
     // Add central
     if (centralProduct) {
@@ -169,35 +184,39 @@ export default function CreateDevisPage() {
         alarmInstallationDiscount,
         {
           quantity: alarmInstallationQty,
-          offered: alarmInstallationOffered,
-          basePrice: 690
+          isOffered: alarmInstallationOffered,
+          price: 690
         },
         {
-          simcard: { offered: simcardOffered },
-          processing: { offered: processingOffered }
+          simCardOffered: simcardOffered,
+          processingOffered: processingOffered
         },
         {
-          testCyclique: { selected: testCycliqueSelected, offered: testCycliqueOffered, price: 0 },
-          surveillance: { type: surveillanceType, price: surveillancePrice, offered: surveillanceOffered }
+          testCyclique: { 
+            selected: testCycliqueSelected, 
+            offered: testCycliqueOffered, 
+            price: testCycliquePrice 
+          },
+          surveillance: { 
+            type: surveillanceType, 
+            price: surveillancePrice, 
+            offered: surveillanceOffered 
+          }
         },
         alarmPaymentMonths,
         alarmRentalMode,
-        null, // selectedCentral - will be detected from products
+        selectedCentral,
         CATALOG_ALARM_PRODUCTS
       );
     } catch (error) {
       console.error('Error calculating alarm totals:', error);
       return {
-        materialHT: 0,
-        materialTTC: 0,
-        installationHT: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty,
-        installationTTC: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty * 1.081,
-        adminFeesHT: 0,
-        adminFeesTTC: 0,
-        servicesMonthly: 0,
+        material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
+        installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
+        adminFees: { simCard: 0, processing: 0, total: 0 },
+        services: { testCyclique: 0, surveillance: 0 },
         totalHT: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty,
-        totalTTC: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty * 1.081,
-        monthlyPayment: 0
+        totalTTC: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty * 1.081
       };
     }
   }, [
@@ -210,12 +229,14 @@ export default function CreateDevisPage() {
     simcardOffered,
     processingOffered,
     testCycliqueSelected,
+    testCycliquePrice,
     testCycliqueOffered,
     surveillanceType,
     surveillancePrice,
     surveillanceOffered,
     alarmPaymentMonths,
-    alarmRentalMode
+    alarmRentalMode,
+    selectedCentral
   ]);
   
   // Calculate camera totals with default values
@@ -226,8 +247,8 @@ export default function CreateDevisPage() {
         cameraMaterialDiscount,
         {
           quantity: cameraInstallationQty,
-          offered: cameraInstallationOffered,
-          basePrice: 690
+          isOffered: cameraInstallationOffered,
+          price: cameraInstallationPrice
         },
         cameraRemoteAccess,
         cameraPaymentMonths,
@@ -237,14 +258,11 @@ export default function CreateDevisPage() {
     } catch (error) {
       console.error('Error calculating camera totals:', error);
       return {
-        materialHT: 0,
-        materialTTC: 0,
-        installationHT: cameraInstallationOffered ? 0 : 690 * cameraInstallationQty,
-        installationTTC: cameraInstallationOffered ? 0 : 690 * cameraInstallationQty * 1.081,
-        remoteAccessMonthly: cameraRemoteAccess ? 20 : 0,
-        totalHT: cameraInstallationOffered ? 0 : 690 * cameraInstallationQty,
-        totalTTC: cameraInstallationOffered ? 0 : 690 * cameraInstallationQty * 1.081,
-        monthlyPayment: 0
+        material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
+        installation: { total: 0, isOffered: false },
+        remoteAccess: { enabled: false, price: 0 },
+        totalHT: cameraInstallationOffered ? 0 : cameraInstallationPrice * cameraInstallationQty,
+        totalTTC: cameraInstallationOffered ? 0 : cameraInstallationPrice * cameraInstallationQty * 1.081
       };
     }
   }, [
@@ -252,12 +270,13 @@ export default function CreateDevisPage() {
     cameraMaterialDiscount,
     cameraInstallationQty,
     cameraInstallationOffered,
+    cameraInstallationPrice,
     cameraRemoteAccess,
     cameraPaymentMonths,
     cameraRentalMode
   ]);
   
-  const { generatePdf, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
+  const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
   const { assemblePdf, isAssembling, progress: assemblyProgress, error: assemblyError } = usePdfAssembly();
   const { sendQuote, isSending, progress: sendProgress, error: sendError } = useQuoteSender();
   
@@ -324,48 +343,30 @@ export default function CreateDevisPage() {
       console.log('🔄 Step 1: Generating PDF...');
       const totals = currentTab === 'alarm' ? alarmTotals : cameraTotals;
       
-      const generatedPdf = await generatePdf({
-        clientInfo: {
-          name: finalClientName,
-          // Add more client info as needed
-        },
-        commercial: {
-          name: finalCommercial,
-          phone: commercialInfo.phone,
-          email: commercialInfo.email
-        },
-        productLines: {
-          material: currentTab === 'alarm' ? alarmMaterialLines : cameraMaterialLines,
-          installation: currentTab === 'alarm' ? alarmInstallationLines : [],
-        },
-        totals: {
-          materialHT: totals.materialHT,
-          materialTTC: totals.materialTTC,
-          installationHT: totals.installationHT,
-          installationTTC: totals.installationTTC,
-          totalHT: totals.totalHT,
-          totalTTC: totals.totalTTC,
-          monthlyPayment: totals.monthlyPayment,
-          paymentMonths: currentTab === 'alarm' ? alarmPaymentMonths : cameraPaymentMonths
-        },
-        quoteType: currentTab,
-        rentalMode: currentTab === 'alarm' ? alarmRentalMode : cameraRentalMode,
-        centralType: null // Will be detected from products
+      const generatedPdf = await generatePDF({
+        type: currentTab === 'alarm' ? 'alarm' : 'camera',
+        clientName: finalClientName,
+        commercial: finalCommercial,
+        isRental: currentTab === 'alarm' ? alarmRentalMode : cameraRentalMode,
+        materialLines: currentTab === 'alarm' ? alarmMaterialLines : cameraMaterialLines,
+        installationLines: currentTab === 'alarm' ? alarmInstallationLines : [],
+        totals: totals as any,
+        paymentMonths: currentTab === 'alarm' ? alarmPaymentMonths : cameraPaymentMonths
       });
       
       // Step 2: Collect products for assembly
       console.log('🔄 Step 2: Collecting products...');
       const allProductLines = currentTab === 'alarm' 
         ? { material: alarmMaterialLines, installation: alarmInstallationLines }
-        : { material: cameraMaterialLines };
+        : { material: cameraMaterialLines, installation: [] };
       const products = collectAllProducts(allProductLines);
       
       // Step 3: Assemble PDF (add base docs, product sheets, overlay)
       console.log('🔄 Step 3: Assembling PDF...');
       const assembled = await assemblePdf({
-        pdfBlob: generatedPdf,
-        quoteType: currentTab,
-        centralType: null, // Will be detected from products
+        pdfBlob: generatedPdf.blob,
+        quoteType: currentTab === 'alarm' ? 'alarme' : 'video',
+        centralType: selectedCentral || null,
         products,
         commercial: {
           name: finalCommercial,
@@ -383,8 +384,8 @@ export default function CreateDevisPage() {
         filename,
         commercial: finalCommercial,
         clientName: finalClientName,
-        type: currentTab,
-        centralType: null, // Will be detected from products
+        type: currentTab === 'alarm' ? 'alarme' : 'video',
+        centralType: selectedCentral || undefined,
         products,
         assemblyInfo: assembled.info
       });
@@ -623,10 +624,10 @@ export default function CreateDevisPage() {
             <label>Réduction:</label>
             <select 
               value={alarmMaterialDiscount.type}
-              onChange={(e) => setAlarmMaterialDiscount({ ...alarmMaterialDiscount, type: e.target.value as 'percent' | 'amount' })}
+              onChange={(e) => setAlarmMaterialDiscount({ ...alarmMaterialDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
-              <option value="amount">CHF</option>
+              <option value="fixed">CHF</option>
             </select>
             <input 
               type="number" 
@@ -711,31 +712,115 @@ export default function CreateDevisPage() {
             </div>
             <div className="price-display">{processingOffered ? 'OFFERT' : '190.00 CHF HT'}</div>
           </div>
+          <p style={{ fontSize: '12px', color: '#6c757d', marginTop: '10px' }}>
+            * Les frais de dossier se payent à l&apos;installation
+          </p>
         </div>
+
+        {/* Services Section */}
+        <ServicesSection
+          testCycliqueSelected={testCycliqueSelected}
+          testCycliquePrice={testCycliquePrice}
+          testCycliqueOffered={testCycliqueOffered}
+          onTestCycliqueSelectedChange={setTestCycliqueSelected}
+          onTestCycliquePriceChange={setTestCycliquePrice}
+          onTestCycliqueOfferedChange={setTestCycliqueOffered}
+          surveillanceType={surveillanceType}
+          surveillancePrice={surveillancePrice}
+          surveillanceOffered={surveillanceOffered}
+          onSurveillanceTypeChange={setSurveillanceType}
+          onSurveillancePriceChange={setSurveillancePrice}
+          onSurveillanceOfferedChange={setSurveillanceOffered}
+          centralType={selectedCentral}
+          rentalMode={alarmRentalMode}
+        />
+
+        {/* Options Section */}
+        <OptionsSection
+          interventionsGratuites={interventionsGratuites}
+          interventionsAnnee={interventionsAnnee}
+          interventionsQty={interventionsQty}
+          serviceCles={serviceCles}
+          onInterventionsGratuitesChange={setInterventionsGratuites}
+          onInterventionsAnneeChange={setInterventionsAnnee}
+          onInterventionsQtyChange={setInterventionsQty}
+          onServiceClesChange={setServiceCles}
+        />
+
+        {/* Payment Mode */}
+        {!alarmRentalMode && (
+          <PaymentSelector
+            selectedMonths={alarmPaymentMonths}
+            onSelect={setAlarmPaymentMonths}
+            label="6. Mode de paiement"
+          />
+        )}
+
+        {/* Uninstall Line (Rental Mode Only) */}
+        {alarmRentalMode && (
+          <div className="quote-section">
+            <h3>💰 Désinstallation</h3>
+            <div className="product-line" style={{ background: '#fff3cd' }}>
+              <div>Désinstallation facturée si durée inférieure à 12 mois</div>
+              <input type="number" defaultValue="1" className="quantity-input" readOnly />
+              <div></div>
+              <div></div>
+              <div className="price-display">{UNINSTALL_PRICE.toFixed(2)} CHF</div>
+            </div>
+          </div>
+        )}
 
         {/* Summary */}
         <div className="quote-summary">
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{(alarmTotals?.materialTTC || 0).toFixed(2)} CHF</span>
+            <span>{((alarmTotals?.material?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Installation</span>
-            <span>{(alarmTotals?.installationTTC || 0).toFixed(2)} CHF</span>
+            <span>{((alarmTotals?.installation?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
-            <span>TOTAL HT</span>
+            <span>Frais de dossier</span>
+            <span>{((alarmTotals?.adminFees?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+          </div>
+          {surveillanceType && (
+            <div className="summary-item">
+              <span>Service de surveillance</span>
+              <span>{surveillanceOffered ? 'OFFERT' : `${surveillancePrice.toFixed(2)} CHF/mois`}</span>
+            </div>
+          )}
+          <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+            <span>TOTAL HT (hors surveillance)</span>
             <span>{(alarmTotals?.totalHT || 0).toFixed(2)} CHF</span>
           </div>
-          <div className="summary-item">
-            <span>TOTAL TTC</span>
+          <div className="summary-item" style={{ fontWeight: 600, fontSize: '18px' }}>
+            <span>TOTAL TTC (hors surveillance)</span>
             <span>{(alarmTotals?.totalTTC || 0).toFixed(2)} CHF</span>
           </div>
-          {alarmPaymentMonths > 0 && alarmTotals?.monthlyPayment && (
-            <div className="monthly-payment">
-              <strong>
-                Mensualités: {(alarmTotals.monthlyPayment || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
+          {!alarmRentalMode && alarmPaymentMonths > 0 && alarmTotals?.monthly && (
+            <div className="monthly-payment" style={{ 
+              background: '#f4e600', 
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginTop: '15px' 
+            }}>
+              <strong style={{ fontSize: '16px' }}>
+                💳 Mensualités: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
+              </strong>
+            </div>
+          )}
+          {!alarmRentalMode && alarmPaymentMonths === 0 && alarmTotals?.cash && (
+            <div className="monthly-payment" style={{ 
+              background: '#28a745', 
+              color: 'white',
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginTop: '15px' 
+            }}>
+              <strong style={{ fontSize: '16px' }}>
+                💰 Montant comptant: {(alarmTotals.cash.totalTTC || 0).toFixed(2)} CHF
               </strong>
             </div>
           )}
@@ -823,11 +908,10 @@ export default function CreateDevisPage() {
               className="add-product-btn" 
               onClick={() => {
                 setCameraMaterialLines([...cameraMaterialLines, {
-                  id: Date.now().toString(),
+                  id: Date.now(),
                   product: null,
                   quantity: 1,
-                  offered: false,
-                  customProduct: null
+                  offered: false
                 }]);
               }}
               title="Ajouter un produit"
@@ -899,10 +983,10 @@ export default function CreateDevisPage() {
             <label>Réduction:</label>
             <select 
               value={cameraMaterialDiscount.type}
-              onChange={(e) => setCameraMaterialDiscount({ ...cameraMaterialDiscount, type: e.target.value as 'percent' | 'amount' })}
+              onChange={(e) => setCameraMaterialDiscount({ ...cameraMaterialDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
-              <option value="amount">CHF</option>
+              <option value="fixed">CHF</option>
             </select>
             <input 
               type="number" 
@@ -915,25 +999,141 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
+        {/* Installation Section */}
+        <div className="quote-section">
+          <h3>🔧 2. Installation</h3>
+          <div className="product-line" style={{ background: '#f0f8ff' }}>
+            <div>Installation (690 + {cameraMaterialLines.filter(l => l.product && !l.offered).reduce((s, l) => s + l.quantity, 0)} caméras × 140)</div>
+            <div>
+              <label style={{ marginRight: '5px', fontSize: '12px' }}>Nombre:</label>
+              <input 
+                type="number" 
+                value={cameraInstallationQty}
+                onChange={(e) => setCameraInstallationQty(parseInt(e.target.value) || 1)}
+                min="1" 
+                max="10" 
+                className="quantity-input" 
+              />
+            </div>
+            <input 
+              type="number" 
+              value={cameraInstallationPrice}
+              className="discount-input" 
+              placeholder="Prix" 
+              readOnly 
+              style={{ background: '#f0f0f0' }}
+            />
+            <div className="checkbox-option" style={{ margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={cameraInstallationOffered}
+                onChange={(e) => setCameraInstallationOffered(e.target.checked)}
+                className="offered-checkbox" 
+              />
+              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+            </div>
+            <div className="price-display">
+              {cameraInstallationOffered ? 'OFFERT' : `${(cameraInstallationPrice * cameraInstallationQty).toFixed(2)} CHF`}
+            </div>
+          </div>
+        </div>
+
+        {/* Vision à distance (only in sale mode) */}
+        {!cameraRentalMode && (
+          <div className="quote-section">
+            <h3>📡 3. Vision à distance</h3>
+            <div className="product-line">
+              <div>Accès à distance via application mobile</div>
+              <div></div>
+              <div></div>
+              <div className="checkbox-option" style={{ margin: 0 }}>
+                <input 
+                  type="checkbox" 
+                  checked={cameraRemoteAccess}
+                  onChange={(e) => setCameraRemoteAccess(e.target.checked)}
+                />
+                <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Activer</label>
+              </div>
+              <div className="price-display">
+                {cameraRemoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Mode */}
+        {!cameraRentalMode && (
+          <PaymentSelector
+            selectedMonths={cameraPaymentMonths}
+            onSelect={setCameraPaymentMonths}
+            label="4. Mode de paiement"
+          />
+        )}
+
+        {/* Uninstall Line (Rental Mode Only) */}
+        {cameraRentalMode && (
+          <div className="quote-section">
+            <h3>💰 Désinstallation</h3>
+            <div className="product-line" style={{ background: '#fff3cd' }}>
+              <div>Désinstallation facturée si durée inférieure à 12 mois</div>
+              <input type="number" defaultValue="1" className="quantity-input" readOnly />
+              <div></div>
+              <div></div>
+              <div className="price-display">{UNINSTALL_PRICE.toFixed(2)} CHF</div>
+            </div>
+          </div>
+        )}
+
         {/* Summary */}
         <div className="quote-summary">
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{(cameraTotals?.materialTTC || 0).toFixed(2)} CHF</span>
+            <span>{((cameraTotals?.material?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Installation</span>
-            <span>{(cameraTotals?.installationTTC || 0).toFixed(2)} CHF</span>
+            <span>{((cameraTotals?.installation?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
           </div>
-          <div className="summary-item">
+          {cameraRemoteAccess && !cameraRentalMode && (
+            <div className="summary-item">
+              <span>Vision à distance</span>
+              <span>20.00 CHF/mois</span>
+            </div>
+          )}
+          <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{(cameraTotals?.totalHT || 0).toFixed(2)} CHF</span>
           </div>
-          <div className="summary-item">
+          <div className="summary-item" style={{ fontWeight: 600, fontSize: '18px' }}>
             <span>TOTAL TTC</span>
             <span>{(cameraTotals?.totalTTC || 0).toFixed(2)} CHF</span>
           </div>
+          {!cameraRentalMode && cameraPaymentMonths > 0 && cameraTotals?.monthly && (
+            <div className="monthly-payment" style={{ 
+              background: '#f4e600', 
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginTop: '15px' 
+            }}>
+              <strong style={{ fontSize: '16px' }}>
+                💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
+              </strong>
+            </div>
+          )}
+          {!cameraRentalMode && cameraPaymentMonths === 0 && (
+            <div className="monthly-payment" style={{ 
+              background: '#28a745', 
+              color: 'white',
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginTop: '15px' 
+            }}>
+              <strong style={{ fontSize: '16px' }}>
+                💰 Montant comptant: {(cameraTotals?.totalTTC || 0).toFixed(2)} CHF
+              </strong>
+            </div>
+          )}
         </div>
 
         <div className="action-buttons">
@@ -1185,3 +1385,4 @@ export default function CreateDevisPage() {
     </div>
   );
 }
+

@@ -166,7 +166,7 @@ async function assembleAlarmPdf(
     
     // 9. Generate final PDF
     const mergedPdfBytes = await pdfDoc.save();
-    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+    const mergedPdfBlob = new Blob([Buffer.from(mergedPdfBytes)], { type: 'application/pdf' });
     
     const totalPages = pdfDoc.getPageCount();
     const baseDossierName = centralType === 'jablotron'
@@ -285,7 +285,7 @@ async function assembleVideoPdf(
     
     // 10. Generate final PDF
     const mergedPdfBytes = await pdfDoc.save();
-    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+    const mergedPdfBlob = new Blob([Buffer.from(mergedPdfBytes)], { type: 'application/pdf' });
     
     const totalPages = pdfDoc.getPageCount();
     

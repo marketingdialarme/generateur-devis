@@ -1,141 +1,111 @@
-'use client';
-
 /**
- * ============================================================================
- * PRODUCT SECTION COMPONENT
- * ============================================================================
+ * ProductSection Component
  * 
- * Manages a collection of product lines for a specific section
- * (e.g., alarm-material, camera-material, etc.)
+ * Manages a section of products with add/remove functionality
+ * Replaces DOM-based product management from script.js
  */
 
-import { useState, useCallback, useMemo } from 'react';
-import { ProductLine, type ProductLineData } from './ProductLine';
-import { 
-  CATALOG_ALARM_PRODUCTS, 
-  CATALOG_CAMERA_MATERIAL,
-  getFilteredProducts,
-  type AlarmProduct,
-  type CameraProduct
-} from '@/lib/quote-generator';
+import { ProductLine, Product, ProductLineData } from './ProductLine';
 
 interface ProductSectionProps {
-  sectionId: string;
-  selectedCentral?: string | null;
-  onTotalsChange?: () => void;
-  onCentralChange?: () => void;
-  onCameraInstallUpdate?: () => void;
+  title: string;
+  lines: ProductLineData[];
+  productCatalog: Product[];
+  centralType: 'titane' | 'jablotron' | null;
+  onLinesChange: (lines: ProductLineData[]) => void;
+  showAddButton?: boolean;
+  emoji?: string;
 }
 
 export function ProductSection({
-  sectionId,
-  selectedCentral,
-  onTotalsChange,
-  onCentralChange,
-  onCameraInstallUpdate
+  title,
+  lines,
+  productCatalog,
+  centralType,
+  onLinesChange,
+  showAddButton = true,
+  emoji = '🛡️'
 }: ProductSectionProps) {
-  const [productLines, setProductLines] = useState<Map<string, ProductLineData>>(new Map());
+  
+  const addProductLine = () => {
+    const newLine: ProductLineData = {
+      id: Date.now(),
+      product: null,
+      quantity: 1,
+      offered: false
+    };
+    onLinesChange([...lines, newLine]);
+  };
 
-  // Get available products based on section
-  const availableProducts = useMemo(() => {
-    if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
-      const isInstallationSection = sectionId === 'alarm-installation';
-      return getFilteredProducts(
-        CATALOG_ALARM_PRODUCTS,
-        selectedCentral || null,
-        isInstallationSection
-      );
-    } else if (sectionId === 'camera-material') {
-      return CATALOG_CAMERA_MATERIAL;
-    }
-    return [];
-  }, [sectionId, selectedCentral]);
+  const updateLine = (id: number, updates: Partial<ProductLineData>) => {
+    const updatedLines = lines.map(line =>
+      line.id === id ? { ...line, ...updates } : line
+    );
+    onLinesChange(updatedLines);
+  };
 
-  // Add new product line
-  const addProductLine = useCallback(() => {
-    const lineId = `line-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    setProductLines(prev => {
-      const newMap = new Map(prev);
-      newMap.set(lineId, {
-        id: lineId,
-        productId: null,
-        productName: '',
-        quantity: 1,
-        price: 0,
-        isOffered: false,
-        isCustom: false
-      });
-      return newMap;
-    });
-  }, []);
-
-  // Update product line
-  const updateProductLine = useCallback((lineId: string, data: ProductLineData) => {
-    setProductLines(prev => {
-      const newMap = new Map(prev);
-      newMap.set(lineId, data);
-      return newMap;
-    });
-    onTotalsChange?.();
-  }, [onTotalsChange]);
-
-  // Remove product line
-  const removeProductLine = useCallback((lineId: string) => {
-    setProductLines(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(lineId);
-      return newMap;
-    });
-    onTotalsChange?.();
-  }, [onTotalsChange]);
-
-  // Expose product lines data for parent components
-  const getProductLinesData = useCallback(() => {
-    return Array.from(productLines.values());
-  }, [productLines]);
-
-  // Make getProductLinesData available globally for calculations
-  // This is a temporary bridge until we fully migrate calculations
-  if (typeof window !== 'undefined') {
-    (window as any)[`get${sectionId}ProductLines`] = getProductLinesData;
-  }
+  const removeLine = (id: number) => {
+    const updatedLines = lines.filter(line => line.id !== id);
+    onLinesChange(updatedLines);
+  };
 
   return (
     <div className="quote-section">
-      <div id={`${sectionId}-products`} className="products-container">
-        {Array.from(productLines.entries()).map(([lineId, data]) => (
-          <ProductLine
-            key={lineId}
-            lineId={lineId}
-            sectionId={sectionId}
-            availableProducts={availableProducts}
-            selectedCentral={selectedCentral}
-            onUpdate={updateProductLine}
-            onRemove={removeProductLine}
-            onCentralChange={onCentralChange}
-            onCameraInstallUpdate={onCameraInstallUpdate}
-          />
-        ))}
-      </div>
+      <h3>
+        {emoji} {title}
+        {showAddButton && (
+          <button
+            className="add-product-btn"
+            onClick={addProductLine}
+            title="Ajouter un produit"
+            style={{
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              fontSize: '20px',
+              cursor: 'pointer',
+              marginLeft: '10px',
+              transition: 'all 0.2s',
+              lineHeight: '1'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#218838'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#28a745'}
+          >
+            +
+          </button>
+        )}
+      </h3>
 
-      {/* Add Product Button */}
-      <button
-        type="button"
-        className="add-product-btn"
-        onClick={addProductLine}
-        style={{
-          marginTop: '10px',
-          padding: '8px 16px',
-          background: '#f4e600',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        + Ajouter un produit
-      </button>
+      {/* Product Lines */}
+      {lines.length === 0 ? (
+        <div style={{ 
+          padding: '20px', 
+          textAlign: 'center', 
+          color: '#6c757d',
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          fontSize: '14px'
+        }}>
+          Aucun produit ajouté. Cliquez sur "+" pour commencer.
+        </div>
+      ) : (
+        <div id="product-lines-container">
+          {lines.map((line) => (
+            <ProductLine
+              key={line.id}
+              line={line}
+              productCatalog={productCatalog}
+              centralType={centralType}
+              onUpdate={updateLine}
+              onRemove={removeLine}
+              showRemoveButton={lines.length > 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
