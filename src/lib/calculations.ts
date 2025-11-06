@@ -127,8 +127,17 @@ export function calculateSectionTotal(
   let subtotal = 0;
   
   productLines.forEach(line => {
-    if (line.isOffered || !line.productId) return;
-    const lineTotal = line.price * line.quantity;
+    if (line.offered || !line.product) return;
+    
+    // Calculate price based on product
+    let price = 0;
+    if (line.product.isCustom && line.customPrice !== undefined) {
+      price = line.customPrice;
+    } else if (line.product.price !== undefined) {
+      price = line.product.price;
+    }
+    
+    const lineTotal = price * line.quantity;
     subtotal += lineTotal;
   });
 
@@ -173,33 +182,42 @@ export function calculateSectionMonthlyPrice(
   let monthlyTotal = 0;
 
   productLines.forEach(line => {
-    if (line.isOffered || !line.productId || line.quantity === 0) return;
+    if (line.offered || !line.product || line.quantity === 0) return;
 
-    // Custom product
-    if (line.isCustom) {
-      const monthlyPrice = line.price / months;
+    const product = line.product;
+    
+    // Get price for this line
+    let price = 0;
+    if (product.isCustom && line.customPrice !== undefined) {
+      price = line.customPrice;
+    } else if (product.price !== undefined) {
+      price = product.price;
+    } else if (selectedCentral === 'titane' && product.priceTitane !== undefined) {
+      price = product.priceTitane;
+    } else if (selectedCentral === 'jablotron' && product.priceJablotron !== undefined) {
+      price = product.priceJablotron;
+    }
+
+    // Custom product - calculate monthly from price
+    if (product.isCustom) {
+      const monthlyPrice = price / months;
       monthlyTotal += roundToFiveCents(monthlyPrice) * line.quantity;
       return;
     }
-
-    // Find product in catalog
-    const product = catalog.find(p => p.id === line.productId);
-    if (!product) return;
 
     let monthlyPrice = 0;
 
     // Alarm products
     if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
-      const alarmProduct = product as AlarmProduct;
-      if (selectedCentral === 'titane' && alarmProduct.monthlyTitane !== undefined) {
-        monthlyPrice = alarmProduct.monthlyTitane;
-      } else if (selectedCentral === 'jablotron' && alarmProduct.monthlyJablotron !== undefined) {
-        monthlyPrice = alarmProduct.monthlyJablotron;
+      if (selectedCentral === 'titane' && product.monthlyTitane !== undefined) {
+        monthlyPrice = product.monthlyTitane;
+      } else if (selectedCentral === 'jablotron' && product.monthlyJablotron !== undefined) {
+        monthlyPrice = product.monthlyJablotron;
       }
     }
     // Camera products
     else if (sectionId === 'camera-material') {
-      const cameraProduct = product as CameraProduct;
+      const cameraProduct = product as any; // Camera-specific monthly pricing
       if (months === 48 && cameraProduct.monthly48 !== undefined) {
         monthlyPrice = cameraProduct.monthly48;
       } else if (months === 36 && cameraProduct.monthly36 !== undefined) {
@@ -210,8 +228,8 @@ export function calculateSectionMonthlyPrice(
     }
 
     // Fallback: calculate from total price
-    if (monthlyPrice === 0) {
-      monthlyPrice = line.price / months;
+    if (monthlyPrice === 0 && price > 0) {
+      monthlyPrice = price / months;
     }
 
     monthlyPrice = roundToFiveCents(monthlyPrice);

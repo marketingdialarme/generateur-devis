@@ -11,7 +11,15 @@
 import { Resend } from 'resend';
 import { CONFIG } from '../config';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY || '';
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export interface EmailAttachment {
   filename: string;
@@ -173,9 +181,9 @@ Système Dialarme
     `;
     
     // Send email via Resend
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from: `Dialarme <${CONFIG.email.from}>`,
-      to: [CONFIG.email.destination],
+      to: [CONFIG.email.recipients.internal],
       subject: `Nouveau devis Dialarme - ${clientName} - ${commercial}`,
       html: htmlBody,
       text: textBody,
@@ -205,7 +213,7 @@ Système Dialarme
  */
 export async function sendTestEmail(toEmail: string): Promise<boolean> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from: `Dialarme <${CONFIG.email.from}>`,
       to: [toEmail],
       subject: 'Test - Dialarme Quote Generator',
