@@ -77,7 +77,7 @@ export default function CreateDevisPage() {
   const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
-  
+
   // Auto-calculate camera installation price: 690 + (cameras × 140)
   const cameraInstallationPrice = useMemo(() => {
     return calculateCameraInstallation(cameraMaterialLines);
@@ -94,7 +94,7 @@ export default function CreateDevisPage() {
   const [surveillanceType, setSurveillanceType] = useState('');
   const [surveillancePrice, setSurveillancePrice] = useState(0);
   const [surveillanceOffered, setSurveillanceOffered] = useState(false);
-  
+
   // Options state
   const [interventionsGratuites, setInterventionsGratuites] = useState(false);
   const [interventionsAnnee, setInterventionsAnnee] = useState(false);
@@ -146,7 +146,7 @@ export default function CreateDevisPage() {
     const kitProducts = kitType === 'kit1' ? kit1Products : kit2Products;
     
     const newLines: ProductLineData[] = [];
-    
+
     // Add central
     if (centralProduct) {
       newLines.push({
@@ -173,7 +173,7 @@ export default function CreateDevisPage() {
     setAlarmMaterialLines(newLines);
     setShowKitModal(false);
   };
-  
+
   // Calculate alarm totals with default values
   const alarmTotals = useMemo(() => {
     try {
@@ -275,7 +275,7 @@ export default function CreateDevisPage() {
     cameraPaymentMonths,
     cameraRentalMode
   ]);
-  
+      
   const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
   const { assemblePdf, isAssembling, progress: assemblyProgress, error: assemblyError } = usePdfAssembly();
   const { sendQuote, isSending, progress: sendProgress, error: sendError } = useQuoteSender();
@@ -309,10 +309,10 @@ export default function CreateDevisPage() {
     if (value === 'autre') {
       setShowCustomCommercial(true);
       setCommercial('');
-    } else {
+      } else {
       setShowCustomCommercial(false);
       setCommercial(value);
-    }
+      }
   };
   
   // Handle generate and send quote
@@ -405,8 +405,8 @@ export default function CreateDevisPage() {
   // Show loading state
   if (!mounted) {
     return null;
-  }
-  
+    }
+
   const isProcessing = isPdfGenerating || isAssembling || isSending;
   const currentProgress = isPdfGenerating 
     ? 'Génération du PDF...' 
@@ -415,10 +415,10 @@ export default function CreateDevisPage() {
     : isSending 
     ? sendProgress 
     : '';
-  
+
   return (
     <div className="container">
-      {/* Header */}
+        {/* Header */}
       <div className="header">
         <div className="logo">
           <div className="logo-img">D</div>
@@ -430,7 +430,7 @@ export default function CreateDevisPage() {
         <div>
           <span id="currentDate">{getCurrentDate()}</span>
         </div>
-      </div>
+        </div>
 
       {/* Progress Indicator */}
       {isProcessing && (
@@ -507,12 +507,12 @@ export default function CreateDevisPage() {
               <label htmlFor="clientName">Nom du client</label>
               <input 
                 type="text" 
-                id="clientName" 
+                      id="clientName"
                 placeholder="Nom complet du client"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-              />
-            </div>
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                    />
+                  </div>
             <div className="form-group">
               <label htmlFor="commercial">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -542,9 +542,9 @@ export default function CreateDevisPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
+                  </div>
+                </div>
+                
         {/* Product Sections */}
         <div className="quote-section">
           <h3>
@@ -645,7 +645,7 @@ export default function CreateDevisPage() {
           <h3>🔧 2. Installation et matériel supplémentaire</h3>
           <div className="product-line" style={{ background: '#f0f8ff' }}>
             <div>Installation, paramétrages, tests, mise en service & formation</div>
-            <div>
+                  <div>
               <label style={{ marginRight: '5px', fontSize: '12px' }}>Nombre:</label>
               <input 
                 type="number" 
@@ -655,7 +655,7 @@ export default function CreateDevisPage() {
                 max="10" 
                 className="quantity-input" 
               />
-            </div>
+                  </div>
             <input 
               type="number" 
               value={690}
@@ -768,7 +768,7 @@ export default function CreateDevisPage() {
               <div className="price-display">{UNINSTALL_PRICE.toFixed(2)} CHF</div>
             </div>
           </div>
-        )}
+                )}
 
         {/* Summary */}
         <div className="quote-summary">
@@ -834,7 +834,7 @@ export default function CreateDevisPage() {
           >
             {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
           </button>
-        </div>
+                    </div>
       </div>
 
       {/* TAB CAMERA - Similar structure */}
@@ -941,7 +941,7 @@ export default function CreateDevisPage() {
                   ))}
                 </select>
                 <input 
-                  type="number" 
+                      type="number"
                   className="quantity-input"
                   value={line.quantity}
                   onChange={(e) => {
@@ -949,8 +949,8 @@ export default function CreateDevisPage() {
                     newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
                     setCameraMaterialLines(newLines);
                   }}
-                  min="1"
-                />
+                      min="1"
+                    />
                 <div className="checkbox-option" style={{ margin: 0 }}>
                   <input 
                     type="checkbox" 
@@ -976,8 +976,8 @@ export default function CreateDevisPage() {
                 >
                   ×
                 </button>
-              </div>
-            ))}
+                  </div>
+                ))}
           </div>
           <div className="discount-section">
             <label>Réduction:</label>
@@ -1058,8 +1058,8 @@ export default function CreateDevisPage() {
                 {cameraRemoteAccess ? '20.00 CHF/mois' : '0.00 CHF/mois'}
               </div>
             </div>
-          </div>
-        )}
+                  </div>
+                )}
 
         {/* Payment Mode */}
         {!cameraRentalMode && (
@@ -1080,7 +1080,7 @@ export default function CreateDevisPage() {
               <div></div>
               <div></div>
               <div className="price-display">{UNINSTALL_PRICE.toFixed(2)} CHF</div>
-            </div>
+                </div>
           </div>
         )}
 
@@ -1090,25 +1090,25 @@ export default function CreateDevisPage() {
           <div className="summary-item">
             <span>Matériel</span>
             <span>{((cameraTotals?.material?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
-          </div>
+                  </div>
           <div className="summary-item">
-            <span>Installation</span>
+                    <span>Installation</span>
             <span>{((cameraTotals?.installation?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
-          </div>
+                  </div>
           {cameraRemoteAccess && !cameraRentalMode && (
             <div className="summary-item">
               <span>Vision à distance</span>
               <span>20.00 CHF/mois</span>
-            </div>
+                  </div>
           )}
           <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{(cameraTotals?.totalHT || 0).toFixed(2)} CHF</span>
-          </div>
+                  </div>
           <div className="summary-item" style={{ fontWeight: 600, fontSize: '18px' }}>
             <span>TOTAL TTC</span>
             <span>{(cameraTotals?.totalTTC || 0).toFixed(2)} CHF</span>
-          </div>
+                </div>
           {!cameraRentalMode && cameraPaymentMonths > 0 && cameraTotals?.monthly && (
             <div className="monthly-payment" style={{ 
               background: '#f4e600', 
@@ -1119,8 +1119,8 @@ export default function CreateDevisPage() {
               <strong style={{ fontSize: '16px' }}>
                 💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
               </strong>
-            </div>
-          )}
+                  </div>
+                )}
           {!cameraRentalMode && cameraPaymentMonths === 0 && (
             <div className="monthly-payment" style={{ 
               background: '#28a745', 
@@ -1132,8 +1132,8 @@ export default function CreateDevisPage() {
               <strong style={{ fontSize: '16px' }}>
                 💰 Montant comptant: {(cameraTotals?.totalTTC || 0).toFixed(2)} CHF
               </strong>
-            </div>
-          )}
+                  </div>
+                )}
         </div>
 
         <div className="action-buttons">
@@ -1144,7 +1144,7 @@ export default function CreateDevisPage() {
           >
             {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
           </button>
-        </div>
+                  </div>
       </div>
 
       {/* Kit Selection Modal */}
@@ -1378,9 +1378,9 @@ export default function CreateDevisPage() {
               <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
                 💡 Le kit sera automatiquement marqué comme OFFERT
               </p>
-            </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

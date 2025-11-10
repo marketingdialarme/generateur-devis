@@ -21,7 +21,7 @@ export default function HomePage() {
 
   return (
     <div className="container">
-      {/* Header */}
+        {/* Header */}
       <div className="header">
         <div className="logo">
           <div className="logo-img">D</div>
@@ -30,13 +30,13 @@ export default function HomePage() {
             <p>Générateur de Devis Professionnel</p>
           </div>
         </div>
-      </div>
+              </div>
 
       {/* Main Content */}
       <div style={{ padding: '60px 30px', textAlign: 'center' }}>
         <h2 style={{ fontSize: '32px', marginBottom: '20px', color: '#333' }}>
           Bienvenue sur le générateur de devis Dialarme
-        </h2>
+              </h2>
         
         <p style={{ fontSize: '18px', color: '#666', marginBottom: '40px', maxWidth: '800px', margin: '0 auto 40px' }}>
           Créez des devis professionnels pour vos systèmes d'alarme et de vidéosurveillance 
@@ -59,7 +59,7 @@ export default function HomePage() {
           >
             📊 Tableau de bord
           </button>
-        </div>
+            </div>
 
         {/* Features */}
         <div style={{ 
@@ -76,7 +76,7 @@ export default function HomePage() {
               Configurez des devis pour centrales Titane ou Jablotron avec tous les accessoires 
               (détecteurs, claviers, sirènes, etc.)
             </p>
-          </div>
+              </div>
 
           <div className="form-section" style={{ textAlign: 'left' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>📹 Vidéosurveillance</h3>
@@ -84,7 +84,7 @@ export default function HomePage() {
               Créez des offres complètes de vidéosurveillance avec caméras, NVR, 
               et options de vision à distance
             </p>
-          </div>
+            </div>
 
           <div className="form-section" style={{ textAlign: 'left' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>📄 PDF Professionnel</h3>
@@ -92,7 +92,7 @@ export default function HomePage() {
               Génération automatique de PDFs professionnels avec assemblage de documents 
               techniques et overlay commercial
             </p>
-          </div>
+              </div>
 
           <div className="form-section" style={{ textAlign: 'left' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>📧 Envoi Automatique</h3>
@@ -100,7 +100,7 @@ export default function HomePage() {
               Envoi automatique par email et sauvegarde dans Google Drive 
               avec archivage par commercial
             </p>
-          </div>
+            </div>
 
           <div className="form-section" style={{ textAlign: 'left' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>💳 Options Flexibles</h3>
@@ -108,7 +108,7 @@ export default function HomePage() {
               Vente ou location, paiement comptant ou mensualités (24, 36, 48 mois), 
               avec calcul automatique des mensualités
             </p>
-          </div>
+        </div>
 
           <div className="form-section" style={{ textAlign: 'left' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>📊 Suivi et Analytics</h3>
@@ -116,11 +116,11 @@ export default function HomePage() {
               Tableau de bord avec statistiques des devis, produits les plus vendus, 
               et performance des commerciaux
             </p>
+              </div>
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
+        {/* Footer */}
       <div style={{ 
         background: '#333', 
         color: 'white', 
@@ -133,8 +133,8 @@ export default function HomePage() {
         </p>
         <p style={{ margin: '10px 0 0', fontSize: '12px', opacity: 0.7 }}>
           Système de sécurité et vidéosurveillance
-        </p>
+          </p>
+        </div>
       </div>
-    </div>
   );
 }

@@ -132,73 +132,73 @@ export const config: AppConfig = {
   // COMMERCIALS INFORMATION
   // ==========================================================================
   commercials: {
-    'Anabelle': {
-      phone: '06 XX XX XX XX',
-      email: 'anabelle@dialarme.fr',
-    },
-    'Test Commercial': {
-      phone: '06 00 00 00 00',
-      email: 'test@dialarme.fr',
-    },
     'Arnaud Bloch': {
       phone: '06 XX XX XX XX',
       email: 'arnaud.bloch@dialarme.fr',
     },
-    'Yann Mamet': {
+    'Benali Kodad': {
       phone: '06 XX XX XX XX',
-      email: 'yann.mamet@dialarme.fr',
+      email: 'benali.kodad@dialarme.fr',
     },
-    'Maxime Legrand': {
+    'Bryan Debrosse': {
       phone: '06 XX XX XX XX',
-      email: 'maxime.legrand@dialarme.fr',
+      email: 'bryan.debrosse@dialarme.fr',
     },
-    'Gérald Guenard': {
+    'Cédric Boldron': {
       phone: '06 XX XX XX XX',
-      email: 'gerald.guenard@dialarme.fr',
+      email: 'cedric.boldron@dialarme.fr',
     },
-    'François Ribeiro': {
+    'Emin Comert': {
       phone: '06 XX XX XX XX',
-      email: 'francois.ribeiro@dialarme.fr',
+      email: 'emin.comert@dialarme.fr',
     },
-    'Thomas Lefevre': {
+    'Gérald Clausen': {
       phone: '06 XX XX XX XX',
-      email: 'thomas.lefevre@dialarme.fr',
+      email: 'gerald.clausen@dialarme.fr',
     },
-    'Nicolas Dub': {
+    'Heythem Ziaya': {
       phone: '06 XX XX XX XX',
-      email: 'nicolas.dub@dialarme.fr',
+      email: 'heythem.ziaya@dialarme.fr',
     },
-    'Julien Auge': {
+    'Iyed Baccouche': {
       phone: '06 XX XX XX XX',
-      email: 'julien.auge@dialarme.fr',
+      email: 'iyed.baccouche@dialarme.fr',
     },
-    'Guillaume Marmey': {
+    'Matys Goiot': {
       phone: '06 XX XX XX XX',
-      email: 'guillaume.marmey@dialarme.fr',
+      email: 'matys.goiot@dialarme.fr',
     },
-    'Dylan Morel': {
+    'Mohamed Tartik': {
       phone: '06 XX XX XX XX',
-      email: 'dylan.morel@dialarme.fr',
+      email: 'mohamed.tartik@dialarme.fr',
     },
-    'Baptiste Laude': {
+    'Nassim Jaza': {
       phone: '06 XX XX XX XX',
-      email: 'baptiste.laude@dialarme.fr',
+      email: 'nassim.jaza@dialarme.fr',
     },
-    'Clement Faivre': {
+    'Nora Sassi': {
       phone: '06 XX XX XX XX',
-      email: 'clement.faivre@dialarme.fr',
+      email: 'nora.sassi@dialarme.fr',
     },
-    'Alexis Delamare': {
+    'Rodolphe De Vito': {
       phone: '06 XX XX XX XX',
-      email: 'alexis.delamare@dialarme.fr',
+      email: 'rodolphe.devito@dialarme.fr',
     },
-    'Clement Sorel': {
+    'Samir Ouhameni': {
       phone: '06 XX XX XX XX',
-      email: 'clement.sorel@dialarme.fr',
+      email: 'samir.ouhameni@dialarme.fr',
     },
-    'Laurent Rochard': {
+    'Thilan Curt': {
       phone: '06 XX XX XX XX',
-      email: 'laurent.rochard@dialarme.fr',
+      email: 'thilan.curt@dialarme.fr',
+    },
+    'Thomas Garcia': {
+      phone: '06 XX XX XX XX',
+      email: 'thomas.garcia@dialarme.fr',
+    },
+    'Wassim Tahiri': {
+      phone: '06 XX XX XX XX',
+      email: 'wassim.tahiri@dialarme.fr',
     },
   },
   

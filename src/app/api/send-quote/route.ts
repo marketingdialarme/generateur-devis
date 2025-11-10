@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFileToDrive } from '@/lib/services/google-drive.service';
+import { uploadFileToDrive, getOrCreateCommercialFolder } from '@/lib/services/google-drive.service';
 import { sendQuoteEmail } from '@/lib/services/email.service';
 import { logQuote } from '@/lib/services/database.service';
 import { config } from '@/lib/config';
@@ -105,23 +105,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     let driveResult;
     
     try {
-      // Determine folder based on quote type
-      let folderId: string;
-      
-      if (type === 'alarme') {
-        if (centralType === 'jablotron') {
-          folderId = config.google.drive.folders.jablotron;
-          console.log('📂 [API] Using Jablotron folder');
-        } else {
-          folderId = config.google.drive.folders.titane;
-          console.log('📂 [API] Using Titane folder');
-        }
-      } else if (type === 'video') {
-        folderId = config.google.drive.folders.video;
-        console.log('📂 [API] Using Video folder');
-      } else {
-        throw new Error(`Invalid quote type: ${type}`);
-      }
+      // Get or create folder for this commercial
+      console.log(`📂 [API] Getting folder for commercial: ${commercial}`);
+      const folderId = await getOrCreateCommercialFolder(commercial);
+      console.log(`✅ [API] Using folder ID: ${folderId}`);
       
       driveResult = await uploadFileToDrive(
         pdfBuffer,

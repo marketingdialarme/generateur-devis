@@ -1,24 +1,41 @@
 /**
  * ============================================================================
- * EMAIL SERVICE
+ * EMAIL SERVICE - Gmail SMTP (Google Ecosystem)
  * ============================================================================
  * 
- * Replaces Google Apps Script MailApp with Resend API
- * Sends emails with PDF attachments
+ * Uses Gmail SMTP via nodemailer
+ * This is the same infrastructure that Google Apps Script MailApp uses
+ * 100% Google - no external services
  * ============================================================================
  */
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { CONFIG } from '../config';
 
-let resend: Resend | null = null;
+let transporter: nodemailer.Transporter | null = null;
 
-function getResendClient(): Resend {
-  if (!resend) {
-    const apiKey = process.env.RESEND_API_KEY || '';
-    resend = new Resend(apiKey);
+function getEmailTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+    const smtpUser = process.env.SMTP_USER || '';
+    const smtpPassword = process.env.SMTP_PASSWORD || '';
+
+    if (!smtpUser || !smtpPassword) {
+      throw new Error('SMTP credentials not configured. Please set SMTP_USER and SMTP_PASSWORD in .env.local');
+    }
+
+    transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: false, // true for 465, false for 587
+      auth: {
+        user: smtpUser,
+        pass: smtpPassword,
+      },
+    });
   }
-  return resend;
+  return transporter;
 }
 
 export interface EmailAttachment {
@@ -43,7 +60,7 @@ export interface SendQuoteEmailParams {
  */
 export async function sendQuoteEmail(params: SendQuoteEmailParams): Promise<boolean> {
   try {
-    console.log('📧 Preparing email...');
+    console.log('📧 Preparing email via Gmail SMTP...');
     
     const { clientName, commercial, fileName, pdfBuffer, assemblyInfo } = params;
     
@@ -163,7 +180,7 @@ Un nouveau devis a été généré :
 💼 Commercial : ${commercial}
 📅 Date : ${new Date().toLocaleDateString('fr-FR')}
 `;
-    
+
     if (assemblyInfo) {
       textBody += `
 📦 Dossier complet assemblé :
@@ -180,10 +197,10 @@ Cordialement,
 Système Dialarme
     `;
     
-    // Send email via Resend
-    const { data, error } = await getResendClient().emails.send({
+    // Send email via Gmail SMTP
+    const mailOptions = {
       from: `Dialarme <${CONFIG.email.from}>`,
-      to: [CONFIG.email.recipients.internal],
+      to: CONFIG.email.recipients.internal,
       subject: `Nouveau devis Dialarme - ${clientName} - ${commercial}`,
       html: htmlBody,
       text: textBody,
@@ -193,14 +210,11 @@ Système Dialarme
           content: pdfBuffer,
         },
       ],
-    });
+    };
+
+    const info = await getEmailTransporter().sendMail(mailOptions);
     
-    if (error) {
-      console.error('❌ Email send error:', error);
-      throw new Error(`Failed to send email: ${error.message}`);
-    }
-    
-    console.log('✅ Email sent successfully:', data?.id);
+    console.log('✅ Email sent successfully via Gmail SMTP:', info.messageId);
     return true;
   } catch (error) {
     console.error('Error sending email:', error);
@@ -213,9 +227,9 @@ Système Dialarme
  */
 export async function sendTestEmail(toEmail: string): Promise<boolean> {
   try {
-    const { data, error } = await getResendClient().emails.send({
+    const mailOptions = {
       from: `Dialarme <${CONFIG.email.from}>`,
-      to: [toEmail],
+      to: toEmail,
       subject: 'Test - Dialarme Quote Generator',
       html: `
 <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -233,18 +247,14 @@ Email service is working correctly.
 
 Generated at: ${new Date().toISOString()}
       `,
-    });
+    };
+
+    const info = await getEmailTransporter().sendMail(mailOptions);
     
-    if (error) {
-      console.error('Test email error:', error);
-      return false;
-    }
-    
-    console.log('Test email sent:', data?.id);
+    console.log('Test email sent:', info.messageId);
     return true;
   } catch (error) {
     console.error('Error sending test email:', error);
     return false;
   }
 }
-

@@ -4,27 +4,47 @@
  * ============================================================================
  * 
  * Replaces Google Apps Script Drive functionality with Google Drive REST API
- * Uses service account authentication for serverless operation
+ * Supports both OAuth 2.0 (for personal Gmail) and Service Account authentication
  * ============================================================================
  */
 
 import { google } from 'googleapis';
 import { CONFIG } from '../config';
+import { Readable } from 'stream'; 
 
-// Initialize Google Drive client with service account
+// Initialize Google Drive client with OAuth or Service Account
 function getDriveClient() {
-  if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON not configured');
+  // Try OAuth first (for personal Gmail accounts)
+  if (process.env.GOOGLE_CLIENT_ID && 
+      process.env.GOOGLE_CLIENT_SECRET && 
+      process.env.GOOGLE_REFRESH_TOKEN) {
+    
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'http://localhost:3000' // Redirect URI (not used for refresh token flow)
+    );
+    
+    oauth2Client.setCredentials({
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+    });
+    
+    return google.drive({ version: 'v3', auth: oauth2Client });
   }
   
-  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  // Fallback to Service Account (for Google Workspace Shared Drives)
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive'],
+    });
+    
+    return google.drive({ version: 'v3', auth });
+  }
   
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  
-  return google.drive({ version: 'v3', auth });
+  throw new Error('No Google authentication configured. Set either OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN) or Service Account (GOOGLE_SERVICE_ACCOUNT_JSON)');
 }
 
 /**
@@ -51,7 +71,7 @@ export async function uploadFileToDrive(
     
     const media = {
       mimeType,
-      body: Buffer.from(fileBuffer),
+      body: Readable.from(fileBuffer),  // Convert Buffer to Stream
     };
     
     const response = await drive.files.create({
@@ -83,19 +103,36 @@ export async function uploadFileToDrive(
  */
 export async function getOrCreateCommercialFolder(commercialName: string): Promise<string> {
   try {
+    console.log(`\n🔍 [FOLDER] Starting folder lookup for: "${commercialName}"`);
     const drive = getDriveClient();
     const parentFolderId = CONFIG.google.drive.folders.devis;
+    
+    console.log(`📂 [FOLDER] Parent folder ID: ${parentFolderId}`);
     
     if (!parentFolderId) {
       throw new Error('DEVIS folder ID not configured');
     }
     
+    // Escape single quotes in commercial name for Drive API query
+    const escapedName = commercialName.replace(/'/g, "\\'");
+    console.log(`🔤 [FOLDER] Escaped name: "${escapedName}"`);
+    
     // Search for existing folder
+    const query = `name='${escapedName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    console.log(`🔎 [FOLDER] Search query: ${query}`);
+    
     const searchResponse = await drive.files.list({
-      q: `name='${commercialName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      q: query,
       fields: 'files(id, name)',
       spaces: 'drive',
     });
+    
+    console.log(`📊 [FOLDER] Search results: ${searchResponse.data.files?.length || 0} folders found`);
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      searchResponse.data.files.forEach((file, idx) => {
+        console.log(`  ${idx + 1}. "${file.name}" (ID: ${file.id})`);
+      });
+    }
     
     // If folder exists, return its ID
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
@@ -103,28 +140,40 @@ export async function getOrCreateCommercialFolder(commercialName: string): Promi
       if (!folderId) {
         throw new Error('Folder ID is undefined');
       }
+      console.log(`✅ [FOLDER] Using existing folder: ${folderId}\n`);
       return folderId;
     }
     
     // Create new folder
+    console.log(`📁 [FOLDER] No existing folder found. Creating new folder...`);
+    console.log(`📝 [FOLDER] Folder name: "${commercialName}"`);
+    console.log(`📝 [FOLDER] Parent ID: ${parentFolderId}`);
+    
     const createResponse = await drive.files.create({
       requestBody: {
         name: commercialName,
         mimeType: 'application/vnd.google-apps.folder',
         parents: [parentFolderId],
       },
-      fields: 'id',
+      fields: 'id, name',
     });
     
     const newFolderId = createResponse.data.id;
+    const newFolderName = createResponse.data.name;
+    
     if (!newFolderId) {
-      throw new Error('Failed to create folder');
+      throw new Error('Failed to create folder - no ID returned');
     }
     
+    console.log(`✅ [FOLDER] Successfully created folder: "${newFolderName}" (ID: ${newFolderId})\n`);
     return newFolderId;
   } catch (error) {
-    console.error('Error getting/creating folder:', error);
-    throw new Error(`Folder operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(`\n❌ [FOLDER] Error for "${commercialName}":`, error);
+    if (error instanceof Error) {
+      console.error(`❌ [FOLDER] Error message: ${error.message}`);
+      console.error(`❌ [FOLDER] Error stack:`, error.stack);
+    }
+    throw new Error(`Folder operation failed for "${commercialName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
