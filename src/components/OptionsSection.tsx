@@ -40,11 +40,10 @@ export function OptionsSection(props: OptionsSectionProps) {
         <div className="option-item" style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '12px',
+          padding: '10px 12px',
           background: interventionsGratuites ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
-          transition: 'all 0.2s',
-          minHeight: '48px'
+          transition: 'all 0.2s'
         }}>
           <input
             type="checkbox"
@@ -57,11 +56,12 @@ export function OptionsSection(props: OptionsSectionProps) {
               }
             }}
             style={{ 
-              marginRight: '12px', 
+              margin: '0 12px 0 0', 
               cursor: 'pointer',
-              width: '18px',
-              height: '18px',
-              flexShrink: 0
+              width: '16px',
+              height: '16px',
+              flexShrink: 0,
+              verticalAlign: 'middle'
             }}
           />
           <label
@@ -70,8 +70,11 @@ export function OptionsSection(props: OptionsSectionProps) {
               cursor: 'pointer', 
               fontSize: '14px', 
               fontWeight: interventionsGratuites ? 600 : 400,
-              lineHeight: '1.5',
-              flex: 1
+              lineHeight: '1.4',
+              flex: 1,
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
             Interventions gratuites & illimitées des agents
@@ -82,12 +85,11 @@ export function OptionsSection(props: OptionsSectionProps) {
         <div className="option-item" style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '12px',
+          padding: '10px 12px',
           background: interventionsAnnee ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s',
-          gap: '12px',
-          minHeight: '48px'
+          gap: '12px'
         }}>
           <input
             type="checkbox"
@@ -100,10 +102,12 @@ export function OptionsSection(props: OptionsSectionProps) {
               }
             }}
             style={{ 
+              margin: 0,
               cursor: 'pointer',
-              width: '18px',
-              height: '18px',
-              flexShrink: 0
+              width: '16px',
+              height: '16px',
+              flexShrink: 0,
+              verticalAlign: 'middle'
             }}
           />
           <label
@@ -113,7 +117,10 @@ export function OptionsSection(props: OptionsSectionProps) {
               fontSize: '14px', 
               flex: 1, 
               fontWeight: interventionsAnnee ? 600 : 400,
-              lineHeight: '1.5'
+              lineHeight: '1.4',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
             Intervention par année des agents
@@ -128,7 +135,7 @@ export function OptionsSection(props: OptionsSectionProps) {
               className="quantity-input"
               style={{
                 width: '70px',
-                padding: '8px',
+                padding: '6px 8px',
                 border: '2px solid #007bff',
                 borderRadius: '6px',
                 textAlign: 'center',
@@ -143,11 +150,10 @@ export function OptionsSection(props: OptionsSectionProps) {
         <div className="option-item" style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '12px',
+          padding: '10px 12px',
           background: serviceCles ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
-          transition: 'all 0.2s',
-          minHeight: '48px'
+          transition: 'all 0.2s'
         }}>
           <input
             type="checkbox"
@@ -155,11 +161,12 @@ export function OptionsSection(props: OptionsSectionProps) {
             checked={serviceCles}
             onChange={(e) => onServiceClesChange(e.target.checked)}
             style={{ 
-              marginRight: '12px', 
+              margin: '0 12px 0 0', 
               cursor: 'pointer',
-              width: '18px',
-              height: '18px',
-              flexShrink: 0
+              width: '16px',
+              height: '16px',
+              flexShrink: 0,
+              verticalAlign: 'middle'
             }}
           />
           <label
@@ -168,8 +175,11 @@ export function OptionsSection(props: OptionsSectionProps) {
               cursor: 'pointer', 
               fontSize: '14px', 
               fontWeight: serviceCles ? 600 : 400,
-              lineHeight: '1.5',
-              flex: 1
+              lineHeight: '1.4',
+              flex: 1,
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
             Service des clés offert
