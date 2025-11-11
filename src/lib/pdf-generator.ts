@@ -182,16 +182,14 @@ function createAlarmPDFSections(
     yPos
   );
 
-  // Installation section
-  if (options.installationLines) {
-    yPos = createProductSection(
-      doc,
-      'INSTALLATION & MATERIEL SUPPLEMENTAIRE',
-      options.installationLines,
-      alarmTotals.installation,
-      yPos
-    );
-  }
+  // Installation section (with main installation line)
+  yPos = createAlarmInstallationSection(
+    doc,
+    options.installationLines || [],
+    alarmTotals.installation,
+    options.isRental,
+    yPos
+  );
 
   // Admin fees
   yPos = createAdminFeesSection(doc, alarmTotals.adminFees, yPos);
@@ -208,6 +206,184 @@ function createAlarmPDFSections(
 
   // Final summary
   yPos = createFinalSummary(doc, alarmTotals, options.type, options.isRental, yPos);
+
+  return yPos;
+}
+
+// ============================================
+// ALARM INSTALLATION SECTION
+// ============================================
+
+function createAlarmInstallationSection(
+  doc: jsPDF,
+  productLines: ProductLineData[],
+  installationTotals: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
+  isRental: boolean,
+  yPos: number
+): number {
+  // Section title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
+  doc.text('INSTALLATION & MATERIEL SUPPLEMENTAIRE', 40, yPos);
+  yPos += 12;
+
+  // Table header
+  doc.setFillColor(244, 230, 0);
+  doc.rect(40, yPos, 515, 14, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Qté', 50, yPos + 9);
+  doc.text('Désignation du matériel', 90, yPos + 9);
+  doc.text('Prix uni. HT', 400, yPos + 9);
+  doc.text('Total HT', 480, yPos + 9);
+  yPos += 14;
+
+  let lineCount = 0;
+
+  // Product lines (supplementary materials)
+  productLines.forEach(line => {
+    if (!line.product) return;
+
+    lineCount++;
+
+    // Alternating row colors
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+
+    // Calculate price based on product type
+    const product = line.product;
+    let unitPrice = 0;
+    if (product.isCustom && line.customPrice !== undefined) {
+      unitPrice = line.customPrice;
+    } else if (product.price !== undefined) {
+      unitPrice = product.price;
+    } else if (product.priceTitane !== undefined) {
+      unitPrice = product.priceTitane;
+    } else if (product.priceJablotron !== undefined) {
+      unitPrice = product.priceJablotron;
+    }
+    
+    const lineTotal = unitPrice * line.quantity;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(0, 0, 0);
+
+    // Quantity
+    doc.text(line.quantity.toString(), 55, yPos + 8);
+
+    // Product name (truncate if too long)
+    const maxNameLength = 45;
+    const productName = product.isCustom && line.customName ? line.customName : product.name;
+    const displayName = productName.length > maxNameLength
+      ? productName.substring(0, maxNameLength - 3) + '...'
+      : productName;
+    doc.text(displayName, 90, yPos + 8);
+
+    // Unit price
+    doc.text(unitPrice.toFixed(2), 405, yPos + 8);
+
+    // Total or OFFERT
+    if (line.offered) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 150, 0);
+      doc.text('OFFERT', 485, yPos + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+    } else {
+      doc.text(lineTotal.toFixed(2), 485, yPos + 8);
+    }
+
+    yPos += 12;
+  });
+
+  // Add main installation line: "Installation, paramétrages, tests, mise en service & formation"
+  // Calculate the installation base amount (total minus supplementary materials)
+  let supplementaryTotal = 0;
+  productLines.forEach(line => {
+    if (!line.product || line.offered) return;
+    const product = line.product;
+    let unitPrice = 0;
+    if (product.isCustom && line.customPrice !== undefined) {
+      unitPrice = line.customPrice;
+    } else if (product.price !== undefined) {
+      unitPrice = product.price;
+    } else if (product.priceTitane !== undefined) {
+      unitPrice = product.priceTitane;
+    } else if (product.priceJablotron !== undefined) {
+      unitPrice = product.priceJablotron;
+    }
+    supplementaryTotal += unitPrice * line.quantity;
+  });
+
+  const mainInstallationTotal = installationTotals.totalBeforeDiscount - supplementaryTotal;
+
+  if (mainInstallationTotal > 0 || isRental) {
+    lineCount++;
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(0, 0, 0);
+
+    doc.text('1', 55, yPos + 8);
+    doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 8);
+
+    if (isRental || mainInstallationTotal === 0) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 150, 0);
+      doc.text(isRental ? 'Compris' : 'OFFERT', 405, yPos + 8);
+      doc.text(isRental ? 'Compris' : 'OFFERT', 485, yPos + 8);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+    } else {
+      doc.text(mainInstallationTotal.toFixed(2), 405, yPos + 8);
+      doc.text(mainInstallationTotal.toFixed(2), 485, yPos + 8);
+    }
+
+    yPos += 12;
+  }
+
+  // Discount line
+  if (installationTotals.discount > 0) {
+    lineCount++;
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6);
+    doc.setTextColor(200, 0, 0);
+    doc.text(`Réduction ${installationTotals.discountDisplay}`, 90, yPos + 8);
+    doc.text(`-${installationTotals.discount.toFixed(2)}`, 485, yPos + 8);
+    doc.setTextColor(0, 0, 0);
+    yPos += 12;
+  }
+
+  // Section totals
+  const totalTTC = installationTotals.total * (1 + TVA_RATE);
+  const tva = totalTTC - installationTotals.total;
+
+  doc.setFillColor(230, 230, 230);
+  doc.rect(390, yPos, 165, 36, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Total H.T.', 400, yPos + 12);
+  doc.text(installationTotals.total.toFixed(2), 485, yPos + 12);
+  doc.text('TVA 8.1%', 400, yPos + 24);
+  doc.text(tva.toFixed(2), 485, yPos + 24);
+  doc.text('Total T.T.C.', 400, yPos + 32);
+  doc.text(totalTTC.toFixed(2), 485, yPos + 32);
+
+  yPos += 45;
 
   return yPos;
 }

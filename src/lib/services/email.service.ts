@@ -48,6 +48,7 @@ export interface SendQuoteEmailParams {
   commercial: string;
   fileName: string;
   pdfBuffer: Buffer;
+  driveLink?: string;
   assemblyInfo?: {
     baseDossier: string;
     productsFound: number;
@@ -62,7 +63,7 @@ export async function sendQuoteEmail(params: SendQuoteEmailParams): Promise<bool
   try {
     console.log('📧 Preparing email via Gmail SMTP...');
     
-    const { clientName, commercial, fileName, pdfBuffer, assemblyInfo } = params;
+    const { clientName, commercial, fileName, pdfBuffer, driveLink, assemblyInfo } = params;
     
     // Prepare email body
     let htmlBody = `
@@ -156,6 +157,19 @@ export async function sendQuoteEmail(params: SendQuoteEmailParams): Promise<bool
       
       <p>Le PDF est en pièce jointe.</p>
       
+      ${driveLink ? `
+      <div class="info-box" style="background: #e8f5e9; border-left-color: #4caf50;">
+        <h3 style="margin-top: 0; color: #4caf50;">☁️ Accès Google Drive</h3>
+        <p>Le devis est également disponible sur Google Drive :</p>
+        <p style="text-align: center;">
+          <a href="${driveLink}" 
+             style="display: inline-block; background: #4caf50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            📁 Ouvrir dans Google Drive
+          </a>
+        </p>
+      </div>
+      ` : ''}
+      
       <p style="margin-top: 30px;">
         Cordialement,<br>
         <strong>Système Dialarme</strong>
@@ -192,7 +206,16 @@ Un nouveau devis a été généré :
     
     textBody += `
 Le PDF est en pièce jointe.
+`;
 
+    if (driveLink) {
+      textBody += `
+☁️ Accès Google Drive :
+${driveLink}
+`;
+    }
+    
+    textBody += `
 Cordialement,
 Système Dialarme
     `;

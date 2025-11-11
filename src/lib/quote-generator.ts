@@ -131,6 +131,7 @@ export const INSTALLATION_MONTHLY_PRICES: Record<number, Record<number, number>>
 };
 
 export const HALF_DAY_PRICE = 690;
+export const FULL_DAY_PRICE = 1290;
 export const HALF_DAY_MONTHLY_24 = 32;
 export const HALF_DAY_MONTHLY_36 = 23;
 export const HALF_DAY_MONTHLY_48 = 18;
@@ -260,35 +261,63 @@ export function roundToFiveCents(amount: number): number {
   return Math.ceil(amount * 20) / 20;
 }
 
-export function calculateInstallationPrice(qty: number): number {
-  if (qty > 6) {
-    const fullDays = Math.floor(qty / 2);
-    const halfDay = qty % 2;
-    return (fullDays * HALF_DAY_PRICE * 2) + (halfDay * HALF_DAY_PRICE);
+/**
+ * Calculate installation price using tiered half-day system:
+ * - 1 half-day = 690 CHF
+ * - 2 half-days (1 full day) = 1290 CHF
+ * - 3 half-days = 1290 + 690 = 1980 CHF
+ * - 4 half-days (2 full days) = 1290 + 1290 = 2580 CHF
+ * - And so on...
+ */
+export function calculateInstallationPrice(nbHalfDays: number): number {
+  let total = 0;
+  for (let i = 0; i < nbHalfDays; i += 2) {
+    if (i + 2 <= nbHalfDays) {
+      // We have a complete pair (full day)
+      total += FULL_DAY_PRICE;
+    } else {
+      // Remaining single half-day
+      total += HALF_DAY_PRICE;
+    }
   }
-  
-  return INSTALLATION_PRICES[qty] || HALF_DAY_PRICE;
+  return total;
 }
 
-export function getInstallationMonthlyPrice(qty: number, months: number): number {
-  if (qty > 6) {
-    const fullDays = Math.floor(qty / 2);
-    const halfDay = qty % 2;
-    
-    if (months === 24) {
-      return (fullDays * FULL_DAY_MONTHLY_24) + (halfDay * HALF_DAY_MONTHLY_24);
-    } else if (months === 36) {
-      return (fullDays * FULL_DAY_MONTHLY_36) + (halfDay * HALF_DAY_MONTHLY_36);
-    } else if (months === 48) {
-      return (fullDays * FULL_DAY_MONTHLY_48) + (halfDay * HALF_DAY_MONTHLY_48);
+/**
+ * Calculate installation monthly price using tiered half-day system
+ */
+export function getInstallationMonthlyPrice(nbHalfDays: number, months: number): number {
+  let total = 0;
+  
+  // Get monthly rate for one half-day and one full-day based on payment plan
+  let halfDayMonthly = 0;
+  let fullDayMonthly = 0;
+  
+  if (months === 24) {
+    halfDayMonthly = HALF_DAY_MONTHLY_24;
+    fullDayMonthly = FULL_DAY_MONTHLY_24;
+  } else if (months === 36) {
+    halfDayMonthly = HALF_DAY_MONTHLY_36;
+    fullDayMonthly = FULL_DAY_MONTHLY_36;
+  } else if (months === 48) {
+    halfDayMonthly = HALF_DAY_MONTHLY_48;
+    fullDayMonthly = FULL_DAY_MONTHLY_48;
+  } else {
+    return 0;
+  }
+  
+  // Apply tiered pricing
+  for (let i = 0; i < nbHalfDays; i += 2) {
+    if (i + 2 <= nbHalfDays) {
+      // We have a complete pair (full day)
+      total += fullDayMonthly;
+    } else {
+      // Remaining single half-day
+      total += halfDayMonthly;
     }
   }
   
-  if (INSTALLATION_MONTHLY_PRICES[qty] && INSTALLATION_MONTHLY_PRICES[qty][months]) {
-    return INSTALLATION_MONTHLY_PRICES[qty][months];
-  }
-  
-  return 0;
+  return total;
 }
 
 export function getProductPrice(product: AlarmProduct | CameraProduct, selectedCentral?: string | null): number {

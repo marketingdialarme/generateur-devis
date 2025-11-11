@@ -43,7 +43,8 @@ export function OptionsSection(props: OptionsSectionProps) {
           padding: '12px',
           background: interventionsGratuites ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          minHeight: '48px'
         }}>
           <input
             type="checkbox"
@@ -55,11 +56,23 @@ export function OptionsSection(props: OptionsSectionProps) {
                 onInterventionsAnneeChange(false);
               }
             }}
-            style={{ marginRight: '10px', cursor: 'pointer' }}
+            style={{ 
+              marginRight: '12px', 
+              cursor: 'pointer',
+              width: '18px',
+              height: '18px',
+              flexShrink: 0
+            }}
           />
           <label
             htmlFor="option-interventions-gratuites"
-            style={{ cursor: 'pointer', fontSize: '14px', fontWeight: interventionsGratuites ? 600 : 400 }}
+            style={{ 
+              cursor: 'pointer', 
+              fontSize: '14px', 
+              fontWeight: interventionsGratuites ? 600 : 400,
+              lineHeight: '1.5',
+              flex: 1
+            }}
           >
             Interventions gratuites & illimitées des agents
           </label>
@@ -73,7 +86,8 @@ export function OptionsSection(props: OptionsSectionProps) {
           background: interventionsAnnee ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s',
-          gap: '10px'
+          gap: '12px',
+          minHeight: '48px'
         }}>
           <input
             type="checkbox"
@@ -85,11 +99,22 @@ export function OptionsSection(props: OptionsSectionProps) {
                 onInterventionsGratuitesChange(false);
               }
             }}
-            style={{ cursor: 'pointer' }}
+            style={{ 
+              cursor: 'pointer',
+              width: '18px',
+              height: '18px',
+              flexShrink: 0
+            }}
           />
           <label
             htmlFor="option-interventions-annee"
-            style={{ cursor: 'pointer', fontSize: '14px', flex: 1, fontWeight: interventionsAnnee ? 600 : 400 }}
+            style={{ 
+              cursor: 'pointer', 
+              fontSize: '14px', 
+              flex: 1, 
+              fontWeight: interventionsAnnee ? 600 : 400,
+              lineHeight: '1.5'
+            }}
           >
             Intervention par année des agents
           </label>
@@ -102,11 +127,13 @@ export function OptionsSection(props: OptionsSectionProps) {
               max="10"
               className="quantity-input"
               style={{
-                width: '60px',
-                padding: '6px',
+                width: '70px',
+                padding: '8px',
                 border: '2px solid #007bff',
                 borderRadius: '6px',
-                textAlign: 'center'
+                textAlign: 'center',
+                fontSize: '14px',
+                flexShrink: 0
               }}
             />
           )}
@@ -119,18 +146,31 @@ export function OptionsSection(props: OptionsSectionProps) {
           padding: '12px',
           background: serviceCles ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          minHeight: '48px'
         }}>
           <input
             type="checkbox"
             id="option-service-cles"
             checked={serviceCles}
             onChange={(e) => onServiceClesChange(e.target.checked)}
-            style={{ marginRight: '10px', cursor: 'pointer' }}
+            style={{ 
+              marginRight: '12px', 
+              cursor: 'pointer',
+              width: '18px',
+              height: '18px',
+              flexShrink: 0
+            }}
           />
           <label
             htmlFor="option-service-cles"
-            style={{ cursor: 'pointer', fontSize: '14px', fontWeight: serviceCles ? 600 : 400 }}
+            style={{ 
+              cursor: 'pointer', 
+              fontSize: '14px', 
+              fontWeight: serviceCles ? 600 : 400,
+              lineHeight: '1.5',
+              flex: 1
+            }}
           >
             Service des clés offert
           </label>

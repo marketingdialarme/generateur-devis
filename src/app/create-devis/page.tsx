@@ -334,9 +334,27 @@ export default function CreateDevisPage() {
       
       // Get commercial info
       const commercialInfo = getCommercialInfo(finalCommercial);
+      console.log('🔍 Commercial selected:', finalCommercial);
+      console.log('📋 Commercial info:', commercialInfo);
+      
       if (!commercialInfo) {
-        alert('Informations du commercial introuvables');
-        return;
+        console.warn('⚠️ Commercial not found in config, using defaults');
+        // Use default values if commercial not found
+        const defaultCommercialInfo = {
+          phone: '06 XX XX XX XX',
+          email: `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`
+        };
+        console.log('📋 Using default commercial info:', defaultCommercialInfo);
+      } else {
+        // Validate commercial info has required fields
+        if (!commercialInfo.phone) {
+          console.warn('⚠️ Commercial phone missing, using default');
+          commercialInfo.phone = '06 XX XX XX XX';
+        }
+        if (!commercialInfo.email) {
+          console.warn('⚠️ Commercial email missing, using default');
+          commercialInfo.email = `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`;
+        }
       }
       
       // Step 1: Generate PDF
@@ -363,6 +381,19 @@ export default function CreateDevisPage() {
       
       // Step 3: Assemble PDF (add base docs, product sheets, overlay)
       console.log('🔄 Step 3: Assembling PDF...');
+      
+      // Get validated commercial info
+      const validatedCommercialInfo = commercialInfo || {
+        phone: '06 XX XX XX XX',
+        email: `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`
+      };
+      
+      console.log('📝 Commercial info for PDF assembly:', {
+        name: finalCommercial,
+        phone: validatedCommercialInfo.phone,
+        email: validatedCommercialInfo.email
+      });
+      
       const assembled = await assemblePdf({
         pdfBlob: generatedPdf.blob,
         quoteType: currentTab === 'alarm' ? 'alarme' : 'video',
@@ -370,8 +401,8 @@ export default function CreateDevisPage() {
         products,
         commercial: {
           name: finalCommercial,
-          phone: commercialInfo.phone,
-          email: commercialInfo.email
+          phone: validatedCommercialInfo.phone,
+          email: validatedCommercialInfo.email
         }
       });
       
@@ -391,7 +422,25 @@ export default function CreateDevisPage() {
       });
       
       if (result.success) {
-        alert(`✅ Devis envoyé avec succès!\n\n📁 Lien Drive: ${result.driveLink}\n📧 Email envoyé: ${result.emailSent ? 'Oui' : 'Non'}\n📊 Enregistré: ${result.logged ? 'Oui' : 'Non'}`);
+        // Step 5: Trigger automatic download
+        console.log('🔄 Step 5: Triggering automatic PDF download...');
+        try {
+          const pdfBytes = await assembled.blob.arrayBuffer();
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          console.log('✅ PDF downloaded successfully');
+        } catch (downloadError) {
+          console.error('⚠️ Download failed (non-critical):', downloadError);
+        }
+        
+        alert(`✅ Devis envoyé avec succès!\n\n📁 Lien Drive: ${result.driveLink}\n📧 Email envoyé: ${result.emailSent ? 'Oui' : 'Non'}\n📊 Enregistré: ${result.logged ? 'Oui' : 'Non'}\n💾 PDF téléchargé automatiquement`);
       } else {
         alert(`❌ Erreur lors de l'envoi: ${result.error}`);
       }
@@ -804,9 +853,10 @@ export default function CreateDevisPage() {
               background: '#f4e600', 
               padding: '15px', 
               borderRadius: '8px', 
-              marginTop: '15px' 
+              marginTop: '15px',
+              color: '#000'
             }}>
-              <strong style={{ fontSize: '16px' }}>
+              <strong style={{ fontSize: '16px', color: '#000' }}>
                 💳 Mensualités: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
               </strong>
             </div>
@@ -1003,7 +1053,7 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>🔧 2. Installation</h3>
           <div className="product-line" style={{ background: '#f0f8ff' }}>
-            <div>Installation (690 + {cameraMaterialLines.filter(l => l.product && !l.offered).reduce((s, l) => s + l.quantity, 0)} caméras × 140)</div>
+            <div>Installation caméra</div>
             <div>
               <label style={{ marginRight: '5px', fontSize: '12px' }}>Nombre:</label>
               <input 
@@ -1114,9 +1164,10 @@ export default function CreateDevisPage() {
               background: '#f4e600', 
               padding: '15px', 
               borderRadius: '8px', 
-              marginTop: '15px' 
+              marginTop: '15px',
+              color: '#000'
             }}>
-              <strong style={{ fontSize: '16px' }}>
+              <strong style={{ fontSize: '16px', color: '#000' }}>
                 💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
               </strong>
                   </div>

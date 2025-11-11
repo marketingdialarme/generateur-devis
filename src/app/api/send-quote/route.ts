@@ -16,6 +16,7 @@ import { uploadFileToDrive, getOrCreateCommercialFolder } from '@/lib/services/g
 import { sendQuoteEmail } from '@/lib/services/email.service';
 import { logQuote } from '@/lib/services/database.service';
 import { config } from '@/lib/config';
+import { PDFDocument } from 'pdf-lib';
 
 interface SendQuoteRequest {
   pdfBase64: string;
@@ -97,8 +98,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     }
     
     // Convert base64 to buffer
-    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
-    console.log(`📄 [API] PDF buffer size: ${pdfBuffer.length} bytes`);
+    let pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    const originalSize = pdfBuffer.length;
+    console.log(`📄 [API] PDF buffer size: ${originalSize} bytes (${(originalSize / 1024 / 1024).toFixed(2)} MB)`);
+    
+    // Compress PDF if it's larger than 5MB to avoid email issues
+    if (originalSize > 5 * 1024 * 1024) {
+      console.log('⚠️ [API] PDF is large, attempting compression...');
+      try {
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const compressedPdfBytes = await pdfDoc.save({ 
+          useObjectStreams: true,
+          addDefaultPage: false
+        });
+        const compressedBuffer = Buffer.from(compressedPdfBytes);
+        const compressionRatio = ((1 - compressedBuffer.length / originalSize) * 100).toFixed(1);
+        console.log(`✅ [API] PDF compressed: ${originalSize} → ${compressedBuffer.length} bytes (${compressionRatio}% reduction)`);
+        pdfBuffer = compressedBuffer;
+      } catch (compressionError) {
+        console.warn('⚠️ [API] PDF compression failed, using original:', compressionError);
+      }
+    }
     
     // Step 1: Upload to Google Drive
     console.log('📁 [API] Step 1: Uploading to Google Drive...');
@@ -123,6 +143,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       });
     } catch (error) {
       console.error('❌ [API] Drive upload failed:', error);
+      if (error instanceof Error) {
+        console.error('Stack trace:', error.stack);
+      }
       return NextResponse.json(
         {
           success: false,
@@ -142,13 +165,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
         clientName,
         commercial,
         fileName: filename,
-        pdfBuffer
+        pdfBuffer,
+        driveLink: driveResult.webViewLink
       });
       
       emailSent = true;
       console.log('✅ [API] Email sent successfully');
     } catch (error) {
       console.error('❌ [API] Email send failed:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Stack trace:', error.stack);
+      }
       // Don't fail the entire request if email fails
       // The PDF is already in Drive, which is the most important part
     }
@@ -192,6 +220,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`❌ [API] Send Quote failed after ${duration}ms:`, error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Stack trace:', error.stack);
+    }
     
     return NextResponse.json(
       {
