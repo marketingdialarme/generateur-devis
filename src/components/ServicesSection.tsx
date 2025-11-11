@@ -105,8 +105,7 @@ export function ServicesSection(props: ServicesSectionProps) {
         ...baseOptions,
         { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
         { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' },
-        { value: 'autosurveillance', label: 'Autosurveillance' },
-        { value: 'autosurveillance-pro', label: 'Autosurveillance Professionnel' }
+        { value: 'autosurveillance', label: 'Autosurveillance' }
       ];
     }
 
@@ -120,22 +119,33 @@ export function ServicesSection(props: ServicesSectionProps) {
       return;
     }
 
+    // Proper key mapping for price lookup
+    const keyMap: Record<string, string> = {
+      'telesurveillance': 'telesurveillance',
+      'telesurveillance-pro': 'telesurveillancePro',
+      'autosurveillance': 'autosurveillance',
+      'autosurveillance-pro': 'autosurveillancePro'
+    };
+
+    const priceKey = keyMap[surveillanceType];
+    if (!priceKey) {
+      onSurveillancePriceChange(0);
+      return;
+    }
+
     const prices = rentalMode ? SURVEILLANCE_PRICES_RENTAL : SURVEILLANCE_PRICES_SALE;
     let price = 0;
 
     if (centralType === 'titane') {
-      const titanePrices = prices.titane as any;
-      price = titanePrices[surveillanceType.replace('-', '')] || 0;
+      price = (prices.titane as any)[priceKey] || 0;
     } else if (centralType === 'jablotron') {
-      const jablotronPrices = prices.jablotron as any;
-      price = jablotronPrices[surveillanceType.replace('-', '')] || 0;
+      price = (prices.jablotron as any)[priceKey] || 0;
     } else {
-      const defaultPrices = prices.default as any;
-      price = defaultPrices[surveillanceType.replace('-', '')] || 0;
+      price = (prices.default as any)[priceKey] || 0;
     }
 
     onSurveillancePriceChange(price);
-  }, [surveillanceType, centralType, rentalMode]);
+  }, [surveillanceType, centralType, rentalMode, onSurveillancePriceChange]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;

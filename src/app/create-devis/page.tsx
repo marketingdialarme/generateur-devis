@@ -78,6 +78,11 @@ export default function CreateDevisPage() {
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
 
+  // Calculate alarm installation price using tiered half-day system
+  const alarmInstallationPrice = useMemo(() => {
+    return calculateInstallationPrice(alarmInstallationQty);
+  }, [alarmInstallationQty]);
+
   // Auto-calculate camera installation price: 690 + (cameras × 140)
   const cameraInstallationPrice = useMemo(() => {
     return calculateCameraInstallation(cameraMaterialLines);
@@ -184,8 +189,7 @@ export default function CreateDevisPage() {
         alarmInstallationDiscount,
         {
           quantity: alarmInstallationQty,
-          isOffered: alarmInstallationOffered,
-          price: 690
+          isOffered: alarmInstallationOffered
         },
         {
           simCardOffered: simcardOffered,
@@ -215,8 +219,8 @@ export default function CreateDevisPage() {
         installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         adminFees: { simCard: 0, processing: 0, total: 0 },
         services: { testCyclique: 0, surveillance: 0 },
-        totalHT: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty,
-        totalTTC: alarmInstallationOffered ? 0 : 690 * alarmInstallationQty * 1.081
+        totalHT: alarmInstallationOffered ? 0 : alarmInstallationPrice,
+        totalTTC: alarmInstallationOffered ? 0 : alarmInstallationPrice * 1.081
       };
     }
   }, [
@@ -226,6 +230,7 @@ export default function CreateDevisPage() {
     alarmInstallationDiscount,
     alarmInstallationQty,
     alarmInstallationOffered,
+    alarmInstallationPrice,
     simcardOffered,
     processingOffered,
     testCycliqueSelected,
@@ -246,7 +251,7 @@ export default function CreateDevisPage() {
         cameraMaterialLines,
         cameraMaterialDiscount,
         {
-          quantity: cameraInstallationQty,
+          quantity: 1,
           isOffered: cameraInstallationOffered,
           price: cameraInstallationPrice
         },
@@ -261,14 +266,13 @@ export default function CreateDevisPage() {
         material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         installation: { total: 0, isOffered: false },
         remoteAccess: { enabled: false, price: 0 },
-        totalHT: cameraInstallationOffered ? 0 : cameraInstallationPrice * cameraInstallationQty,
-        totalTTC: cameraInstallationOffered ? 0 : cameraInstallationPrice * cameraInstallationQty * 1.081
+        totalHT: cameraInstallationOffered ? 0 : cameraInstallationPrice,
+        totalTTC: cameraInstallationOffered ? 0 : cameraInstallationPrice * 1.081
       };
     }
   }, [
     cameraMaterialLines,
     cameraMaterialDiscount,
-    cameraInstallationQty,
     cameraInstallationOffered,
     cameraInstallationPrice,
     cameraRemoteAccess,
@@ -707,7 +711,7 @@ export default function CreateDevisPage() {
                   </div>
             <input 
               type="number" 
-              value={690}
+              value={alarmInstallationPrice}
               className="discount-input" 
               placeholder="Prix" 
               readOnly 
@@ -723,7 +727,7 @@ export default function CreateDevisPage() {
               <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
             </div>
             <div className="price-display">
-              {alarmInstallationOffered ? 'OFFERT' : `${(690 * alarmInstallationQty).toFixed(2)} CHF`}
+              {alarmInstallationOffered ? 'OFFERT' : `${alarmInstallationPrice.toFixed(2)} CHF`}
             </div>
           </div>
         </div>
@@ -1054,17 +1058,7 @@ export default function CreateDevisPage() {
           <h3>🔧 2. Installation</h3>
           <div className="product-line" style={{ background: '#f0f8ff' }}>
             <div>Installation caméra</div>
-            <div>
-              <label style={{ marginRight: '5px', fontSize: '12px' }}>Nombre:</label>
-              <input 
-                type="number" 
-                value={cameraInstallationQty}
-                onChange={(e) => setCameraInstallationQty(parseInt(e.target.value) || 1)}
-                min="1" 
-                max="10" 
-                className="quantity-input" 
-              />
-            </div>
+            <div></div>
             <input 
               type="number" 
               value={cameraInstallationPrice}
@@ -1083,7 +1077,7 @@ export default function CreateDevisPage() {
               <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
             </div>
             <div className="price-display">
-              {cameraInstallationOffered ? 'OFFERT' : `${(cameraInstallationPrice * cameraInstallationQty).toFixed(2)} CHF`}
+              {cameraInstallationOffered ? 'OFFERT' : `${cameraInstallationPrice.toFixed(2)} CHF`}
             </div>
           </div>
         </div>
