@@ -10,6 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { googleDriveService } from '@/lib/services/google-drive.service';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);

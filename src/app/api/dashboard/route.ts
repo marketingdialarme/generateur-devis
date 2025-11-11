@@ -14,6 +14,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDashboardStats, getQuotes } from '@/lib/services/database.service';
 import { z } from 'zod';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Query params validation
 const DashboardQuerySchema = z.object({
   commercial: z.string().optional(),
