@@ -23,13 +23,14 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE, calculateInstallationPrice } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { detectCentralType, calculateCameraInstallation, toCalcFormat } from '@/lib/product-line-adapter';
 
 // Commercial list
@@ -471,6 +472,12 @@ export default function CreateDevisPage() {
 
   return (
     <div className="container">
+      {/* Loading Spinner Overlay */}
+      <LoadingSpinner 
+        show={isProcessing}
+        message={currentProgress || 'Traitement en cours...'}
+      />
+
         {/* Header */}
       <div className="header">
         <div className="logo">
@@ -484,25 +491,6 @@ export default function CreateDevisPage() {
           <span id="currentDate">{getCurrentDate()}</span>
         </div>
         </div>
-
-      {/* Progress Indicator */}
-      {isProcessing && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '15px',
-          textAlign: 'center',
-          zIndex: 9999,
-          fontWeight: 'bold',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-        }}>
-          ⏳ {currentProgress}
-        </div>
-      )}
 
       {/* Error Display */}
       {(pdfError || assemblyError || sendError) && (
