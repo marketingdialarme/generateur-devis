@@ -91,7 +91,104 @@ export function useQuoteSender(): UseQuoteSenderReturn {
   }, []);
   
   /**
-   * Send quote via API with retry logic
+   * Upload large PDF directly to Drive via FormData
+   */
+  const uploadDirectToDrive = useCallback(async (
+    pdfBlob: Blob,
+    filename: string,
+    commercial: string,
+    type: 'alarme' | 'video',
+    centralType?: 'titane' | 'jablotron'
+  ): Promise<{ fileId: string; driveLink: string }> => {
+    console.log('📤 Using direct Drive upload for large file...');
+    setProgress('Uploading to Drive...');
+    
+    const formData = new FormData();
+    formData.append('file', pdfBlob, filename);
+    formData.append('filename', filename);
+    formData.append('commercial', commercial);
+    formData.append('type', type);
+    if (centralType) {
+      formData.append('centralType', centralType);
+    }
+    
+    const response = await fetch('/api/drive-upload-direct', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Upload failed: HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.fileId) {
+      throw new Error(result.error || 'Upload failed');
+    }
+    
+    console.log('✅ Direct upload successful:', result.driveLink);
+    return { fileId: result.fileId, driveLink: result.driveLink };
+  }, []);
+  
+  /**
+   * Send quote metadata after direct upload
+   */
+  const sendQuoteMetadata = useCallback(async (
+    driveFileId: string,
+    driveLink: string,
+    filename: string,
+    commercial: string,
+    clientName: string,
+    type: 'alarme' | 'video',
+    centralType: 'titane' | 'jablotron' | undefined,
+    products: string[],
+    assemblyInfo?: {
+      baseDossier: string;
+      productsFound: number;
+      totalPages: number;
+    }
+  ): Promise<SendQuoteResult> => {
+    setProgress('Sending email and logging...');
+    
+    const response = await fetch('/api/send-quote-lightweight', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        driveFileId,
+        driveLink,
+        filename,
+        commercial,
+        clientName,
+        type,
+        centralType,
+        produits: products,
+        frontendAssemblyInfo: assemblyInfo
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    return {
+      success: result.success,
+      message: result.message,
+      driveLink,
+      driveId: driveFileId,
+      emailSent: result.emailSent,
+      logged: result.logged
+    };
+  }, []);
+  
+  /**
+   * Send quote via API with retry logic (legacy method for small files)
    */
   const sendViaAPI = useCallback(async (
     payload: any,
@@ -187,53 +284,94 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       const device = detectDevice();
       console.log('📱 Device detection:', device);
       
-      // Convert PDF to base64
-      setProgress('Converting PDF...');
-      const base64 = await blobToBase64(pdfBlob);
-      console.log(`📄 PDF size: ${base64.length} bytes`);
+      // Check PDF size
+      const pdfSizeMB = pdfBlob.size / 1024 / 1024;
+      console.log(`📄 PDF size: ${pdfSizeMB.toFixed(2)} MB (${pdfBlob.size} bytes)`);
       
-      // Prepare payload
-      const payload = {
-        pdfBase64: base64,
-        filename,
-        commercial,
-        clientName,
-        type,
-        centralType,
-        produits: products,
-        addCommercialOverlay: false,
-        mergedByFrontend: true,
-        frontendAssemblyInfo: assemblyInfo,
-        timestamp: new Date().toISOString()
-      };
+      // Use direct upload for files > 10MB to avoid body size limits
+      const useDirectUpload = pdfSizeMB > 10;
       
-      console.log('📦 Payload:', {
-        filename,
-        commercial,
-        clientName,
-        type,
-        centralType,
-        productsCount: products.length,
-        pdfSize: base64.length
-      });
-      
-      if (assemblyInfo) {
-        console.log('📋 Assembly info:', assemblyInfo);
+      if (useDirectUpload) {
+        console.log('🚀 Using direct upload method (file > 10MB)');
+        
+        // Phase 1: Upload PDF directly to Drive
+        setProgress('Uploading large PDF to Drive...');
+        const { fileId, driveLink } = await uploadDirectToDrive(
+          pdfBlob,
+          filename,
+          commercial,
+          type,
+          centralType
+        );
+        
+        // Phase 2: Send email and log
+        setProgress('Sending email and logging...');
+        const result = await sendQuoteMetadata(
+          fileId,
+          driveLink,
+          filename,
+          commercial,
+          clientName,
+          type,
+          centralType,
+          products,
+          assemblyInfo
+        );
+        
+        setProgress('Quote sent successfully!');
+        console.log('✅ Complete (direct upload):', result);
+        
+        return result;
+      } else {
+        console.log('📤 Using standard upload method (file < 10MB)');
+        
+        // Convert PDF to base64
+        setProgress('Converting PDF...');
+        const base64 = await blobToBase64(pdfBlob);
+        console.log(`📄 Base64 size: ${base64.length} bytes`);
+        
+        // Prepare payload
+        const payload = {
+          pdfBase64: base64,
+          filename,
+          commercial,
+          clientName,
+          type,
+          centralType,
+          produits: products,
+          addCommercialOverlay: false,
+          mergedByFrontend: true,
+          frontendAssemblyInfo: assemblyInfo,
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log('📦 Payload:', {
+          filename,
+          commercial,
+          clientName,
+          type,
+          centralType,
+          productsCount: products.length,
+          pdfSize: base64.length
+        });
+        
+        if (assemblyInfo) {
+          console.log('📋 Assembly info:', assemblyInfo);
+        }
+        
+        // Determine timeout based on quote type
+        const timeoutMs = type === 'video' ? 240000 : 120000;
+        console.log(`⏱️ Timeout: ${timeoutMs / 1000}s (${type})`);
+        
+        // Send via API
+        setProgress('Uploading to Drive and sending email...');
+        const result = await sendViaAPI(payload, 2, timeoutMs);
+        
+        setProgress('Quote sent successfully!');
+        console.log('✅ Complete:', result);
+        
+        return result;
       }
-      
-      // Determine timeout based on quote type
-      // Video quotes are larger (product sheets + accessories) - need more time
-      const timeoutMs = type === 'video' ? 240000 : 120000; // 240s for video, 120s for alarm
-      console.log(`⏱️ Timeout: ${timeoutMs / 1000}s (${type})`);
-      
-      // Send via API
-      setProgress('Uploading to Drive and sending email...');
-      const result = await sendViaAPI(payload, 2, timeoutMs);
-      
-      setProgress('Quote sent successfully!');
-      console.log('✅ Complete:', result);
-      
-      return result;
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -250,7 +388,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       // Clear progress after 3 seconds
       setTimeout(() => setProgress(''), 3000);
     }
-  }, [blobToBase64, detectDevice, sendViaAPI]);
+  }, [blobToBase64, detectDevice, uploadDirectToDrive, sendQuoteMetadata, sendViaAPI]);
   
   return {
     sendQuote,
