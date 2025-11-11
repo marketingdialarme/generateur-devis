@@ -13,6 +13,17 @@ const nextConfig = {
     APP_VERSION: '2.0.0',
   },
   
+  // Redirects
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/create-devis',
+        permanent: true,
+      },
+    ];
+  },
+  
   // API routes configuration
   async headers() {
     return [
