@@ -164,8 +164,11 @@ async function assembleAlarmPdf(
     // 8. Add commercial overlay to page 2 (index 1)
     await addCommercialOverlay(pdfDoc, commercial, 1);
     
-    // 9. Generate final PDF
-    const mergedPdfBytes = await pdfDoc.save();
+    // 9. Generate final PDF with compression
+    const mergedPdfBytes = await pdfDoc.save({
+      useObjectStreams: true,
+      addDefaultPage: false
+    });
     const mergedPdfBlob = new Blob([Buffer.from(mergedPdfBytes)], { type: 'application/pdf' });
     
     const totalPages = pdfDoc.getPageCount();
@@ -283,8 +286,11 @@ async function assembleVideoPdf(
     
     console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
     
-    // 10. Generate final PDF
-    const mergedPdfBytes = await pdfDoc.save();
+    // 10. Generate final PDF with compression
+    const mergedPdfBytes = await pdfDoc.save({
+      useObjectStreams: true,
+      addDefaultPage: false
+    });
     const mergedPdfBlob = new Blob([Buffer.from(mergedPdfBytes)], { type: 'application/pdf' });
     
     const totalPages = pdfDoc.getPageCount();
@@ -442,60 +448,76 @@ async function fetchDocumentFromDrive(fileId: string): Promise<ArrayBuffer> {
 
 /**
  * Fetch all documents needed for video quote assembly
+ * Optimized: Fetches all documents in parallel for maximum speed
  */
 async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments> {
-  console.log('📥 Fetching video documents...');
+  console.log('📥 Fetching video documents in parallel...');
   
   try {
-    // Fetch base document
     const baseDocumentId = config.google.drive.baseDocuments.video;
-    const base = await fetchDocumentFromDrive(baseDocumentId);
     
-    // Fetch product sheets
-    const productResults: Array<{ name: string; data: ArrayBuffer }> = [];
-    
-    for (const productName of products) {
-      try {
-        console.log(`📦 Fetching product sheet: ${productName}`);
-        const response = await fetch(`/api/drive-fetch-product?productName=${encodeURIComponent(productName)}`);
-        
-        if (response.ok) {
-          const data = await response.arrayBuffer();
-          productResults.push({ name: productName, data });
-          console.log(`✅ Fetched: ${productName}`);
-        } else {
-          console.warn(`⚠️ Not found: ${productName}`);
-        }
-      } catch (error) {
-        console.warn(`⚠️ Error fetching ${productName}:`, error);
-      }
-    }
-    
-    // Fetch accessories sheet
-    let accessories: ArrayBuffer | undefined;
-    try {
-      console.log('📦 Fetching accessories sheet...');
-      const response = await fetch('/api/drive-fetch-accessories');
+    // Fetch all documents in parallel for maximum speed
+    const [base, productResults, accessories] = await Promise.all([
+      // Fetch base document
+      fetchDocumentFromDrive(baseDocumentId),
       
-      if (response.ok) {
-        accessories = await response.arrayBuffer();
-        console.log('✅ Accessories sheet fetched');
-      } else {
-        console.warn('⚠️ Accessories sheet not found');
-      }
-    } catch (error) {
-      console.warn('⚠️ Error fetching accessories:', error);
-    }
+      // Fetch all product sheets in parallel
+      Promise.all(
+        products.map(async (productName) => {
+          try {
+            console.log(`📦 Fetching product sheet: ${productName}`);
+            const response = await fetch(`/api/drive-fetch-product?productName=${encodeURIComponent(productName)}`);
+            
+            if (response.ok) {
+              const data = await response.arrayBuffer();
+              console.log(`✅ Fetched: ${productName}`);
+              return { name: productName, data };
+            } else {
+              console.warn(`⚠️ Not found: ${productName}`);
+              return null;
+            }
+          } catch (error) {
+            console.warn(`⚠️ Error fetching ${productName}:`, error);
+            return null;
+          }
+        })
+      ),
+      
+      // Fetch accessories sheet
+      (async () => {
+        try {
+          console.log('📦 Fetching accessories sheet...');
+          const response = await fetch('/api/drive-fetch-accessories');
+          
+          if (response.ok) {
+            const data = await response.arrayBuffer();
+            console.log('✅ Accessories sheet fetched');
+            return data;
+          } else {
+            console.warn('⚠️ Accessories sheet not found');
+            return undefined;
+          }
+        } catch (error) {
+          console.warn('⚠️ Error fetching accessories:', error);
+          return undefined;
+        }
+      })()
+    ]);
+    
+    // Filter out null results from product fetches
+    const validProducts = productResults.filter(
+      (result): result is { name: string; data: ArrayBuffer } => result !== null
+    );
     
     console.log('✅ All documents fetched:', {
       base: (base.byteLength / 1024 / 1024).toFixed(2) + ' MB',
-      products: productResults.length + '/' + products.length,
+      products: validProducts.length + '/' + products.length,
       accessories: accessories ? 'yes' : 'no'
     });
     
     return {
       base,
-      products: productResults,
+      products: validProducts,
       accessories
     };
   } catch (error) {

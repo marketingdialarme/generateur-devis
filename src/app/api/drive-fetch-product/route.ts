@@ -53,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Length': fileBuffer.length.toString(),
-          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+          'Cache-Control': 'public, max-age=86400, immutable', // Cache for 24 hours
         },
       });
     } catch (error) {
