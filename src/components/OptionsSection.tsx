@@ -56,7 +56,8 @@ export function OptionsSection(props: OptionsSectionProps) {
               }
             }}
             style={{ 
-              margin: '0 12px 0 0', 
+              margin: 0,
+              marginRight: '12px',
               cursor: 'pointer',
               width: '16px',
               height: '16px',
@@ -88,8 +89,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           padding: '10px 12px',
           background: interventionsAnnee ? '#f0f8ff' : 'transparent',
           borderRadius: '6px',
-          transition: 'all 0.2s',
-          gap: '12px'
+          transition: 'all 0.2s'
         }}>
           <input
             type="checkbox"
@@ -103,6 +103,7 @@ export function OptionsSection(props: OptionsSectionProps) {
             }}
             style={{ 
               margin: 0,
+              marginRight: '12px',
               cursor: 'pointer',
               width: '16px',
               height: '16px',
@@ -161,7 +162,8 @@ export function OptionsSection(props: OptionsSectionProps) {
             checked={serviceCles}
             onChange={(e) => onServiceClesChange(e.target.checked)}
             style={{ 
-              margin: '0 12px 0 0', 
+              margin: 0,
+              marginRight: '12px',
               cursor: 'pointer',
               width: '16px',
               height: '16px',
