@@ -1,76 +1,56 @@
 /**
- * API Route: Blob Upload
+ * API Route: Blob Upload Token
  * 
- * Handles large PDF uploads via Vercel Blob storage.
- * This bypasses the 4.5 MB serverless function body limit.
+ * Generates a client upload token for direct-to-blob uploads.
+ * This endpoint does NOT receive the PDF - it only returns a token.
  * 
  * Flow:
- * 1. Client uploads PDF to this endpoint
- * 2. Upload to Vercel Blob (supports up to 5 GB)
- * 3. Return blob URL
+ * 1. Client requests upload token (small request)
+ * 2. Returns token + upload URL
+ * 3. Client uploads PDF DIRECTLY to Vercel Blob (bypasses serverless)
+ * 4. Returns blob URL
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
 
-interface BlobUploadResponse {
-  success: boolean;
-  blobUrl?: string;
-  error?: string;
-}
-
-export async function POST(request: NextRequest): Promise<NextResponse<BlobUploadResponse>> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    console.log('📤 [API] Blob Upload - Starting...');
-    
-    // Parse multipart form data
-    const formData = await request.formData();
-    
-    const file = formData.get('file') as File;
-    const filename = formData.get('filename') as string;
-    
-    // Validate required fields
-    if (!file || !filename) {
-      console.error('❌ [API] Missing required fields');
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing required fields: file and filename are required'
-        },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`📄 [API] File: ${filename}, Size: ${file.size} bytes (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-    
-    // Upload to Vercel Blob
-    console.log(`☁️ [API] Uploading to Vercel Blob...`);
-    
-    const blob = await put(filename, file, {
-      access: 'public',
-      addRandomSuffix: true,
+    const body = (await request.json()) as HandleUploadBody;
+
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        // Validate file extension
+        if (!pathname.endsWith('.pdf')) {
+          throw new Error('Only PDF files are allowed');
+        }
+        
+        console.log(`🔑 [API] Generating upload token for: ${pathname}`);
+        
+        return {
+          allowedContentTypes: ['application/pdf'],
+          maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB max
+        };
+      },
+      onUploadCompleted: async ({ blob }) => {
+        console.log(`✅ [API] Blob upload completed: ${blob.url}`);
+      },
     });
-    
-    console.log(`✅ [API] Uploaded to Blob: ${blob.url}`);
-    
-    return NextResponse.json({
-      success: true,
-      blobUrl: blob.url
-    });
-    
+
+    return NextResponse.json(jsonResponse);
   } catch (error) {
-    console.error('❌ [API] Blob upload failed:', error);
+    console.error('❌ [API] Token generation failed:', error);
     
     return NextResponse.json(
       {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Token generation failed'
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }

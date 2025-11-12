@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PDFDocument } from 'pdf-lib';
+import { upload } from '@vercel/blob/client';
 
 interface SendQuoteParams {
   pdfBlob: Blob;
@@ -92,37 +92,30 @@ export function useQuoteSender(): UseQuoteSenderReturn {
   }, []);
   
   /**
-   * Upload large PDF to Vercel Blob (bypasses 4.5 MB limit)
+   * Upload large PDF to Vercel Blob (client-side direct upload - bypasses 4.5 MB limit)
    */
   const uploadToBlob = useCallback(async (
     pdfBlob: Blob,
     filename: string
   ): Promise<string> => {
-    console.log('📤 Uploading to Vercel Blob...');
+    console.log('📤 Uploading to Vercel Blob (client-side direct)...');
     setProgress('Uploading PDF to cloud storage...');
     
-    const formData = new FormData();
-    formData.append('file', pdfBlob, filename);
-    formData.append('filename', filename);
-    
-    const response = await fetch('/api/blob-upload', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Blob upload failed: HTTP ${response.status}`);
+    try {
+      // Client-side direct upload - PDF never goes through serverless function
+      const blob = await upload(filename, pdfBlob, {
+        access: 'public',
+        handleUploadUrl: '/api/blob-upload',
+      });
+      
+      console.log('✅ Blob upload successful:', blob.url);
+      console.log(`📊 Size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB uploaded directly to blob storage`);
+      
+      return blob.url;
+    } catch (uploadError) {
+      console.error('❌ Blob upload failed:', uploadError);
+      throw new Error(uploadError instanceof Error ? uploadError.message : 'Blob upload failed');
     }
-    
-    const result = await response.json();
-    
-    if (!result.success || !result.blobUrl) {
-      throw new Error(result.error || 'Blob upload failed');
-    }
-    
-    console.log('✅ Blob upload successful:', result.blobUrl);
-    return result.blobUrl;
   }, []);
   
   /**
