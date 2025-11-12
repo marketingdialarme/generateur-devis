@@ -17,12 +17,12 @@ Vercel serverless functions have a body size limit (~4.5MB for JSON). Video quot
 
 Implemented a **two-phase upload strategy** that automatically switches based on PDF size:
 
-### 1. **Standard Upload** (PDFs < 10MB)
+### 1. **Standard Upload** (PDFs < 3MB)
 - Converts PDF to base64
 - Sends via `/api/send-quote` (original endpoint)
 - ✅ Fast and simple for small files
 
-### 2. **Direct Upload** (PDFs > 10MB)
+### 2. **Direct Upload** (PDFs > 3MB)
 - **Phase 1:** Upload PDF as `multipart/form-data` to `/api/drive-upload-direct`
   - Bypasses JSON body size limits
   - Returns Drive file ID
@@ -51,7 +51,7 @@ Implemented a **two-phase upload strategy** that automatically switches based on
    - Added `uploadDirectToDrive()` method
    - Added `sendQuoteMetadata()` method
    - Auto-detects PDF size and chooses upload strategy
-   - Threshold: 10MB
+   - Threshold: 3MB (accounts for base64 encoding overhead)
 
 4. **`vercel.json`**
    - Increased memory to 3GB for upload routes
@@ -71,8 +71,8 @@ Implemented a **two-phase upload strategy** that automatically switches based on
 ```mermaid
 graph TD
     A[Generate PDF] --> B{Check Size}
-    B -->|< 10MB| C[Standard Upload]
-    B -->|> 10MB| D[Direct Upload]
+    B -->|< 3MB| C[Standard Upload]
+    B -->|> 3MB| D[Direct Upload]
     
     C --> E[Base64 Encode]
     E --> F[POST /api/send-quote]
@@ -152,4 +152,5 @@ No configuration needed! The system automatically:
 **Status:** ✅ Deployed and tested  
 **Date:** 2025-01-11  
 **Impact:** All large video quotes now work correctly
+
 
