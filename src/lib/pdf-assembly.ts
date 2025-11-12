@@ -239,17 +239,29 @@ async function assembleVideoPdf(
     quotePages.forEach(page => pdfDoc.addPage(page));
     console.log('✅ Generated quote inserted as page 6');
     
-    // 6. Add product sheets
+    // 6. Add product sheets (deduplicated to avoid adding the same PDF multiple times)
     let productSheetsAdded = 0;
+    const addedPdfHashes = new Set<string>();
+    
     if (documents.products) {
       for (const product of documents.products) {
         if (product.data) {
           try {
+            // Create a simple hash from the PDF data to detect duplicates
+            // (multiple products can share the same technical sheet PDF)
+            const pdfHash = Buffer.from(product.data).toString('base64').substring(0, 100);
+            
+            if (addedPdfHashes.has(pdfHash)) {
+              console.log('⏭️ Skipping duplicate sheet for:', product.name, '(already added)');
+              continue;
+            }
+            
             const productPdf = await PDFDocument.load(product.data);
             const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
             productPages.forEach(page => pdfDoc.addPage(page));
             console.log('✅ Product sheet added:', product.name);
             productSheetsAdded++;
+            addedPdfHashes.add(pdfHash);
           } catch (error) {
             console.warn('⚠️ Could not add product sheet for:', product.name, error);
           }
