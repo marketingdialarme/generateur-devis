@@ -1,26 +1,28 @@
 /**
  * API Route: Send Quote (Lightweight)
  * 
- * Handles email and logging after PDF is already uploaded to Drive.
- * This is used in conjunction with drive-upload-direct for large files.
+ * Handles email and logging after PDF is uploaded to blob storage.
+ * This is used in conjunction with blob-upload for large files.
  * 
  * Flow:
- * 1. PDF already uploaded to Drive (via drive-upload-direct)
- * 2. This endpoint sends email and logs to database
- * 3. No PDF data in request body - only metadata
+ * 1. PDF already uploaded to Vercel Blob
+ * 2. Download PDF from blob
+ * 3. Upload to Google Drive
+ * 4. Send email with attachment
+ * 5. Log to database
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuoteEmail } from '@/lib/services/email.service';
 import { logQuote } from '@/lib/services/database.service';
-import { downloadFileFromDrive } from '@/lib/services/google-drive.service';
+import { uploadFileToDrive, getOrCreateCommercialFolder } from '@/lib/services/google-drive.service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 interface SendQuoteLightweightRequest {
-  driveFileId: string;
-  driveLink: string;
+  blobUrl: string;
   filename: string;
   commercial: string;
   clientName: string;
@@ -37,6 +39,8 @@ interface SendQuoteLightweightRequest {
 interface SendQuoteLightweightResponse {
   success: boolean;
   message: string;
+  driveLink?: string;
+  driveFileId?: string;
   emailSent?: boolean;
   logged?: boolean;
   error?: string;
@@ -50,8 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     const body: SendQuoteLightweightRequest = await request.json();
     
     const {
-      driveFileId,
-      driveLink,
+      blobUrl,
       filename,
       commercial,
       clientName,
@@ -62,36 +65,66 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     } = body;
     
     // Validate required fields
-    if (!driveFileId || !driveLink || !filename || !commercial || !clientName || !type) {
+    if (!blobUrl || !filename || !commercial || !clientName || !type) {
       console.error('❌ [API] Missing required fields');
       return NextResponse.json(
         {
           success: false,
           message: 'Missing required fields',
-          error: 'driveFileId, driveLink, filename, commercial, clientName, and type are required'
+          error: 'blobUrl, filename, commercial, clientName, and type are required'
         },
         { status: 400 }
       );
     }
     
-    console.log(`📧 [API] Sending email for: ${filename}`);
+    console.log(`📧 [API] Processing quote: ${filename}`);
     console.log(`👤 [API] Commercial: ${commercial}, Client: ${clientName}`);
+    console.log(`🔗 [API] Blob URL: ${blobUrl}`);
     
     let emailSent = false;
     let logged = false;
+    let driveLink = '';
+    let driveFileId = '';
     
-    // Download PDF from Drive for email attachment
-    console.log('📥 [API] Downloading PDF from Drive for email...');
+    // Step 1: Download PDF from Vercel Blob
+    console.log('📥 [API] Downloading PDF from Blob...');
     let pdfBuffer: Buffer | null = null;
     
     try {
-      pdfBuffer = await downloadFileFromDrive(driveFileId);
-      console.log(`✅ [API] PDF downloaded: ${pdfBuffer.length} bytes`);
+      const blobResponse = await fetch(blobUrl);
+      if (!blobResponse.ok) {
+        throw new Error(`Blob download failed: HTTP ${blobResponse.status}`);
+      }
+      const arrayBuffer = await blobResponse.arrayBuffer();
+      pdfBuffer = Buffer.from(arrayBuffer);
+      console.log(`✅ [API] PDF downloaded from Blob: ${pdfBuffer.length} bytes (${(pdfBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
     } catch (downloadError) {
-      console.error('⚠️ [API] PDF download failed, will send email without attachment:', downloadError);
+      console.error('❌ [API] Blob download failed:', downloadError);
+      throw new Error('Failed to download PDF from blob storage');
     }
     
-    // Send email
+    // Step 2: Upload to Google Drive
+    if (pdfBuffer) {
+      try {
+        console.log('📤 [API] Uploading to Google Drive...');
+        const folderId = await getOrCreateCommercialFolder(commercial);
+        const driveFile = await uploadFileToDrive(
+          pdfBuffer,
+          filename,
+          'application/pdf',
+          folderId
+        );
+        
+        driveFileId = driveFile.id || '';
+        driveLink = `https://drive.google.com/file/d/${driveFileId}/view`;
+        console.log(`✅ [API] Uploaded to Drive: ${driveLink}`);
+      } catch (driveError) {
+        console.error('❌ [API] Drive upload failed:', driveError);
+        // Continue - we can still send email
+      }
+    }
+    
+    // Step 3: Send email with PDF attachment
     if (pdfBuffer) {
       try {
         await sendQuoteEmail({
@@ -108,11 +141,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
         console.error('❌ [API] Email send failed:', emailError);
         // Continue even if email fails
       }
-    } else {
-      console.warn('⚠️ [API] Skipping email (no PDF buffer available)');
     }
     
-    // Log to database
+    // Step 4: Log to database
     try {
       await logQuote({
         client_name: clientName,
@@ -137,6 +168,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     return NextResponse.json({
       success: true,
       message: 'Quote sent successfully',
+      driveLink,
+      driveFileId,
       emailSent,
       logged
     });

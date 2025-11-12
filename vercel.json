@@ -19,6 +19,10 @@
       "maxDuration": 300,
       "memory": 1024
     },
+    "src/app/api/blob-upload/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
     "src/app/api/send-quote-lightweight/route.ts": {
       "maxDuration": 300,
       "memory": 1024

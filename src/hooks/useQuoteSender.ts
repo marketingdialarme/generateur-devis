@@ -92,53 +92,44 @@ export function useQuoteSender(): UseQuoteSenderReturn {
   }, []);
   
   /**
-   * Upload large PDF directly to Drive via FormData
+   * Upload large PDF to Vercel Blob (bypasses 4.5 MB limit)
    */
-  const uploadDirectToDrive = useCallback(async (
+  const uploadToBlob = useCallback(async (
     pdfBlob: Blob,
-    filename: string,
-    commercial: string,
-    type: 'alarme' | 'video',
-    centralType?: 'titane' | 'jablotron'
-  ): Promise<{ fileId: string; driveLink: string }> => {
-    console.log('📤 Using direct Drive upload for large file...');
-    setProgress('Uploading to Drive...');
+    filename: string
+  ): Promise<string> => {
+    console.log('📤 Uploading to Vercel Blob...');
+    setProgress('Uploading PDF to cloud storage...');
     
     const formData = new FormData();
     formData.append('file', pdfBlob, filename);
     formData.append('filename', filename);
-    formData.append('commercial', commercial);
-    formData.append('type', type);
-    if (centralType) {
-      formData.append('centralType', centralType);
-    }
     
-    const response = await fetch('/api/drive-upload-direct', {
+    const response = await fetch('/api/blob-upload', {
       method: 'POST',
       body: formData,
     });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Upload failed: HTTP ${response.status}`);
+      throw new Error(errorData.error || `Blob upload failed: HTTP ${response.status}`);
     }
     
     const result = await response.json();
     
-    if (!result.success || !result.fileId) {
-      throw new Error(result.error || 'Upload failed');
+    if (!result.success || !result.blobUrl) {
+      throw new Error(result.error || 'Blob upload failed');
     }
     
-    console.log('✅ Direct upload successful:', result.driveLink);
-    return { fileId: result.fileId, driveLink: result.driveLink };
+    console.log('✅ Blob upload successful:', result.blobUrl);
+    return result.blobUrl;
   }, []);
   
   /**
-   * Send quote metadata after direct upload
+   * Send quote metadata after blob upload
    */
   const sendQuoteMetadata = useCallback(async (
-    driveFileId: string,
-    driveLink: string,
+    blobUrl: string,
     filename: string,
     commercial: string,
     clientName: string,
@@ -151,7 +142,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       totalPages: number;
     }
   ): Promise<SendQuoteResult> => {
-    setProgress('Sending email and logging...');
+    setProgress('Processing and sending email...');
     
     const response = await fetch('/api/send-quote-lightweight', {
       method: 'POST',
@@ -159,8 +150,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        driveFileId,
-        driveLink,
+        blobUrl,
         filename,
         commercial,
         clientName,
@@ -181,8 +171,8 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     return {
       success: result.success,
       message: result.message,
-      driveLink,
-      driveId: driveFileId,
+      driveLink: result.driveLink,
+      driveId: result.driveFileId,
       emailSent: result.emailSent,
       logged: result.logged
     };
@@ -296,52 +286,12 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       if (useDirectUpload) {
         console.log('🚀 Using direct upload method (file > 3MB)');
         
-        // Compress PDF before upload to stay under Vercel's 4.5 MB body limit
-        let uploadBlob = pdfBlob;
-        try {
-          setProgress('Compressing PDF...');
-          console.log('🗜️ Compressing PDF before upload...');
-          
-          const arrayBuffer = await pdfBlob.arrayBuffer();
-          const pdfDoc = await PDFDocument.load(arrayBuffer);
-          const compressedBytes = await pdfDoc.save({
-            useObjectStreams: true,
-            addDefaultPage: false,
-            objectsPerTick: 50,
-          });
-          
-          uploadBlob = new Blob([Buffer.from(compressedBytes)], { type: 'application/pdf' });
-          
-          const originalSizeMB = pdfBlob.size / 1024 / 1024;
-          const compressedSizeMB = uploadBlob.size / 1024 / 1024;
-          const savings = ((1 - compressedSizeMB / originalSizeMB) * 100).toFixed(1);
-          
-          console.log(`✅ Compressed: ${originalSizeMB.toFixed(2)} MB → ${compressedSizeMB.toFixed(2)} MB (${savings}% reduction)`);
-          
-          // If still too large, warn but proceed
-          if (compressedSizeMB > 4.5) {
-            console.warn(`⚠️ Compressed PDF is ${compressedSizeMB.toFixed(2)} MB, may still exceed Vercel limit`);
-          }
-        } catch (compressionError) {
-          console.warn('⚠️ PDF compression failed, using original:', compressionError);
-          uploadBlob = pdfBlob; // Fallback to original
-        }
+        // Phase 1: Upload PDF to Vercel Blob (bypasses 4.5 MB limit)
+        const blobUrl = await uploadToBlob(pdfBlob, filename);
         
-        // Phase 1: Upload PDF directly to Drive
-        setProgress('Uploading PDF to Drive...');
-        const { fileId, driveLink } = await uploadDirectToDrive(
-          uploadBlob,
-          filename,
-          commercial,
-          type,
-          centralType
-        );
-        
-        // Phase 2: Send email and log
-        setProgress('Sending email and logging...');
+        // Phase 2: Process (upload to Drive, send email, log to DB)
         const result = await sendQuoteMetadata(
-          fileId,
-          driveLink,
+          blobUrl,
           filename,
           commercial,
           clientName,
@@ -352,7 +302,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         );
         
         setProgress('Quote sent successfully!');
-        console.log('✅ Complete (direct upload):', result);
+        console.log('✅ Complete (blob upload):', result);
         
         return result;
       } else {
@@ -421,7 +371,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       // Clear progress after 3 seconds
       setTimeout(() => setProgress(''), 3000);
     }
-  }, [blobToBase64, detectDevice, uploadDirectToDrive, sendQuoteMetadata, sendViaAPI]);
+  }, [blobToBase64, detectDevice, uploadToBlob, sendQuoteMetadata, sendViaAPI]);
   
   return {
     sendQuote,
