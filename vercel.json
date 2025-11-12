@@ -9,19 +9,19 @@
   "functions": {
     "src/app/api/send-quote/route.ts": {
       "maxDuration": 300,
-      "memory": 3008
+      "memory": 1024
     },
     "src/app/api/drive-upload/route.ts": {
       "maxDuration": 300,
-      "memory": 3008
+      "memory": 1024
     },
     "src/app/api/drive-upload-direct/route.ts": {
       "maxDuration": 300,
-      "memory": 3008
+      "memory": 1024
     },
     "src/app/api/send-quote-lightweight/route.ts": {
       "maxDuration": 300,
-      "memory": 3008
+      "memory": 1024
     }
   }
 }
