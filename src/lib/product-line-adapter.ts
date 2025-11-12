@@ -118,14 +118,51 @@ export function calculateLineTotal(
 }
 
 /**
- * Calculate camera installation price
- * Formula: 690 + (number of cameras × 140)
+ * Calculate camera installation price with tiered pricing
+ * - 1 camera = 350 CHF
+ * - 1/2 journée (half-day) = 690 CHF
+ * - 1 journée (full day) = 1290 CHF
+ * - Additional half-days use tiered logic
  */
-export function calculateCameraInstallation(cameraLines: ProductLineData[]): number {
+export function calculateCameraInstallation(cameraLines: ProductLineData[], halfDays?: number): number {
   const cameraCount = cameraLines.reduce((sum, line) => {
     return sum + (line.product && !line.offered ? line.quantity : 0);
   }, 0);
   
-  return 690 + (cameraCount * 140);
+  // If only 1 camera, charge 350 CHF
+  if (cameraCount === 1) {
+    return 350;
+  }
+  
+  // Otherwise, use half-day pricing with tiered system
+  const days = halfDays || 1;
+  let total = 0;
+  for (let i = 0; i < days; i += 2) {
+    if (i + 2 <= days) {
+      // Complete pair (full day)
+      total += 1290;
+    } else {
+      // Single half-day
+      total += 690;
+    }
+  }
+  return total;
+}
+
+/**
+ * Calculate remote access price based on camera count
+ * - 1 camera = 20 CHF/mois
+ * - 2-7 cameras = 35 CHF/mois
+ * - 8+ cameras = 60 CHF/mois
+ */
+export function calculateRemoteAccessPrice(cameraLines: ProductLineData[]): number {
+  const cameraCount = cameraLines.reduce((sum, line) => {
+    return sum + (line.product && !line.offered ? line.quantity : 0);
+  }, 0);
+  
+  if (cameraCount === 0) return 0;
+  if (cameraCount === 1) return 20;
+  if (cameraCount >= 2 && cameraCount <= 7) return 35;
+  return 60; // 8+
 }
 

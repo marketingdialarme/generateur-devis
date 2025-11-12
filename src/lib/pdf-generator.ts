@@ -10,7 +10,8 @@
 import type { jsPDF } from 'jspdf';
 import type { AlarmTotals, CameraTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
-import { TVA_RATE, ADMIN_FEES, REMOTE_ACCESS_PRICE } from './quote-generator';
+import { TVA_RATE, ADMIN_FEES, REMOTE_ACCESS_PRICE, UNINSTALL_PRICE } from './quote-generator';
+import { calculateRemoteAccessPrice } from './product-line-adapter';
 
 // ============================================
 // INTERFACES
@@ -202,6 +203,11 @@ function createAlarmPDFSections(
   // Options
   if (options.options) {
     yPos = createOptionsSection(doc, options.options, yPos);
+  }
+
+  // Uninstall notice for rental mode
+  if (options.isRental) {
+    yPos = createUninstallNotice(doc, yPos);
   }
 
   // Final summary
@@ -423,12 +429,22 @@ function createCameraPDFSections(
     yPos += 15;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Vision à distance : ${REMOTE_ACCESS_PRICE.toFixed(2)} CHF/mois`, 40, yPos);
-    yPos += 15;
+    const remoteAccessPrice = calculateRemoteAccessPrice(options.materialLines);
+    doc.text(`Vision à distance : ${remoteAccessPrice.toFixed(2)} CHF/mois`, 40, yPos);
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text('(Tarif adapté selon le nombre de caméras: 1 cam=20 CHF | 2-7 cams=35 CHF | 8+=60 CHF)', 40, yPos + 10);
+    doc.setTextColor(0, 0, 0);
+    yPos += 20;
   }
 
   // Maintenance
   yPos = createMaintenanceSection(doc, yPos);
+
+  // Uninstall notice for rental mode
+  if (options.isRental) {
+    yPos = createUninstallNotice(doc, yPos);
+  }
 
   // Final summary
   yPos = createFinalSummary(doc, cameraTotals, options.type, options.isRental, yPos);
@@ -888,6 +904,35 @@ function createMaintenanceSection(doc: jsPDF, yPos: number): number {
   yPos += 14;
 
   return yPos + 15;
+}
+
+// ============================================
+// UNINSTALL NOTICE (Rental Mode)
+// ============================================
+
+function createUninstallNotice(doc: jsPDF, yPos: number): number {
+  // Add notice box
+  doc.setFillColor(255, 243, 205); // Light yellow background
+  doc.rect(40, yPos, 515, 30, 'F');
+  
+  // Border
+  doc.setDrawColor(255, 193, 7); // Yellow border
+  doc.setLineWidth(2);
+  doc.rect(40, yPos, 515, 30, 'S');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.text('⚠ DÉSINSTALLATION', 50, yPos + 15);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(`Désinstallation : ${UNINSTALL_PRICE.toFixed(2)} CHF si durée inférieure à 12 mois`, 50, yPos + 24);
+  
+  doc.setTextColor(0, 0, 0);
+  yPos += 45;
+  
+  return yPos;
 }
 
 // ============================================

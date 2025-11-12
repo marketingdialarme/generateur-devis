@@ -147,7 +147,10 @@ export const ADMIN_FEES = {
 };
 
 export const CAMERA_INSTALL_BASE_PRICE = 690.00;
+export const CAMERA_INSTALL_ONE_CAMERA = 350.00;
 export const REMOTE_ACCESS_PRICE = 20.00;
+export const REMOTE_ACCESS_PRICE_2_7 = 35.00;
+export const REMOTE_ACCESS_PRICE_8_PLUS = 60.00;
 export const TEST_CYCLIQUE_DEFAULT_PRICE = 0.00;
 
 export const SURVEILLANCE_PRICES_SALE = {

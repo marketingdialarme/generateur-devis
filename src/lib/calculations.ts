@@ -11,6 +11,8 @@ import {
   TVA_RATE,
   ADMIN_FEES,
   REMOTE_ACCESS_PRICE,
+  REMOTE_ACCESS_PRICE_2_7,
+  REMOTE_ACCESS_PRICE_8_PLUS,
   TEST_CYCLIQUE_DEFAULT_PRICE,
   roundToFiveCents,
   calculateInstallationPrice,
@@ -18,6 +20,8 @@ import {
   type AlarmProduct,
   type CameraProduct
 } from './quote-generator';
+
+import { calculateRemoteAccessPrice } from './product-line-adapter';
 
 import type { ProductLineData } from '@/components/ProductLine';
 
@@ -375,8 +379,10 @@ export function calculateCameraTotals(
     ? 0 
     : (installation.isOffered ? 0 : (installation.price || calculateInstallationPrice(installation.quantity)));
 
-  // Remote access
-  const remoteAccessPrice = (!isRentalMode && remoteAccessEnabled) ? REMOTE_ACCESS_PRICE : 0;
+  // Remote access - use tiered pricing based on camera count
+  const remoteAccessPrice = (!isRentalMode && remoteAccessEnabled) 
+    ? calculateRemoteAccessPrice(materialLines)
+    : 0;
 
   // Total HT and TTC
   const totalHT = material.total + installationTotal;
