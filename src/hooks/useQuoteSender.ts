@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { PDFDocument } from 'pdf-lib';
 
 interface SendQuoteParams {
   pdfBlob: Blob;
@@ -295,10 +296,41 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       if (useDirectUpload) {
         console.log('🚀 Using direct upload method (file > 3MB)');
         
+        // Compress PDF before upload to stay under Vercel's 4.5 MB body limit
+        let uploadBlob = pdfBlob;
+        try {
+          setProgress('Compressing PDF...');
+          console.log('🗜️ Compressing PDF before upload...');
+          
+          const arrayBuffer = await pdfBlob.arrayBuffer();
+          const pdfDoc = await PDFDocument.load(arrayBuffer);
+          const compressedBytes = await pdfDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false,
+            objectsPerTick: 50,
+          });
+          
+          uploadBlob = new Blob([Buffer.from(compressedBytes)], { type: 'application/pdf' });
+          
+          const originalSizeMB = pdfBlob.size / 1024 / 1024;
+          const compressedSizeMB = uploadBlob.size / 1024 / 1024;
+          const savings = ((1 - compressedSizeMB / originalSizeMB) * 100).toFixed(1);
+          
+          console.log(`✅ Compressed: ${originalSizeMB.toFixed(2)} MB → ${compressedSizeMB.toFixed(2)} MB (${savings}% reduction)`);
+          
+          // If still too large, warn but proceed
+          if (compressedSizeMB > 4.5) {
+            console.warn(`⚠️ Compressed PDF is ${compressedSizeMB.toFixed(2)} MB, may still exceed Vercel limit`);
+          }
+        } catch (compressionError) {
+          console.warn('⚠️ PDF compression failed, using original:', compressionError);
+          uploadBlob = pdfBlob; // Fallback to original
+        }
+        
         // Phase 1: Upload PDF directly to Drive
-        setProgress('Uploading large PDF to Drive...');
+        setProgress('Uploading PDF to Drive...');
         const { fileId, driveLink } = await uploadDirectToDrive(
-          pdfBlob,
+          uploadBlob,
           filename,
           commercial,
           type,
