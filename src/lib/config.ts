@@ -122,7 +122,7 @@ export const config: AppConfig = {
   // EMAIL CONFIGURATION
   // ==========================================================================
   email: {
-    from: process.env.EMAIL_FROM || 'devis@dialarme.fr',
+    from: process.env.EMAIL_FROM || 'devis@dialarme.ch',
     recipients: {
       internal: process.env.EMAIL_INTERNAL || 'devis.dialarme@gmail.com',
     },
@@ -133,72 +133,68 @@ export const config: AppConfig = {
   // ==========================================================================
   commercials: {
     'Arnaud Bloch': {
-      phone: '06 XX XX XX XX',
-      email: 'arnaud.bloch@dialarme.fr',
+      phone: '076 595 51 06',
+      email: 'arnaud.bloch@dialarme.ch',
     },
     'Benali Kodad': {
-      phone: '06 XX XX XX XX',
-      email: 'benali.kodad@dialarme.fr',
+      phone: '076 401 36 54',
+      email: 'benali.kodad@dialarme.ch',
     },
     'Bryan Debrosse': {
-      phone: '06 XX XX XX XX',
-      email: 'bryan.debrosse@dialarme.fr',
+      phone: '076 811 23 42',
+      email: 'bryan.debrosse@dialarme.ch',
     },
     'Cédric Boldron': {
-      phone: '06 XX XX XX XX',
-      email: 'cedric.boldron@dialarme.fr',
+      phone: '076 811 23 41',
+      email: 'cedric.boldron@dialarme.ch',
     },
     'Emin Comert': {
-      phone: '06 XX XX XX XX',
-      email: 'emin.comert@dialarme.fr',
+      phone: '076 541 13 60',
+      email: 'emin.comert@dialarme.ch',
     },
     'Gérald Clausen': {
-      phone: '06 XX XX XX XX',
-      email: 'gerald.clausen@dialarme.fr',
+      phone: '079 416 22 22',
+      email: 'gc.rocsecurite@bluewin.ch',
     },
     'Heythem Ziaya': {
-      phone: '06 XX XX XX XX',
-      email: 'heythem.ziaya@dialarme.fr',
+      phone: '076 656 55 28',
+      email: 'heythem.ziaya@dialarme.ch',
     },
     'Iyed Baccouche': {
-      phone: '06 XX XX XX XX',
-      email: 'iyed.baccouche@dialarme.fr',
+      phone: '076 393 08 98',
+      email: 'iyed.baccouche@dialarme.ch',
     },
     'Matys Goiot': {
-      phone: '06 XX XX XX XX',
-      email: 'matys.goiot@dialarme.fr',
+      phone: '076 811 23 38',
+      email: 'matys.goiot@dialarme.ch',
     },
     'Mohamed Tartik': {
-      phone: '06 XX XX XX XX',
-      email: 'mohamed.tartik@dialarme.fr',
-    },
-    'Nassim Jaza': {
-      phone: '06 XX XX XX XX',
-      email: 'nassim.jaza@dialarme.fr',
+      phone: '076 592 87 64',
+      email: 'mohamed.tartik@dialarme.ch',
     },
     'Nora Sassi': {
-      phone: '06 XX XX XX XX',
-      email: 'nora.sassi@dialarme.fr',
+      phone: '076 656 80 10',
+      email: 'nora.sassi@dialarme.ch',
     },
     'Rodolphe De Vito': {
-      phone: '06 XX XX XX XX',
-      email: 'rodolphe.devito@dialarme.fr',
+      phone: '076 559 61 32',
+      email: 'rodolphe.devito@dialarme.ch',
     },
     'Samir Ouhameni': {
-      phone: '06 XX XX XX XX',
-      email: 'samir.ouhameni@dialarme.fr',
+      phone: '076 280 86 14',
+      email: 'samir.ouhameni@dialarme.ch',
     },
     'Thilan Curt': {
-      phone: '06 XX XX XX XX',
-      email: 'thilan.curt@dialarme.fr',
+      phone: '076 355 27 32',
+      email: 'thilan.curt@dialarme.ch',
     },
     'Thomas Garcia': {
-      phone: '06 XX XX XX XX',
-      email: 'thomas.garcia@dialarme.fr',
+      phone: '076 656 55 28',
+      email: 'thomas.garcia@dialarme.ch',
     },
     'Wassim Tahiri': {
-      phone: '06 XX XX XX XX',
-      email: 'wassim.tahiri@dialarme.fr',
+      phone: '076 408 36 54',
+      email: 'tahiri@dialarme.ch',
     },
   },
   
