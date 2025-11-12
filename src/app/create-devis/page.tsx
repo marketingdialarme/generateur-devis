@@ -453,7 +453,8 @@ export default function CreateDevisPage() {
           console.error('⚠️ Download failed (non-critical):', downloadError);
         }
         
-        alert(`✅ Devis envoyé avec succès!\n\n📁 Lien Drive: ${result.driveLink}\n📧 Email envoyé: ${result.emailSent ? 'Oui' : 'Non'}\n📊 Enregistré: ${result.logged ? 'Oui' : 'Non'}\n💾 PDF téléchargé automatiquement`);
+        // Success - PDF downloaded automatically, no modal needed
+        console.log('✅ Quote sent successfully:', result);
       } else {
         alert(`❌ Erreur lors de l'envoi: ${result.error}`);
       }
