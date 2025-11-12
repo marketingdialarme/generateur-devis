@@ -20,6 +20,11 @@ export const dynamic = 'force-dynamic';
 // Increase body size limit to 50MB for this route
 export const maxDuration = 300;
 
+// Configure body size limit for Next.js (50MB)
+export const bodyParser = {
+  sizeLimit: '50mb',
+};
+
 interface UploadResponse {
   success: boolean;
   fileId?: string;

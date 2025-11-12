@@ -288,11 +288,12 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       const pdfSizeMB = pdfBlob.size / 1024 / 1024;
       console.log(`📄 PDF size: ${pdfSizeMB.toFixed(2)} MB (${pdfBlob.size} bytes)`);
       
-      // Use direct upload for files > 10MB to avoid body size limits
-      const useDirectUpload = pdfSizeMB > 10;
+      // Use direct upload for files > 3MB to avoid body size limits
+      // (3MB blob → ~4MB base64 → safe margin below Vercel's 4.5MB JSON limit)
+      const useDirectUpload = pdfSizeMB > 3;
       
       if (useDirectUpload) {
-        console.log('🚀 Using direct upload method (file > 10MB)');
+        console.log('🚀 Using direct upload method (file > 3MB)');
         
         // Phase 1: Upload PDF directly to Drive
         setProgress('Uploading large PDF to Drive...');
@@ -323,7 +324,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         
         return result;
       } else {
-        console.log('📤 Using standard upload method (file < 10MB)');
+        console.log('📤 Using standard upload method (file < 3MB)');
         
         // Convert PDF to base64
         setProgress('Converting PDF...');
