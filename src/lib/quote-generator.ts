@@ -100,7 +100,6 @@ export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
   { id: 48, name: "Support Mural Articulé", price: 100.00, monthly48: 3, monthly36: 4, monthly24: 5, monthly12: 9  },
   { id: 42, name: "Onduleur 1000 - 60min", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
   { id: 40, name: "Mat 3 mètre", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 43  },
-  { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 48  },
   { id: 43, name: "Coffret NVR 4P", price: 240.00, monthly48: 6, monthly36: 8, monthly24: 11, monthly12: 21  },
   { id: 44, name: "Coffret NVR 8P", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
  ];
