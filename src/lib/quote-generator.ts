@@ -49,6 +49,7 @@ export interface CameraProduct {
   monthly48?: number;
   monthly36?: number;
   monthly24?: number;
+  monthly12?: number;
   isCustom?: boolean;
 }
 
@@ -93,14 +94,13 @@ export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
   { id: 52, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00, monthly48: 43, monthly36: 54, monthly24: 78, monthly12: 148  },
   { id: 30, name: "Disque dur 4 To", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
   { id: 38, name: "Modem 4G", price: 290.00, monthly48: 8, monthly36: 10, monthly24: 14, monthly12: 26  },
-  { id: 27, name: "Switch POE", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  }
+  { id: 27, name: "Switch POE", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
   { id: 37, name: "HDMI Ext.", price: 190.00, monthly48: 5, monthly36: 7, monthly24: 9, monthly12: 17  },
   { id: 39, name: "Moniteur Vidéo 22\"", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
   { id: 48, name: "Support Mural Articulé", price: 100.00, monthly48: 3, monthly36: 4, monthly24: 5, monthly12: 9  },
   { id: 42, name: "Onduleur 1000 - 60min", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
   { id: 40, name: "Mat 3 mètre", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 43  },
   { id: 41, name: "Moniteur Vidéo 32\"", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 48  },
-  { id: 42, name: "Onduleur 1000 - 60min", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 48  },
   { id: 43, name: "Coffret NVR 4P", price: 240.00, monthly48: 6, monthly36: 8, monthly24: 11, monthly12: 21  },
   { id: 44, name: "Coffret NVR 8P", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
  ];
@@ -358,4 +358,3 @@ export function getFilteredProducts(
   }
   return products.filter(p => !p.requiresJablotron);
 }
-
