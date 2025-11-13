@@ -159,6 +159,7 @@ export function ProductLine({
           type="number"
           value={line.quantity}
           onChange={(e) => onUpdate(line.id, { quantity: parseInt(e.target.value) || 1 })}
+          onFocus={(e) => e.target.select()}
           min="1"
           max="99"
           className="quantity-input"

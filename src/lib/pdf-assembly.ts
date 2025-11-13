@@ -272,16 +272,26 @@ async function assembleVideoPdf(
     }
     console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
     
-    // 7. Add accessories sheet
-    if (documents.accessories) {
+    // 7. Add accessories sheet ONLY if accessories products are present
+    const accessoryKeywords = ['onduleur', 'nvr', 'coffret', 'switch'];
+    const hasAccessories = products.some(product => {
+      const normalizedProduct = product.toLowerCase();
+      return accessoryKeywords.some(keyword => normalizedProduct.includes(keyword));
+    });
+    
+    if (hasAccessories && documents.accessories) {
       try {
         const accessoriesPdf = await PDFDocument.load(documents.accessories);
         const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
         accessoriesPages.forEach(page => pdfDoc.addPage(page));
-        console.log('✅ Accessories sheet added');
+        console.log('✅ Accessories sheet added (detected accessories in quote)');
       } catch (error) {
         console.warn('⚠️ Could not add accessories sheet:', error);
       }
+    } else if (hasAccessories) {
+      console.log('⚠️ Accessories detected but sheet not found');
+    } else {
+      console.log('ℹ️ No accessories in quote, skipping accessories sheet');
     }
     
     // 8. Add remaining pages from base document

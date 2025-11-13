@@ -138,10 +138,26 @@ export default function CreateDevisPage() {
   }, [alarmMaterialLines]);
   
   // Apply kit function
-  const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2') => {
+  const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
     const centralProduct = CATALOG_ALARM_PRODUCTS.find(p => 
       centralType === 'jablotron' ? p.id === 5 : p.id === 6
     );
+    
+    // If 'none' is selected, add only the central and nothing else, not offered
+    if (kitType === 'none') {
+      const newLines: ProductLineData[] = [];
+      if (centralProduct) {
+        newLines.push({
+          id: Date.now(),
+          product: centralProduct,
+          quantity: 1,
+          offered: false  // Not offered when user chooses "Rien Offert"
+        });
+      }
+      setAlarmMaterialLines(newLines);
+      setShowKitModal(false);
+      return;
+    }
     
     const kit1Products = [
       { id: 8, quantity: 2 }, // 2 Détecteurs volumétriques
@@ -1403,7 +1419,7 @@ export default function CreateDevisPage() {
               }}>
                 Centrale Jablotron - 990.00 CHF
               </h3>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
                   onClick={() => applyKit('jablotron', 'kit1')}
                   style={{
@@ -1465,10 +1481,35 @@ export default function CreateDevisPage() {
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
                     1 Détecteur volumétrique<br />
                     3 Détecteurs d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                  1 Clavier + 1 Sirène
                   </div>
                 </button>
               </div>
+              <button
+                onClick={() => applyKit('jablotron', 'none')}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px solid #dc3545',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#dc3545',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#fff5f5';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                ❌ Rien Offert (centrale uniquement, non offerte)
+              </button>
             </div>
 
             {/* Titane Kits */}
@@ -1483,7 +1524,7 @@ export default function CreateDevisPage() {
               }}>
                 Centrale Titane - 690.00 CHF
               </h3>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
                   onClick={() => applyKit('titane', 'kit1')}
                   style={{
@@ -1549,6 +1590,31 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
+              <button
+                onClick={() => applyKit('titane', 'none')}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px solid #dc3545',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#dc3545',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#fff5f5';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                ❌ Rien Offert (centrale uniquement, non offerte)
+              </button>
             </div>
 
             <div style={{

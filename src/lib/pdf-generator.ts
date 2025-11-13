@@ -973,11 +973,20 @@ function createFinalSummary(
       ? (totals as AlarmTotals).monthly?.surveillanceHT || 0
       : (totals as CameraTotals).monthly?.remoteAccessHT || 0;
     
-    doc.text(
-      `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
-      50,
-      yPos + 35
-    );
+    // Only show service line if service amount > 0
+    if (serviceAmount > 0) {
+      doc.text(
+        `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
+        50,
+        yPos + 35
+      );
+    } else {
+      doc.text(
+        `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT`,
+        50,
+        yPos + 35
+      );
+    }
 
     doc.text(`Total mensualité HT = ${totals.monthly.totalHT.toFixed(2)} CHF`, 50, yPos + 48);
     doc.text(`TVA 8,1% = ${(totals.monthly.totalTTC - totals.monthly.totalHT).toFixed(2)} CHF`, 250, yPos + 48);

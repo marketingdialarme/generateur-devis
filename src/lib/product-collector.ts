@@ -12,10 +12,11 @@ import { ProductLineData } from '@/components/ProductLine';
  * 
  * Filters out:
  * - Products with no quantity
- * - Products marked as "offered"
  * - Empty or invalid product names
  * 
  * Cleans product names by removing price information
+ * 
+ * Note: Includes both offered and non-offered products so their fiches appear in PDF
  * 
  * @param productLines - Array of product line data
  * @returns Array of clean product names
@@ -34,14 +35,14 @@ export function collectProductsForAssembly(productLines: ProductLineData[]): str
       offered
     });
     
-    // Only add if: has product, has name, has quantity, and not offered
+    // Only add if: has product, has name, has quantity
+    // Include both offered and non-offered products so fiches appear
     if (
       product &&
       product.name &&
       product.name.trim() !== '' &&
       product.name !== 'Sélectionner un produit' &&
-      quantity > 0 &&
-      !offered
+      quantity > 0
     ) {
       // Clean product name: remove price (everything after " - " if it contains "CHF")
       let cleanName = product.name.trim();
@@ -51,9 +52,9 @@ export function collectProductsForAssembly(productLines: ProductLineData[]): str
       }
       
       products.push(cleanName);
-      console.log(`    ✅ Added: ${cleanName}${cleanName !== product.name ? ' (cleaned from: ' + product.name + ')' : ''}`);
+      console.log(`    ✅ Added: ${cleanName}${cleanName !== product.name ? ' (cleaned from: ' + product.name + ')' : ''}${offered ? ' [OFFERT]' : ''}`);
     } else {
-      console.log(`    ⏭️ Skipped (${offered ? 'offered' : 'no quantity or invalid name'})`);
+      console.log(`    ⏭️ Skipped (no quantity or invalid name)`);
     }
   });
   

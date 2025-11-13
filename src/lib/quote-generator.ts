@@ -102,7 +102,7 @@ export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
   { id: 40, name: "Mat 3 mètre", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 43  },
   { id: 43, name: "Coffret NVR 4P", price: 240.00, monthly48: 6, monthly36: 8, monthly24: 11, monthly12: 21  },
   { id: 44, name: "Coffret NVR 8P", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
- ];
+];
 
 // ============================================
 // PRICING CONFIGURATION
@@ -259,7 +259,7 @@ export const CENTRALS_CONFIG: Record<string, CentralConfig> = {
 // ============================================
 
 export function roundToFiveCents(amount: number): number {
-  return Math.ceil(amount * 20) / 20;
+  return Math.round(amount * 20) / 20;
 }
 
 /**

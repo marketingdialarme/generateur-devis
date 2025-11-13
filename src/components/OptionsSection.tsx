@@ -131,6 +131,7 @@ export function OptionsSection(props: OptionsSectionProps) {
               type="number"
               value={interventionsQty}
               onChange={(e) => onInterventionsQtyChange(parseInt(e.target.value) || 1)}
+              onFocus={(e) => e.target.select()}
               min="1"
               max="10"
               className="quantity-input"
