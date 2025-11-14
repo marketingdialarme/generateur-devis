@@ -92,7 +92,15 @@ export function ServicesSection(props: ServicesSectionProps) {
       { value: '', label: 'Aucun' }
     ];
 
-    if (!centralType) return baseOptions;
+    // If no central type, show all options with manual pricing
+    if (!centralType) {
+      return [
+        ...baseOptions,
+        { value: 'autosurveillance', label: 'Autosurveillance' },
+        { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
+        { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' }
+      ];
+    }
 
     if (centralType === 'jablotron') {
       return [
@@ -114,8 +122,13 @@ export function ServicesSection(props: ServicesSectionProps) {
 
   // Auto-update surveillance price when type changes
   useEffect(() => {
-    if (!surveillanceType || !centralType) {
+    if (!surveillanceType) {
       onSurveillancePriceChange(0);
+      return;
+    }
+    
+    // If no central type, keep current manual price
+    if (!centralType) {
       return;
     }
 
@@ -202,7 +215,6 @@ export function ServicesSection(props: ServicesSectionProps) {
               fontSize: '14px',
               minWidth: '200px'
             }}
-            disabled={!centralType}
           >
             {getSurveillanceOptions().map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -232,17 +244,17 @@ export function ServicesSection(props: ServicesSectionProps) {
         </div>
       </div>
 
-      {!centralType && (
+      {!centralType && surveillanceType && (
         <div style={{
           marginTop: '10px',
           padding: '10px',
-          background: '#fff3cd',
-          border: '1px solid #ffc107',
+          background: '#d1ecf1',
+          border: '1px solid #0c5460',
           borderRadius: '6px',
           fontSize: '13px',
-          color: '#856404'
+          color: '#0c5460'
         }}>
-          ⚠️ Sélectionnez une centrale dans le kit de base pour activer les options de surveillance
+          ℹ️ Prix manuel - Aucune centrale sélectionnée. Veuillez saisir le prix manuellement.
         </div>
       )}
     </div>

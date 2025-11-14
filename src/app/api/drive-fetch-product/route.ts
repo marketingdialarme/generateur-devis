@@ -32,12 +32,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const productSheetsFolderId = config.google.drive.folders.productSheets;
     
     try {
-      const fileBuffer = await googleDriveService.findAndDownloadFile(
+      const result = await googleDriveService.findAndDownloadFileWithMetadata(
         productSheetsFolderId,
         productName
       );
       
-      if (!fileBuffer) {
+      if (!result) {
         console.warn('⚠️ [API] Product sheet not found:', productName);
         return NextResponse.json(
           { error: 'Product sheet not found' },
@@ -45,14 +45,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         );
       }
       
-      console.log('✅ [API] Product sheet fetched:', fileBuffer.length, 'bytes');
+      console.log('✅ [API] Product sheet fetched:', result.buffer.length, 'bytes', `(fileId: ${result.fileId})`);
       
-      // Return the PDF as ArrayBuffer
-      return new NextResponse(Buffer.from(fileBuffer), {
+      // Return the PDF as ArrayBuffer with fileId in headers
+      return new NextResponse(Buffer.from(result.buffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Length': fileBuffer.length.toString(),
+          'Content-Length': result.buffer.length.toString(),
+          'X-File-Id': result.fileId, // Include fileId for deduplication
           'Cache-Control': 'public, max-age=86400, immutable', // Cache for 24 hours
         },
       });

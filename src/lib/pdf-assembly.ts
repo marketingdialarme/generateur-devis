@@ -35,7 +35,7 @@ export interface AssemblyResult {
 // Document fetch result
 interface FetchedDocuments {
   base: ArrayBuffer;
-  products?: Array<{ name: string; data: ArrayBuffer }>;
+  products?: Array<{ name: string; data: ArrayBuffer; fileId: string }>;
   accessories?: ArrayBuffer;
 }
 
@@ -239,29 +239,27 @@ async function assembleVideoPdf(
     quotePages.forEach(page => pdfDoc.addPage(page));
     console.log('✅ Generated quote inserted as page 6');
     
-    // 6. Add product sheets (deduplicated to avoid adding the same PDF multiple times)
+    // 6. Add product sheets (deduplicated by file ID to avoid adding the same file multiple times)
     let productSheetsAdded = 0;
-    const addedPdfHashes = new Set<string>();
+    const addedFileIds = new Set<string>();
     
     if (documents.products) {
       for (const product of documents.products) {
-        if (product.data) {
+        if (product.data && product.fileId) {
           try {
-            // Create a simple hash from the PDF data to detect duplicates
-            // (multiple products can share the same technical sheet PDF)
-            const pdfHash = Buffer.from(product.data).toString('base64').substring(0, 100);
-            
-            if (addedPdfHashes.has(pdfHash)) {
-              console.log('⏭️ Skipping duplicate sheet for:', product.name, '(already added)');
+            // Skip if we've already added this exact file (by file ID)
+            // Note: Different products should have different file IDs even if sheets look similar
+            if (addedFileIds.has(product.fileId)) {
+              console.log('⏭️ Skipping duplicate file for:', product.name, `(fileId: ${product.fileId} already added)`);
               continue;
             }
             
             const productPdf = await PDFDocument.load(product.data);
             const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
             productPages.forEach(page => pdfDoc.addPage(page));
-            console.log('✅ Product sheet added:', product.name);
+            console.log('✅ Product sheet added:', product.name, `(fileId: ${product.fileId})`);
             productSheetsAdded++;
-            addedPdfHashes.add(pdfHash);
+            addedFileIds.add(product.fileId);
           } catch (error) {
             console.warn('⚠️ Could not add product sheet for:', product.name, error);
           }
@@ -491,9 +489,13 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
             const response = await fetch(`/api/drive-fetch-product?productName=${encodeURIComponent(productName)}`);
             
             if (response.ok) {
+              // Check if response includes metadata (fileId)
+              const contentType = response.headers.get('content-type');
+              const fileId = response.headers.get('x-file-id') || productName; // Fallback to productName if no header
+              
               const data = await response.arrayBuffer();
-              console.log(`✅ Fetched: ${productName}`);
-              return { name: productName, data };
+              console.log(`✅ Fetched: ${productName} (fileId: ${fileId})`);
+              return { name: productName, data, fileId };
             } else {
               console.warn(`⚠️ Not found: ${productName}`);
               return null;
@@ -528,7 +530,7 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
     
     // Filter out null results from product fetches
     const validProducts = productResults.filter(
-      (result): result is { name: string; data: ArrayBuffer } => result !== null
+      (result): result is { name: string; data: ArrayBuffer; fileId: string } => result !== null
     );
     
     console.log('✅ All documents fetched:', {

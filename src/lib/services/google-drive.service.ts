@@ -393,6 +393,100 @@ class GoogleDriveService {
   }
   
   /**
+   * Find and download a file by name in a folder with metadata
+   *
+   * Returns both the file buffer and fileId for proper deduplication.
+   */
+  async findAndDownloadFileWithMetadata(folderId: string, fileName: string): Promise<{ buffer: Buffer; fileId: string; fileName: string } | null> {
+    try {
+      const drive = getDriveClient();
+      
+      // Normalize search term
+      const normalizedSearch = fileName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      const searchWords = normalizedSearch
+        .split(/[\s\-_]+/)
+        .filter(w => w.length > 2);
+      
+      // Search for files containing the file name
+      const searchResponse = await drive.files.list({
+        q: `'${folderId}' in parents and trashed=false and mimeType='application/pdf'`,
+        fields: 'files(id, name)',
+        spaces: 'drive',
+      });
+      
+      const files = searchResponse.data.files || [];
+      
+      let bestMatch: { fileId: string; fileName: string; score: number } | null = null;
+      
+      for (const file of files) {
+        if (!file.name || !file.id) continue;
+        
+        const normalizedFileName = file.name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        const baseFileName = normalizedFileName
+          .replace('.pdf', '')
+          .replace(' - compressed', '');
+        
+        let score = 0;
+        
+        // Strong match: filename contains the full search string
+        if (
+          normalizedSearch.length > 0 &&
+          (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
+        ) {
+          score = (searchWords.length || 1) + 10;
+        } else if (searchWords.length > 0) {
+          // Partial match scoring based on number of matching words
+          let matchCount = 0;
+          for (const word of searchWords) {
+            if (normalizedFileName.includes(word)) {
+              matchCount++;
+            }
+          }
+          if (matchCount === 0) {
+            continue;
+          }
+          score = matchCount;
+        } else {
+          // Fallback to simple substring search when no valid words
+          if (!normalizedFileName.includes(normalizedSearch)) {
+            continue;
+          }
+          score = 1;
+        }
+
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = {
+            fileId: file.id,
+            fileName: file.name,
+            score,
+          };
+        }
+      }
+
+      if (bestMatch) {
+        const buffer = await this.downloadFile(bestMatch.fileId);
+        return {
+          buffer,
+          fileId: bestMatch.fileId,
+          fileName: bestMatch.fileName
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error finding file ${fileName}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Find and download a file by name in a folder
    *
    * Uses the same matching strategy as findProductSheet to avoid

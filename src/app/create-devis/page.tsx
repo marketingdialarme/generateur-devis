@@ -276,7 +276,7 @@ export default function CreateDevisPage() {
         cameraMaterialLines,
         cameraMaterialDiscount,
         {
-          quantity: 1,
+          quantity: cameraInstallationQty,
           isOffered: cameraInstallationOffered,
           price: cameraInstallationPrice
         },
@@ -298,6 +298,7 @@ export default function CreateDevisPage() {
   }, [
     cameraMaterialLines,
     cameraMaterialDiscount,
+    cameraInstallationQty,
     cameraInstallationOffered,
     cameraInstallationPrice,
     cameraRemoteAccess,
