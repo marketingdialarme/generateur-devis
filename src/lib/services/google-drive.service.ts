@@ -201,6 +201,11 @@ export async function downloadFileFromDrive(fileId: string): Promise<Buffer> {
 
 /**
  * Search for product sheets in the technical sheets folder
+ *
+ * Matching strategy:
+ * - Normalize both search term and filenames (lowercase, no accents)
+ * - Prefer files that contain the full search string
+ * - Otherwise, score partial word matches and pick the best match
  */
 export async function findProductSheet(productName: string): Promise<{
   fileId: string;
@@ -221,6 +226,10 @@ export async function findProductSheet(productName: string): Promise<{
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
     
+    const searchWords = normalizedSearch
+      .split(/[\s\-_]+/)
+      .filter(w => w.length > 2);
+    
     // Search for files containing the product name
     const searchResponse = await drive.files.list({
       q: `'${techSheetsFolderId}' in parents and trashed=false and mimeType='application/pdf'`,
@@ -230,7 +239,8 @@ export async function findProductSheet(productName: string): Promise<{
     
     const files = searchResponse.data.files || [];
     
-    // Find best match
+    let bestMatch: { fileId: string; fileName: string; score: number } | null = null;
+    
     for (const file of files) {
       if (!file.name || !file.id) continue;
       
@@ -238,49 +248,54 @@ export async function findProductSheet(productName: string): Promise<{
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
+      const baseFileName = normalizedFileName
+        .replace('.pdf', '')
+        .replace(' - compressed', '');
       
+      let score = 0;
+      
+      // Strong match: filename contains the full search string
       if (
-        normalizedFileName.includes(normalizedSearch) ||
-        normalizedSearch.includes(normalizedFileName.replace('.pdf', '').replace(' - compressed', ''))
+        normalizedSearch.length > 0 &&
+        (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
       ) {
-        // Download the file
-        const buffer = await downloadFileFromDrive(file.id);
-        
-        return {
+        score = (searchWords.length || 1) + 10; // Ensure this wins over partial matches
+      } else if (searchWords.length > 0) {
+        // Partial match scoring based on number of matching words
+        let matchCount = 0;
+        for (const word of searchWords) {
+          if (normalizedFileName.includes(word)) {
+            matchCount++;
+          }
+        }
+        if (matchCount === 0) {
+          continue;
+        }
+        score = matchCount;
+      } else {
+        // Fallback to simple substring search when no valid words
+        if (!normalizedFileName.includes(normalizedSearch)) {
+          continue;
+        }
+        score = 1;
+      }
+
+      if (!bestMatch || score > bestMatch.score) {
+        bestMatch = {
           fileId: file.id,
           fileName: file.name,
-          buffer,
+          score,
         };
       }
     }
-    
-    // If no exact match, try partial match with keywords
-    const searchWords = normalizedSearch.split(/[\s\-_]+/).filter(w => w.length > 2);
-    
-    for (const file of files) {
-      if (!file.name || !file.id) continue;
-      
-      const normalizedFileName = file.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-      
-      let matchCount = 0;
-      for (const word of searchWords) {
-        if (normalizedFileName.includes(word)) {
-          matchCount++;
-        }
-      }
-      
-      if (matchCount >= Math.min(2, searchWords.length)) {
-        const buffer = await downloadFileFromDrive(file.id);
-        
-        return {
-          fileId: file.id,
-          fileName: file.name,
-          buffer,
-        };
-      }
+
+    if (bestMatch) {
+      const buffer = await downloadFileFromDrive(bestMatch.fileId);
+      return {
+        fileId: bestMatch.fileId,
+        fileName: bestMatch.fileName,
+        buffer,
+      };
     }
     
     return null;
@@ -379,6 +394,9 @@ class GoogleDriveService {
   
   /**
    * Find and download a file by name in a folder
+   *
+   * Uses the same matching strategy as findProductSheet to avoid
+   * confusing similar products (e.g. SOLAR 4G XL vs SOLAR 4G XL PTZ).
    */
   async findAndDownloadFile(folderId: string, fileName: string): Promise<Buffer | null> {
     try {
@@ -389,6 +407,10 @@ class GoogleDriveService {
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
+
+      const searchWords = normalizedSearch
+        .split(/[\s\-_]+/)
+        .filter(w => w.length > 2);
       
       // Search for files containing the file name
       const searchResponse = await drive.files.list({
@@ -399,7 +421,8 @@ class GoogleDriveService {
       
       const files = searchResponse.data.files || [];
       
-      // Find best match
+      let bestMatch: { fileId: string; score: number } | null = null;
+      
       for (const file of files) {
         if (!file.name || !file.id) continue;
         
@@ -407,14 +430,48 @@ class GoogleDriveService {
           .toLowerCase()
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '');
+        const baseFileName = normalizedFileName
+          .replace('.pdf', '')
+          .replace(' - compressed', '');
         
+        let score = 0;
+        
+        // Strong match: filename contains the full search string
         if (
-          normalizedFileName.includes(normalizedSearch) ||
-          normalizedSearch.includes(normalizedFileName.replace('.pdf', '').replace(' - compressed', ''))
+          normalizedSearch.length > 0 &&
+          (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
         ) {
-          // Download the file
-          return await this.downloadFile(file.id);
+          score = (searchWords.length || 1) + 10;
+        } else if (searchWords.length > 0) {
+          // Partial match scoring based on number of matching words
+          let matchCount = 0;
+          for (const word of searchWords) {
+            if (normalizedFileName.includes(word)) {
+              matchCount++;
+            }
+          }
+          if (matchCount === 0) {
+            continue;
+          }
+          score = matchCount;
+        } else {
+          // Fallback to simple substring search when no valid words
+          if (!normalizedFileName.includes(normalizedSearch)) {
+            continue;
+          }
+          score = 1;
         }
+
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = {
+            fileId: file.id,
+            score,
+          };
+        }
+      }
+
+      if (bestMatch) {
+        return await this.downloadFile(bestMatch.fileId);
       }
       
       return null;

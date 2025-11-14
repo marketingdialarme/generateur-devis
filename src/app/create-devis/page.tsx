@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE, calculateInstallationPrice } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE, calculateInstallationPrice, TVA_RATE, roundToFiveCents } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
@@ -245,7 +245,7 @@ export default function CreateDevisPage() {
         adminFees: { simCard: 0, processing: 0, total: 0 },
         services: { testCyclique: 0, surveillance: 0 },
         totalHT: alarmInstallationOffered ? 0 : alarmInstallationPrice,
-        totalTTC: alarmInstallationOffered ? 0 : alarmInstallationPrice * 1.081
+        totalTTC: alarmInstallationOffered ? 0 : roundToFiveCents(alarmInstallationPrice * (1 + TVA_RATE))
       };
     }
   }, [
@@ -292,7 +292,7 @@ export default function CreateDevisPage() {
         installation: { total: 0, isOffered: false },
         remoteAccess: { enabled: false, price: 0 },
         totalHT: cameraInstallationOffered ? 0 : cameraInstallationPrice,
-        totalTTC: cameraInstallationOffered ? 0 : cameraInstallationPrice * 1.081
+        totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationPrice * (1 + TVA_RATE))
       };
     }
   }, [
@@ -709,7 +709,7 @@ export default function CreateDevisPage() {
         {/* Installation Section */}
         <div className="quote-section">
           <h3>
-            🔧 2. Installation et matériel supplémentaire
+            🔧 2. Installation et matériel divers
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -952,15 +952,15 @@ export default function CreateDevisPage() {
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{((alarmTotals?.material?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents((alarmTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Installation</span>
-            <span>{((alarmTotals?.installation?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents((alarmTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Frais de dossier</span>
-            <span>{((alarmTotals?.adminFees?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents((alarmTotals?.adminFees?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           {surveillanceType && (
             <div className="summary-item">
@@ -1287,11 +1287,11 @@ export default function CreateDevisPage() {
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{((cameraTotals?.material?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents((cameraTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
                   </div>
           <div className="summary-item">
                     <span>Installation</span>
-            <span>{((cameraTotals?.installation?.total || 0) * 1.081).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents((cameraTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
                   </div>
           {cameraRemoteAccess && !cameraRentalMode && (
             <div className="summary-item">
@@ -1485,31 +1485,6 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
-              <button
-                onClick={() => applyKit('jablotron', 'none')}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px solid #dc3545',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#dc3545',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#fff5f5';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                ❌ Rien Offert (centrale uniquement, non offerte)
-              </button>
             </div>
 
             {/* Titane Kits */}
@@ -1590,31 +1565,6 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
-              <button
-                onClick={() => applyKit('titane', 'none')}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px solid #dc3545',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#dc3545',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#fff5f5';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                ❌ Rien Offert (centrale uniquement, non offerte)
-              </button>
             </div>
 
             <div style={{

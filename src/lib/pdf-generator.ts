@@ -174,14 +174,16 @@ function createAlarmPDFSections(
 ): number {
   const alarmTotals = options.totals as AlarmTotals;
 
-  // Material section
-  yPos = createProductSection(
-    doc,
-    'KIT DE BASE',
-    options.materialLines,
-    alarmTotals.material,
-    yPos
-  );
+  // Material section (only if kit/base material is present)
+  if (options.materialLines.length > 0) {
+    yPos = createProductSection(
+      doc,
+      'KIT DE BASE',
+      options.materialLines,
+      alarmTotals.material,
+      yPos
+    );
+  }
 
   // Installation section (with main installation line)
   yPos = createAlarmInstallationSection(
@@ -231,7 +233,7 @@ function createAlarmInstallationSection(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
-  doc.text('INSTALLATION & MATERIEL SUPPLEMENTAIRE', 40, yPos);
+  doc.text('INSTALLATION & MATERIEL DIVERS', 40, yPos);
   yPos += 12;
 
   // Table header
@@ -623,15 +625,16 @@ function createAdminFeesSection(
     doc.text('1', 55, yPos + 9);
     doc.text(item.desc, 90, yPos + 9);
 
+    // Always show unit price, even when offered
+    doc.text(item.price.toFixed(2), 405, yPos + 9);
+
     if (item.actual === 0) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 405, yPos + 9);
       doc.text('OFFERT', 485, yPos + 9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
     } else {
-      doc.text(item.price.toFixed(2), 405, yPos + 9);
       doc.text(item.actual.toFixed(2), 485, yPos + 9);
     }
 
@@ -702,15 +705,16 @@ function createServicesSection(
     doc.setFontSize(6);
     doc.text('Test Cyclique', 90, yPos + 8);
 
+    // Always show reference price
+    doc.text(services.testCyclique.price.toFixed(2), 405, yPos + 8);
+
     if (services.testCyclique.offered) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 405, yPos + 8);
       doc.text('OFFERT', 485, yPos + 8);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
     } else {
-      doc.text(services.testCyclique.price.toFixed(2), 405, yPos + 8);
       doc.text(services.testCyclique.price.toFixed(2), 485, yPos + 8);
     }
 
@@ -740,15 +744,16 @@ function createServicesSection(
     doc.setFontSize(6);
     doc.text(serviceName, 90, yPos + 8);
 
+    // Always show reference price
+    doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 405, yPos + 8);
+
     if (services.surveillance.offered) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 405, yPos + 8);
       doc.text('OFFERT', 485, yPos + 8);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
     } else {
-      doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 405, yPos + 8);
       doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 485, yPos + 8);
     }
 
@@ -973,19 +978,37 @@ function createFinalSummary(
       ? (totals as AlarmTotals).monthly?.surveillanceHT || 0
       : (totals as CameraTotals).monthly?.remoteAccessHT || 0;
     
-    // Only show service line if service amount > 0
-    if (serviceAmount > 0) {
+    if (type === 'camera') {
+      const cameraMonthly = (totals as CameraTotals).monthly!;
+      // Show separate monthly amounts for material and installation
       doc.text(
-        `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
+        `Matériel = ${cameraMonthly.materialHT.toFixed(2)} CHF HT   |   Installation = ${cameraMonthly.installationHT.toFixed(2)} CHF HT`,
         50,
         yPos + 35
       );
+      // Optional vision à distance line
+      if (serviceAmount > 0) {
+        doc.text(
+          `${serviceName} = ${serviceAmount.toFixed(2)} CHF HT`,
+          50,
+          yPos + 48
+        );
+      }
     } else {
-      doc.text(
-        `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT`,
-        50,
-        yPos + 35
-      );
+      // Alarm: keep original wording
+      if (serviceAmount > 0) {
+        doc.text(
+          `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
+          50,
+          yPos + 35
+        );
+      } else {
+        doc.text(
+          `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT`,
+          50,
+          yPos + 35
+        );
+      }
     }
 
     doc.text(`Total mensualité HT = ${totals.monthly.totalHT.toFixed(2)} CHF`, 50, yPos + 48);
