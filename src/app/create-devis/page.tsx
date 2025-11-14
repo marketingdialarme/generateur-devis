@@ -244,8 +244,8 @@ export default function CreateDevisPage() {
         installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         adminFees: { simCard: 0, processing: 0, total: 0 },
         services: { testCyclique: 0, surveillance: 0 },
-        totalHT: alarmInstallationOffered ? 0 : alarmInstallationPrice,
-        totalTTC: alarmInstallationOffered ? 0 : roundToFiveCents(alarmInstallationPrice * (1 + TVA_RATE))
+        totalHT: alarmInstallationOffered ? 0 : roundToFiveCents(alarmInstallationPrice),
+        totalTTC: alarmInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(alarmInstallationPrice) * (1 + TVA_RATE))
       };
     }
   }, [
@@ -291,8 +291,8 @@ export default function CreateDevisPage() {
         material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         installation: { total: 0, isOffered: false },
         remoteAccess: { enabled: false, price: 0 },
-        totalHT: cameraInstallationOffered ? 0 : cameraInstallationPrice,
-        totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationPrice * (1 + TVA_RATE))
+        totalHT: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationPrice),
+        totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(cameraInstallationPrice) * (1 + TVA_RATE))
       };
     }
   }, [
@@ -953,15 +953,15 @@ export default function CreateDevisPage() {
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{roundToFiveCents((alarmTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Installation</span>
-            <span>{roundToFiveCents((alarmTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Frais de dossier</span>
-            <span>{roundToFiveCents((alarmTotals?.adminFees?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.adminFees?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           {surveillanceType && (
             <div className="summary-item">
@@ -1288,11 +1288,11 @@ export default function CreateDevisPage() {
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{roundToFiveCents((cameraTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(cameraTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
                   </div>
           <div className="summary-item">
                     <span>Installation</span>
-            <span>{roundToFiveCents((cameraTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(cameraTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
                   </div>
           {cameraRemoteAccess && !cameraRentalMode && (
             <div className="summary-item">

@@ -10,7 +10,7 @@
 import type { jsPDF } from 'jspdf';
 import type { AlarmTotals, CameraTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
-import { TVA_RATE, ADMIN_FEES, REMOTE_ACCESS_PRICE, UNINSTALL_PRICE } from './quote-generator';
+import { TVA_RATE, ADMIN_FEES, REMOTE_ACCESS_PRICE, UNINSTALL_PRICE, roundToFiveCents } from './quote-generator';
 import { calculateRemoteAccessPrice } from './product-line-adapter';
 
 // ============================================
@@ -376,8 +376,9 @@ function createAlarmInstallationSection(
   }
 
   // Section totals
-  const totalTTC = installationTotals.total * (1 + TVA_RATE);
-  const tva = totalTTC - installationTotals.total;
+  const totalHT = roundToFiveCents(installationTotals.total);
+  const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
+  const tva = roundToFiveCents(totalTTC - totalHT);
 
   doc.setFillColor(230, 230, 230);
   doc.rect(390, yPos, 165, 36, 'F');
@@ -385,7 +386,7 @@ function createAlarmInstallationSection(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(installationTotals.total.toFixed(2), 485, yPos + 12);
+  doc.text(totalHT.toFixed(2), 485, yPos + 12);
   doc.text('TVA 8.1%', 400, yPos + 24);
   doc.text(tva.toFixed(2), 485, yPos + 24);
   doc.text('Total T.T.C.', 400, yPos + 32);
@@ -561,8 +562,9 @@ function createProductSection(
   }
 
   // Section totals
-  const totalTTC = totals.total * (1 + TVA_RATE);
-  const tva = totalTTC - totals.total;
+  const totalHT = roundToFiveCents(totals.total);
+  const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
+  const tva = roundToFiveCents(totalTTC - totalHT);
 
   doc.setFillColor(230, 230, 230);
   doc.rect(390, yPos, 165, 36, 'F');
@@ -570,7 +572,7 @@ function createProductSection(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(totals.total.toFixed(2), 485, yPos + 12);
+  doc.text(totalHT.toFixed(2), 485, yPos + 12);
   doc.text('TVA 8.1%', 400, yPos + 24);
   doc.text(tva.toFixed(2), 485, yPos + 24);
   doc.text('Total T.T.C.', 400, yPos + 32);
@@ -642,8 +644,9 @@ function createAdminFeesSection(
   });
 
   // Totals
-  const adminTotalTTC = adminFees.total * (1 + TVA_RATE);
-  const adminTVA = adminTotalTTC - adminFees.total;
+  const adminTotalHT = roundToFiveCents(adminFees.total);
+  const adminTotalTTC = roundToFiveCents(adminTotalHT * (1 + TVA_RATE));
+  const adminTVA = roundToFiveCents(adminTotalTTC - adminTotalHT);
 
   doc.setFillColor(230, 230, 230);
   doc.rect(390, yPos, 165, 36, 'F');
@@ -651,7 +654,7 @@ function createAdminFeesSection(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(adminFees.total.toFixed(2), 485, yPos + 12);
+  doc.text(adminTotalHT.toFixed(2), 485, yPos + 12);
   doc.text('TVA 8.1%', 400, yPos + 24);
   doc.text(adminTVA.toFixed(2), 485, yPos + 24);
   doc.text('Total T.T.C.', 400, yPos + 32);
@@ -854,8 +857,9 @@ function createCameraInstallationSection(
   yPos += 14;
 
   if (!isRental) {
-    const installTotalTTC = installation.total * (1 + TVA_RATE);
-    const installTVA = installTotalTTC - installation.total;
+    const installTotalHT = roundToFiveCents(installation.total);
+    const installTotalTTC = roundToFiveCents(installTotalHT * (1 + TVA_RATE));
+    const installTVA = roundToFiveCents(installTotalTTC - installTotalHT);
 
     doc.setFillColor(200, 200, 200);
     doc.rect(390, yPos, 165, 42, 'F');
@@ -863,7 +867,7 @@ function createCameraInstallationSection(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.text('Total H.T.', 400, yPos + 9);
-    doc.text(installation.total.toFixed(2), 485, yPos + 9);
+    doc.text(installTotalHT.toFixed(2), 485, yPos + 9);
     doc.text('TVA 8.1%', 400, yPos + 21);
     doc.text(installTVA.toFixed(2), 485, yPos + 21);
     doc.text('Total T.T.C.', 400, yPos + 35);
@@ -1012,7 +1016,7 @@ function createFinalSummary(
     }
 
     doc.text(`Total mensualité HT = ${totals.monthly.totalHT.toFixed(2)} CHF`, 50, yPos + 48);
-    doc.text(`TVA 8,1% = ${(totals.monthly.totalTTC - totals.monthly.totalHT).toFixed(2)} CHF`, 250, yPos + 48);
+    doc.text(`TVA 8,1% = ${roundToFiveCents(totals.monthly.totalTTC - totals.monthly.totalHT).toFixed(2)} CHF`, 250, yPos + 48);
 
     doc.setFillColor(255, 255, 255);
     doc.rect(420, yPos + 38, 120, 20, 'F');
@@ -1038,7 +1042,7 @@ function createFinalSummary(
       doc.setFontSize(8);
       const cash = (totals as AlarmTotals).cash!;
       doc.text(`Total HT = ${cash.totalHT.toFixed(2)} CHF`, 50, yPos + 30);
-      doc.text(`TVA 8,1% = ${(cash.totalTTC - cash.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
+      doc.text(`TVA 8,1% = ${roundToFiveCents(cash.totalTTC - cash.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
 
       doc.setFillColor(255, 255, 255);
       doc.rect(420, yPos + 20, 120, 20, 'F');
@@ -1064,7 +1068,7 @@ function createFinalSummary(
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(`Total HT = ${totals.totalHT.toFixed(2)} CHF`, 50, yPos + 30);
-    doc.text(`TVA 8,1% = ${(totals.totalTTC - totals.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
+    doc.text(`TVA 8,1% = ${roundToFiveCents(totals.totalTTC - totals.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
 
     doc.setFillColor(255, 255, 255);
     doc.rect(420, yPos + 20, 120, 20, 'F');

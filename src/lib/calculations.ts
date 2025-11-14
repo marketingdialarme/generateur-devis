@@ -290,8 +290,8 @@ export function calculateAlarmTotals(
     ? (services.surveillance.offered ? 0 : services.surveillance.price)
     : 0;
 
-  // Total HT and TTC
-  const totalHT = material.total + installationTotal.total + adminTotal + testCycliqueTotal;
+  // Total HT and TTC (round HT up first, then calculate TTC and round up again)
+  const totalHT = roundToFiveCents(material.total + installationTotal.total + adminTotal + testCycliqueTotal);
   const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
 
   const result: AlarmTotals = {
@@ -332,7 +332,7 @@ export function calculateAlarmTotals(
       ? 0 
       : roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths));
 
-    const totalMonthlyHT = materialMonthlyHT + installationProductsMonthlyHT + mainInstallMonthlyHT + surveillanceTotal;
+    const totalMonthlyHT = roundToFiveCents(materialMonthlyHT + installationProductsMonthlyHT + mainInstallMonthlyHT + surveillanceTotal);
     const totalMonthlyTTC = roundToFiveCents(totalMonthlyHT * (1 + TVA_RATE));
 
     result.monthly = {
@@ -345,9 +345,10 @@ export function calculateAlarmTotals(
     };
 
     // Cash payment (admin fees)
-    const cashTTC = roundToFiveCents(adminTotal * (1 + TVA_RATE));
+    const cashHT = roundToFiveCents(adminTotal);
+    const cashTTC = roundToFiveCents(cashHT * (1 + TVA_RATE));
     result.cash = {
-      totalHT: adminTotal,
+      totalHT: cashHT,
       totalTTC: cashTTC
     };
   }
@@ -384,8 +385,8 @@ export function calculateCameraTotals(
     ? calculateRemoteAccessPrice(materialLines)
     : 0;
 
-  // Total HT and TTC
-  const totalHT = material.total + installationTotal;
+  // Total HT and TTC (round HT up first, then calculate TTC and round up again)
+  const totalHT = roundToFiveCents(material.total + installationTotal);
   const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
 
   const result: CameraTotals = {
@@ -416,7 +417,7 @@ export function calculateCameraTotals(
       ? 0 
       : roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths));
 
-    const totalMonthlyHT = materialMonthlyHT + installationMonthlyHT + remoteAccessPrice;
+    const totalMonthlyHT = roundToFiveCents(materialMonthlyHT + installationMonthlyHT + remoteAccessPrice);
     const totalMonthlyTTC = roundToFiveCents(totalMonthlyHT * (1 + TVA_RATE));
 
     result.monthly = {
