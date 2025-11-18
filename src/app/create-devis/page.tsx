@@ -45,7 +45,6 @@ const COMMERCIALS_LIST = [
   "Iyed Baccouche",
   "Matys Goiot",
   "Mohamed Tartik",
-  "Nassim Jaza",
   "Nora Sassi",
   "Rodolphe De Vito",
   "Samir Ouhameni",
