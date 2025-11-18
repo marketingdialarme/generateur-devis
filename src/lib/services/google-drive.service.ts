@@ -236,7 +236,8 @@ export async function findProductSheet(productName: string): Promise<{
     const normalizedSearch = productName
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
     
     const searchWords = normalizedSearch
       .split(/[\s\-_]+/)
@@ -259,40 +260,61 @@ export async function findProductSheet(productName: string): Promise<{
       const normalizedFileName = file.name
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
       const baseFileName = normalizedFileName
         .replace('.pdf', '')
-        .replace(' - compressed', '');
+        .replace(' - compressed', '')
+        .trim();
       
       let score = 0;
       
-      // Strong match: filename contains the full search string
-      if (
-        normalizedSearch.length > 0 &&
-        (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
-      ) {
-        score = (searchWords.length || 1) + 10; // Ensure this wins over partial matches
-      } else if (searchWords.length > 0) {
-        // Partial match scoring based on number of matching words
+      // BEST: Exact match (highest priority)
+      if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
+        score = 1000; // Exact match always wins
+      }
+      // GOOD: Full search string appears in filename
+      else if (normalizedFileName.includes(normalizedSearch)) {
+        // Check if this is a true substring match (not just word overlap)
+        // Prioritize matches where the search is a complete phrase in the filename
+        const searchIndex = normalizedFileName.indexOf(normalizedSearch);
+        if (searchIndex !== -1) {
+          // Check boundaries - is it a word boundary match?
+          const beforeChar = searchIndex > 0 ? normalizedFileName[searchIndex - 1] : ' ';
+          const afterChar = searchIndex + normalizedSearch.length < normalizedFileName.length 
+            ? normalizedFileName[searchIndex + normalizedSearch.length] : ' ';
+          
+          const isWordBoundary = /[\s\-_.]/.test(beforeChar) && /[\s\-_.]/.test(afterChar);
+          score = isWordBoundary ? 100 : 50;
+        }
+      }
+      // ACCEPTABLE: All search words present (for complex names)
+      else if (searchWords.length > 0) {
         let matchCount = 0;
+        let allWordsMatch = true;
+        
         for (const word of searchWords) {
           if (normalizedFileName.includes(word)) {
             matchCount++;
+          } else {
+            allWordsMatch = false;
           }
         }
-        if (matchCount === 0) {
-          continue;
+        
+        // Only score if ALL words match (avoid partial matches like "Solar 4G XL" matching "Solar 4G XL PTZ")
+        if (allWordsMatch && matchCount === searchWords.length) {
+          // Additional check: filename shouldn't have extra significant words
+          const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
+          const extraWords = fileWords.filter(fw => !searchWords.includes(fw));
+          
+          // Penalize files with extra words (e.g., "PTZ" in "Solar 4G XL PTZ")
+          score = matchCount * 10 - extraWords.length * 5;
+          
+          if (score < 0) score = 0; // Don't match if too many extra words
         }
-        score = matchCount;
-      } else {
-        // Fallback to simple substring search when no valid words
-        if (!normalizedFileName.includes(normalizedSearch)) {
-          continue;
-        }
-        score = 1;
       }
 
-      if (!bestMatch || score > bestMatch.score) {
+      if (score > 0 && (!bestMatch || score > bestMatch.score)) {
         bestMatch = {
           fileId: file.id,
           fileName: file.name,
@@ -417,7 +439,8 @@ class GoogleDriveService {
       const normalizedSearch = fileName
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
 
       const searchWords = normalizedSearch
         .split(/[\s\-_]+/)
@@ -440,40 +463,53 @@ class GoogleDriveService {
         const normalizedFileName = file.name
           .toLowerCase()
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
         const baseFileName = normalizedFileName
           .replace('.pdf', '')
-          .replace(' - compressed', '');
+          .replace(' - compressed', '')
+          .trim();
         
         let score = 0;
         
-        // Strong match: filename contains the full search string
-        if (
-          normalizedSearch.length > 0 &&
-          (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
-        ) {
-          score = (searchWords.length || 1) + 10;
-        } else if (searchWords.length > 0) {
-          // Partial match scoring based on number of matching words
+        // BEST: Exact match (highest priority)
+        if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
+          score = 1000;
+        }
+        // GOOD: Full search string appears in filename
+        else if (normalizedFileName.includes(normalizedSearch)) {
+          const searchIndex = normalizedFileName.indexOf(normalizedSearch);
+          if (searchIndex !== -1) {
+            const beforeChar = searchIndex > 0 ? normalizedFileName[searchIndex - 1] : ' ';
+            const afterChar = searchIndex + normalizedSearch.length < normalizedFileName.length 
+              ? normalizedFileName[searchIndex + normalizedSearch.length] : ' ';
+            
+            const isWordBoundary = /[\s\-_.]/.test(beforeChar) && /[\s\-_.]/.test(afterChar);
+            score = isWordBoundary ? 100 : 50;
+          }
+        }
+        // ACCEPTABLE: All search words present
+        else if (searchWords.length > 0) {
           let matchCount = 0;
+          let allWordsMatch = true;
+          
           for (const word of searchWords) {
             if (normalizedFileName.includes(word)) {
               matchCount++;
+            } else {
+              allWordsMatch = false;
             }
           }
-          if (matchCount === 0) {
-            continue;
+          
+          if (allWordsMatch && matchCount === searchWords.length) {
+            const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
+            const extraWords = fileWords.filter(fw => !searchWords.includes(fw));
+            score = matchCount * 10 - extraWords.length * 5;
+            if (score < 0) score = 0;
           }
-          score = matchCount;
-        } else {
-          // Fallback to simple substring search when no valid words
-          if (!normalizedFileName.includes(normalizedSearch)) {
-            continue;
-          }
-          score = 1;
         }
 
-        if (!bestMatch || score > bestMatch.score) {
+        if (score > 0 && (!bestMatch || score > bestMatch.score)) {
           bestMatch = {
             fileId: file.id,
             fileName: file.name,
@@ -512,7 +548,8 @@ class GoogleDriveService {
       const normalizedSearch = fileName
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
 
       const searchWords = normalizedSearch
         .split(/[\s\-_]+/)
@@ -535,40 +572,53 @@ class GoogleDriveService {
         const normalizedFileName = file.name
           .toLowerCase()
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
         const baseFileName = normalizedFileName
           .replace('.pdf', '')
-          .replace(' - compressed', '');
+          .replace(' - compressed', '')
+          .trim();
         
         let score = 0;
         
-        // Strong match: filename contains the full search string
-        if (
-          normalizedSearch.length > 0 &&
-          (normalizedFileName.includes(normalizedSearch) || baseFileName === normalizedSearch)
-        ) {
-          score = (searchWords.length || 1) + 10;
-        } else if (searchWords.length > 0) {
-          // Partial match scoring based on number of matching words
+        // BEST: Exact match (highest priority)
+        if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
+          score = 1000;
+        }
+        // GOOD: Full search string appears in filename
+        else if (normalizedFileName.includes(normalizedSearch)) {
+          const searchIndex = normalizedFileName.indexOf(normalizedSearch);
+          if (searchIndex !== -1) {
+            const beforeChar = searchIndex > 0 ? normalizedFileName[searchIndex - 1] : ' ';
+            const afterChar = searchIndex + normalizedSearch.length < normalizedFileName.length 
+              ? normalizedFileName[searchIndex + normalizedSearch.length] : ' ';
+            
+            const isWordBoundary = /[\s\-_.]/.test(beforeChar) && /[\s\-_.]/.test(afterChar);
+            score = isWordBoundary ? 100 : 50;
+          }
+        }
+        // ACCEPTABLE: All search words present
+        else if (searchWords.length > 0) {
           let matchCount = 0;
+          let allWordsMatch = true;
+          
           for (const word of searchWords) {
             if (normalizedFileName.includes(word)) {
               matchCount++;
+            } else {
+              allWordsMatch = false;
             }
           }
-          if (matchCount === 0) {
-            continue;
+          
+          if (allWordsMatch && matchCount === searchWords.length) {
+            const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
+            const extraWords = fileWords.filter(fw => !searchWords.includes(fw));
+            score = matchCount * 10 - extraWords.length * 5;
+            if (score < 0) score = 0;
           }
-          score = matchCount;
-        } else {
-          // Fallback to simple substring search when no valid words
-          if (!normalizedFileName.includes(normalizedSearch)) {
-            continue;
-          }
-          score = 1;
         }
 
-        if (!bestMatch || score > bestMatch.score) {
+        if (score > 0 && (!bestMatch || score > bestMatch.score)) {
           bestMatch = {
             fileId: file.id,
             score,
