@@ -1065,6 +1065,21 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
+              <label htmlFor="propertyTypeCamera">Type de bien</label>
+              <select 
+                id="propertyTypeCamera"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value as any)}
+                style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
+              >
+                <option value="locaux">Locaux</option>
+                <option value="habitation">Habitation</option>
+                <option value="villa">Villa</option>
+                <option value="commerce">Commerce</option>
+                <option value="entreprise">Entreprise</option>
+              </select>
+            </div>
+            <div className="form-group">
               <label htmlFor="commercialCamera">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <select 
