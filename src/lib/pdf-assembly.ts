@@ -47,6 +47,7 @@ interface FetchedDocuments {
  * @param centralType - 'titane' or 'jablotron' (for alarm quotes)
  * @param products - Array of product names (for video quotes)
  * @param commercial - Commercial info
+ * @param propertyType - Type of property (locaux, habitation, villa, commerce, entreprise)
  * @returns Assembled PDF blob and metadata
  */
 export async function assemblePdf(
@@ -54,7 +55,8 @@ export async function assemblePdf(
   quoteType: 'alarme' | 'video',
   centralType: 'titane' | 'jablotron' | null,
   products: string[],
-  commercial: CommercialInfo
+  commercial: CommercialInfo,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise' = 'locaux'
 ): Promise<AssemblyResult> {
   console.log('🔧 Starting PDF assembly with pdf-lib...');
   console.log('📋 Assembly parameters:', {
@@ -66,9 +68,9 @@ export async function assemblePdf(
   
   try {
     if (quoteType === 'alarme') {
-      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial);
+      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType);
     } else if (quoteType === 'video') {
-      return await assembleVideoPdf(pdfBlob, products, commercial);
+      return await assembleVideoPdf(pdfBlob, products, commercial, propertyType);
     } else {
       console.log('⚠️ No assembly needed for this quote type, returning original PDF');
       return {
@@ -109,7 +111,8 @@ export async function assemblePdf(
 async function assembleAlarmPdf(
   pdfBlob: Blob,
   centralType: 'titane' | 'jablotron',
-  commercial: CommercialInfo
+  commercial: CommercialInfo,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
 ): Promise<AssemblyResult> {
   console.log('🚨 Assembling alarm PDF with central type:', centralType);
   
@@ -164,6 +167,9 @@ async function assembleAlarmPdf(
     // 8. Add commercial overlay to page 2 (index 1)
     await addCommercialOverlay(pdfDoc, commercial, 1);
     
+    // 9. Add property type text to intro paragraph on page 1 (index 0)
+    await addPropertyTypeOverlay(pdfDoc, propertyType, 0);
+    
     // 9. Generate final PDF with compression
     const mergedPdfBytes = await pdfDoc.save({
       useObjectStreams: true,
@@ -209,7 +215,8 @@ async function assembleAlarmPdf(
 async function assembleVideoPdf(
   pdfBlob: Blob,
   products: string[],
-  commercial: CommercialInfo
+  commercial: CommercialInfo,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
 ): Promise<AssemblyResult> {
   console.log('📹 Assembling video PDF with', products.length, 'products');
   
@@ -303,6 +310,9 @@ async function assembleVideoPdf(
     
     // 9. Add commercial overlay to page 2 (index 1)
     await addCommercialOverlay(pdfDoc, commercial, 1);
+    
+    // 10. Add property type text to intro paragraph on page 1 (index 0)
+    await addPropertyTypeOverlay(pdfDoc, propertyType, 0);
     
     console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
     
@@ -439,6 +449,69 @@ async function addCommercialOverlay(
     console.log('   - Email:', commercial.email);
   } catch (error) {
     console.error('❌ Error adding commercial overlay:', error);
+    // Non-critical, don't throw
+  }
+}
+
+/**
+ * Add property type text to intro paragraph
+ * 
+ * Adds text after "votre devis vidéo concernant la sécurité" on first page:
+ * - de vos locaux
+ * - de votre habitation
+ * - de votre villa
+ * - de votre commerce
+ * - de votre entreprise
+ */
+async function addPropertyTypeOverlay(
+  pdfDoc: PDFDocument,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  pageIndex: number
+): Promise<void> {
+  console.log('📝 Adding property type overlay to page', pageIndex + 1, ':', propertyType);
+  
+  try {
+    const pages = pdfDoc.getPages();
+    if (pageIndex >= pages.length) {
+      console.warn('⚠️ Page index out of range:', pageIndex);
+      return;
+    }
+    
+    const page = pages[pageIndex];
+    const { width, height } = page.getSize();
+    
+    // Load font
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    
+    // Map property types to French text
+    const propertyTextMap = {
+      locaux: 'de vos locaux',
+      habitation: 'de votre habitation',
+      villa: 'de votre villa',
+      commerce: 'de votre commerce',
+      entreprise: 'de votre entreprise'
+    };
+    
+    const propertyText = propertyTextMap[propertyType];
+    
+    // Position the text after "concernant la sécurité" on page 1
+    // The intro paragraph is typically around y=620-640 from bottom
+    // Adjust these coordinates based on your actual PDF layout
+    const textX = 285; // Adjust X position to align after "sécurité"
+    const textY = height - 220; // Adjust Y from top (595 height - 220 = 375 from bottom)
+    const fontSize = 11;
+    
+    page.drawText(propertyText, {
+      x: textX,
+      y: textY,
+      size: fontSize,
+      font: helveticaFont,
+      color: rgb(0, 0, 0)
+    });
+    
+    console.log('✅ Property type added:', propertyText, `at (${textX}, ${textY})`);
+  } catch (error) {
+    console.error('❌ Error adding property type overlay:', error);
     // Non-critical, don't throw
   }
 }

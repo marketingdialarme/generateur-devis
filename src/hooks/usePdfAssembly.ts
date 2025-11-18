@@ -16,6 +16,7 @@ interface AssemblePdfParams {
   centralType: 'titane' | 'jablotron' | null;
   products: string[];
   commercial: CommercialInfo;
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise';
 }
 
 interface UsePdfAssemblyReturn {
@@ -49,7 +50,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
       quoteType,
       centralType,
       products,
-      commercial
+      commercial,
+      propertyType
     } = params;
     
     setIsAssembling(true);
@@ -72,7 +74,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
         quoteType,
         centralType,
         products,
-        commercial
+        commercial,
+        propertyType
       );
       
       setProgress('Assembly complete!');

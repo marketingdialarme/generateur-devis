@@ -62,6 +62,7 @@ export default function CreateDevisPage() {
   const [commercial, setCommercial] = useState('');
   const [customCommercial, setCustomCommercial] = useState('');
   const [showCustomCommercial, setShowCustomCommercial] = useState(false);
+  const [propertyType, setPropertyType] = useState<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'>('locaux');
   
   // Product lines state - now using ProductLineData type
   const [alarmMaterialLines, setAlarmMaterialLines] = useState<ProductLineData[]>([]);
@@ -433,7 +434,8 @@ export default function CreateDevisPage() {
           name: finalCommercial,
           phone: validatedCommercialInfo.phone,
           email: validatedCommercialInfo.email
-        }
+        },
+        propertyType
       });
       
       // Step 4: Send quote (upload to Drive, send email, log to DB)
@@ -580,6 +582,21 @@ export default function CreateDevisPage() {
                       onChange={(e) => setClientName(e.target.value)}
                     />
                   </div>
+            <div className="form-group">
+              <label htmlFor="propertyType">Type de bien</label>
+              <select 
+                id="propertyType"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value as any)}
+                style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
+              >
+                <option value="locaux">Locaux</option>
+                <option value="habitation">Habitation</option>
+                <option value="villa">Villa</option>
+                <option value="commerce">Commerce</option>
+                <option value="entreprise">Entreprise</option>
+              </select>
+            </div>
             <div className="form-group">
               <label htmlFor="commercial">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
