@@ -259,11 +259,12 @@ export const CENTRALS_CONFIG: Record<string, CentralConfig> = {
 // ============================================
 
 /**
- * Round amount UP to nearest centime (0.01 CHF)
- * Swiss pricing requires always rounding up
+ * Round amount UP to nearest 5 cents (0.05 CHF)
+ * Swiss rounding standard - rounds up to nearest 0.05 CHF
+ * Switzerland eliminated 1 and 2 cent coins, so all amounts round to 0.05
  */
 export function roundToFiveCents(amount: number): number {
-  return Math.ceil(amount * 100) / 100;
+  return Math.ceil(amount * 20) / 20;
 }
 
 /**
