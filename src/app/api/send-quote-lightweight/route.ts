@@ -103,24 +103,40 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       throw new Error('Failed to download PDF from blob storage');
     }
     
-    // Step 2: Upload to Google Drive
+    // Step 2: Upload to Google Drive (with retry logic)
     if (pdfBuffer) {
-      try {
-        console.log('📤 [API] Uploading to Google Drive...');
-        const folderId = await getOrCreateCommercialFolder(commercial);
-        const driveFile = await uploadFileToDrive(
-          pdfBuffer,
-          filename,
-          'application/pdf',
-          folderId
-        );
-        
-        driveFileId = driveFile.id || '';
-        driveLink = `https://drive.google.com/file/d/${driveFileId}/view`;
-        console.log(`✅ [API] Uploaded to Drive: ${driveLink}`);
-      } catch (driveError) {
-        console.error('❌ [API] Drive upload failed:', driveError);
-        // Continue - we can still send email
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`📤 [API] Uploading to Google Drive (attempt ${attempt}/${maxRetries})...`);
+          const folderId = await getOrCreateCommercialFolder(commercial);
+          const driveFile = await uploadFileToDrive(
+            pdfBuffer,
+            filename,
+            'application/pdf',
+            folderId
+          );
+          
+          driveFileId = driveFile.id || '';
+          driveLink = `https://drive.google.com/file/d/${driveFileId}/view`;
+          console.log(`✅ [API] Uploaded to Drive: ${driveLink}`);
+          break; // Success, exit retry loop
+        } catch (driveError) {
+          lastError = driveError instanceof Error ? driveError : new Error(String(driveError));
+          console.error(`❌ [API] Drive upload failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
+          
+          // If it's an auth error and not the last attempt, wait and retry
+          if (attempt < maxRetries && (lastError.message.includes('invalid_grant') || lastError.message.includes('auth'))) {
+            const delay = 1000 * attempt; // Exponential backoff
+            console.log(`⏳ [API] Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else if (attempt === maxRetries) {
+            console.error(`❌ [API] Drive upload failed after ${maxRetries} attempts:`, lastError.message);
+            // Continue - we can still send email
+          }
+        }
       }
     }
     

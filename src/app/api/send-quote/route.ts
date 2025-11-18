@@ -120,37 +120,62 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       }
     }
     
-    // Step 1: Upload to Google Drive
+    // Step 1: Upload to Google Drive (with retry logic)
     console.log('📁 [API] Step 1: Uploading to Google Drive...');
     let driveResult;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
     
-    try {
-      // Get or create folder for this commercial
-      console.log(`📂 [API] Getting folder for commercial: ${commercial}`);
-      const folderId = await getOrCreateCommercialFolder(commercial);
-      console.log(`✅ [API] Using folder ID: ${folderId}`);
-      
-      driveResult = await uploadFileToDrive(
-        pdfBuffer,
-        filename,
-        'application/pdf',
-        folderId
-      );
-      
-      console.log('✅ [API] Drive upload successful:', {
-        id: driveResult.id,
-        webViewLink: driveResult.webViewLink
-      });
-    } catch (error) {
-      console.error('❌ [API] Drive upload failed:', error);
-      if (error instanceof Error) {
-        console.error('Stack trace:', error.stack);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📂 [API] Getting folder for commercial: ${commercial} (attempt ${attempt}/${maxRetries})`);
+        const folderId = await getOrCreateCommercialFolder(commercial);
+        console.log(`✅ [API] Using folder ID: ${folderId}`);
+        
+        driveResult = await uploadFileToDrive(
+          pdfBuffer,
+          filename,
+          'application/pdf',
+          folderId
+        );
+        
+        console.log('✅ [API] Drive upload successful:', {
+          id: driveResult.id,
+          webViewLink: driveResult.webViewLink
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.error(`❌ [API] Drive upload failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
+        if (lastError instanceof Error) {
+          console.error('Stack trace:', lastError.stack);
+        }
+        
+        // If it's an auth error and not the last attempt, wait and retry
+        if (attempt < maxRetries && (lastError.message.includes('invalid_grant') || lastError.message.includes('auth'))) {
+          const delay = 1000 * attempt; // Exponential backoff
+          console.log(`⏳ [API] Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else if (attempt === maxRetries) {
+          // Last attempt failed
+          return NextResponse.json(
+            {
+              success: false,
+              message: 'Failed to upload PDF to Google Drive after multiple attempts',
+              error: lastError.message
+            },
+            { status: 500 }
+          );
+        }
       }
+    }
+    
+    if (!driveResult) {
       return NextResponse.json(
         {
           success: false,
           message: 'Failed to upload PDF to Google Drive',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: lastError?.message || 'Unknown error'
         },
         { status: 500 }
       );

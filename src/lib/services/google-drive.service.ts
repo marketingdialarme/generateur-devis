@@ -13,8 +13,24 @@ import { CONFIG } from '../config';
 import { Readable } from 'stream'; 
 
 // Initialize Google Drive client with OAuth or Service Account
-function getDriveClient() {
-  // Try OAuth first (for personal Gmail accounts)
+async function getDriveClient() {
+  // Try Service Account first (more reliable for server-side operations)
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    try {
+      const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+      
+      const auth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/drive'],
+      });
+      
+      return google.drive({ version: 'v3', auth });
+    } catch (error) {
+      console.error('Service Account auth failed:', error);
+    }
+  }
+  
+  // Fallback to OAuth (for personal Gmail accounts)
   if (process.env.GOOGLE_CLIENT_ID && 
       process.env.GOOGLE_CLIENT_SECRET && 
       process.env.GOOGLE_REFRESH_TOKEN) {
@@ -22,29 +38,25 @@ function getDriveClient() {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      'http://localhost:3000' // Redirect URI (not used for refresh token flow)
+      'http://localhost:3000'
     );
     
     oauth2Client.setCredentials({
       refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
     
+    // Force token refresh to avoid invalid_grant errors
+    try {
+      await oauth2Client.getAccessToken();
+    } catch (error) {
+      console.error('OAuth token refresh failed:', error);
+      throw new Error('Google OAuth authentication failed. Token may be expired. Please regenerate GOOGLE_REFRESH_TOKEN.');
+    }
+    
     return google.drive({ version: 'v3', auth: oauth2Client });
   }
   
-  // Fallback to Service Account (for Google Workspace Shared Drives)
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
-    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-    
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/drive'],
-    });
-    
-    return google.drive({ version: 'v3', auth });
-  }
-  
-  throw new Error('No Google authentication configured. Set either OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN) or Service Account (GOOGLE_SERVICE_ACCOUNT_JSON)');
+  throw new Error('No Google authentication configured. Set either Service Account (GOOGLE_SERVICE_ACCOUNT_JSON) or OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)');
 }
 
 /**
@@ -62,7 +74,7 @@ export async function uploadFileToDrive(
   webContentLink: string;
 }> {
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     
     const fileMetadata = {
       name: fileName,
@@ -104,7 +116,7 @@ export async function uploadFileToDrive(
 export async function getOrCreateCommercialFolder(commercialName: string): Promise<string> {
   try {
     console.log(`\n🔍 [FOLDER] Starting folder lookup for: "${commercialName}"`);
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     const parentFolderId = CONFIG.google.drive.folders.devis;
     
     console.log(`📂 [FOLDER] Parent folder ID: ${parentFolderId}`);
@@ -182,7 +194,7 @@ export async function getOrCreateCommercialFolder(commercialName: string): Promi
  */
 export async function downloadFileFromDrive(fileId: string): Promise<Buffer> {
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     
     const response = await drive.files.get(
       {
@@ -213,7 +225,7 @@ export async function findProductSheet(productName: string): Promise<{
   buffer: Buffer;
 } | null> {
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     const techSheetsFolderId = CONFIG.google.drive.folders.techSheets;
     
     if (!techSheetsFolderId) {
@@ -314,7 +326,7 @@ export async function findAccessoriesPdf(): Promise<{
   buffer: Buffer;
 } | null> {
   try {
-    const drive = getDriveClient();
+    const drive = await getDriveClient();
     const techSheetsFolderId = CONFIG.google.drive.folders.techSheets;
     
     if (!techSheetsFolderId) {
@@ -399,7 +411,7 @@ class GoogleDriveService {
    */
   async findAndDownloadFileWithMetadata(folderId: string, fileName: string): Promise<{ buffer: Buffer; fileId: string; fileName: string } | null> {
     try {
-      const drive = getDriveClient();
+      const drive = await getDriveClient();
       
       // Normalize search term
       const normalizedSearch = fileName
@@ -494,7 +506,7 @@ class GoogleDriveService {
    */
   async findAndDownloadFile(folderId: string, fileName: string): Promise<Buffer | null> {
     try {
-      const drive = getDriveClient();
+      const drive = await getDriveClient();
       
       // Normalize search term
       const normalizedSearch = fileName
