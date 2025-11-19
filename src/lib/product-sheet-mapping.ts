@@ -64,12 +64,20 @@ export const PRODUCT_SHEET_NAME_MAP: Record<string, string> = {
   'NVR 4-8 Caméras (1 mois d\'enregistrement)': 'NVR 4-8 Cameras',
   'NVR 8-16 Caméras (1 mois d\'enregistrement)': 'NVR 8-16 Cameras',
   
-  // === ACCESSORIES - Combined in one sheet ===
-  // These are in: "MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI.pdf"
+  // === ACCESSORIES - Combined sheets ===
+  
+  // Moniteur group - in: "MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI.pdf"
   'Moniteur Vidéo 22"': 'MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI',
   'Disque dur 4 To': 'MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI',
   'Support Mural Articulé': 'MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI',
   'HDMI Ext.': 'MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI',
+  
+  // Accessories group - in: "ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed.pdf"
+  // NOTE: Filename has SPACE before "compressed" not hyphen!
+  'Switch POE': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
+  'Coffret NVR 4P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
+  'Coffret NVR 8P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
+  'Onduleur 1000 - 60min': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
   
   // Modem has its own sheet
   'Modem 4G': 'Modem 4G',
@@ -77,18 +85,14 @@ export const PRODUCT_SHEET_NAME_MAP: Record<string, string> = {
 
 /**
  * Products that should NOT get individual technical sheets
- * They are grouped in: "ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed.pdf"
  * Or don't have sheets at all
  */
 export const PRODUCTS_WITHOUT_INDIVIDUAL_SHEETS = new Set([
-  'Switch POE',
-  'Coffret NVR 4P',
-  'Coffret NVR 8P',
-  'Onduleur 1000 - 60min',
   'Mat 3 mètre',  // No sheet visible in Drive
   'Ecran complémentaire - interphone',  // No sheet visible in Drive
   'Autre',  // Custom product, no sheet
-  // Note: Moniteur, Disque dur, Support Mural, HDMI now mapped to combined sheet above
+  // Note: Switch POE, Coffret NVR, Onduleur are now mapped to accessories sheet
+  // Note: Moniteur, Disque dur, Support Mural, HDMI mapped to combined sheet
   // Note: Modem 4G has its own individual sheet
 ]);
 

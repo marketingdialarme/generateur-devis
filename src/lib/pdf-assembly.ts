@@ -36,7 +36,6 @@ export interface AssemblyResult {
 interface FetchedDocuments {
   base: ArrayBuffer;
   products?: Array<{ name: string; data: ArrayBuffer; fileId: string }>;
-  accessories?: ArrayBuffer;
 }
 
 /**
@@ -279,27 +278,14 @@ async function assembleVideoPdf(
     }
     console.log('📊 Product sheets added:', productSheetsAdded, '/', products.length);
     
-    // 7. Add accessories sheet ONLY if accessories products are present
-    const accessoryKeywords = ['onduleur', 'nvr', 'coffret', 'switch'];
-    const hasAccessories = products.some(product => {
-      const normalizedProduct = product.toLowerCase();
-      return accessoryKeywords.some(keyword => normalizedProduct.includes(keyword));
-    });
+    // 7. Accessories sheet is NO LONGER ADDED automatically
+    // The accessories sheet mapping now handles this:
+    // - Switch POE, Coffret NVR, Onduleur map to "ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE"
+    // - That sheet is fetched as a regular product sheet if those products are present
+    // - NVR products do NOT trigger accessories sheet (they have individual sheets)
+    console.log('ℹ️ Accessories sheet handling now via product mapping (not automatic addition)');
     
-    if (hasAccessories && documents.accessories) {
-      try {
-        const accessoriesPdf = await PDFDocument.load(documents.accessories);
-        const accessoriesPages = await pdfDoc.copyPages(accessoriesPdf, accessoriesPdf.getPageIndices());
-        accessoriesPages.forEach(page => pdfDoc.addPage(page));
-        console.log('✅ Accessories sheet added (detected accessories in quote)');
-      } catch (error) {
-        console.warn('⚠️ Could not add accessories sheet:', error);
-      }
-    } else if (hasAccessories) {
-      console.log('⚠️ Accessories detected but sheet not found');
-    } else {
-      console.log('ℹ️ No accessories in quote, skipping accessories sheet');
-    }
+    // Remove old accessories logic completely - it's handled by product mapping now
     
     // 8. Add remaining pages from base document
     if (basePageCount > 5) {
@@ -552,11 +538,13 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
     const baseDocumentId = config.google.drive.baseDocuments.video;
     
     // Fetch all documents in parallel for maximum speed
-    const [base, productResults, accessories] = await Promise.all([
+    const [base, productResults] = await Promise.all([
       // Fetch base document
       fetchDocumentFromDrive(baseDocumentId),
       
       // Fetch all product sheets in parallel
+      // Note: Accessories sheet (Switch POE, Coffret NVR, etc.) is now fetched as a regular product sheet
+      // through the product mapping system, not as a separate accessories fetch
       Promise.all(
         products.map(async (productName) => {
           try {
@@ -580,27 +568,7 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
             return null;
           }
         })
-      ),
-      
-      // Fetch accessories sheet
-      (async () => {
-        try {
-          console.log('📦 Fetching accessories sheet...');
-          const response = await fetch('/api/drive-fetch-accessories');
-          
-          if (response.ok) {
-            const data = await response.arrayBuffer();
-            console.log('✅ Accessories sheet fetched');
-            return data;
-          } else {
-            console.warn('⚠️ Accessories sheet not found');
-            return undefined;
-          }
-        } catch (error) {
-          console.warn('⚠️ Error fetching accessories:', error);
-          return undefined;
-        }
-      })()
+      )
     ]);
     
     // Filter out null results from product fetches
@@ -610,14 +578,12 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
     
     console.log('✅ All documents fetched:', {
       base: (base.byteLength / 1024 / 1024).toFixed(2) + ' MB',
-      products: validProducts.length + '/' + products.length,
-      accessories: accessories ? 'yes' : 'no'
+      products: validProducts.length + '/' + products.length
     });
     
     return {
       base,
-      products: validProducts,
-      accessories
+      products: validProducts
     };
   } catch (error) {
     console.error('❌ Error fetching video documents:', error);

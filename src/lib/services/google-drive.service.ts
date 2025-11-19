@@ -264,7 +264,8 @@ export async function findProductSheet(productName: string): Promise<{
         .trim();
       const baseFileName = normalizedFileName
         .replace('.pdf', '')
-        .replace(' - compressed', '')
+        .replace(' - compressed', '')  // Remove " - compressed"
+        .replace(' compressed', '')     // Remove " compressed" (without hyphen)
         .trim();
       
       let score = 0;
@@ -493,7 +494,8 @@ class GoogleDriveService {
           .trim();
         const baseFileName = normalizedFileName
           .replace('.pdf', '')
-          .replace(' - compressed', '')
+          .replace(' - compressed', '')  // Remove " - compressed"
+          .replace(' compressed', '')     // Remove " compressed" (without hyphen)
           .trim();
         
         let score = 0;
@@ -634,7 +636,8 @@ class GoogleDriveService {
           .trim();
         const baseFileName = normalizedFileName
           .replace('.pdf', '')
-          .replace(' - compressed', '')
+          .replace(' - compressed', '')  // Remove " - compressed"
+          .replace(' compressed', '')     // Remove " compressed" (without hyphen)
           .trim();
         
         let score = 0;

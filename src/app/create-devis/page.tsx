@@ -645,64 +645,94 @@ export default function CreateDevisPage() {
           </h3>
           <div id="alarm-material-products">
             {alarmMaterialLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
-                    const newLines = [...alarmMaterialLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setAlarmMaterialLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_ALARM_PRODUCTS.map(product => {
-                    const price = product.price || product.priceTitane || product.priceJablotron || 0;
-                    return (
-                      <option key={product.name} value={product.name}>
-                        {product.name} - {price.toFixed(2)} CHF
-                      </option>
-                    );
-                  })}
-                </select>
-                <input 
-                  type="number" 
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...alarmMaterialLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setAlarmMaterialLines(newLines);
-                  }}
-                  min="1"
-                />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    className="offered-checkbox"
-                    checked={line.offered}
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.name || ''}
                     onChange={(e) => {
+                      const productName = e.target.value;
+                      const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
                       const newLines = [...alarmMaterialLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
+                      newLines[index] = { ...line, product: product || null };
                       setAlarmMaterialLines(newLines);
                     }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    {CATALOG_ALARM_PRODUCTS.map(product => {
+                      const price = product.price || product.priceTitane || product.priceJablotron || 0;
+                      return (
+                        <option key={product.name} value={product.name}>
+                          {product.name} - {price.toFixed(2)} CHF
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...alarmMaterialLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setAlarmMaterialLines(newLines);
+                    }}
+                    min="1"
                   />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...alarmMaterialLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setAlarmMaterialLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  </div>
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setAlarmMaterialLines(alarmMaterialLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
                 </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setAlarmMaterialLines(alarmMaterialLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...alarmMaterialLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setAlarmMaterialLines(newLines);
+                      }}
+                      style={{ flex: 2, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...alarmMaterialLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setAlarmMaterialLines(newLines);
+                      }}
+                      min="0"
+                      step="0.01"
+                      style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
