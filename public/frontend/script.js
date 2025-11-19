@@ -1884,7 +1884,7 @@ throw error;
              * This function will merge the generated quote with base documents and product sheets
              * Returns a single merged PDF blob ready to send to backend
              */
-            async assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName) {
+            async assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName, propertyType = null) {
                 console.log('🔧 Starting PDF assembly with pdf-lib...');
                 
                 try {
@@ -1915,9 +1915,9 @@ throw error;
                     });
 
                     if (quoteType === 'alarme') {
-                        return await this.assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType);
+                        return await this.assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType, propertyType);
                     } else if (quoteType === 'video') {
-                        return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products);
+                        return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products, propertyType);
                                 } else {
                         console.log('⚠️ No assembly needed for this quote type, returning original PDF');
                         return { blob: pdfBlob, info: null };
@@ -1934,7 +1934,7 @@ throw error;
             /**
              * Assemble alarm PDF: Base document with generated quote REPLACING page 6 + Commercial overlay at page 2
              */
-            async assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType) {
+            async assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType, propertyType = null) {
                 console.log('🚨 Assembling alarm PDF with central type:', centralType);
                 
                 try {
@@ -1986,7 +1986,7 @@ throw error;
                     console.log('   - Generated quote: page 6');
                     
                     // 8. Add commercial overlay to page 2 (index 1)
-                    await this.addCommercialOverlay(pdfDoc, commercial, 1);
+                    await this.addCommercialOverlay(pdfDoc, commercial, 1, propertyType);
                     
                     // 9. Generate final PDF
                     const mergedPdfBytes = await pdfDoc.save();
@@ -2020,7 +2020,7 @@ throw error;
              * iOS: Uses individual fetches and skips accessories (timeout limitation)
              * Desktop: Uses batch fetching for faster performance
              */
-            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products) {
+            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products, propertyType = null) {
                 console.log('📹 Assembling video PDF with', products.length, 'products');
                 
                 try {
@@ -2149,7 +2149,7 @@ throw error;
                     }
                     
                     // 9. Add commercial overlay to page 2 (index 1)
-                    await this.addCommercialOverlay(pdfDoc, commercial, 1);
+                    await this.addCommercialOverlay(pdfDoc, commercial, 1, propertyType);
                     
                     console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
                     
@@ -2601,14 +2601,15 @@ throw error;
              * Add commercial overlay to page 2
              * Date: Positioned on the same line as "Le" (top-right area)
              * Name/Phone/Email: Text INSIDE the existing yellow box (no new box drawn)
+             * PropertyType: Added at specified position
              */
-            async addCommercialOverlay(pdfDoc, commercialName, pageIndex) {
+            async addCommercialOverlay(pdfDoc, commercialName, pageIndex, propertyType = null) {
                 console.log('📝 Adding commercial overlay to page', pageIndex + 1);
                 
                 try {
                     // Get commercial info
-                    const commercialInfo = this.getCommercialInfo(commercialName);
-                    
+                   const commercialInfo = this.getCommercialInfo(commercialName);
+        
                     // Get the target page
                     const pages = pdfDoc.getPages();
                     if (pageIndex >= pages.length) {
@@ -2618,7 +2619,7 @@ throw error;
                     
                     const page = pages[pageIndex];
                     const { width, height } = page.getSize();
-                    
+        
                     // Remove annotations/form fields that block text (Titane has white rectangles on page 2)
                     // This only runs when pdf-lib is assembling, safe for all devices
                     try {
@@ -2633,11 +2634,11 @@ throw error;
                         console.warn('⚠️ Could not remove annotations:', annotError.message);
                         // Non-critical, continue anyway
                     }
-                    
+        
                     // Load font
                     const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                     const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-                    
+        
                     // === 1. ADD DATE (On same line as "Carouge. le") ===
                     // Position date to align horizontally with "Carouge. le" text
                     const currentDate = new Date().toLocaleDateString('fr-CH');
@@ -2652,21 +2653,38 @@ throw error;
                         size: dateFontSize,
                         font: helveticaFont,
                         color: PDFLib.rgb(0, 0, 0)
-                    });
+                   });
                     
                     console.log('✅ Date added on "Le" line:', dateText);
                     
-                    // === 2. ADD TEXT INSIDE EXISTING YELLOW BOX (Bottom-right) ===
+                    // === 2. ADD PROPERTY TYPE (at specified position) ===
+                    if (propertyType) {
+                        const propertyTypeFontSize = 10;
+                        const propertyTypeX = 41;
+                        const propertyTypeY = 319;
+            
+                        page.drawText(`Type de bien: ${propertyType}`, {
+                            x: propertyTypeX,
+                            y: propertyTypeY,
+                            size: propertyTypeFontSize,
+                            font: helveticaFont,
+                            color: PDFLib.rgb(0, 0, 0)
+                        });
+            
+                        console.log('✅ Property type added:', propertyType, 'at position X:', propertyTypeX, 'Y:', propertyTypeY);
+                    }
+        
+                    // === 3. ADD TEXT INSIDE EXISTING YELLOW BOX (Bottom-right) ===
                     // NOTE: Yellow box already exists on page 2 - we just add text inside it
                     // Typical yellow box position: bottom-right corner
                     const boxStartX = width - 185; // Moved more to the right
-                    const boxStartY = 110; // Moved up 30px more
+                   const boxStartY = 110; // Moved up 30px more
                     
                     // Add text inside the EXISTING yellow box (no rectangle drawn)
                     const textPadding = 8;
                     const lineHeight = 15;
                     let textY = boxStartY + 58; // Start from top of the yellow box area
-                    
+        
                     // Commercial name (bold)
                     page.drawText(commercialName, {
                         x: boxStartX + textPadding,
@@ -2675,7 +2693,7 @@ throw error;
                         font: helveticaBold,
                         color: PDFLib.rgb(0, 0, 0)
                     });
-                    
+        
                     textY -= lineHeight;
                     
                     // Phone
@@ -2810,6 +2828,8 @@ throw error;
                 } else {
                     commercial = commercialSelect;
                 }
+                    // Récupérer le type de bien
+                const propertyType = document.getElementById('propertyType')?.value || '';
 
                 if (!commercial) {
                     alert('Veuillez sélectionner un commercial avant de générer le PDF.');
@@ -2916,7 +2936,7 @@ throw error;
                         });
                         try {
                             console.log('⏳ Starting assembly...');
-                            const assemblyResult = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName);
+                            const assemblyResult = await this.assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName, propertyType);
                             finalPdfBlob = assemblyResult.blob;
                             assemblyInfo = assemblyResult.info;
                             console.log('✅ PDF assembly completed with pdf-lib');
@@ -2943,1050 +2963,3 @@ throw error;
                     // Envoi par email et sauvegarde dans Drive (FIRST - before download on iOS)
                     this.sendToEmailAndDrive(finalPdfBlob, filename, commercial, clientName, assemblyInfo)
                         .then((result) => {
-                            // Download merged PDF locally AFTER upload succeeds (iOS compatibility)
-                            const downloadLink = document.createElement('a');
-                            downloadLink.href = URL.createObjectURL(finalPdfBlob);
-                            downloadLink.download = filename;
-                            downloadLink.click();
-                            
-                            // Revoke URL after a short delay to ensure download starts
-                            setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
-                            
-                            if (result && result.assumed) {
-                                // Success assumed (normal pour certains navigateurs)
-                                this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!\n(Vérifiez votre email pour confirmation)', 'success', 5000);
-                            } else {
-                                // Success confirmé
-                                this.showNotification('✅ PDF envoyé par email et sauvegardé dans Drive!', 'success', 4000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Erreur lors de l\'envoi:', error);
-                            
-                            // Even if upload fails, download locally
-                            const downloadLink = document.createElement('a');
-                            downloadLink.href = URL.createObjectURL(finalPdfBlob);
-                            downloadLink.download = filename;
-                            downloadLink.click();
-                            setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
-                            
-                            this.showNotification('⚠️ Erreur d\'envoi. Vérifiez votre email pour voir si le PDF est arrivé.', 'warning', 5000);
-                        });
-                    
-} catch (error) {
-                    console.error('Erreur PDF:', error);
-                    alert(`Erreur lors de la génération du PDF: ${error.message}`);
-                }
-            }
-
-            hasSectionProducts(sectionId) {
-                const container = document.getElementById(`${sectionId}-products`);
-                if (!container) return false;
-                const productLines = container.querySelectorAll('.product-line');
-                let hasProducts = false;
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    if (select && select.value) hasProducts = true;
-                });
-                return hasProducts;
-            }
-
-            createPDFSection(doc, title, sectionId, yPos, isRental) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(0, 0, 0);
-                doc.text(title, 40, yPos);
-                yPos += 12;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 9);
-                doc.text('Désignation du matériel', 90, yPos + 9);
-                doc.text('Prix uni. HT', 400, yPos + 9);
-                doc.text('Total HT', 480,yPos + 9);
-                yPos += 14;
-
-                const container = document.getElementById(`${sectionId}-products`);
-                const productLines = container ? Array.from(container.querySelectorAll('.product-line')) : [];
-                let sectionTotal = 0;
-                let sectionTotalBeforeDiscount = 0;
-                let lineCount = 0;
-                
-                productLines.forEach(line => {
-                    const select = line.querySelector('.product-select');
-                    const qtyInput = line.querySelector('.quantity-input');
-                    const offeredCheckbox = line.querySelector('.offered-checkbox');
-                    const priceInput = line.querySelector('.price-input');
-                    
-                    const isCentralLine = line.classList.contains('central-line');
-                    const isKitLine = line.style.background === 'rgb(255, 251, 240)' || line.style.background === '#fffbf0';
-                    
-                    if ((select && select.value && qtyInput) || (isCentralLine && qtyInput) || (line.querySelector('.price-input') && qtyInput)) {
-                        lineCount++;
-                        
-                        if (isKitLine) {
-                            doc.setFillColor(255, 251, 240);
-                            doc.rect(40, yPos, 515, 12, 'F');
-                        } else if (lineCount % 2 === 0) {
-                            doc.setFillColor(245, 245, 245);
-                            doc.rect(40, yPos, 515, 12, 'F');
-                        }
-
-                        const qty = parseFloat(qtyInput.value) || 0;
-                        const isOffered = offeredCheckbox?.checked || false;
-                        
-                        let price = 0;
-                        let productName = '';
-                        
-                        const selectedOption = select?.querySelector(`option[value="${select.value}"]`);
-                        const nameInput = line.querySelector('.product-name-input');
-                        
-                        if (nameInput && nameInput.style.display !== 'none' && nameInput.value) {
-                            productName = nameInput.value;
-                            price = parseFloat(priceInput?.value) || 0;
-                        } else if (priceInput && priceInput.style.display !== 'none') {
-                            price = parseFloat(priceInput.value) || 0;
-                            productName = selectedOption?.text?.split(' - ')[0] || 'Produit personnalisé';
-                        } else if (selectedOption) {
-                            price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
-                            productName = selectedOption.text.split(' - ')[0] || '';
-                        } else if (priceInput) {
-                            productName = line.querySelector('div')?.textContent || '';
-                            price = parseFloat(priceInput.value) || 0;
-                        }
-                        
-                        let lineTotal = price * qty;
-                        sectionTotalBeforeDiscount += lineTotal;
-                        if (!isOffered) {
-                            sectionTotal += lineTotal;
-                        }
-
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(6);
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(qty.toString(), 55, yPos + 8);
-                        
-                        const maxNameLength = 45;
-                        const displayName = productName.length > maxNameLength 
-                            ? productName.substring(0, maxNameLength - 3) + '...' 
-                            : productName;
-                        doc.text(displayName, 90, yPos + 8);
-                        
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(price.toFixed(2), 405, yPos + 8);
-                        
-                        if (isOffered) {
-                            doc.setFont('helvetica', 'bold');
-                            doc.setTextColor(0, 150, 0);
-                            doc.text('OFFERT', 485, yPos + 8);
-                            doc.setFont('helvetica', 'normal');
-                        } else {
-                            doc.setTextColor(0, 0, 0);
-                            doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-                        }
-                        doc.setTextColor(0, 0, 0);
-                        yPos += 12;
-                    }
-                });
-
-                if (sectionId === 'alarm-installation' && !isRental) {
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    let daysText = '';
-                    if (installQty === 1) daysText = ' (1/2 journée)';
-                    else if (installQty === 2) daysText = ' (1 jour)';
-                    else if (installQty === 3) daysText = ' (1.5 jours)';
-                    else if (installQty === 4) daysText = ' (2 jours)';
-                    else if (installQty === 5) daysText = ' (2.5 jours)';
-                    else if (installQty === 6) daysText = ' (3 jours)';
-                    else {
-                        const fullDays = Math.floor(installQty / 2);
-                        const halfDay = installQty % 2;
-                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text(installQty.toString(), 55, yPos + 8);
-                    doc.text('Installation, paramétrages, tests, mise en service & formation' + daysText, 90, yPos + 8);
-                    
-                    if (installOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(installPrice.toFixed(2), 405, yPos + 8);
-                        doc.text(installTotal.toFixed(2), 485, yPos + 8);
-                    }
-                    
-                    sectionTotal += installTotal;
-                    sectionTotalBeforeDiscount += installTotal;
-                    yPos += 12;
-                } else if (sectionId === 'alarm-installation' && isRental) {
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text('1', 55, yPos + 8);
-                    doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 8);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('Compris dans le forfait', 395, yPos + 8);
-                    doc.text('Compris', 475, yPos + 8);
-                    doc.setTextColor(0, 0, 0);
-                    yPos += 12;
-                    
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text('1', 55, yPos + 8);
-                    doc.text('Désinstallation facturée si durée inférieure à 12 mois', 90, yPos + 8);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(UNINSTALL_PRICE.toFixed(2), 405, yPos + 8);
-                    doc.text(UNINSTALL_PRICE.toFixed(2), 485, yPos + 8);
-                    yPos += 12;
-                }
-
-                const discountType = document.getElementById(`${sectionId}-discount-type`)?.value || 'percent';
-                const discountValue = parseFloat(document.getElementById(`${sectionId}-discount-value`)?.value) || 0;
-                
-                let discountAmount = 0;
-                if (discountValue > 0) {
-                    if (discountType === 'percent') {
-                        discountAmount = sectionTotal * (discountValue / 100);
-                        sectionTotal = sectionTotal - discountAmount;
-                    } else {
-                        discountAmount = Math.min(discountValue, sectionTotal);
-                        sectionTotal = Math.max(0, sectionTotal - discountValue);
-                    }
-                    
-                    lineCount++;
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 12, 'F');
-                    }
-                    
-                    doc.setFont('helvetica', 'italic');
-                    doc.setFontSize(6);
-                    doc.setTextColor(200, 0, 0);
-                    const discountText = discountType === 'percent' 
-                        ? `Réduction ${discountValue}%` 
-                        : `Réduction ${discountValue.toFixed(2)} CHF`;
-                    doc.text(discountText, 90, yPos + 8);
-                    doc.text(`-${discountAmount.toFixed(2)}`, 485, yPos + 8);
-                    doc.setTextColor(0, 0, 0);
-                    yPos += 12;
-                }
-
-                const totalTTC = this.roundToFiveCents(sectionTotal * (1 + TVA_RATE));
-                const tva = totalTTC - sectionTotal;
-
-                doc.setFillColor(230, 230, 230);
-                doc.rect(390, yPos, 165, 36, 'F');
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 12);
-                doc.text(sectionTotal.toFixed(2), 485, yPos + 12);
-                doc.text('TVA 8.1%', 400, yPos + 24);
-                doc.text(tva.toFixed(2), 485, yPos + 24);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(totalTTC.toFixed(2), 485, yPos + 32);
-
-                yPos += 40;
-
-                return yPos + 5;
-            }
-
-            createServicesPDF(doc, yPos, isRental) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text('SERVICES', 40, yPos);
-                yPos += 12;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 14, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Service', 90, yPos + 9);
-                doc.text('Prix', 400, yPos + 9);
-                doc.text('Total', 480, yPos + 9);
-                yPos += 14;
-
-                const testCycliqueSelected = document.getElementById('test-cyclique-selected')?.checked || false;
-                const testCycliquePrice = parseFloat(document.getElementById('test-cyclique-price')?.value) || TEST_CYCLIQUE_DEFAULT_PRICE;
-                const testCycliqueOffered = document.getElementById('test-cyclique-offered')?.checked || false;
-                
-                if (testCycliqueSelected) {
-                    doc.setFillColor(245, 245, 245);
-                    doc.rect(40, yPos, 515, 12, 'F');
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.text('Test Cyclique', 90, yPos + 8);
-                    
-                    if (testCycliqueOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(testCycliquePrice.toFixed(2), 405, yPos + 8);
-                        doc.text(testCycliquePrice.toFixed(2), 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-                
-                const surveillanceType = document.getElementById('surveillance-type')?.value;
-                const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-                const surveillanceOffered = document.getElementById('surveillance-offered')?.checked || false;
-                
-                if (surveillanceType) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(6);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    let serviceName = '';
-                    if (surveillanceType === 'telesurveillance') {
-                        serviceName = 'Télésurveillance Particulier';
-                    } else if (surveillanceType === 'telesurveillance-pro') {
-                        serviceName = 'Télésurveillance Professionnel';
-                    } else if (surveillanceType === 'autosurveillance') {
-                        serviceName = 'Autosurveillance';
-                    } else if (surveillanceType === 'autosurveillance-pro') {
-                        serviceName = 'Autosurveillance Professionnel';
-                    }
-                    
-                    doc.text(serviceName, 90, yPos + 8);
-                    
-                    if (surveillanceOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 8);
-                        doc.text('OFFERT', 485, yPos + 8);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 405, yPos + 8);
-                        doc.text(`${surveillancePrice.toFixed(2)}/mois`, 485, yPos + 8);
-                    }
-                    yPos += 12;
-                }
-
-                return yPos + 5;
-            }
-
-            createOptionsAlarmPDF(doc, yPos) {
-                const optionInterventionsGratuites = document.getElementById('option-interventions-gratuites')?.checked;
-                const optionInterventionsAnnee = document.getElementById('option-interventions-annee')?.checked;
-                const interventionsQty = parseInt(document.getElementById('interventions-qty')?.value) || 1;
-                const optionServiceCles = document.getElementById('option-service-cles')?.checked;
-                
-                if (!optionInterventionsGratuites && !optionInterventionsAnnee && !optionServiceCles) {
-                    return yPos;
-                }
-                
-                yPos += 10;
-                
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
-                doc.text('OPTIONS DE L\'OFFRE : ', 40, yPos);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                
-                const options = [];
-                if (optionInterventionsGratuites) {
-                    options.push('Interventions gratuites & illimitées des agents');
-                }
-                if (optionInterventionsAnnee) {
-                    options.push(`${interventionsQty} intervention(s) par année des agents`);
-                }
-                if (optionServiceCles) {
-                    options.push('Service des clés offert');
-                }
-                
-                doc.text(options.join(' | '), 165, yPos);
-                yPos += 20;
-                
-                return yPos;
-            }
-
-            createAdminFeesPDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Description', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                const simCardOffered = document.getElementById('admin-simcard-offered')?.checked || false;
-                const processingOffered = document.getElementById('admin-processing-offered')?.checked || false;
-
-                const adminItems = [
-                    { qty: 1, desc: 'Carte SIM + Activation', price: ADMIN_FEES.simCard, offered: simCardOffered },
-                    { qty: 1, desc: 'Frais de dossier', price: ADMIN_FEES.processingFee, offered: processingOffered }
-                ];
-
-                let lineCount = 0;
-                let adminTotal = 0;
-                
-                adminItems.forEach(item => {
-                    lineCount++;
-                    
-                    if (lineCount % 2 === 0) {
-                        doc.setFillColor(245, 245, 245);
-                        doc.rect(40, yPos, 515, 14, 'F');
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(item.qty.toString(), 55, yPos + 9);
-                    doc.text(item.desc, 90, yPos + 9);
-                    
-                    if (item.offered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 9);
-                        doc.text('OFFERT', 485, yPos + 9);
-                        doc.setFont('helvetica', 'normal');
-                        doc.setTextColor(0, 0, 0);
-                    } else {
-                        doc.text(item.price.toFixed(2), 405, yPos + 9);
-                        doc.text(item.price.toFixed(2), 485, yPos + 9);
-                        adminTotal += item.price;
-                    }
-                    yPos += 14;
-                });
-
-                const adminTotalTTC = this.roundToFiveCents(adminTotal * (1 + TVA_RATE));
-                const adminTVA = adminTotalTTC - adminTotal;
-
-                doc.setFillColor(230, 230, 230);
-                doc.rect(390, yPos, 165, 36, 'F');
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7);
-                doc.text('Total H.T.', 400, yPos + 12);
-                doc.text(adminTotal.toFixed(2), 485, yPos + 12);
-                doc.text('TVA 8.1%', 400, yPos + 24);
-                doc.text(adminTVA.toFixed(2), 485, yPos + 24);
-                doc.text('Total T.T.C.', 400, yPos + 32);
-                doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Montant à régler à l\'installation', 50, yPos + 32);
-
-                return yPos + 50;
-            }
-
-            createCameraInstallPDF(doc, yPos, isRental) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('INSTALLATION', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                if (isRental) {
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setLineWidth(0.5);
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.text('1', 55, yPos + 9);
-                    doc.text('Installation, paramétrages, tests, mise en service & formation des utilisateurs', 90, yPos + 9);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(0, 150, 0);
-                    doc.text('Compris dans le forfait', 395, yPos + 9);
-                    doc.text('Compris', 475, yPos + 9);
-                    doc.setTextColor(0, 0, 0);
-                    yPos += 14;
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFillColor(245, 245, 245);
-                    doc.rect(40, yPos, 515, 14, 'F');
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFontSize(7);
-                    doc.text('1', 55, yPos + 9);
-                    doc.text('Désinstallation facturée si durée inférieure à 12 mois', 90, yPos + 9);
-                    doc.text(UNINSTALL_PRICE.toFixed(2), 405, yPos + 9);
-                    doc.text(UNINSTALL_PRICE.toFixed(2), 485, yPos + 9);
-                    yPos += 14;
-                } else {
-                    const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                    const installPrice = this.calculateCameraInstallationPrice();
-                    const installTotal = installOffered ? 0 : installPrice;
-                    
-                    const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                    let description = '';
-                    
-                    let daysText = '';
-                    if (installQty === 1) daysText = ' (1/2 journée)';
-                    else if (installQty === 2) daysText = ' (1 jour)';
-                    else if (installQty === 3) daysText = ' (1.5 jours)';
-                    else if (installQty === 4) daysText = ' (2 jours)';
-                    else if (installQty === 5) daysText = ' (2.5 jours)';
-                    else if (installQty === 6) daysText = ' (3 jours)';
-                    else {
-                        const fullDays = Math.floor(installQty / 2);
-                        const halfDay = installQty % 2;
-                        daysText = halfDay ? ` (${fullDays}.5 jours)` : ` (${fullDays} jours)`;
-                    }
-                    description = 'Installation, paramétrages, tests, mise en service & formation' + daysText;
-
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setLineWidth(0.5);
-                    doc.rect(40, yPos, 515, 14);
-                    doc.line(80, yPos, 80, yPos + 14);
-                    doc.line(390, yPos, 390, yPos + 14);
-                    doc.line(470, yPos, 470, yPos + 14);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(7);
-                    doc.text('1', 55, yPos + 9);
-                    doc.text(description, 90, yPos + 9);
-                    
-                    if (installOffered) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(0, 150, 0);
-                        doc.text('OFFERT', 405, yPos + 9);
-                        doc.text('OFFERT', 485, yPos + 9);
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                        doc.text(installPrice.toFixed(2), 405, yPos + 9);
-                        doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                    }
-                    yPos += 14;
-
-                    const installTotalTTC = this.roundToFiveCents(installTotal * (1 + TVA_RATE));
-                    const installTVA = installTotalTTC - installTotal;
-
-                    doc.setFillColor(200, 200, 200);
-                    doc.rect(390, yPos, 165, 42, 'F');
-                    doc.rect(390, yPos, 165, 42);
-                    doc.line(390, yPos + 14, 555, yPos + 14);
-                    doc.line(390, yPos + 28, 555, yPos + 28);
-
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('Total H.T.', 400, yPos + 9);
-                    doc.text(installTotal.toFixed(2), 485, yPos + 9);
-                    doc.text('TVA 8.1%', 400, yPos + 21);
-                    doc.text(installTVA.toFixed(2), 485, yPos + 21);
-                    doc.text('Total T.T.C.', 400, yPos + 35);
-                    doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
-
-                    yPos += 42;
-                }
-
-                return yPos + 15;
-            }
-
-            // NOUVEAU: Fonction pour créer la section Maintenance dans le PDF
-            createMaintenancePDF(doc, yPos) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.text('MAINTENANCE ET GARANTIE', 40, yPos);
-                yPos += 15;
-
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Qté', 50, yPos + 10);
-                doc.text('Désignation', 90, yPos + 10);
-                doc.text('Prix uni. HT', 400, yPos + 10);
-                doc.text('Total HT', 480, yPos + 10);
-                yPos += 16;
-
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.rect(40, yPos, 515, 14);
-                doc.line(80, yPos, 80, yPos + 14);
-                doc.line(390, yPos, 390, yPos + 14);
-                doc.line(470, yPos, 470, yPos + 14);
-                
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
-                doc.text('1', 55, yPos + 9);
-                doc.text('Assistance hotline, déplacement(s), matériels pièce(s), main d\'œuvre et support téléphonique', 90, yPos + 9);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(0, 150, 0);
-                doc.text('OFFERT', 405, yPos + 9);
-                doc.text('OFFERT', 485, yPos + 9);
-                doc.setTextColor(0, 0, 0);
-                yPos += 14;
-
-                return yPos + 15;
-            }
-
-            createFinalSummaryPDF(doc, yPos, type, isRental) {
-                yPos += 15;
-                
-                doc.setFillColor(244, 230, 0);
-                doc.rect(40, yPos, 515, 16, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-                yPos += 16;
-
-                let totalMensualitesHT = 0;
-                let totalComptantHT = 0;
-                let monthsCount = 0;
-                let surveillanceMonthlyHT = 0;
-                
-                if (type === 'alarm') {
-                    const materialTotal = this.calculateSectionTotal('alarm-material');
-                    
-                    const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                    const installPrice = this.calculateInstallationPrice(installQty);
-                    const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                    const installTotal = installOffered ? 0 : installPrice;
-                    const otherInstallationTotal = this.calculateSectionTotal('alarm-installation');
-                    const totalInstallation = installTotal + otherInstallationTotal;
-                    
-                    const simCardOffered = document.getElementById('admin-simcard-offered')?.checked || false;
-                    const processingOffered = document.getElementById('admin-processing-offered')?.checked || false;
-                    const adminTotal = (simCardOffered ? 0 : ADMIN_FEES.simCard) + (processingOffered ? 0 : ADMIN_FEES.processingFee);
-                    
-                    const paymentMonths = this.globalPaymentMonths['alarm'] || 0;
-                    
-                    const surveillanceType = document.getElementById('surveillance-type')?.value;
-                    const surveillancePrice = parseFloat(document.getElementById('surveillance-price')?.value) || 0;
-                    const surveillanceOffered = document.getElementById('surveillance-offered')?.checked;
-                    surveillanceMonthlyHT = surveillanceType && !surveillanceOffered ? surveillancePrice : 0;
-                    
-                    if (paymentMonths > 0) {
-                        totalMensualitesHT = materialTotal + totalInstallation;
-                        monthsCount = paymentMonths;
-                    } else {
-                        totalComptantHT = materialTotal + totalInstallation;
-                    }
-                    
-                    totalComptantHT += adminTotal;
-                    
-                } else if (type === 'camera') {
-                    const materialTotal = this.calculateSectionTotal('camera-material');
-                    
-                    let installTotal = 0;
-                    if (!isRental) {
-                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                        const installPrice = this.calculateCameraInstallationPrice();
-                        installTotal = installOffered ? 0 : installPrice;
-                    }
-                    
-                    const paymentMonths = this.globalPaymentMonths['camera'] || 0;
-                    
-                    if (paymentMonths > 0 && !isRental) {
-                        totalMensualitesHT = materialTotal + installTotal;
-                        monthsCount = paymentMonths;
-                    } else {
-                        totalComptantHT = materialTotal + installTotal;
-                    }
-                    
-                    if (!isRental) {
-                        const remoteAccess = document.getElementById('camera-remote-access')?.checked;
-                        if (remoteAccess) {
-                            surveillanceMonthlyHT = REMOTE_ACCESS_PRICE;
-                        }
-                    }
-                }
-
-                if (!isRental && monthsCount > 0 && totalMensualitesHT > 0) {
-                    let mensualiteMatHT = 0;
-                    let mensualiteInstallHT = 0;
-                    
-                    if (type === 'alarm') {
-                        const installQty = parseFloat(document.getElementById('alarm-installation-qty')?.value) || 1;
-                        const installOffered = document.getElementById('alarm-installation-offered')?.checked || false;
-                        
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('alarm-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-                        
-                        const otherInstallMensualite = this.calculateSectionMonthlyPrice('alarm-installation', monthsCount);
-                        mensualiteMatHT += otherInstallMensualite;
-                    } else if (type === 'camera') {
-                        const installQty = parseFloat(document.getElementById('camera-installation-qty')?.value) || 1;
-                        const installOffered = document.getElementById('camera-installation-offered')?.checked || false;
-                        
-                        mensualiteMatHT = this.calculateSectionMonthlyPrice('camera-material', monthsCount);
-                        mensualiteInstallHT = installOffered ? 0 : this.roundToFiveCents(this.getInstallationMonthlyPrice(installQty, monthsCount));
-                    }
-                    
-                    const totalInstallMatSupp = mensualiteMatHT + mensualiteInstallHT;
-                    const totalMensuelHT = totalInstallMatSupp + surveillanceMonthlyHT;
-                    const totalMensuelTVA = totalMensuelHT * TVA_RATE;
-                    const totalMensuelTTC = this.roundToFiveCents(totalMensuelHT * (1 + TVA_RATE));
-
-                    doc.setFillColor(245, 245, 245);
-                    doc.roundedRect(40, yPos, 515, 75, 8, 8, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text('MENSUALITÉS GLOBALES (' + monthsCount + ' mois)', 50, yPos + 18);
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    const serviceName = type === 'alarm' ? 
-                        (document.getElementById('surveillance-type')?.value === 'telesurveillance' ? 'Télésurveillance' : 
-                        document.getElementById('surveillance-type')?.value === 'telesurveillance-pro' ? 'Télésurveillance Pro' : 
-                        document.getElementById('surveillance-type')?.value === 'autosurveillance-pro' ? 'Autosurveillance Pro' : 'Autosurveillance') : 
-                        'Vision à distance';
-                    
-                    doc.text(`Installation et matériel supp. = ${totalInstallMatSupp.toFixed(2)} CHF HT   |   ${serviceName} = ${surveillanceMonthlyHT.toFixed(2)} CHF HT`, 50, yPos + 35);
-                    
-                    doc.text(`Total mensualité HT = ${totalMensuelHT.toFixed(2)} CHF`, 50, yPos + 48);
-                    doc.text(`TVA 8,1% = ${totalMensuelTVA.toFixed(2)} CHF`, 250, yPos + 48);
-                    
-                    doc.setFillColor(255, 255, 255);
-                    doc.roundedRect(420, yPos + 38, 120, 20, 5, 5, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(`Total TTC = ${totalMensuelTTC.toFixed(2)} CHF`, 430, yPos + 51);
-                    
-                    yPos += 75;
-                    
-                    if (totalComptantHT > 0) {
-                        yPos += 15;
-                        
-                        doc.setFillColor(245, 245, 245);
-                        doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(9);
-                        doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
-                        
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
-                        doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                        const comptantTVA = totalComptantHT * TVA_RATE;
-                        const comptantTTC = this.roundToFiveCents(totalComptantHT * (1 + TVA_RATE));
-                        doc.text(`TVA 8,1% = ${comptantTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                        
-                        doc.setFillColor(255, 255, 255);
-                        doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`Total TTC = ${comptantTTC.toFixed(2)} CHF`, 430, yPos + 33);
-                        
-                        yPos += 50;
-                    }
-                    
-                } else {
-                    const totalTVA = totalComptantHT * TVA_RATE;
-                    const totalTTC = this.roundToFiveCents(totalComptantHT * (1 + TVA_RATE));
-                    
-                    doc.setFillColor(245, 245, 245);
-                    doc.roundedRect(40, yPos, 515, 45, 8, 8, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.setTextColor(0, 0, 0);
-                    
-                    if (isRental) {
-                        doc.text('MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)', 50, yPos + 18);
-                    } else {
-                        doc.text('MONTANT TOTAL (PAIEMENT COMPTANT)', 50, yPos + 18);
-                    }
-                    
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Total HT = ${totalComptantHT.toFixed(2)} CHF`, 50, yPos + 30);
-                    doc.text(`TVA 8,1% = ${totalTVA.toFixed(2)} CHF`, 250, yPos + 30);
-                    
-                    doc.setFillColor(255, 255, 255);
-                    doc.roundedRect(420, yPos + 20, 120, 20, 5, 5, 'F');
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total TTC = ${totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
-                    
-                    yPos += 50;
-                }
-
-                if (!isRental && type !== 'camera' && monthsCount > 0) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0);
-                    yPos += 10;
-                    doc.text(`Nous demandons à nos abonnés la signature d'un contrat de ${monthsCount} mois par habitation.`, 80, yPos);
-                    yPos += 12;
-                    doc.text(`La mensualité est fixée et non indexable pendant la durée contractuelle.`, 80, yPos);
-                    yPos += 15;
-                }
-
-                return yPos;
-            }
-
-            createPDFFooter(doc, clientName) {
-                doc.setFillColor(51, 51, 51);
-                doc.rect(0, 720, 595, 122, 'F');
-                
-                doc.setFillColor(244, 230, 0);
-                doc.rect(0, 720, 595, 6, 'F');
-
-                doc.setFillColor(255, 255, 255);
-                doc.rect(50, 745, 200, 25, 'F');
-                doc.rect(350, 745, 200, 60, 'F');
-
-                doc.setTextColor(0, 0, 0);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.text(`NOM DU CLIENT : ${clientName}`, 60, 760);
-                doc.text('SIGNATURE DU CLIENT', 430, 760);
-            }
-
-            exportQuote() {
-                const quote = {
-                    timestamp: new Date().toISOString(),
-                    type: this.currentTab,
-                    isRental: this.rentalMode[this.currentTab],
-                    sections: this.sections
-                };
-                
-                const dataStr = JSON.stringify(quote, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                
-                const exportFileDefaultName = `devis-${this.currentTab}-${this.rentalMode[this.currentTab] ? 'location' : 'vente'}-${new Date().toISOString().split('T')[0]}.json`;
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-                
-                this.showNotification('Devis exporté avec succès!', 'success');
-            }
-
-            showNotification(message, type = 'success', duration = 3000) {
-                const existingNotifs = document.querySelectorAll('.dialarme-notification');
-                existingNotifs.forEach(n => n.remove());
-                
-                const notification = document.createElement('div');
-                notification.className = 'dialarme-notification';
-                
-                let bgColor = '#28a745';
-                let icon = '✅';
-                
-                if (type === 'info') {
-                    bgColor = '#17a2b8';
-                    icon = '📤';
-                }
-                if (type === 'warning') {
-                    bgColor = '#ffc107';
-                    icon = '⚠️';
-                }
-                if (type === 'error') {
-                    bgColor = '#dc3545';
-                    icon = '❌';
-                }
-                
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: ${bgColor};
-                    color: white;
-                    padding: 15px 25px;
-                    border-radius: 10px;
-                    z-index: 10000;
-                    animation: slideIn 0.3s ease;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                    max-width: 400px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                `;
-                
-                notification.innerHTML = `
-                    <span style="font-size: 18px;">${icon}</span>
-                    <span>${message}</span>
-                `;
-                
-                document.body.appendChild(notification);
-
-                if (duration > 0) {
-                    setTimeout(() => {
-                        notification.style.animation = 'slideOut 0.3s ease';
-                        setTimeout(() => {
-                            if (notification.parentNode) {
-                                notification.remove();
-                            }
-                        }, 300);
-                    }, duration);
-                }
-            }
-        }
-
-        let generator;
-
-        function showTab(tabName, element) {
-            if (generator) generator.showTab(tabName, element);
-        }
-
-        function toggleRentalMode(type) {
-            if (generator) generator.toggleRentalMode(type);
-        }
-
-        function toggleInterventionsQty() {
-            const checkbox = document.getElementById('option-interventions-annee');
-            const qtyInput = document.getElementById('interventions-qty');
-            qtyInput.style.display = checkbox.checked ? 'inline-block' : 'none';
-            updateTotals();
-        }
-
-        function updateAlarmInstallationPrice() {
-            if (generator) generator.updateAlarmInstallationPrice();
-        }
-
-        function updateCameraInstallationPrice() {
-            if (generator) generator.updateCameraInstallationPrice();
-        }
-
-        function updateSurveillancePrice() {
-            if (generator) generator.updateSurveillancePrice();
-        }
-
-        async function generatePDF(type) {
-            if (generator) await generator.generatePDF(type);
-        }
-
-        // Test function for pdf-lib (can be called from console)
-        async function testPdfLib() {
-            if (generator) {
-                return await generator.testPdfLibMerging();
-            } else {
-                console.error('❌ Generator not initialized');
-                return false;
-            }
-        }
-
-        // Toggle feature flag for testing (can be called from console)
-        function togglePdfLibMerging() {
-            if (generator) {
-                generator.USE_PDF_LIB_MERGING = !generator.USE_PDF_LIB_MERGING;
-                console.log('🔧 PDF Assembly Method:', generator.USE_PDF_LIB_MERGING ? 'pdf-lib (NEW)' : 'Backend (EXISTING)');
-                return generator.USE_PDF_LIB_MERGING;
-            } else {
-                console.error('❌ Generator not initialized');
-                return false;
-            }
-        }
-
-        function exportQuote() {
-            if (generator) generator.exportQuote();
-        }
-
-        function selectGlobalPayment(element, type) {
-            if (generator) generator.selectGlobalPayment(element, type);
-        }
-
-        function addProductLine(sectionId) {
-            if (generator) generator.addProductLine(sectionId);
-        }
-
-        function handleProductSelection(selectElement) {
-            if (generator) generator.handleProductSelection(selectElement);
-        }
-
-        function updateTotals() {
-            if (generator) generator.updateTotals();
-        }
-
-        function showKitSelector() {
-            if (generator) generator.showKitSelector();
-        }
-
-        function handleCommercialSelection(selectElement) {
-            const customInput = document.getElementById('commercial-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        function handleCommercialSelectionCamera(selectElement) {
-            const customInput = document.getElementById('commercialCamera-custom');
-            if (selectElement.value === 'autre') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            generator = new DialarmeFinalGenerator();
-            console.log('✅ Application Dialarme chargée avec succès');
-            console.log('📋 Catalogues disponibles:', Object.keys(generator.catalog));
-            console.log('👥 Commerciaux disponibles:', COMMERCIALS_LIST.length);
-            console.log('💰 Configuration des prix chargée');
-            console.log('📧 URL Google Script:', GOOGLE_SCRIPT_URL);
-            console.log('🔧 PDF Assembly Method:', generator.USE_PDF_LIB_MERGING ? 'pdf-lib (NEW)' : 'Backend (EXISTING)');
-            console.log('🧪 Test pdf-lib: Run testPdfLib() in console');
-            console.log('🔄 Toggle method: Run togglePdfLibMerging() in console');
-        });
