@@ -2659,19 +2659,24 @@ throw error;
                     
                     // === 2. ADD PROPERTY TYPE (at specified position) ===
                     if (propertyType) {
-                        const propertyTypeFontSize = 10;
-                        const propertyTypeX = 41;
-                        const propertyTypeY = 319;
+                                const propertyPageIndex = pageIndex + 1; // Page suivante = page 2
             
-                        page.drawText(`Type de bien: ${propertyType}`, {
-                            x: propertyTypeX,
-                            y: propertyTypeY,
-                            size: propertyTypeFontSize,
-                            font: helveticaFont,
-                            color: PDFLib.rgb(0, 0, 0)
-                        });
-            
-                        console.log('✅ Property type added:', propertyType, 'at position X:', propertyTypeX, 'Y:', propertyTypeY);
+                                if (propertyPageIndex < pages.length) {
+                                    const propertyPage = pages[propertyPageIndex];
+                                    const propertyTypeFontSize = 10;
+                
+                                    const propertyTypeX = 50;  
+                                    const propertyTypeY = 269;
+    
+                                    propertyPage.drawText(`Type de bien: ${propertyType}`, {
+                                        x: propertyTypeX,
+                                        y: propertyTypeY,
+                                        size: propertyTypeFontSize,
+                                        font: helveticaFont,
+                                        color: PDFLib.rgb(0, 0, 0)
+                                    });
+    
+                console.log('✅ Property type added on page', propertyPageIndex + 1, ':', propertyType);
                     }
         
                     // === 3. ADD TEXT INSIDE EXISTING YELLOW BOX (Bottom-right) ===
