@@ -1884,7 +1884,7 @@ throw error;
              * This function will merge the generated quote with base documents and product sheets
              * Returns a single merged PDF blob ready to send to backend
              */
-            async assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName, propertyType = null) {
+            async assemblePdfWithLibrary(pdfBlob, filename, commercial, clientName, propertyType) {
                 console.log('🔧 Starting PDF assembly with pdf-lib...');
                 
                 try {
@@ -1918,9 +1918,6 @@ throw error;
                         return await this.assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType, propertyType);
                     } else if (quoteType === 'video') {
                         return await this.assembleVideoPdf(pdfBlob, filename, commercial, clientName, products, propertyType);
-                                } else {
-                        console.log('⚠️ No assembly needed for this quote type, returning original PDF');
-                        return { blob: pdfBlob, info: null };
                     }
                     
                 } catch (error) {
@@ -1934,7 +1931,7 @@ throw error;
             /**
              * Assemble alarm PDF: Base document with generated quote REPLACING page 6 + Commercial overlay at page 2
              */
-            async assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType, propertyType = null) {
+            async assembleAlarmPdf(pdfBlob, filename, commercial, clientName, centralType, propertyType) {
                 console.log('🚨 Assembling alarm PDF with central type:', centralType);
                 
                 try {
@@ -2020,7 +2017,7 @@ throw error;
              * iOS: Uses individual fetches and skips accessories (timeout limitation)
              * Desktop: Uses batch fetching for faster performance
              */
-            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products, propertyType = null) {
+            async assembleVideoPdf(pdfBlob, filename, commercial, clientName, products, propertyType) {
                 console.log('📹 Assembling video PDF with', products.length, 'products');
                 
                 try {
@@ -2603,13 +2600,13 @@ throw error;
              * Name/Phone/Email: Text INSIDE the existing yellow box (no new box drawn)
              * PropertyType: Added at specified position
              */
-            async addCommercialOverlay(pdfDoc, commercialName, pageIndex, propertyType = null) {
+            async addCommercialOverlay(pdfDoc, commercialName, pageIndex, propertyType) {
                 console.log('📝 Adding commercial overlay to page', pageIndex + 1);
                 
                 try {
                     // Get commercial info
-                   const commercialInfo = this.getCommercialInfo(commercialName);
-        
+                    const commercialInfo = this.getCommercialInfo(commercialName);
+                    
                     // Get the target page
                     const pages = pdfDoc.getPages();
                     if (pageIndex >= pages.length) {
@@ -2621,7 +2618,6 @@ throw error;
                     const { width, height } = page.getSize();
         
                     // Remove annotations/form fields that block text (Titane has white rectangles on page 2)
-                    // This only runs when pdf-lib is assembling, safe for all devices
                     try {
                         const annots = page.node.get(PDFLib.PDFName.of('Annots'));
                         if (annots) {
@@ -2640,55 +2636,42 @@ throw error;
                     const helveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         
                     // === 1. ADD DATE (On same line as "Carouge. le") ===
-                    // Position date to align horizontally with "Carouge. le" text
                     const currentDate = new Date().toLocaleDateString('fr-CH');
                     const dateText = currentDate;
                     const dateFontSize = 11;
-                    const dateX = width - 139; // Moved left 6px more
-                    const dateY = height - 155; // Aligned with "Carouge. le"
-                    
+                    const dateX = width - 139;
+                    const dateY = height - 155;
+        
                     page.drawText(dateText, {
                         x: dateX,
                         y: dateY,
                         size: dateFontSize,
                         font: helveticaFont,
                         color: PDFLib.rgb(0, 0, 0)
-                   });
-                    
+                    });
+        
                     console.log('✅ Date added on "Le" line:', dateText);
-                    
-                    // === 2. ADD PROPERTY TYPE (at specified position) ===
+        
+                    // === 2. ADD PROPERTY TYPE (X=20, Y=269) ===
                     if (propertyType) {
-                                const propertyPageIndex = pageIndex + 1; // Page suivante = page 2
+                        page.drawText(propertyType, {
+                            x: 20,
+                            y: 269,
+                            size: 11,
+                            font: helveticaBold,
+                            color: PDFLib.rgb(0, 0, 0)
+                        });
             
-                                if (propertyPageIndex < pages.length) {
-                                    const propertyPage = pages[propertyPageIndex];
-                                    const propertyTypeFontSize = 10;
-                
-                                    const propertyTypeX = 50;  
-                                    const propertyTypeY = 269;
-    
-                                    propertyPage.drawText(`Type de bien: ${propertyType}`, {
-                                        x: propertyTypeX,
-                                        y: propertyTypeY,
-                                        size: propertyTypeFontSize,
-                                        font: helveticaFont,
-                                        color: PDFLib.rgb(0, 0, 0)
-                                    });
-    
-                console.log('✅ Property type added on page', propertyPageIndex + 1, ':', propertyType);
+                        console.log('✅ Property type added:', propertyType);
                     }
         
                     // === 3. ADD TEXT INSIDE EXISTING YELLOW BOX (Bottom-right) ===
-                    // NOTE: Yellow box already exists on page 2 - we just add text inside it
-                    // Typical yellow box position: bottom-right corner
-                    const boxStartX = width - 185; // Moved more to the right
-                   const boxStartY = 110; // Moved up 30px more
-                    
-                    // Add text inside the EXISTING yellow box (no rectangle drawn)
+                    const boxStartX = width - 185;
+                    const boxStartY = 110;
+        
                     const textPadding = 8;
                     const lineHeight = 15;
-                    let textY = boxStartY + 58; // Start from top of the yellow box area
+                    let textY = boxStartY + 58;
         
                     // Commercial name (bold)
                     page.drawText(commercialName, {
@@ -2698,9 +2681,9 @@ throw error;
                         font: helveticaBold,
                         color: PDFLib.rgb(0, 0, 0)
                     });
-        
-                    textY -= lineHeight;
                     
+                    textY -= lineHeight;
+        
                     // Phone
                     page.drawText(`Tel: ${commercialInfo.phone}`, {
                         x: boxStartX + textPadding,
@@ -2709,9 +2692,9 @@ throw error;
                         font: helveticaFont,
                         color: PDFLib.rgb(0, 0, 0)
                     });
-                    
+        
                     textY -= lineHeight;
-                    
+        
                     // Email
                     page.drawText(commercialInfo.email, {
                         x: boxStartX + textPadding,
@@ -2720,14 +2703,15 @@ throw error;
                         font: helveticaFont,
                         color: PDFLib.rgb(0, 0, 0)
                     });
-                    
+        
                     console.log('✅ Commercial info added inside existing yellow box on page', pageIndex + 1);
                     console.log('   - Name:', commercialName);
                     console.log('   - Phone:', commercialInfo.phone);
                     console.log('   - Email:', commercialInfo.email);
-                    
+                    console.log('   - Property Type:', propertyType || 'Not specified');
+        
                 } catch (error) {
-                    console.error('❌ Error adding commercial overlay:', error);
+                   console.error('❌ Error adding commercial overlay:', error);
                     // Don't throw - this is not critical
                 }
             }
@@ -2834,12 +2818,12 @@ throw error;
                     commercial = commercialSelect;
                 }
                     // Récupérer le type de bien
-                const propertyType = document.getElementById('propertyType')?.value || '';
+                const propertyType = document.getElementById(propertyType)?.value || '';
 
-                if (!commercial) {
-                    alert('Veuillez sélectionner un commercial avant de générer le PDF.');
-                    return;
-                }
+                    if (!commercial) {
+                        alert('Veuillez sélectionner un commercial avant de générer le PDF.');
+                        return;
+    }
 
                 if (!window.jspdf || !window.jspdf.jsPDF) {
                     alert('Erreur: Bibliothèque PDF non disponible.');
