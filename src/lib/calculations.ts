@@ -96,10 +96,7 @@ export interface AlarmTotals {
 
 export interface CameraTotals {
   material: SectionTotals;
-  installation: {
-    total: number;
-    isOffered: boolean;
-  };
+  installation: SectionTotals;
   remoteAccess: {
     enabled: boolean;
     price: number;
@@ -367,6 +364,7 @@ export function calculateCameraTotals(
   materialLines: ProductLineData[],
   materialDiscount: DiscountConfig | undefined,
   installation: InstallationConfig,
+  installationDiscount: DiscountConfig | undefined,
   remoteAccessEnabled: boolean,
   paymentMonths: number,
   isRentalMode: boolean,
@@ -375,10 +373,34 @@ export function calculateCameraTotals(
   // Material totals
   const material = calculateSectionTotal(materialLines, materialDiscount);
 
-  // Installation
-  const installationTotal = isRentalMode 
+  // Installation - calculate base price first
+  const baseInstallationPrice = isRentalMode 
     ? 0 
     : (installation.isOffered ? 0 : (installation.price || calculateInstallationPrice(installation.quantity)));
+  
+  // Apply discount to installation
+  let installationTotal = baseInstallationPrice;
+  let installationDiscount_amount = 0;
+  let installationDiscountDisplay = '';
+  
+  if (!installation.isOffered && installationDiscount && installationDiscount.value > 0 && baseInstallationPrice > 0) {
+    if (installationDiscount.type === 'percent') {
+      installationDiscount_amount = baseInstallationPrice * (installationDiscount.value / 100);
+      installationDiscountDisplay = `${installationDiscount.value}%`;
+    } else {
+      installationDiscount_amount = Math.min(installationDiscount.value, baseInstallationPrice);
+      installationDiscountDisplay = `${installationDiscount.value.toFixed(2)} CHF`;
+    }
+    installationTotal = Math.max(0, baseInstallationPrice - installationDiscount_amount);
+  }
+
+  const installationSectionTotals: SectionTotals = {
+    subtotal: installationTotal,
+    discount: installationDiscount_amount,
+    total: installationTotal,
+    totalBeforeDiscount: baseInstallationPrice,
+    discountDisplay: installationDiscountDisplay
+  };
 
   // Remote access - use tiered pricing based on camera count
   const remoteAccessPrice = (!isRentalMode && remoteAccessEnabled) 
@@ -391,10 +413,7 @@ export function calculateCameraTotals(
 
   const result: CameraTotals = {
     material,
-    installation: {
-      total: installationTotal,
-      isOffered: installation.isOffered
-    },
+    installation: installationSectionTotals,
     remoteAccess: {
       enabled: remoteAccessEnabled && !isRentalMode,
       price: remoteAccessPrice

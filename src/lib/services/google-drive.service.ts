@@ -269,40 +269,41 @@ export async function findProductSheet(productName: string): Promise<{
       
       let score = 0;
       
-      // BEST: Exact match (highest priority)
-      if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
-        score = 1000; // Exact match always wins
-      }
-      // GOOD: Full search string appears as complete phrase in filename
-      else if (normalizedFileName.includes(normalizedSearch)) {
-        const searchIndex = normalizedFileName.indexOf(normalizedSearch);
-        if (searchIndex !== -1) {
-          // Check boundaries - is it a word boundary match?
-          const beforeChar = searchIndex > 0 ? normalizedFileName[searchIndex - 1] : ' ';
-          const afterChar = searchIndex + normalizedSearch.length < normalizedFileName.length 
-            ? normalizedFileName[searchIndex + normalizedSearch.length] : ' ';
-          
-          const isWordBoundary = /[\s\-_.]/.test(beforeChar) && /[\s\-_.]/.test(afterChar);
-          
-          if (isWordBoundary) {
-            // Check if filename has same number of significant words (prevents partial matches)
-            const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
-            const searchWordCount = searchWords.length > 0 ? searchWords.length : normalizedSearch.split(/[\s\-_]+/).filter(w => w.length > 2).length;
+        // BEST: Exact match (highest priority) - Return immediately!
+        if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
+          // Exact match found - stop searching and use this one
+          return {
+            fileId: file.id,
+            fileName: file.name,
+            buffer: await downloadFileFromDrive(file.id)
+          }; // Return immediately - exact match is guaranteed correct
+        }
+        // STRICT: Only match if all words match AND no extra words in filename
+        else if (normalizedFileName.includes(normalizedSearch)) {
+          const searchIndex = normalizedFileName.indexOf(normalizedSearch);
+          if (searchIndex !== -1) {
+            // Check boundaries - is it a word boundary match?
+            const beforeChar = searchIndex > 0 ? normalizedFileName[searchIndex - 1] : ' ';
+            const afterChar = searchIndex + normalizedSearch.length < normalizedFileName.length 
+              ? normalizedFileName[searchIndex + normalizedSearch.length] : ' ';
             
-            // Perfect match: same word count
-            if (fileWords.length === searchWordCount) {
-              score = 500; // Very high score for same word count
+            const isWordBoundary = /[\s\-_.]/.test(beforeChar) && /[\s\-_.]/.test(afterChar);
+            
+            if (isWordBoundary) {
+              // Check if filename has same number of significant words (prevents partial matches)
+              const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
+              const searchWordCount = searchWords.length > 0 ? searchWords.length : normalizedSearch.split(/[\s\-_]+/).filter(w => w.length > 2).length;
+              
+              // ONLY match if word counts are exactly the same (prevents "Solar 4G XL" matching "Solar 4G XL PTZ")
+              if (fileWords.length === searchWordCount) {
+                score = 500; // Very high score for same word count
+              }
+              // If word counts differ, don't even consider it
             }
-            // Close match: word boundary match but different word count
-            else {
-              score = 100;
-            }
-          } else {
-            score = 50;
           }
         }
-      }
-      // ACCEPTABLE: All search words present (strict matching)
+      // FALLBACK: Word-by-word matching - VERY STRICT
+      // Only match if ALL words match AND file has no extra significant words
       else if (searchWords.length > 0) {
         let matchCount = 0;
         let allWordsMatch = true;
@@ -320,24 +321,22 @@ export async function findProductSheet(productName: string): Promise<{
         // Only consider if ALL search words match
         if (allWordsMatch && matchCount === searchWords.length) {
           const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
-          
-          // Check for reverse: all FILE words should be in search words (prevents "Mini Solar 4G" matching "Solar 4G XL PTZ")
           const searchWordsSet = new Set(searchWords);
-          let fileWordsMissing = 0;
           
+          // Check for reverse: all FILE words should be in search words
+          let extraWordsInFile = 0;
           for (const fw of fileWords) {
             if (!searchWordsSet.has(fw)) {
-              fileWordsMissing++;
+              extraWordsInFile++;
             }
           }
           
-          // STRICT: If file has words not in search, big penalty (prevents wrong matches)
-          if (fileWordsMissing > 0) {
-            score = Math.max(0, matchCount * 5 - fileWordsMissing * 20);
-          } else {
+          // REJECT if file has extra words (prevents "Mini Solar 4G" matching "Solar 4G XL PTZ")
+          if (extraWordsInFile === 0) {
             // Perfect word-for-word match (all search words in file, no extra file words)
             score = 200;
           }
+          // If file has extra words, reject completely (score stays 0)
         }
       }
 
@@ -499,9 +498,15 @@ class GoogleDriveService {
         
         let score = 0;
         
-        // BEST: Exact match (highest priority)
+        // BEST: Exact match (highest priority) - Return immediately!
         if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
-          score = 1000;
+          // Exact match found - stop searching and use this one
+          bestMatch = {
+            fileId: file.id,
+            fileName: file.name,
+            score: 1000
+          };
+          break; // Stop searching - exact match is guaranteed correct
         }
         // GOOD: Full search string appears as complete phrase in filename
         else if (normalizedFileName.includes(normalizedSearch)) {
@@ -527,7 +532,8 @@ class GoogleDriveService {
             }
           }
         }
-        // ACCEPTABLE: All search words present (strict matching)
+        // FALLBACK: Word-by-word matching - VERY STRICT
+        // Only match if ALL words match AND file has no extra significant words
         else if (searchWords.length > 0) {
           let matchCount = 0;
           let allWordsMatch = true;
@@ -544,19 +550,20 @@ class GoogleDriveService {
           if (allWordsMatch && matchCount === searchWords.length) {
             const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
             const searchWordsSet = new Set(searchWords);
-            let fileWordsMissing = 0;
             
+            // Check for reverse: all FILE words should be in search words
+            let extraWordsInFile = 0;
             for (const fw of fileWords) {
               if (!searchWordsSet.has(fw)) {
-                fileWordsMissing++;
+                extraWordsInFile++;
               }
             }
             
-            if (fileWordsMissing > 0) {
-              score = Math.max(0, matchCount * 5 - fileWordsMissing * 20);
-            } else {
+            // REJECT if file has extra words
+            if (extraWordsInFile === 0) {
               score = 200;
             }
+            // If file has extra words, reject completely (score stays 0)
           }
         }
 
@@ -632,11 +639,16 @@ class GoogleDriveService {
         
         let score = 0;
         
-        // BEST: Exact match (highest priority)
+        // BEST: Exact match (highest priority) - Return immediately!
         if (baseFileName === normalizedSearch || normalizedFileName === normalizedSearch + '.pdf') {
-          score = 1000;
+          // Exact match found - stop searching and use this one
+          bestMatch = {
+            fileId: file.id,
+            score: 1000
+          };
+          break; // Stop searching - exact match is guaranteed correct
         }
-        // GOOD: Full search string appears as complete phrase in filename
+        // STRICT: Only match if all words match AND no extra words in filename
         else if (normalizedFileName.includes(normalizedSearch)) {
           const searchIndex = normalizedFileName.indexOf(normalizedSearch);
           if (searchIndex !== -1) {
@@ -650,17 +662,16 @@ class GoogleDriveService {
               const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
               const searchWordCount = searchWords.length > 0 ? searchWords.length : normalizedSearch.split(/[\s\-_]+/).filter(w => w.length > 2).length;
               
+              // ONLY match if word counts are exactly the same (prevents "Solar 4G XL" matching "Solar 4G XL PTZ")
               if (fileWords.length === searchWordCount) {
                 score = 500;
-              } else {
-                score = 100;
               }
-            } else {
-              score = 50;
+              // If word counts differ, don't even consider it
             }
           }
         }
-        // ACCEPTABLE: All search words present (strict matching)
+        // FALLBACK: Word-by-word matching - VERY STRICT
+        // Only match if ALL words match AND file has no extra significant words
         else if (searchWords.length > 0) {
           let matchCount = 0;
           let allWordsMatch = true;
@@ -677,19 +688,20 @@ class GoogleDriveService {
           if (allWordsMatch && matchCount === searchWords.length) {
             const fileWords = baseFileName.split(/[\s\-_]+/).filter(w => w.length > 2);
             const searchWordsSet = new Set(searchWords);
-            let fileWordsMissing = 0;
             
+            // Check for reverse: all FILE words should be in search words
+            let extraWordsInFile = 0;
             for (const fw of fileWords) {
               if (!searchWordsSet.has(fw)) {
-                fileWordsMissing++;
+                extraWordsInFile++;
               }
             }
             
-            if (fileWordsMissing > 0) {
-              score = Math.max(0, matchCount * 5 - fileWordsMissing * 20);
-            } else {
+            // REJECT if file has extra words
+            if (extraWordsInFile === 0) {
               score = 200;
             }
+            // If file has extra words, reject completely (score stays 0)
           }
         }
 

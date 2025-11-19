@@ -72,6 +72,7 @@ export default function CreateDevisPage() {
   const [alarmMaterialDiscount, setAlarmMaterialDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   const [alarmInstallationDiscount, setAlarmInstallationDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   const [cameraMaterialDiscount, setCameraMaterialDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
+  const [cameraInstallationDiscount, setCameraInstallationDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   
   // Installation state
   const [alarmInstallationQty, setAlarmInstallationQty] = useState(1);
@@ -280,6 +281,7 @@ export default function CreateDevisPage() {
           isOffered: cameraInstallationOffered,
           price: cameraInstallationPrice
         },
+        cameraInstallationDiscount,
         cameraRemoteAccess,
         cameraPaymentMonths,
         cameraRentalMode,
@@ -289,7 +291,7 @@ export default function CreateDevisPage() {
       console.error('Error calculating camera totals:', error);
       return {
         material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
-        installation: { total: 0, isOffered: false },
+        installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         remoteAccess: { enabled: false, price: 0 },
         totalHT: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationPrice),
         totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(cameraInstallationPrice) * (1 + TVA_RATE))
@@ -301,6 +303,7 @@ export default function CreateDevisPage() {
     cameraInstallationQty,
     cameraInstallationOffered,
     cameraInstallationPrice,
+    cameraInstallationDiscount,
     cameraRemoteAccess,
     cameraPaymentMonths,
     cameraRentalMode
@@ -1131,63 +1134,93 @@ export default function CreateDevisPage() {
           </h3>
           <div id="camera-material-products">
             {cameraMaterialLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_CAMERA_MATERIAL.find(p => p.name === productName);
-                    const newLines = [...cameraMaterialLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setCameraMaterialLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_CAMERA_MATERIAL.map(product => (
-                    <option key={product.name} value={product.name}>
-                      {product.name} - {(product.price || 0).toFixed(2)} CHF
-                    </option>
-                  ))}
-                </select>
-                <input 
-                      type="number"
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...cameraMaterialLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setCameraMaterialLines(newLines);
-                  }}
-                      min="1"
-                    />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    className="offered-checkbox"
-                    checked={line.offered}
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.name || ''}
                     onChange={(e) => {
+                      const productName = e.target.value;
+                      const product = CATALOG_CAMERA_MATERIAL.find(p => p.name === productName);
                       const newLines = [...cameraMaterialLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
+                      newLines[index] = { ...line, product: product || null };
                       setCameraMaterialLines(newLines);
                     }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    {CATALOG_CAMERA_MATERIAL.map(product => (
+                      <option key={product.name} value={product.name}>
+                        {product.name} - {(product.price || 0).toFixed(2)} CHF
+                      </option>
+                    ))}
+                  </select>
+                  <input 
+                    type="number"
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...cameraMaterialLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setCameraMaterialLines(newLines);
+                    }}
+                    min="1"
                   />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-                </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setCameraMaterialLines(cameraMaterialLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...cameraMaterialLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setCameraMaterialLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
-                ))}
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setCameraMaterialLines(cameraMaterialLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
+                </div>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...cameraMaterialLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setCameraMaterialLines(newLines);
+                      }}
+                      style={{ flex: 2, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...cameraMaterialLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setCameraMaterialLines(newLines);
+                      }}
+                      min="0"
+                      step="0.01"
+                      style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
           <div className="discount-section">
             <label>Réduction:</label>
@@ -1249,6 +1282,26 @@ export default function CreateDevisPage() {
             <div className="price-display">
               {cameraInstallationOffered ? 'OFFERT' : `${cameraInstallationPrice.toFixed(2)} CHF`}
             </div>
+          </div>
+          
+          {/* Discount section */}
+          <div className="discount-section">
+            <label>Réduction:</label>
+            <select 
+              value={cameraInstallationDiscount.type}
+              onChange={(e) => setCameraInstallationDiscount({ ...cameraInstallationDiscount, type: e.target.value as 'percent' | 'fixed' })}
+            >
+              <option value="percent">%</option>
+              <option value="fixed">CHF</option>
+            </select>
+            <input 
+              type="number" 
+              value={cameraInstallationDiscount.value}
+              onChange={(e) => setCameraInstallationDiscount({ ...cameraInstallationDiscount, value: parseFloat(e.target.value) || 0 })}
+              placeholder="0" 
+              min="0" 
+              className="discount-input" 
+            />
           </div>
         </div>
 

@@ -246,27 +246,29 @@ async function assembleVideoPdf(
     quotePages.forEach(page => pdfDoc.addPage(page));
     console.log('✅ Generated quote inserted as page 6');
     
-    // 6. Add product sheets (deduplicated by file ID to avoid adding the same file multiple times)
+    // 6. Add product sheets (deduplicated by sheet name to avoid duplicate sheets)
+    // Now that product-collector applies mapping, each product name in the array
+    // should already be a unique sheet name
     let productSheetsAdded = 0;
-    const addedFileIds = new Set<string>();
+    const addedSheetNames = new Set<string>();
     
     if (documents.products) {
       for (const product of documents.products) {
-        if (product.data && product.fileId) {
+        if (product.data && product.name) {
           try {
-            // Skip if we've already added this exact file (by file ID)
-            // Note: Different products should have different file IDs even if sheets look similar
-            if (addedFileIds.has(product.fileId)) {
-              console.log('⏭️ Skipping duplicate file for:', product.name, `(fileId: ${product.fileId} already added)`);
+            // Skip if we've already added this sheet (by name)
+            // This prevents duplicates when multiple products map to same sheet
+            if (addedSheetNames.has(product.name)) {
+              console.log('⏭️ Skipping duplicate sheet:', product.name, '(already added)');
               continue;
             }
             
             const productPdf = await PDFDocument.load(product.data);
             const productPages = await pdfDoc.copyPages(productPdf, productPdf.getPageIndices());
             productPages.forEach(page => pdfDoc.addPage(page));
-            console.log('✅ Product sheet added:', product.name, `(fileId: ${product.fileId})`);
+            console.log('✅ Product sheet added:', product.name);
             productSheetsAdded++;
-            addedFileIds.add(product.fileId);
+            addedSheetNames.add(product.name);
           } catch (error) {
             console.warn('⚠️ Could not add product sheet for:', product.name, error);
           }

@@ -816,7 +816,7 @@ function createOptionsSection(
 
 function createCameraInstallationSection(
   doc: jsPDF,
-  installation: { total: number; isOffered: boolean },
+  installation: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
   isRental: boolean,
   yPos: number
 ): number {
@@ -836,13 +836,15 @@ function createCameraInstallationSection(
   doc.text('Total HT', 480, yPos + 10);
   yPos += 16;
 
+  const isOffered = installation.totalBeforeDiscount === 0;
+
   // Installation line
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.text('1', 55, yPos + 9);
   doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 9);
 
-  if (isRental || installation.isOffered) {
+  if (isRental || isOffered) {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 150, 0);
     doc.text(isRental ? 'Compris dans le forfait' : 'OFFERT', 395, yPos + 9);
@@ -850,11 +852,23 @@ function createCameraInstallationSection(
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
   } else {
-    doc.text(installation.total.toFixed(2), 405, yPos + 9);
-    doc.text(installation.total.toFixed(2), 485, yPos + 9);
+    doc.text(installation.totalBeforeDiscount.toFixed(2), 405, yPos + 9);
+    doc.text(installation.totalBeforeDiscount.toFixed(2), 485, yPos + 9);
   }
 
   yPos += 14;
+
+  // Discount line
+  if (installation.discount > 0) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(200, 0, 0);
+    doc.text(`Réduction ${installation.discountDisplay}`, 90, yPos + 9);
+    doc.text(`-${installation.discount.toFixed(2)}`, 485, yPos + 9);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    yPos += 14;
+  }
 
   if (!isRental) {
     const installTotalHT = roundToFiveCents(installation.total);

@@ -6,6 +6,7 @@
  */
 
 import { ProductLineData } from '@/components/ProductLine';
+import { getSheetNameForProduct, getUniqueSheetNames } from './product-sheet-mapping';
 
 /**
  * Collect product names for backend assembly
@@ -77,7 +78,15 @@ export function collectAllProducts(sections: Record<string, ProductLineData[]>):
     allProducts.push(...sectionProducts);
   });
   
-  console.log(`✅ Total products collected: ${allProducts.length}`);
-  return allProducts;
+  console.log(`✅ Total products collected (before mapping): ${allProducts.length}`);
+  console.log('📝 Products:', allProducts);
+  
+  // Apply product sheet mapping and deduplication
+  const uniqueSheetNames = getUniqueSheetNames(allProducts);
+  
+  console.log(`✅ Unique technical sheets needed (after mapping & dedup): ${uniqueSheetNames.length}`);
+  console.log('📑 Sheet names:', uniqueSheetNames);
+  
+  return uniqueSheetNames;
 }
 
