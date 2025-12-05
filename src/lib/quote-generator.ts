@@ -12,19 +12,22 @@
 // ============================================
 
 export const COMMERCIALS_LIST = [
+  "Alexandre Bentejac",
   "Arnaud Bloch",
   "Benali Kodad",
+  "Brahim Martin",
   "Bryan Debrosse",
   "Cédric Boldron",
+  "Dorian AFONSO",    
   "Emin Comert",
   "Gérald Clausen",
   "Heythem Ziaya",
   "Iyed Baccouche",
+  "Mattia Cazeres",
   "Matys Goiot",
   "Mohamed Tartik",
   "Nora Sassi",
   "Rodolphe De Vito",
-  "Samir Ouhameni",
   "Thilan Curt",
   "Thomas Garcia",
   "Wassim Tahiri"
