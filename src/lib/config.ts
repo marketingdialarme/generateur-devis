@@ -180,9 +180,9 @@ export const config: AppConfig = {
       phone: '076 559 61 32',
       email: 'rodolphe.devito@dialarme.ch',
     },
-    'Samir Ouhameni': {
-      phone: '076 280 86 14',
-      email: 'samir.ouhameni@dialarme.ch',
+    'Dorian Afonso': {
+      phone: '076 266 37 25',
+      email: 'dorian.afonso@dialarme.ch',
     },
     'Thilan Curt': {
       phone: '076 355 27 32',
@@ -195,6 +195,18 @@ export const config: AppConfig = {
     'Wassim Tahiri': {
       phone: '076 408 36 54',
       email: 'tahiri@dialarme.ch',
+    },
+    'Alexandre Bentejac': {
+      phone: '076 510 98 78',
+      email: 'alexandre.bentejac@dialarme.ch',
+    },
+    'Mattia Cazeres': {
+      phone: '076 248 20 42',
+      email: 'mattia.cazeres@dialarme.ch',
+    },
+    'Brahim Martin': {
+      phone: '076 596 24 26',
+      email: 'b.martin@dialarme.ch',
     },
   },
   
