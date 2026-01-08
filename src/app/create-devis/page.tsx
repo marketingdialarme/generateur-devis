@@ -791,7 +791,7 @@ export default function CreateDevisPage() {
         {/* Product Sections */}
         <div className="quote-section">
           <h3>
-            🛡️ 1. Kit de base
+            🛡️ Choix Kit de base
             <button 
               className="add-product-btn" 
               onClick={() => setShowKitModal(true)}
@@ -916,7 +916,7 @@ export default function CreateDevisPage() {
         {/* Installation Section */}
         <div className="quote-section">
           <h3>
-            🔧 2. Installation et matériel divers
+            🔧 Installation et matériel divers
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -1059,7 +1059,7 @@ export default function CreateDevisPage() {
 
         {/* Admin Fees */}
         <div className="quote-section">
-          <h3>📄 3. Frais de dossier</h3>
+          <h3>📄 Frais de dossier</h3>
           <div className="product-line">
             <div>Carte SIM + Activation</div>
             <input type="number" defaultValue="1" className="quantity-input" readOnly />
@@ -1139,7 +1139,7 @@ export default function CreateDevisPage() {
             <PaymentSelector
               selectedMonths={alarmPaymentMonths}
               onSelect={setAlarmPaymentMonths}
-              label="6. Mode de paiement"
+              label="Mode de paiement"
             />
             
             {/* Engagement Duration */}
@@ -1336,7 +1336,7 @@ export default function CreateDevisPage() {
         {/* Camera product sections */}
         <div className="quote-section">
           <h3>
-            📹 1. Matériel
+            📹 Matériel
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -1464,7 +1464,7 @@ export default function CreateDevisPage() {
 
         {/* Installation Section */}
         <div className="quote-section">
-          <h3>🔧 2. Installation</h3>
+          <h3>🔧 Installation</h3>
           <div className="product-line" style={{ background: '#f0f8ff' }}>
             <div>Installation caméra</div>
             <div>
@@ -1528,7 +1528,7 @@ export default function CreateDevisPage() {
         {/* Vision à distance (only in sale mode) */}
         {!cameraRentalMode && (
           <div className="quote-section">
-            <h3>📡 3. Vision à distance</h3>
+            <h3>📡 Vision à distance</h3>
             <div className="product-line">
               <div>
                 Vision à distance (4G cameras + classic with modem)
@@ -1605,7 +1605,7 @@ export default function CreateDevisPage() {
           <PaymentSelector
             selectedMonths={cameraPaymentMonths}
             onSelect={setCameraPaymentMonths}
-            label="4. Mode de paiement"
+            label="Mode de paiement"
           />
         )}
 
