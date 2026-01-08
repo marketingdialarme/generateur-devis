@@ -14,9 +14,11 @@ interface PaymentSelectorProps {
 export function PaymentSelector({ selectedMonths, onSelect, label = "Mode de paiement" }: PaymentSelectorProps) {
   const options = [
     { months: 0, label: 'Comptant' },
+    { months: 12, label: '12 mois' },
     { months: 24, label: '24 mois' },
     { months: 36, label: '36 mois' },
-    { months: 48, label: '48 mois' }
+    { months: 48, label: '48 mois' },
+    { months: 60, label: '60 mois' }
   ];
 
   return (
