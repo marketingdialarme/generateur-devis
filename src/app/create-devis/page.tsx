@@ -78,6 +78,7 @@ export default function CreateDevisPage() {
   const [alarmInstallationQty, setAlarmInstallationQty] = useState(1);
   const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
   const [alarmInstallationPriceOverride, setAlarmInstallationPriceOverride] = useState<number | null>(null);
+  const [alarmInstallationInMonthly, setAlarmInstallationInMonthly] = useState(false);
   
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
@@ -1055,6 +1056,29 @@ export default function CreateDevisPage() {
               className="discount-input" 
             />
           </div>
+          
+          {/* Include installation in monthly checkbox - NEW */}
+          {!alarmRentalMode && (
+            <div style={{ 
+              marginTop: '15px',
+              padding: '12px',
+              background: '#f0f8ff',
+              borderRadius: '6px',
+              border: '1px solid #007bff'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={alarmInstallationInMonthly}
+                  onChange={(e) => setAlarmInstallationInMonthly(e.target.checked)}
+                  style={{ marginRight: '8px', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                  Inclure le prix de l&apos;installation dans les mensualités
+                </span>
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Admin Fees */}
@@ -1984,6 +2008,104 @@ export default function CreateDevisPage() {
               </button>
             </div>
 
+            {/* Titane Kits - MUST BE FIRST */}
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{
+                color: '#666',
+                marginBottom: '12px',
+                fontSize: '14px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Centrale Titane - 690.00 CHF
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                <button
+                  onClick={() => applyKit('titane', 'kit1')}
+                  style={{
+                    position: 'relative',
+                    flex: 1,
+                    padding: '15px',
+                    background: 'white',
+                    border: '2px solid #f4e600',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#fffef0';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
+                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
+                    2 Détecteurs volumétriques<br />
+                    1 Détecteur d&apos;ouverture<br />
+                    1 Clavier + 1 Sirène
+                  </div>
+                </button>
+                <button
+                  onClick={() => applyKit('titane', 'kit2')}
+                  style={{
+                    position: 'relative',
+                    flex: 1,
+                    padding: '15px',
+                    background: 'white',
+                    border: '2px solid #f4e600',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#fffef0';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
+                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
+                    1 Détecteur volumétrique<br />
+                    3 Détecteurs d&apos;ouverture<br />
+                    1 Clavier + 1 Sirène
+                  </div>
+                </button>
+              </div>
+              <button
+                onClick={() => applyKit('titane', 'none')}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px dashed #f4e600',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  color: '#666',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#fffef0'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+              >
+                ➕ Kit de base à partir de rien (Titane)
+              </button>
+            </div>
+
             {/* Jablotron Kits */}
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{
@@ -2062,9 +2184,27 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
+              <button
+                onClick={() => applyKit('jablotron', 'none')}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px dashed #6c757d',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  color: '#666',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+              >
+                ➕ Kit de base à partir de rien (Jablotron)
+              </button>
             </div>
 
-            {/* Titane Kits */}
+            {/* XTO Kit - NEW */}
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{
                 color: '#666',
@@ -2074,74 +2214,51 @@ export default function CreateDevisPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Centrale Titane - 690.00 CHF
+                Kit XTO (Location mensuelle)
               </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                <button
-                  onClick={() => applyKit('titane', 'kit1')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #f4e600',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#fffef0';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    2 Détecteurs volumétriques<br />
-                    1 Détecteur d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
-                  </div>
-                </button>
-                <button
-                  onClick={() => applyKit('titane', 'kit2')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #f4e600',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#fffef0';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    1 Détecteur volumétrique<br />
-                    3 Détecteurs d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
-                  </div>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  // Add XTO centrale to alarm lines
+                  const xtoProducts = CATALOG_XTO_PRODUCTS.map((prod, index) => ({
+                    id: Date.now() + index,
+                    product: { id: prod.id, name: prod.name, price: prod.monthlyPrice } as any,
+                    quantity: prod.id === 402 ? 4 : 1, // 4 cameras by default
+                    offered: false
+                  }));
+                  setAlarmMaterialLines(xtoProducts);
+                  setShowKitModal(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  background: 'white',
+                  border: '2px solid #28a745',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f0fff4';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(40,167,69,0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit Complet XTO</div>
+                <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
+                  1 Centrale XTO<br />
+                  1 Sirène extérieure avec gyrophare (50 CHF/mois)<br />
+                  4 Caméras à détection infrarouge (100 CHF/mois)<br />
+                  1 Lecteur de badge + 8 badges (30 CHF/mois)<br />
+                  + Centre d&apos;intervention GS inclus
+                </div>
+              </button>
             </div>
 
             <div style={{
