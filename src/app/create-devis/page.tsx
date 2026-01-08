@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, UNINSTALL_PRICE, calculateInstallationPrice, TVA_RATE, roundToFiveCents } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, UNINSTALL_PRICE, calculateInstallationPrice, TVA_RATE, roundToFiveCents } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
@@ -128,10 +128,37 @@ export default function CreateDevisPage() {
   const [cameraRentalMode, setCameraRentalMode] = useState(false);
   
   // Tab state (local - simpler than using the hook)
-  const [currentTab, setCurrentTab] = useState<'alarm' | 'camera'>('alarm');
+  const [currentTab, setCurrentTab] = useState<'alarm' | 'camera' | 'fog' | 'visiophone'>('alarm');
   
   // Kit modal state
   const [showKitModal, setShowKitModal] = useState(false);
+  
+  // Engagement duration state
+  const [engagementMonths, setEngagementMonths] = useState(48);
+  
+  // New alarm options state
+  const [interventionPayante, setInterventionPayante] = useState(false);
+  const [interventionPayantePrice, setInterventionPayantePrice] = useState(149);
+  const [interventionPolice, setInterventionPolice] = useState(false);
+  const [telesurveillanceOption, setTelesurveillanceOption] = useState(false);
+  
+  // Camera 4G and maintenance state
+  const [cameraVisionDistance, setCameraVisionDistance] = useState(false);
+  const [cameraVisionPrice, setCameraVisionPrice] = useState(0);
+  const [cameraMaintenance, setCameraMaintenance] = useState(false);
+  const [cameraMaintenancePrice, setCameraMaintenancePrice] = useState(0);
+  
+  // Fog generator state
+  const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
+  const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
+  const [fogProcessingFee, setFogProcessingFee] = useState(190);
+  const [fogSimCard, setFogSimCard] = useState(50);
+  const [fogProcessingOffered, setFogProcessingOffered] = useState(false);
+  const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
+  
+  // Visiophone state
+  const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
+  const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   
   // Auto-detect selected central from product lines
   const selectedCentral = useMemo(() => {
@@ -269,6 +296,124 @@ export default function CreateDevisPage() {
     alarmRentalMode,
     selectedCentral
   ]);
+  
+  // Auto-calculate vision à distance price (4G cameras)
+  useEffect(() => {
+    if (!cameraVisionDistance) {
+      setCameraVisionPrice(0);
+      return;
+    }
+    
+    // Count 4G cameras
+    const fourGCameras = cameraMaterialLines.filter(
+      (line) => line.product && line.product.name.includes('4G')
+    ).reduce((sum, line) => sum + line.quantity, 0);
+    
+    // Count classic cameras (if modem selected)
+    let classicCameras = 0;
+    const hasModem = cameraMaterialLines.some(
+      (line) => line.product && line.product.name.toLowerCase().includes('modem')
+    );
+    
+    if (hasModem) {
+      classicCameras = cameraMaterialLines.filter(
+        (line) =>
+          line.product &&
+          !line.product.name.includes('4G') &&
+          !line.product.name.includes('NVR') &&
+          !line.product.name.toLowerCase().includes('modem') &&
+          !line.product.name.toLowerCase().includes('interphone') &&
+          !line.product.name.toLowerCase().includes('écran') &&
+          (line.product.name.toLowerCase().includes('caméra') ||
+            line.product.name.includes('Bullet') ||
+            line.product.name.includes('Dôme') ||
+            line.product.name.includes('Solar'))
+      ).reduce((sum, line) => sum + line.quantity, 0);
+    }
+    
+    const totalPrice = (fourGCameras + classicCameras) * 20;
+    setCameraVisionPrice(totalPrice);
+    
+    // Auto-check vision if modem present
+    if (hasModem && !cameraVisionDistance) {
+      setCameraVisionDistance(true);
+    }
+  }, [cameraMaterialLines, cameraVisionDistance]);
+  
+  // Auto-calculate maintenance price
+  useEffect(() => {
+    if (!cameraMaintenance) {
+      setCameraMaintenancePrice(0);
+      return;
+    }
+    
+    // Count cameras
+    const cameraCount = cameraMaterialLines.filter(
+      (line) =>
+        line.product &&
+        (line.product.name.toLowerCase().includes('caméra') ||
+          line.product.name.includes('Bullet') ||
+          line.product.name.includes('Dôme') ||
+          line.product.name.includes('Solar') ||
+          line.product.name.includes('PTZ'))
+    ).reduce((sum, line) => sum + line.quantity, 0);
+    
+    // Count NVRs
+    const nvrCount = cameraMaterialLines.filter(
+      (line) => line.product && line.product.name.includes('NVR')
+    ).reduce((sum, line) => sum + line.quantity, 0);
+    
+    const totalItems = cameraCount + nvrCount;
+    const pricePerItem = totalItems >= 5 ? 5 : 10;
+    const totalPrice = totalItems * pricePerItem;
+    
+    setCameraMaintenancePrice(totalPrice);
+  }, [cameraMaterialLines, cameraMaintenance]);
+  
+  // Initialize Fog kit de base on mount
+  useEffect(() => {
+    if (fogLines.length === 0 && CATALOG_FOG_PRODUCTS.length > 0) {
+      const fogKit = [
+        { id: 200, quantity: 1, offered: true }, // Générateur
+        { id: 201, quantity: 1, offered: true }, // Clavier
+        { id: 202, quantity: 1, offered: true }, // Détecteur
+      ];
+      
+      const newLines: ProductLineData[] = fogKit.map((item, index) => {
+        const product = CATALOG_FOG_PRODUCTS.find(p => p.id === item.id);
+        return {
+          id: Date.now() + index,
+          product: product || null,
+          quantity: item.quantity,
+          offered: item.offered
+        };
+      });
+      
+      setFogLines(newLines);
+    }
+  }, []);
+  
+  // Initialize Visiophone products on mount
+  useEffect(() => {
+    if (visiophoLines.length === 0 && CATALOG_VISIOPHONE_PRODUCTS.length > 0) {
+      const visiophoKit = [
+        { id: 300, quantity: 1, offered: false }, // Interphone
+        { id: 301, quantity: 1, offered: false }, // Écran
+      ];
+      
+      const newLines: ProductLineData[] = visiophoKit.map((item, index) => {
+        const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === item.id);
+        return {
+          id: Date.now() + index,
+          product: product || null,
+          quantity: item.quantity,
+          offered: item.offered
+        };
+      });
+      
+      setVisiophoLines(newLines);
+    }
+  }, []);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -549,6 +694,18 @@ export default function CreateDevisPage() {
           onClick={() => setCurrentTab('camera')}
         >
           📹 Caméra de surveillance
+        </button>
+        <button 
+          className={`nav-tab ${currentTab === 'fog' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('fog')}
+        >
+          💨 Générateur de brouillard
+        </button>
+        <button 
+          className={`nav-tab ${currentTab === 'visiophone' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('visiophone')}
+        >
+          📞 Visiophone
         </button>
       </div>
 
@@ -966,15 +1123,48 @@ export default function CreateDevisPage() {
           onInterventionsAnneeChange={setInterventionsAnnee}
           onInterventionsQtyChange={setInterventionsQty}
           onServiceClesChange={setServiceCles}
+          interventionPayante={interventionPayante}
+          onInterventionPayanteChange={setInterventionPayante}
+          interventionPayantePrice={interventionPayantePrice}
+          onInterventionPayantePriceChange={setInterventionPayantePrice}
+          interventionPolice={interventionPolice}
+          onInterventionPoliceChange={setInterventionPolice}
+          telesurveillanceOption={telesurveillanceOption}
+          onTelesurveillanceOptionChange={setTelesurveillanceOption}
         />
 
         {/* Payment Mode */}
         {!alarmRentalMode && (
-          <PaymentSelector
-            selectedMonths={alarmPaymentMonths}
-            onSelect={setAlarmPaymentMonths}
-            label="6. Mode de paiement"
-          />
+          <>
+            <PaymentSelector
+              selectedMonths={alarmPaymentMonths}
+              onSelect={setAlarmPaymentMonths}
+              label="6. Mode de paiement"
+            />
+            
+            {/* Engagement Duration */}
+            <div className="quote-section">
+              <h3>⏱️ Durée d'engagement</h3>
+              <select 
+                value={engagementMonths}
+                onChange={(e) => setEngagementMonths(parseInt(e.target.value))}
+                style={{
+                  padding: '10px',
+                  fontSize: '14px',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '8px',
+                  width: '200px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value={12}>12 mois</option>
+                <option value={24}>24 mois</option>
+                <option value={36}>36 mois</option>
+                <option value={48}>48 mois</option>
+                <option value={60}>60 mois</option>
+              </select>
+            </div>
+          </>
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
@@ -1341,11 +1531,14 @@ export default function CreateDevisPage() {
             <h3>📡 3. Vision à distance</h3>
             <div className="product-line">
               <div>
-                Accès à distance via application mobile
-                {cameraRemoteAccess && (
-                  <span style={{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>
-                    (Tarif: {calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois)
-                  </span>
+                Vision à distance (4G cameras + classic with modem)
+                {cameraVisionDistance && cameraVisionPrice > 0 && (
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
+                    <strong>Prix calculé: {cameraVisionPrice} CHF/mois</strong>
+                    <div style={{ fontSize: '11px', marginTop: '3px' }}>
+                      (20 CHF par caméra avec vision à distance)
+                    </div>
+                  </div>
                 )}
               </div>
               <div></div>
@@ -1353,18 +1546,57 @@ export default function CreateDevisPage() {
               <div className="checkbox-option" style={{ margin: 0 }}>
                 <input 
                   type="checkbox" 
-                  checked={cameraRemoteAccess}
-                  onChange={(e) => setCameraRemoteAccess(e.target.checked)}
+                  checked={cameraVisionDistance}
+                  onChange={(e) => setCameraVisionDistance(e.target.checked)}
                 />
                 <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Activer</label>
               </div>
               <div className="price-display">
-                {cameraRemoteAccess ? `${calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
+                {cameraVisionDistance && cameraVisionPrice > 0 ? `${cameraVisionPrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
-            <div style={{ fontSize: '11px', color: '#666', marginTop: '8px', fontStyle: 'italic' }}>
-              💡 Tarification : 1 cam = 20 CHF | 2-7 cams = 35 CHF | 8+ cams = 60 CHF
+            
+            {/* Maintenance option */}
+            <div className="product-line" style={{ marginTop: '15px' }}>
+              <div>
+                Contrat de maintenance
+                {cameraMaintenance && cameraMaintenancePrice > 0 && (
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
+                    <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
+                    <div style={{ fontSize: '11px', marginTop: '3px' }}>
+                      (10 CHF/item si &lt; 5, 5 CHF/item si ≥ 5 caméras + NVR)
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div></div>
+              <div></div>
+              <div className="checkbox-option" style={{ margin: 0 }}>
+                <input 
+                  type="checkbox" 
+                  checked={cameraMaintenance}
+                  onChange={(e) => setCameraMaintenance(e.target.checked)}
+                />
+                <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Activer</label>
+              </div>
+              <div className="price-display">
+                {cameraMaintenance && cameraMaintenancePrice > 0 ? `${cameraMaintenancePrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
+              </div>
             </div>
+            
+            {/* Warning if no modem/vision */}
+            {!cameraVisionDistance && !cameraMaterialLines.some(line => line.product && line.product.name.toLowerCase().includes('modem')) && (
+              <div style={{ 
+                marginTop: '15px',
+                padding: '12px',
+                background: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '6px',
+                fontSize: '13px'
+              }}>
+                ⚠️ <strong>Attention:</strong> Sans MODEM ou vision à distance, les caméras ne pourront pas être consultées à distance.
+              </div>
+            )}
                   </div>
                 )}
 
@@ -1459,6 +1691,236 @@ export default function CreateDevisPage() {
             {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
           </button>
                   </div>
+      </div>
+
+      {/* TAB FOG GENERATOR */}
+      <div 
+        id="fog-tab" 
+        className="tab-content"
+        style={{ display: currentTab === 'fog' ? 'block' : 'none' }}
+      >
+        <div className="form-section">
+          <h3>📋 Informations Client</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="clientName-fog">Nom du client</label>
+              <input 
+                type="text" 
+                id="clientName-fog"
+                placeholder="Nom complet du client"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="propertyType-fog">Type de bien</label>
+              <select 
+                id="propertyType-fog"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value as any)}
+              >
+                <option value="locaux">Locaux</option>
+                <option value="habitation">Habitation</option>
+                <option value="villa">Villa</option>
+                <option value="commerce">Commerce</option>
+                <option value="entreprise">Entreprise</option>
+              </select>
+            </div>
+          </div>
+
+          <CommercialSelector
+            commercial={commercial}
+            customCommercial={customCommercial}
+            showCustomCommercial={showCustomCommercial}
+            onCommercialChange={setCommercial}
+            onCustomCommercialChange={setCustomCommercial}
+            onShowCustomCommercialChange={setShowCustomCommercial}
+            commercialsList={COMMERCIALS_LIST}
+          />
+        </div>
+
+        {/* Kit de base */}
+        <div className="quote-section">
+          <h3>💨 Kit de base</h3>
+          <ProductSection
+            title=""
+            lines={fogLines}
+            productCatalog={CATALOG_FOG_PRODUCTS}
+            centralType={null}
+            onLinesChange={setFogLines}
+            emoji="💨"
+          />
+        </div>
+
+        {/* Installation */}
+        <div className="quote-section">
+          <h3>🔧 Installation et paramétrage</h3>
+          <div className="product-line">
+            <div>Installation et paramétrage</div>
+            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={fogInstallationPrice}
+              onChange={(e) => setFogInstallationPrice(parseFloat(e.target.value) || 490)}
+              className="price-input"
+              onFocus={(e) => e.target.select()}
+            />
+            <div className="price-display">
+              {fogInstallationPrice.toFixed(2)} CHF
+            </div>
+          </div>
+        </div>
+
+        {/* Frais de dossier */}
+        <div className="quote-section">
+          <h3>📄 Frais de dossier</h3>
+          <div className="product-line">
+            <div>Frais de dossier</div>
+            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={fogProcessingFee}
+              onChange={(e) => setFogProcessingFee(parseFloat(e.target.value) || 190)}
+              className="price-input"
+              onFocus={(e) => e.target.select()}
+            />
+            <div className="checkbox-option" style={{ margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={fogProcessingOffered}
+                onChange={(e) => setFogProcessingOffered(e.target.checked)}
+                className="offered-checkbox" 
+              />
+              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+            </div>
+            <div className="price-display">
+              {fogProcessingOffered ? 'OFFERT' : `${fogProcessingFee.toFixed(2)} CHF`}
+            </div>
+          </div>
+
+          <div className="product-line">
+            <div>Carte SIM</div>
+            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={fogSimCard}
+              onChange={(e) => setFogSimCard(parseFloat(e.target.value) || 50)}
+              className="price-input"
+              onFocus={(e) => e.target.select()}
+            />
+            <div className="checkbox-option" style={{ margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={fogSimCardOffered}
+                onChange={(e) => setFogSimCardOffered(e.target.checked)}
+                className="offered-checkbox" 
+              />
+              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+            </div>
+            <div className="price-display">
+              {fogSimCardOffered ? 'OFFERT' : `${fogSimCard.toFixed(2)} CHF`}
+            </div>
+          </div>
+        </div>
+
+        <div className="action-buttons">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleGenerateAndSend}
+            disabled={isProcessing}
+          >
+            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+          </button>
+        </div>
+      </div>
+
+      {/* TAB VISIOPHONE */}
+      <div 
+        id="visiophone-tab" 
+        className="tab-content"
+        style={{ display: currentTab === 'visiophone' ? 'block' : 'none' }}
+      >
+        <div className="form-section">
+          <h3>📋 Informations Client</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="clientName-visio">Nom du client</label>
+              <input 
+                type="text" 
+                id="clientName-visio"
+                placeholder="Nom complet du client"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="propertyType-visio">Type de bien</label>
+              <select 
+                id="propertyType-visio"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value as any)}
+              >
+                <option value="locaux">Locaux</option>
+                <option value="habitation">Habitation</option>
+                <option value="villa">Villa</option>
+                <option value="commerce">Commerce</option>
+                <option value="entreprise">Entreprise</option>
+              </select>
+            </div>
+          </div>
+
+          <CommercialSelector
+            commercial={commercial}
+            customCommercial={customCommercial}
+            showCustomCommercial={showCustomCommercial}
+            onCommercialChange={setCommercial}
+            onCustomCommercialChange={setCustomCommercial}
+            onShowCustomCommercialChange={setShowCustomCommercial}
+            commercialsList={COMMERCIALS_LIST}
+          />
+        </div>
+
+        {/* Matériel */}
+        <div className="quote-section">
+          <h3>📞 Matériel</h3>
+          <ProductSection
+            title=""
+            lines={visiophoLines}
+            productCatalog={CATALOG_VISIOPHONE_PRODUCTS}
+            centralType={null}
+            onLinesChange={setVisiophoLines}
+            emoji="📞"
+          />
+        </div>
+
+        {/* Installation */}
+        <div className="quote-section">
+          <h3>🔧 Installation et paramétrage</h3>
+          <div className="product-line">
+            <div>Installation et paramétrage</div>
+            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={visiophoInstallationPrice}
+              onChange={(e) => setVisiophoInstallationPrice(parseFloat(e.target.value) || 690)}
+              className="price-input"
+              onFocus={(e) => e.target.select()}
+            />
+            <div className="price-display">
+              {visiophoInstallationPrice.toFixed(2)} CHF
+            </div>
+          </div>
+        </div>
+
+        <div className="action-buttons">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleGenerateAndSend}
+            disabled={isProcessing}
+          >
+            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+          </button>
+        </div>
       </div>
 
       {/* Kit Selection Modal */}
