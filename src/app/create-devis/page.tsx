@@ -76,8 +76,8 @@ export default function CreateDevisPage() {
   
   // Installation state
   const [alarmInstallationQty, setAlarmInstallationQty] = useState(1);
-  const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
-  const [alarmInstallationPriceOverride, setAlarmInstallationPriceOverride] = useState<number | null>(null);
+  const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(true); // Offered by default per spec
+  const [alarmInstallationPriceOverride, setAlarmInstallationPriceOverride] = useState<number | null>(300); // Default 300 CHF per spec
   const [alarmInstallationInMonthly, setAlarmInstallationInMonthly] = useState(false);
   
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
