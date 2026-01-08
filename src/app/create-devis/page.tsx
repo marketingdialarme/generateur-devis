@@ -1729,12 +1729,12 @@ export default function CreateDevisPage() {
           </div>
 
           <CommercialSelector
-            commercial={commercial}
-            customCommercial={customCommercial}
-            showCustomCommercial={showCustomCommercial}
-            onCommercialChange={setCommercial}
-            onCustomCommercialChange={setCustomCommercial}
-            onShowCustomCommercialChange={setShowCustomCommercial}
+            value={commercial}
+            customValue={customCommercial}
+            showCustom={showCustomCommercial}
+            onValueChange={setCommercial}
+            onCustomValueChange={setCustomCommercial}
+            onShowCustomChange={setShowCustomCommercial}
             commercialsList={COMMERCIALS_LIST}
           />
         </div>
@@ -1870,12 +1870,12 @@ export default function CreateDevisPage() {
           </div>
 
           <CommercialSelector
-            commercial={commercial}
-            customCommercial={customCommercial}
-            showCustomCommercial={showCustomCommercial}
-            onCommercialChange={setCommercial}
-            onCustomCommercialChange={setCustomCommercial}
-            onShowCustomCommercialChange={setShowCustomCommercial}
+            value={commercial}
+            customValue={customCommercial}
+            showCustom={showCustomCommercial}
+            onValueChange={setCommercial}
+            onCustomValueChange={setCustomCommercial}
+            onShowCustomChange={setShowCustomCommercial}
             commercialsList={COMMERCIALS_LIST}
           />
         </div>

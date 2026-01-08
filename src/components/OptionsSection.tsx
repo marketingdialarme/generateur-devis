@@ -16,6 +16,7 @@ interface OptionsSectionProps {
   interventionPayante: boolean;
   interventionPayantePrice: number;
   interventionPolice: boolean;
+  telesurveillanceOption: boolean;
   onInterventionsGratuitesChange: (value: boolean) => void;
   onInterventionsAnneeChange: (value: boolean) => void;
   onInterventionsQtyChange: (value: number) => void;
@@ -23,6 +24,7 @@ interface OptionsSectionProps {
   onInterventionPayanteChange: (value: boolean) => void;
   onInterventionPayantePriceChange: (value: number) => void;
   onInterventionPoliceChange: (value: boolean) => void;
+  onTelesurveillanceOptionChange: (value: boolean) => void;
 }
 
 export function OptionsSection(props: OptionsSectionProps) {
@@ -34,6 +36,7 @@ export function OptionsSection(props: OptionsSectionProps) {
     interventionPayante,
     interventionPayantePrice,
     interventionPolice,
+    telesurveillanceOption,
     onInterventionsGratuitesChange,
     onInterventionsAnneeChange,
     onInterventionsQtyChange,
@@ -41,6 +44,7 @@ export function OptionsSection(props: OptionsSectionProps) {
     onInterventionPayanteChange,
     onInterventionPayantePriceChange,
     onInterventionPoliceChange,
+    onTelesurveillanceOptionChange,
   } = props;
 
   return (
@@ -306,6 +310,47 @@ export function OptionsSection(props: OptionsSectionProps) {
             }}
           >
             Intervention de la police sur levée de doute positive
+          </label>
+        </div>
+
+        {/* NEW: Télésurveillance 99 CHF / 48 mois */}
+        <div className="option-item" style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 12px',
+          background: telesurveillanceOption ? '#f0f8ff' : 'transparent',
+          borderRadius: '6px',
+          transition: 'all 0.2s'
+        }}>
+          <input
+            type="checkbox"
+            id="option-telesurveillance-99"
+            checked={telesurveillanceOption}
+            onChange={(e) => onTelesurveillanceOptionChange(e.target.checked)}
+            style={{ 
+              margin: 0,
+              marginRight: '12px',
+              cursor: 'pointer',
+              width: '16px',
+              height: '16px',
+              flexShrink: 0,
+              verticalAlign: 'middle'
+            }}
+          />
+          <label
+            htmlFor="option-telesurveillance-99"
+            style={{ 
+              cursor: 'pointer', 
+              fontSize: '14px', 
+              fontWeight: telesurveillanceOption ? 600 : 400,
+              lineHeight: '1.4',
+              flex: 1,
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            Télésurveillance (99 CHF / 48 mois)
           </label>
         </div>
       </div>
