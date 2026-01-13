@@ -161,6 +161,7 @@ export default function CreateDevisPage() {
   const [fogSimCard, setFogSimCard] = useState(50);
   const [fogProcessingOffered, setFogProcessingOffered] = useState(false);
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
+  const [fogSimCardSelected, setFogSimCardSelected] = useState(false); // Whether SIM card is selected
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
@@ -1949,32 +1950,116 @@ export default function CreateDevisPage() {
           />
         </div>
 
-        {/* Kit de base */}
+        {/* Matériel (like alarm section) */}
         <div className="quote-section">
-          <h3>💨 Kit de base</h3>
-          <ProductSection
-            title=""
-            lines={fogLines}
-            productCatalog={CATALOG_FOG_PRODUCTS}
-            centralType={null}
-            onLinesChange={setFogLines}
-            emoji="💨"
-          />
+          <h3>
+            Matériel
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                setFogLines([...fogLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              title="Ajouter un produit"
+            >
+              +
+            </button>
+          </h3>
+          <div id="fog-material-products">
+            {fogLines.map((line, index) => (
+              <div key={line.id} className="product-line">
+                <select 
+                  className="product-select"
+                  value={line.product?.name || ''}
+                  onChange={(e) => {
+                    const productName = e.target.value;
+                    const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName);
+                    const newLines = [...fogLines];
+                    newLines[index] = { ...line, product: product || null };
+                    setFogLines(newLines);
+                  }}
+                >
+                  <option value="">Sélectionner un produit</option>
+                  {CATALOG_FOG_PRODUCTS.map(product => (
+                    <option key={product.name} value={product.name}>
+                      {product.name} - {product.price.toFixed(2)} CHF
+                    </option>
+                  ))}
+                </select>
+                <input 
+                  type="number" 
+                  className="quantity-input"
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const newLines = [...fogLines];
+                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                    setFogLines(newLines);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  min="1"
+                />
+                <div className="checkbox-option" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    className="offered-checkbox"
+                    checked={line.offered}
+                    onChange={(e) => {
+                      const newLines = [...fogLines];
+                      newLines[index] = { ...line, offered: e.target.checked };
+                      setFogLines(newLines);
+                    }}
+                  />
+                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                </div>
+                <div className="price-display">
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                </div>
+                <button 
+                  className="remove-btn"
+                  onClick={() => {
+                    setFogLines(fogLines.filter((_, i) => i !== index));
+                  }}
+                  title="Supprimer"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Installation */}
+        {/* Installation et matériel divers */}
         <div className="quote-section">
-          <h3>🔧 Installation et paramétrage</h3>
+          <h3>🔧 Installation et matériel divers</h3>
           <div className="product-line">
             <div>Installation et paramétrage</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={1}
+              className="quantity-input"
+              readOnly
+              style={{ background: '#e9ecef' }}
+            />
             <input 
               type="number" 
               value={fogInstallationPrice}
               onChange={(e) => setFogInstallationPrice(parseFloat(e.target.value) || 490)}
               className="price-input"
               onFocus={(e) => e.target.select()}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #007bff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '120px'
+              }}
             />
+            <div></div>
             <div className="price-display">
               {fogInstallationPrice.toFixed(2)} CHF
             </div>
@@ -1986,13 +2071,27 @@ export default function CreateDevisPage() {
           <h3>📄 Frais de dossier</h3>
           <div className="product-line">
             <div>Frais de dossier</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={1}
+              className="quantity-input"
+              readOnly
+              style={{ background: '#e9ecef' }}
+            />
             <input 
               type="number" 
               value={fogProcessingFee}
               onChange={(e) => setFogProcessingFee(parseFloat(e.target.value) || 190)}
               className="price-input"
               onFocus={(e) => e.target.select()}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #007bff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '100px'
+              }}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
@@ -2010,25 +2109,53 @@ export default function CreateDevisPage() {
 
           <div className="product-line">
             <div>Carte SIM</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input 
+                type="checkbox" 
+                checked={fogSimCardSelected}
+                onChange={(e) => {
+                  setFogSimCardSelected(e.target.checked);
+                  if (!e.target.checked) setFogSimCardOffered(false);
+                }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                title="Sélectionner la carte SIM"
+              />
+              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
+                setFogSimCardSelected(!fogSimCardSelected);
+                if (fogSimCardSelected) setFogSimCardOffered(false);
+              }}>
+                Inclure
+              </label>
+            </div>
             <input 
               type="number" 
               value={fogSimCard}
               onChange={(e) => setFogSimCard(parseFloat(e.target.value) || 50)}
               className="price-input"
               onFocus={(e) => e.target.select()}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #007bff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '100px',
+                opacity: fogSimCardSelected ? 1 : 0.5
+              }}
+              disabled={!fogSimCardSelected}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
                 type="checkbox" 
                 checked={fogSimCardOffered}
                 onChange={(e) => setFogSimCardOffered(e.target.checked)}
+                disabled={!fogSimCardSelected}
                 className="offered-checkbox" 
               />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+              <label style={{ margin: 0, fontSize: '12px', color: !fogSimCardSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
             <div className="price-display">
-              {fogSimCardOffered ? 'OFFERT' : `${fogSimCard.toFixed(2)} CHF`}
+              {!fogSimCardSelected ? '-' : fogSimCardOffered ? 'OFFERT' : `${fogSimCard.toFixed(2)} CHF`}
             </div>
           </div>
         </div>
