@@ -376,34 +376,6 @@ export default function CreateDevisPage() {
     setCameraMaintenancePrice(totalPrice);
   }, [cameraMaterialLines, cameraMaintenance]);
   
-  // Initialize installation lines with half-day and full-day options
-  useEffect(() => {
-    if (alarmInstallationLines.length === 0 && CATALOG_ALARM_PRODUCTS.length > 0) {
-      const halfDay = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-      const fullDay = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
-      
-      const newLines: ProductLineData[] = [];
-      if (halfDay) {
-        newLines.push({
-          id: Date.now(),
-          product: halfDay,
-          quantity: 1,
-          offered: false
-        });
-      }
-      if (fullDay) {
-        newLines.push({
-          id: Date.now() + 1,
-          product: fullDay,
-          quantity: 1,
-          offered: false
-        });
-      }
-      
-      setAlarmInstallationLines(newLines);
-    }
-  }, []); // Run once on mount
-  
   // Initialize Fog kit de base on mount
   useEffect(() => {
     if (fogLines.length === 0 && CATALOG_FOG_PRODUCTS.length > 0) {
@@ -1099,10 +1071,63 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Installation Section */}
+        {/* Installation Section - Simple 300 CHF */}
+        <div className="quote-section">
+          <h3>🔧 Installation</h3>
+          <div className="product-line" style={{ background: '#f0f8ff' }}>
+            <div>Installation alarme (300 CHF par défaut)</div>
+            <input 
+              type="number" 
+              value={alarmInstallationPriceOverride !== null ? alarmInstallationPriceOverride : 300}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setAlarmInstallationPriceOverride(isNaN(val) ? 300 : val);
+              }}
+              onFocus={(e) => e.target.select()}
+              className="discount-input" 
+              placeholder="300" 
+              style={{ 
+                background: '#fff',
+                border: '2px solid #007bff',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '120px'
+              }}
+              title="Prix installation modifiable"
+            />
+            <div className="checkbox-option" style={{ margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={alarmInstallationOffered}
+                onChange={(e) => setAlarmInstallationOffered(e.target.checked)}
+                className="offered-checkbox" 
+              />
+              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+            </div>
+            <div className="price-display">
+              {alarmInstallationOffered ? 'OFFERT' : `${(alarmInstallationPriceOverride !== null ? alarmInstallationPriceOverride : 300).toFixed(2)} CHF`}
+            </div>
+          </div>
+          
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
+              <input 
+                type="checkbox" 
+                checked={alarmInstallationInMonthly}
+                onChange={(e) => setAlarmInstallationInMonthly(e.target.checked)}
+                style={{ marginRight: '8px' }}
+              />
+              <span>Inclure l&apos;installation dans les mensualités</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Material Divers Section */}
         <div className="quote-section">
           <h3>
-            🔧 Installation et matériel divers
+            🔧 Matériel divers
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -1119,7 +1144,7 @@ export default function CreateDevisPage() {
             </button>
           </h3>
           
-          {/* Installation and material lines */}
+          {/* Material lines */}
           <div id="alarm-installation-products">
             {alarmInstallationLines.map((line, index) => (
               <div key={line.id} className="product-line">
