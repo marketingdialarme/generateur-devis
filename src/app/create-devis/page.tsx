@@ -306,7 +306,7 @@ export default function CreateDevisPage() {
     selectedCentral
   ]);
   
-  // Auto-calculate vision à distance price (4G cameras)
+  // Auto-calculate vision à distance price (4G cameras + modem if selected)
   useEffect(() => {
     if (!cameraVisionDistance) {
       setCameraVisionPrice(0);
@@ -318,32 +318,22 @@ export default function CreateDevisPage() {
       (line) => line.product && line.product.name.includes('4G')
     ).reduce((sum, line) => sum + line.quantity, 0);
     
-    // Count classic cameras (if modem selected)
-    let classicCameras = 0;
+    // Count modems (20 CHF per modem, NOT per camera)
+    const modemCount = cameraMaterialLines.filter(
+      (line) => line.product && line.product.name.toLowerCase().includes('modem')
+    ).reduce((sum, line) => sum + line.quantity, 0);
+    
+    // Price: 20 CHF per 4G camera + 20 CHF per modem
+    const totalPrice = (fourGCameras + modemCount) * 20;
+    setCameraVisionPrice(totalPrice);
+  }, [cameraMaterialLines, cameraVisionDistance]);
+  
+  // Auto-check vision à distance when modem is selected
+  useEffect(() => {
     const hasModem = cameraMaterialLines.some(
       (line) => line.product && line.product.name.toLowerCase().includes('modem')
     );
     
-    if (hasModem) {
-      classicCameras = cameraMaterialLines.filter(
-        (line) =>
-          line.product &&
-          !line.product.name.includes('4G') &&
-          !line.product.name.includes('NVR') &&
-          !line.product.name.toLowerCase().includes('modem') &&
-          !line.product.name.toLowerCase().includes('interphone') &&
-          !line.product.name.toLowerCase().includes('écran') &&
-          (line.product.name.toLowerCase().includes('caméra') ||
-            line.product.name.includes('Bullet') ||
-            line.product.name.includes('Dôme') ||
-            line.product.name.includes('Solar'))
-      ).reduce((sum, line) => sum + line.quantity, 0);
-    }
-    
-    const totalPrice = (fourGCameras + classicCameras) * 20;
-    setCameraVisionPrice(totalPrice);
-    
-    // Auto-check vision if modem present
     if (hasModem && !cameraVisionDistance) {
       setCameraVisionDistance(true);
     }
@@ -1764,12 +1754,12 @@ export default function CreateDevisPage() {
             <h3>📡 Vision à distance</h3>
             <div className="product-line">
               <div>
-                Vision à distance (4G cameras + classic with modem)
+                Vision à distance (4G cameras + modem)
                 {cameraVisionDistance && cameraVisionPrice > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
                     <strong>Prix calculé: {cameraVisionPrice} CHF/mois</strong>
                     <div style={{ fontSize: '11px', marginTop: '3px' }}>
-                      (20 CHF par caméra avec vision à distance)
+                      (20 CHF par caméra 4G + 20 CHF par modem)
                     </div>
                   </div>
                 )}
@@ -1816,22 +1806,8 @@ export default function CreateDevisPage() {
                 {cameraMaintenance && cameraMaintenancePrice > 0 ? `${cameraMaintenancePrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
-            
-            {/* Warning if no modem/vision */}
-            {!cameraVisionDistance && !cameraMaterialLines.some(line => line.product && line.product.name.toLowerCase().includes('modem')) && (
-              <div style={{ 
-                marginTop: '15px',
-                padding: '12px',
-                background: '#fff3cd',
-                border: '1px solid #ffc107',
-                borderRadius: '6px',
-                fontSize: '13px'
-              }}>
-                ⚠️ <strong>Attention:</strong> Sans MODEM ou vision à distance, les caméras ne pourront pas être consultées à distance.
-              </div>
-            )}
-                  </div>
-                )}
+          </div>
+        )}
 
         {/* Payment Mode */}
         {!cameraRentalMode && (
@@ -1839,6 +1815,7 @@ export default function CreateDevisPage() {
             selectedMonths={cameraPaymentMonths}
             onSelect={setCameraPaymentMonths}
             label="Mode de paiement"
+            excludeComptant={true}
           />
         )}
 

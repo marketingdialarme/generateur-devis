@@ -9,10 +9,11 @@ interface PaymentSelectorProps {
   selectedMonths: number;
   onSelect: (months: number) => void;
   label?: string;
+  excludeComptant?: boolean; // Option to exclude comptant for cameras
 }
 
-export function PaymentSelector({ selectedMonths, onSelect, label = "Mode de paiement" }: PaymentSelectorProps) {
-  const options = [
+export function PaymentSelector({ selectedMonths, onSelect, label = "Mode de paiement", excludeComptant = false }: PaymentSelectorProps) {
+  const allOptions = [
     { months: 0, label: 'Comptant' },
     { months: 12, label: '12 mois' },
     { months: 24, label: '24 mois' },
@@ -20,6 +21,9 @@ export function PaymentSelector({ selectedMonths, onSelect, label = "Mode de pai
     { months: 48, label: '48 mois' },
     { months: 60, label: '60 mois' }
   ];
+  
+  // Filter out comptant if requested
+  const options = excludeComptant ? allOptions.filter(opt => opt.months !== 0) : allOptions;
 
   return (
     <div className="quote-section">
