@@ -840,6 +840,7 @@ export default function CreateDevisPage() {
                       newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
                       setAlarmMaterialLines(newLines);
                     }}
+                    onFocus={(e) => e.target.select()}
                     min="1"
                   />
                   <div className="checkbox-option" style={{ margin: 0 }}>
@@ -890,6 +891,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
                         setAlarmMaterialLines(newLines);
                       }}
+                      onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
                       style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
@@ -912,6 +914,7 @@ export default function CreateDevisPage() {
               type="number" 
               value={alarmMaterialDiscount.value}
               onChange={(e) => setAlarmMaterialDiscount({ ...alarmMaterialDiscount, value: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
               placeholder="0" 
               min="0" 
               className="discount-input" 
@@ -995,6 +998,7 @@ export default function CreateDevisPage() {
                 type="number" 
                 value={alarmInstallationQty}
                 onChange={(e) => setAlarmInstallationQty(parseInt(e.target.value) || 1)}
+                onFocus={(e) => e.target.select()}
                 min="1" 
                 max="10" 
                 className="quantity-input" 
@@ -1007,6 +1011,7 @@ export default function CreateDevisPage() {
                 const val = parseFloat(e.target.value);
                 setAlarmInstallationPriceOverride(isNaN(val) ? null : val);
               }}
+              onFocus={(e) => e.target.select()}
               className="discount-input" 
               placeholder="Prix" 
               style={{ background: alarmInstallationPriceOverride !== null ? '#fff3cd' : '#f0f0f0' }}
@@ -1060,6 +1065,7 @@ export default function CreateDevisPage() {
                     newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
                     setAlarmInstallationLines(newLines);
                   }}
+                  onFocus={(e) => e.target.select()}
                   min="1"
                 />
                 <div className="checkbox-option" style={{ margin: 0 }}>
@@ -1105,6 +1111,7 @@ export default function CreateDevisPage() {
               type="number" 
               value={alarmInstallationDiscount.value}
               onChange={(e) => setAlarmInstallationDiscount({ ...alarmInstallationDiscount, value: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
               placeholder="0" 
               min="0" 
               className="discount-input" 
@@ -1461,6 +1468,7 @@ export default function CreateDevisPage() {
                       newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
                       setCameraMaterialLines(newLines);
                     }}
+                    onFocus={(e) => e.target.select()}
                     min="1"
                   />
                   <div className="checkbox-option" style={{ margin: 0 }}>
@@ -1511,6 +1519,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
                         setCameraMaterialLines(newLines);
                       }}
+                      onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
                       style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
@@ -1533,6 +1542,7 @@ export default function CreateDevisPage() {
               type="number" 
               value={cameraMaterialDiscount.value}
               onChange={(e) => setCameraMaterialDiscount({ ...cameraMaterialDiscount, value: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
               placeholder="0" 
               min="0" 
               className="discount-input" 
@@ -1551,6 +1561,7 @@ export default function CreateDevisPage() {
                 type="number" 
                 value={cameraInstallationQty}
                 onChange={(e) => setCameraInstallationQty(parseInt(e.target.value) || 1)}
+                onFocus={(e) => e.target.select()}
                 min="1" 
                 max="10" 
                 className="quantity-input" 
@@ -1563,6 +1574,7 @@ export default function CreateDevisPage() {
                 const val = parseFloat(e.target.value);
                 setCameraInstallationPriceOverride(isNaN(val) ? null : val);
               }}
+              onFocus={(e) => e.target.select()}
               className="discount-input" 
               placeholder="Prix" 
               style={{ background: cameraInstallationPriceOverride !== null ? '#fff3cd' : '#f0f0f0' }}
@@ -1596,6 +1608,7 @@ export default function CreateDevisPage() {
               type="number" 
               value={cameraInstallationDiscount.value}
               onChange={(e) => setCameraInstallationDiscount({ ...cameraInstallationDiscount, value: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
               placeholder="0" 
               min="0" 
               className="discount-input" 

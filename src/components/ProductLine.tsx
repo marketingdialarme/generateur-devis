@@ -141,6 +141,7 @@ export function ProductLine({
               placeholder="Prix"
               value={line.customPrice || 0}
               onChange={(e) => onUpdate(line.id, { customPrice: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
               style={{
                 width: '100px',
                 padding: '8px',
