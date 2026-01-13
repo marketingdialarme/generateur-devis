@@ -75,7 +75,11 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
   { id: 18, name: "Sirène déportée", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 10 },
   { id: 21, name: "Sirène déportée grande", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
   { id: 17, name: "Sonde inondation", priceTitane: 290.00, priceJablotron: 390.00, monthlyTitane: 7, monthlyJablotron: 10 },
-  { id: 19, name: "Télécommande", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 }
+  { id: 19, name: "Télécommande", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
+  
+  // Installation options
+  { id: 101, name: "Installation 1/2 journée", price: 690.00 },
+  { id: 102, name: "Installation 1 journée", price: 1290.00 }
 ];
 
 export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [

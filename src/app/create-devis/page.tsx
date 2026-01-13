@@ -376,6 +376,34 @@ export default function CreateDevisPage() {
     setCameraMaintenancePrice(totalPrice);
   }, [cameraMaterialLines, cameraMaintenance]);
   
+  // Initialize installation lines with half-day and full-day options
+  useEffect(() => {
+    if (alarmInstallationLines.length === 0 && CATALOG_ALARM_PRODUCTS.length > 0) {
+      const halfDay = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
+      const fullDay = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
+      
+      const newLines: ProductLineData[] = [];
+      if (halfDay) {
+        newLines.push({
+          id: Date.now(),
+          product: halfDay,
+          quantity: 1,
+          offered: false
+        });
+      }
+      if (fullDay) {
+        newLines.push({
+          id: Date.now() + 1,
+          product: fullDay,
+          quantity: 1,
+          offered: false
+        });
+      }
+      
+      setAlarmInstallationLines(newLines);
+    }
+  }, []); // Run once on mount
+  
   // Initialize Fog kit de base on mount
   useEffect(() => {
     if (fogLines.length === 0 && CATALOG_FOG_PRODUCTS.length > 0) {
@@ -990,48 +1018,8 @@ export default function CreateDevisPage() {
               +
             </button>
           </h3>
-          <div className="product-line" style={{ background: '#f0f8ff' }}>
-            <div>Installation, paramétrages, tests, mise en service & formation</div>
-                  <div>
-              <label style={{ marginRight: '5px', fontSize: '12px' }}>Demi-journées:</label>
-              <input 
-                type="number" 
-                value={alarmInstallationQty}
-                onChange={(e) => setAlarmInstallationQty(parseInt(e.target.value) || 1)}
-                onFocus={(e) => e.target.select()}
-                min="1" 
-                max="10" 
-                className="quantity-input" 
-              />
-                  </div>
-            <input 
-              type="number" 
-              value={alarmInstallationPrice}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                setAlarmInstallationPriceOverride(isNaN(val) ? null : val);
-              }}
-              onFocus={(e) => e.target.select()}
-              className="discount-input" 
-              placeholder="Prix" 
-              style={{ background: alarmInstallationPriceOverride !== null ? '#fff3cd' : '#f0f0f0' }}
-              title={alarmInstallationPriceOverride !== null ? 'Prix personnalisé' : 'Prix automatique'}
-            />
-            <div className="checkbox-option" style={{ margin: 0 }}>
-              <input 
-                type="checkbox" 
-                checked={alarmInstallationOffered}
-                onChange={(e) => setAlarmInstallationOffered(e.target.checked)}
-                className="offered-checkbox" 
-              />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-            </div>
-            <div className="price-display">
-              {alarmInstallationOffered ? 'OFFERT' : `${alarmInstallationPrice.toFixed(2)} CHF`}
-            </div>
-          </div>
           
-          {/* Extra material lines */}
+          {/* Installation and material lines */}
           <div id="alarm-installation-products">
             {alarmInstallationLines.map((line, index) => (
               <div key={line.id} className="product-line">
@@ -1218,38 +1206,43 @@ export default function CreateDevisPage() {
           onTelesurveillanceOptionChange={setTelesurveillanceOption}
         />
 
-        {/* Payment Mode */}
+        {/* Engagement Duration - MOVED BEFORE Payment Mode */}
         {!alarmRentalMode && (
-          <>
-            <PaymentSelector
-              selectedMonths={alarmPaymentMonths}
-              onSelect={setAlarmPaymentMonths}
-              label="Mode de paiement"
-            />
-            
-            {/* Engagement Duration */}
-            <div className="quote-section">
-              <h3>⏱️ Durée d'engagement</h3>
-              <select 
-                value={engagementMonths}
-                onChange={(e) => setEngagementMonths(parseInt(e.target.value))}
-                style={{
-                  padding: '10px',
-                  fontSize: '14px',
-                  border: '2px solid #e9ecef',
-                  borderRadius: '8px',
-                  width: '200px',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value={12}>12 mois</option>
-                <option value={24}>24 mois</option>
-                <option value={36}>36 mois</option>
-                <option value={48}>48 mois</option>
-                <option value={60}>60 mois</option>
-              </select>
-            </div>
-          </>
+          <div className="quote-section">
+            <h3>⏱️ Durée d'engagement</h3>
+            <select 
+              value={engagementMonths}
+              onChange={(e) => {
+                const months = parseInt(e.target.value);
+                setEngagementMonths(months);
+                // Auto-sync payment mode to same duration
+                setAlarmPaymentMonths(months);
+              }}
+              style={{
+                padding: '10px',
+                fontSize: '14px',
+                border: '2px solid #e9ecef',
+                borderRadius: '8px',
+                width: '200px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value={12}>12 mois</option>
+              <option value={24}>24 mois</option>
+              <option value={36}>36 mois</option>
+              <option value={48}>48 mois</option>
+              <option value={60}>60 mois</option>
+            </select>
+          </div>
+        )}
+
+        {/* Payment Mode - MOVED AFTER Engagement */}
+        {!alarmRentalMode && (
+          <PaymentSelector
+            selectedMonths={alarmPaymentMonths}
+            onSelect={setAlarmPaymentMonths}
+            label="Mode de paiement"
+          />
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
