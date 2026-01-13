@@ -843,7 +843,18 @@ export default function CreateDevisPage() {
                     value={line.product?.name || ''}
                     onChange={(e) => {
                       const productName = e.target.value;
-                      const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      // Try to find in alarm catalog first, then XTO catalog
+                      let product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      if (!product) {
+                        const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productName);
+                        if (xtoProduct) {
+                          product = {
+                            id: xtoProduct.id,
+                            name: xtoProduct.name,
+                            price: xtoProduct.monthlyPrice
+                          } as any;
+                        }
+                      }
                       const newLines = [...alarmMaterialLines];
                       newLines[index] = { ...line, product: product || null };
                       setAlarmMaterialLines(newLines);
@@ -858,6 +869,12 @@ export default function CreateDevisPage() {
                         </option>
                       );
                     })}
+                    {/* Add XTO products if XTO is selected */}
+                    {CATALOG_XTO_PRODUCTS.map(product => (
+                      <option key={`xto-${product.name}`} value={product.name}>
+                        {product.name} - {product.monthlyPrice.toFixed(2)} CHF/mois
+                      </option>
+                    ))}
                   </select>
                   <input 
                     type="number" 
@@ -2278,15 +2295,22 @@ export default function CreateDevisPage() {
               </h3>
               <button
                 onClick={() => {
-                  // Add XTO centrale to alarm lines
+                  // Add XTO products to alarm lines - use proper XTO product structure
                   const xtoProducts = CATALOG_XTO_PRODUCTS.map((prod, index) => ({
                     id: Date.now() + index,
-                    product: { id: prod.id, name: prod.name, price: prod.monthlyPrice } as any,
+                    product: {
+                      id: prod.id,
+                      name: prod.name,
+                      price: prod.monthlyPrice,
+                      isXTO: true // Flag to identify XTO products
+                    } as any,
                     quantity: prod.id === 402 ? 4 : 1, // 4 cameras by default
                     offered: false
                   }));
                   setAlarmMaterialLines(xtoProducts);
                   setShowKitModal(false);
+                  // Set rental mode since XTO is monthly rental
+                  setAlarmRentalMode(true);
                 }}
                 style={{
                   width: '100%',
