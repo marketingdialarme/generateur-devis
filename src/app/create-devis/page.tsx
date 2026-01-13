@@ -828,12 +828,51 @@ export default function CreateDevisPage() {
             🛡️ Choix Kit de base
             <button 
               className="add-product-btn" 
-              onClick={() => setShowKitModal(true)}
-              title="Sélectionner un kit"
+              onClick={() => {
+                // Add a blank product line
+                setAlarmMaterialLines([...alarmMaterialLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              title="Ajouter un produit"
             >
               +
             </button>
           </h3>
+          
+          {/* Button to open kit selection modal */}
+          {alarmMaterialLines.length === 0 && (
+            <button 
+              onClick={() => setShowKitModal(true)}
+              style={{
+                width: '100%',
+                padding: '15px',
+                background: 'linear-gradient(135deg, #f4e600 0%, #f4d000 100%)',
+                border: '2px solid #f4e600',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#333',
+                marginBottom: '15px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              }}
+            >
+              🛡️ Sélectionner un kit de base
+            </button>
+          )}
           <div id="alarm-material-products">
             {alarmMaterialLines.map((line, index) => (
               <div key={line.id}>
@@ -2163,24 +2202,6 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
-              <button
-                onClick={() => applyKit('titane', 'none')}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px dashed #f4e600',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  color: '#666',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#fffef0'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-              >
-                ➕ Kit de base à partir de rien (Titane)
-              </button>
             </div>
 
             {/* Jablotron Kits */}
@@ -2261,24 +2282,6 @@ export default function CreateDevisPage() {
                   </div>
                 </button>
               </div>
-              <button
-                onClick={() => applyKit('jablotron', 'none')}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px dashed #6c757d',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  color: '#666',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-              >
-                ➕ Kit de base à partir de rien (Jablotron)
-              </button>
             </div>
 
             {/* XTO Kit - NEW */}
@@ -2342,6 +2345,42 @@ export default function CreateDevisPage() {
                   1 Lecteur de badge + 8 badges (30 CHF/mois)<br />
                   + Centre d&apos;intervention GS inclus
                 </div>
+              </button>
+            </div>
+
+            {/* Custom Kit Button - Placed AFTER all 3 centrales */}
+            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px solid #e9ecef' }}>
+              <button
+                onClick={() => applyKit('titane', 'none')}
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  background: 'white',
+                  border: '2px dashed #f4e600',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#333',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#fffef0';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>➕</span>
+                <span>Créer un kit personnalisé</span>
               </button>
             </div>
 
