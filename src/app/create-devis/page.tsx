@@ -75,9 +75,6 @@ export default function CreateDevisPage() {
   const [cameraInstallationDiscount, setCameraInstallationDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   
   // Installation state
-  const [alarmInstallationQty, setAlarmInstallationQty] = useState(1);
-  const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(true); // Offered by default per spec
-  const [alarmInstallationPriceOverride, setAlarmInstallationPriceOverride] = useState<number | null>(300); // Default 300 CHF per spec
   const [alarmInstallationInMonthly, setAlarmInstallationInMonthly] = useState(false);
   const [isCustomKit, setIsCustomKit] = useState(false); // Track if "à partir de rien" was selected
   const [customSurveillanceType, setCustomSurveillanceType] = useState<'autosurveillance' | 'telesurveillance'>('autosurveillance');
@@ -86,13 +83,6 @@ export default function CreateDevisPage() {
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
   const [cameraInstallationPriceOverride, setCameraInstallationPriceOverride] = useState<number | null>(null);
-
-  // Calculate alarm installation price using tiered half-day system (or use override)
-  const alarmInstallationPrice = useMemo(() => {
-    return alarmInstallationPriceOverride !== null 
-      ? alarmInstallationPriceOverride 
-      : calculateInstallationPrice(alarmInstallationQty);
-  }, [alarmInstallationQty, alarmInstallationPriceOverride]);
 
   // Calculate camera installation price with tiered pricing (or use override)
   const cameraInstallationPrice = useMemo(() => {
@@ -250,8 +240,9 @@ export default function CreateDevisPage() {
         alarmMaterialDiscount,
         alarmInstallationDiscount,
         {
-          quantity: alarmInstallationQty,
-          isOffered: alarmInstallationOffered
+          quantity: 0, // Not used anymore - installation is now in alarmInstallationLines
+          isOffered: false,
+          price: 0
         },
         {
           simCardSelected: simcardSelected,
@@ -267,7 +258,7 @@ export default function CreateDevisPage() {
           surveillance: { 
             type: surveillanceType, 
             price: surveillancePrice, 
-            offered: surveillanceOffered 
+            offered: surveillanceOffered
           }
         },
         alarmPaymentMonths,
@@ -282,8 +273,8 @@ export default function CreateDevisPage() {
         installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         adminFees: { simCard: 0, processing: 0, total: 0 },
         services: { testCyclique: 0, surveillance: 0 },
-        totalHT: alarmInstallationOffered ? 0 : roundToFiveCents(alarmInstallationPrice),
-        totalTTC: alarmInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(alarmInstallationPrice) * (1 + TVA_RATE))
+        totalHT: 0,
+        totalTTC: 0
       };
     }
   }, [
@@ -291,9 +282,7 @@ export default function CreateDevisPage() {
     alarmInstallationLines,
     alarmMaterialDiscount,
     alarmInstallationDiscount,
-    alarmInstallationQty,
-    alarmInstallationOffered,
-    alarmInstallationPrice,
+    simcardSelected,
     simcardOffered,
     processingOffered,
     testCycliqueSelected,
@@ -1065,45 +1054,165 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Installation Section - Simple 300 CHF */}
+        {/* Installation Section - Half-Day and Full-Day Lines */}
         <div className="quote-section">
-          <h3>🔧 Installation</h3>
-          <div className="product-line" style={{ background: '#f0f8ff' }}>
-            <div>Installation alarme (300 CHF par défaut)</div>
-            <input 
-              type="number" 
-              value={alarmInstallationPriceOverride !== null ? alarmInstallationPriceOverride : 300}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                setAlarmInstallationPriceOverride(isNaN(val) ? 300 : val);
+          <h3>
+            🔧 Installation
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                // Add Installation 1/2 journée by default
+                const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
+                if (halfDayProduct) {
+                  setAlarmInstallationLines([...alarmInstallationLines, {
+                    id: Date.now(),
+                    product: halfDayProduct,
+                    quantity: 1,
+                    offered: true // Offered by default
+                  }]);
+                }
               }}
-              onFocus={(e) => e.target.select()}
-              className="discount-input" 
-              placeholder="300" 
-              style={{ 
-                background: '#fff',
-                border: '2px solid #007bff',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '120px'
-              }}
-              title="Prix installation modifiable"
-            />
-            <div className="checkbox-option" style={{ margin: 0 }}>
-              <input 
-                type="checkbox" 
-                checked={alarmInstallationOffered}
-                onChange={(e) => setAlarmInstallationOffered(e.target.checked)}
-                className="offered-checkbox" 
-              />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-            </div>
-            <div className="price-display">
-              {alarmInstallationOffered ? 'OFFERT' : `${(alarmInstallationPriceOverride !== null ? alarmInstallationPriceOverride : 300).toFixed(2)} CHF`}
-            </div>
+              title="Ajouter une ligne d'installation"
+            >
+              +
+            </button>
+          </h3>
+          
+          {/* Installation lines (half-day/full-day) */}
+          <div id="alarm-installation-lines">
+            {alarmInstallationLines.map((line, index) => (
+              <div key={line.id} className="product-line">
+                <select 
+                  className="product-select"
+                  value={line.product?.name || ''}
+                  onChange={(e) => {
+                    const productName = e.target.value;
+                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                    const newLines = [...alarmInstallationLines];
+                    newLines[index] = { ...line, product: product || null };
+                    setAlarmInstallationLines(newLines);
+                  }}
+                >
+                  <option value="">Sélectionner un type d&apos;installation</option>
+                  <option value="Installation 1/2 journée">Installation 1/2 journée - 690.00 CHF</option>
+                  <option value="Installation 1 journée">Installation 1 journée - 1290.00 CHF</option>
+                </select>
+                <input 
+                  type="number" 
+                  className="quantity-input"
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const newLines = [...alarmInstallationLines];
+                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                    setAlarmInstallationLines(newLines);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  min="1"
+                  max="10"
+                />
+                <div className="checkbox-option" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox"
+                    checked={line.offered}
+                    onChange={(e) => {
+                      const newLines = [...alarmInstallationLines];
+                      newLines[index] = { ...line, offered: e.target.checked };
+                      setAlarmInstallationLines(newLines);
+                    }}
+                  />
+                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                </div>
+                <div className="price-display">
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                </div>
+                <button 
+                  className="remove-btn"
+                  onClick={() => {
+                    setAlarmInstallationLines(alarmInstallationLines.filter((_, i) => i !== index));
+                  }}
+                  title="Supprimer"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
+          
+          {/* Quick add buttons for common installation options */}
+          {alarmInstallationLines.length === 0 && (
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button 
+                onClick={() => {
+                  const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
+                  if (halfDayProduct) {
+                    setAlarmInstallationLines([{
+                      id: Date.now(),
+                      product: halfDayProduct,
+                      quantity: 1,
+                      offered: true
+                    }]);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px dashed #28a745',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: '#28a745',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f0fff4';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                + Installation 1/2 journée (690 CHF)
+              </button>
+              <button 
+                onClick={() => {
+                  const fullDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
+                  if (fullDayProduct) {
+                    setAlarmInstallationLines([{
+                      id: Date.now(),
+                      product: fullDayProduct,
+                      quantity: 1,
+                      offered: true
+                    }]);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px dashed #007bff',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: '#007bff',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f0f8ff';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                + Installation 1 journée (1290 CHF)
+              </button>
+            </div>
+          )}
           
           <div style={{ marginTop: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>

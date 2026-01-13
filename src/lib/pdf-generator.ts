@@ -441,6 +441,62 @@ function createCameraPDFSections(
     yPos += 20;
   }
 
+  // Warning if no modem and no remote access selected
+  if (!options.isRental && !options.remoteAccess) {
+    // Check if there's a modem in the materials
+    const hasModem = options.materialLines.some(
+      line => line.product && line.product.name.toLowerCase().includes('modem')
+    );
+    
+    // Only show warning if no modem is present
+    if (!hasModem) {
+      yPos += 15;
+      
+      // Warning box with yellow/orange background
+      doc.setFillColor(255, 243, 205); // Light orange/yellow
+      doc.rect(40, yPos, 515, 85, 'F');
+      
+      // Border
+      doc.setDrawColor(255, 193, 7); // Orange border
+      doc.setLineWidth(2);
+      doc.rect(40, yPos, 515, 85, 'S');
+      
+      // Warning title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(200, 100, 0); // Orange text
+      doc.text('⚠️ ATTENTION - VISION À DISTANCE', 50, yPos + 15);
+      
+      // Warning text
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0);
+      
+      const warningLines = [
+        'Si le client ne souscrit pas la vision à distance par le biais de Dialarme, la société Dialarme',
+        'décline toutes responsabilités dû aux pertes de connexion à distance des caméras.',
+        '',
+        'Un forfait unique de CHF 150 HT par déplacement sera facturé au client pour la remise en réseau',
+        'des caméras.',
+        '',
+        'Si le client prend la vision à distance, un Modem sera facturé en plus à CHF 290.- HT.'
+      ];
+      
+      let lineYPos = yPos + 30;
+      warningLines.forEach(line => {
+        doc.text(line, 50, lineYPos);
+        lineYPos += 10;
+      });
+      
+      // Reset colors
+      doc.setTextColor(0, 0, 0);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      
+      yPos += 100;
+    }
+  }
+
   // Maintenance
   yPos = createMaintenanceSection(doc, yPos);
 
