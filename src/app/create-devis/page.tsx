@@ -103,6 +103,7 @@ export default function CreateDevisPage() {
   }, [cameraMaterialLines, cameraInstallationQty, cameraInstallationPriceOverride]);
   
   // Admin fees state
+  const [simcardSelected, setSimcardSelected] = useState(false); // Whether SIM card is selected at all
   const [simcardOffered, setSimcardOffered] = useState(false);
   const [processingOffered, setProcessingOffered] = useState(false);
   
@@ -144,6 +145,7 @@ export default function CreateDevisPage() {
   const [interventionPayante, setInterventionPayante] = useState(false);
   const [interventionPayantePrice, setInterventionPayantePrice] = useState(149);
   const [interventionPolice, setInterventionPolice] = useState(false);
+  const [interventionPolicePrice, setInterventionPolicePrice] = useState(0);
   const [telesurveillanceOption, setTelesurveillanceOption] = useState(false);
   
   // Camera 4G and maintenance state
@@ -251,6 +253,7 @@ export default function CreateDevisPage() {
           isOffered: alarmInstallationOffered
         },
         {
+          simCardSelected: simcardSelected,
           simCardOffered: simcardOffered,
           processingOffered: processingOffered
         },
@@ -1260,18 +1263,37 @@ export default function CreateDevisPage() {
           <h3>📄 Frais de dossier</h3>
           <div className="product-line">
             <div>Carte SIM + Activation</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
-            <div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input 
+                type="checkbox" 
+                checked={simcardSelected}
+                onChange={(e) => {
+                  setSimcardSelected(e.target.checked);
+                  if (!e.target.checked) setSimcardOffered(false); // Reset offered if deselected
+                }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                title="Sélectionner la carte SIM"
+              />
+              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
+                setSimcardSelected(!simcardSelected);
+                if (simcardSelected) setSimcardOffered(false);
+              }}>
+                Inclure
+              </label>
+            </div>
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
                 type="checkbox" 
                 checked={simcardOffered}
                 onChange={(e) => setSimcardOffered(e.target.checked)}
+                disabled={!simcardSelected}
                 className="offered-checkbox" 
               />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+              <label style={{ margin: 0, fontSize: '12px', color: !simcardSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display">{simcardOffered ? 'OFFERT' : '50.00 CHF HT'}</div>
+            <div className="price-display">
+              {!simcardSelected ? '-' : simcardOffered ? 'OFFERT' : '50.00 CHF HT'}
+            </div>
           </div>
           <div className="product-line">
             <div>Frais de dossier</div>
@@ -1327,6 +1349,8 @@ export default function CreateDevisPage() {
           onInterventionPayantePriceChange={setInterventionPayantePrice}
           interventionPolice={interventionPolice}
           onInterventionPoliceChange={setInterventionPolice}
+          interventionPolicePrice={interventionPolicePrice}
+          onInterventionPolicePriceChange={setInterventionPolicePrice}
           telesurveillanceOption={telesurveillanceOption}
           onTelesurveillanceOptionChange={setTelesurveillanceOption}
         />

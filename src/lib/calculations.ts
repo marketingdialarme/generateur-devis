@@ -41,6 +41,7 @@ export interface InstallationConfig {
 }
 
 export interface AdminFeesConfig {
+  simCardSelected: boolean; // Whether SIM card is selected at all
   simCardOffered: boolean;
   processingOffered: boolean;
 }
@@ -273,8 +274,8 @@ export function calculateAlarmTotals(
     totalBeforeDiscount: installationProductsTotal.totalBeforeDiscount + mainInstallTotal
   };
 
-  // Admin fees
-  const simCard = adminFees.simCardOffered ? 0 : ADMIN_FEES.simCard;
+  // Admin fees (only include SIM card if selected)
+  const simCard = !adminFees.simCardSelected ? 0 : (adminFees.simCardOffered ? 0 : ADMIN_FEES.simCard);
   const processing = adminFees.processingOffered ? 0 : ADMIN_FEES.processingFee;
   const adminTotal = simCard + processing;
 

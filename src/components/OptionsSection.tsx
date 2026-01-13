@@ -16,6 +16,7 @@ interface OptionsSectionProps {
   interventionPayante: boolean;
   interventionPayantePrice: number;
   interventionPolice: boolean;
+  interventionPolicePrice: number;
   telesurveillanceOption: boolean;
   onInterventionsGratuitesChange: (value: boolean) => void;
   onInterventionsAnneeChange: (value: boolean) => void;
@@ -24,6 +25,7 @@ interface OptionsSectionProps {
   onInterventionPayanteChange: (value: boolean) => void;
   onInterventionPayantePriceChange: (value: number) => void;
   onInterventionPoliceChange: (value: boolean) => void;
+  onInterventionPolicePriceChange: (value: number) => void;
   onTelesurveillanceOptionChange: (value: boolean) => void;
 }
 
@@ -36,6 +38,7 @@ export function OptionsSection(props: OptionsSectionProps) {
     interventionPayante,
     interventionPayantePrice,
     interventionPolice,
+    interventionPolicePrice,
     telesurveillanceOption,
     onInterventionsGratuitesChange,
     onInterventionsAnneeChange,
@@ -44,6 +47,7 @@ export function OptionsSection(props: OptionsSectionProps) {
     onInterventionPayanteChange,
     onInterventionPayantePriceChange,
     onInterventionPoliceChange,
+    onInterventionPolicePriceChange,
     onTelesurveillanceOptionChange,
   } = props;
 
@@ -311,6 +315,29 @@ export function OptionsSection(props: OptionsSectionProps) {
           >
             Intervention de la police sur levée de doute positive
           </label>
+          {interventionPolice && (
+            <>
+              <input
+                type="number"
+                value={interventionPolicePrice}
+                onChange={(e) => onInterventionPolicePriceChange(parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                min="0"
+                className="quantity-input"
+                style={{
+                  width: '80px',
+                  padding: '6px 8px',
+                  border: '2px solid #007bff',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  flexShrink: 0,
+                  marginRight: '5px'
+                }}
+              />
+              <span style={{ fontSize: '13px', color: '#6c757d' }}>CHF HT</span>
+            </>
+          )}
         </div>
 
         {/* NEW: Télésurveillance 99 CHF / 48 mois */}
