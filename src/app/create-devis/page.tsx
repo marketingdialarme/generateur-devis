@@ -985,6 +985,50 @@ export default function CreateDevisPage() {
               </div>
             ))}
           </div>
+          
+          {/* Add Product Button - Visible when kit is selected */}
+          {alarmMaterialLines.length > 0 && (
+            <button 
+              onClick={() => {
+                setAlarmMaterialLines([...alarmMaterialLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'white',
+                border: '2px dashed #007bff',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#007bff',
+                marginTop: '10px',
+                marginBottom: '15px',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#f0f8ff';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>+</span>
+              <span>Ajouter un produit supplémentaire</span>
+            </button>
+          )}
+          
           <div className="discount-section">
             <label>Réduction:</label>
             <select 
