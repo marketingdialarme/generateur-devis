@@ -2217,17 +2217,86 @@ export default function CreateDevisPage() {
           />
         </div>
 
-        {/* Matériel */}
+        {/* Matériel (like alarm section) */}
         <div className="quote-section">
-          <h3>📞 Matériel</h3>
-          <ProductSection
-            title=""
-            lines={visiophoLines}
-            productCatalog={CATALOG_VISIOPHONE_PRODUCTS}
-            centralType={null}
-            onLinesChange={setVisiophoLines}
-            emoji="📞"
-          />
+          <h3>
+            Matériel
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                setVisiophoLines([...visiophoLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              title="Ajouter un produit"
+            >
+              +
+            </button>
+          </h3>
+          <div id="visiophone-material-products">
+            {visiophoLines.map((line, index) => (
+              <div key={line.id} className="product-line">
+                <select 
+                  className="product-select"
+                  value={line.product?.name || ''}
+                  onChange={(e) => {
+                    const productName = e.target.value;
+                    const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.name === productName);
+                    const newLines = [...visiophoLines];
+                    newLines[index] = { ...line, product: product || null };
+                    setVisiophoLines(newLines);
+                  }}
+                >
+                  <option value="">Sélectionner un produit</option>
+                  {CATALOG_VISIOPHONE_PRODUCTS.map(product => (
+                    <option key={product.name} value={product.name}>
+                      {product.name} - {product.price.toFixed(2)} CHF
+                    </option>
+                  ))}
+                </select>
+                <input 
+                  type="number" 
+                  className="quantity-input"
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const newLines = [...visiophoLines];
+                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                    setVisiophoLines(newLines);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  min="1"
+                />
+                <div className="checkbox-option" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    className="offered-checkbox"
+                    checked={line.offered}
+                    onChange={(e) => {
+                      const newLines = [...visiophoLines];
+                      newLines[index] = { ...line, offered: e.target.checked };
+                      setVisiophoLines(newLines);
+                    }}
+                  />
+                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                </div>
+                <div className="price-display">
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                </div>
+                <button 
+                  className="remove-btn"
+                  onClick={() => {
+                    setVisiophoLines(visiophoLines.filter((_, i) => i !== index));
+                  }}
+                  title="Supprimer"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Installation */}
@@ -2235,14 +2304,29 @@ export default function CreateDevisPage() {
           <h3>🔧 Installation et paramétrage</h3>
           <div className="product-line">
             <div>Installation et paramétrage</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
+            <input 
+              type="number" 
+              value={1}
+              className="quantity-input"
+              readOnly
+              style={{ background: '#e9ecef' }}
+            />
             <input 
               type="number" 
               value={visiophoInstallationPrice}
               onChange={(e) => setVisiophoInstallationPrice(parseFloat(e.target.value) || 690)}
               className="price-input"
               onFocus={(e) => e.target.select()}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #007bff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '120px'
+              }}
             />
+            <div></div>
             <div className="price-display">
               {visiophoInstallationPrice.toFixed(2)} CHF
             </div>
