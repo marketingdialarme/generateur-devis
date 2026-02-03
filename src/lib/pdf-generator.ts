@@ -10,8 +10,8 @@
 import type { jsPDF } from 'jspdf';
 import type { AlarmTotals, CameraTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
-import { TVA_RATE, ADMIN_FEES, REMOTE_ACCESS_PRICE, UNINSTALL_PRICE, roundToFiveCents } from './quote-generator';
-import { calculateRemoteAccessPrice } from './product-line-adapter';
+import { TVA_RATE, ADMIN_FEES, UNINSTALL_PRICE, roundToFiveCents, calculateFacilityPayment } from './quote-generator';
+import { calculateRemoteAccessPrice, detectCentralType } from './product-line-adapter';
 
 // ============================================
 // INTERFACES
@@ -34,6 +34,11 @@ export interface PDFGenerationOptions {
   materialLines: ProductLineData[];
   installationLines?: ProductLineData[];
   totals: AlarmTotals | CameraTotals;
+  /**
+   * Optional installation duration (in half-days) for camera quotes.
+   * Used only for display wording in the PDF.
+   */
+  installationQty?: number;
   services?: {
     testCyclique?: {
       selected: boolean;
@@ -54,6 +59,38 @@ export interface PDFGenerationOptions {
   };
   remoteAccess?: boolean;
   paymentMonths?: number;
+  /**
+   * Optional overrides to keep quote number consistent across:
+   * - PDF header
+   * - returned filename
+   */
+  quoteNumberOverride?: string;
+  /**
+   * Optional prefix override for quote number generation (e.g. 'GB' for brouillard).
+   * If provided, it takes precedence over alarm/camera defaults.
+   */
+  quoteNumberPrefixOverride?: string | null;
+  dateOverride?: string;
+}
+
+// ============================================
+// HELPERS
+// ============================================
+
+function getLineUnitPrice(line: ProductLineData, selectedCentral: 'titane' | 'jablotron' | null): number {
+  const product = line.product;
+  if (!product) return 0;
+
+  // Treat customPrice as explicit override for any product
+  if (line.customPrice !== undefined) return line.customPrice;
+
+  if (product.price !== undefined) return product.price;
+  if (selectedCentral === 'titane' && product.priceTitane !== undefined) return product.priceTitane;
+  if (selectedCentral === 'jablotron' && product.priceJablotron !== undefined) return product.priceJablotron;
+  // Fallback (legacy behavior): if central type is unknown, pick any available central-specific price
+  if (selectedCentral === null && product.priceTitane !== undefined) return product.priceTitane;
+  if (selectedCentral === null && product.priceJablotron !== undefined) return product.priceJablotron;
+  return 0;
 }
 
 // ============================================
@@ -63,9 +100,31 @@ export interface PDFGenerationOptions {
 /**
  * Generate quote number
  */
-export function generateQuoteNumber(): string {
-  const now = new Date();
-  return `DIA-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+export function getAlarmQuoteNumberPrefix(surveillanceType?: string | null): 'TELES' | 'AUTO' | null {
+  if (!surveillanceType) return null;
+  if (surveillanceType.startsWith('telesurveillance')) return 'TELES';
+  if (surveillanceType.startsWith('autosurveillance')) return 'AUTO';
+  return null;
+}
+
+export function getCameraQuoteNumberPrefix(): 'VID' {
+  return 'VID';
+}
+
+export function generateQuoteNumber(prefix?: string | null, now: Date = new Date()): string {
+  const yyyy = String(now.getFullYear());
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const HH = String(now.getHours()).padStart(2, '0');
+  const MM = String(now.getMinutes()).padStart(2, '0');
+
+  // New formatting requested by client:
+  // - DIA-TELES-AAAA-MM-JJ-HHMM
+  // - DIA-AUTO-AAAA-MM-JJ-HHMM
+  // - DIA-VID-AAAA-MM-JJ-HHMM
+  // Fallback (no prefix): DIA-AAAA-MM-JJ-HHMM
+  const base = `DIA-${yyyy}-${mm}-${dd}-${HH}${MM}`;
+  return prefix ? `DIA-${prefix}-${yyyy}-${mm}-${dd}-${HH}${MM}` : base;
 }
 
 /**
@@ -84,8 +143,14 @@ export async function generateQuotePDF(
   jsPDFInstance: typeof jsPDF
 ): Promise<Blob> {
   const doc = new jsPDFInstance('portrait', 'pt', 'a4');
-  const quoteNumber = generateQuoteNumber();
-  const date = new Date().toLocaleDateString('fr-CH');
+  const now = new Date();
+  const prefix =
+    options.quoteNumberPrefixOverride ??
+    (options.type === 'alarm'
+      ? getAlarmQuoteNumberPrefix(options.services?.surveillance?.type ?? null)
+      : getCameraQuoteNumberPrefix());
+  const quoteNumber = options.quoteNumberOverride ?? generateQuoteNumber(prefix, now);
+  const date = options.dateOverride ?? now.toLocaleDateString('fr-CH');
 
   // Create PDF header
   createPDFHeader(doc, {
@@ -173,6 +238,7 @@ function createAlarmPDFSections(
   yPos: number
 ): number {
   const alarmTotals = options.totals as AlarmTotals;
+  const centralType = detectCentralType(options.materialLines);
 
   // Material section (only if kit/base material is present)
   if (options.materialLines.length > 0) {
@@ -181,6 +247,7 @@ function createAlarmPDFSections(
       'KIT DE BASE',
       options.materialLines,
       alarmTotals.material,
+      centralType,
       yPos
     );
   }
@@ -191,6 +258,7 @@ function createAlarmPDFSections(
     options.installationLines || [],
     alarmTotals.installation,
     options.isRental,
+    centralType,
     yPos
   );
 
@@ -227,6 +295,7 @@ function createAlarmInstallationSection(
   productLines: ProductLineData[],
   installationTotals: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
   isRental: boolean,
+  centralType: 'titane' | 'jablotron' | null,
   yPos: number
 ): number {
   // Section title
@@ -248,10 +317,12 @@ function createAlarmInstallationSection(
   yPos += 14;
 
   let lineCount = 0;
+  let partnershipDiscount = 0;
 
   // Product lines (supplementary materials)
   productLines.forEach(line => {
     if (!line.product) return;
+    const product = line.product;
 
     lineCount++;
 
@@ -261,19 +332,7 @@ function createAlarmInstallationSection(
       doc.rect(40, yPos, 515, 12, 'F');
     }
 
-    // Calculate price based on product type
-    const product = line.product;
-    let unitPrice = 0;
-    if (product.isCustom && line.customPrice !== undefined) {
-      unitPrice = line.customPrice;
-    } else if (product.price !== undefined) {
-      unitPrice = product.price;
-    } else if (product.priceTitane !== undefined) {
-      unitPrice = product.priceTitane;
-    } else if (product.priceJablotron !== undefined) {
-      unitPrice = product.priceJablotron;
-    }
-    
+    const unitPrice = getLineUnitPrice(line, centralType);
     const lineTotal = unitPrice * line.quantity;
 
     doc.setFont('helvetica', 'normal');
@@ -294,16 +353,9 @@ function createAlarmInstallationSection(
     // Unit price
     doc.text(unitPrice.toFixed(2), 405, yPos + 8);
 
-    // Total or OFFERT
-    if (line.offered) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 485, yPos + 8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-    } else {
-      doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-    }
+    // Always show amount; partnership discount line will reflect offered items
+    doc.text(lineTotal.toFixed(2), 485, yPos + 8);
+    if (line.offered) partnershipDiscount += lineTotal;
 
     yPos += 12;
   });
@@ -313,17 +365,7 @@ function createAlarmInstallationSection(
   let supplementaryTotal = 0;
   productLines.forEach(line => {
     if (!line.product || line.offered) return;
-    const product = line.product;
-    let unitPrice = 0;
-    if (product.isCustom && line.customPrice !== undefined) {
-      unitPrice = line.customPrice;
-    } else if (product.price !== undefined) {
-      unitPrice = product.price;
-    } else if (product.priceTitane !== undefined) {
-      unitPrice = product.priceTitane;
-    } else if (product.priceJablotron !== undefined) {
-      unitPrice = product.priceJablotron;
-    }
+    const unitPrice = getLineUnitPrice(line, centralType);
     supplementaryTotal += unitPrice * line.quantity;
   });
 
@@ -343,18 +385,37 @@ function createAlarmInstallationSection(
     doc.text('1', 55, yPos + 8);
     doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 8);
 
-    if (isRental || mainInstallationTotal === 0) {
+    // Keep existing rental behavior, but avoid "OFFERT" wording
+    if (isRental) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 150, 0);
-      doc.text(isRental ? 'Compris' : 'OFFERT', 405, yPos + 8);
-      doc.text(isRental ? 'Compris' : 'OFFERT', 485, yPos + 8);
+      doc.text('Compris', 405, yPos + 8);
+      doc.text('Compris', 485, yPos + 8);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
     } else {
-      doc.text(mainInstallationTotal.toFixed(2), 405, yPos + 8);
-      doc.text(mainInstallationTotal.toFixed(2), 485, yPos + 8);
+      // If offered, total is 0 in calculations; display 0 without "OFFERT"
+      const displayAmount = mainInstallationTotal;
+      doc.text(displayAmount.toFixed(2), 405, yPos + 8);
+      doc.text(displayAmount.toFixed(2), 485, yPos + 8);
     }
 
+    yPos += 12;
+  }
+
+  // Partnership discount line (sum of offered supplementary products)
+  if (partnershipDiscount > 0) {
+    lineCount++;
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6);
+    doc.setTextColor(200, 0, 0);
+    doc.text('Rabais partenariat', 90, yPos + 8);
+    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
+    doc.setTextColor(0, 0, 0);
     yPos += 12;
   }
 
@@ -415,6 +476,7 @@ function createCameraPDFSections(
       'MATERIEL',
       options.materialLines,
       cameraTotals.material,
+      null,
       yPos
     );
   }
@@ -424,6 +486,7 @@ function createCameraPDFSections(
     doc,
     cameraTotals.installation,
     options.isRental,
+    options.installationQty,
     yPos
   );
 
@@ -436,7 +499,7 @@ function createCameraPDFSections(
     doc.text(`Vision à distance : ${remoteAccessPrice.toFixed(2)} CHF/mois`, 40, yPos);
     doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
-    doc.text('(Tarif adapté selon le nombre de caméras: 1 cam=20 CHF | 2-7 cams=35 CHF | 8+=60 CHF)', 40, yPos + 10);
+    doc.text('(20 CHF/mois par caméra 4G + 20 CHF/mois par caméra classique si Modem 4G)', 40, yPos + 10);
     doc.setTextColor(0, 0, 0);
     yPos += 20;
   }
@@ -479,7 +542,7 @@ function createCameraPDFSections(
         'Un forfait unique de CHF 150 HT par déplacement sera facturé au client pour la remise en réseau',
         'des caméras.',
         '',
-        'Si le client prend la vision à distance, un Modem sera facturé en plus à CHF 290.- HT.'
+        'Pour les caméras classiques, la vision à distance nécessite un Modem 4G (CHF 290.- HT).'
       ];
       
       let lineYPos = yPos + 30;
@@ -520,6 +583,7 @@ function createProductSection(
   title: string,
   productLines: ProductLineData[],
   totals: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
+  centralType: 'titane' | 'jablotron' | null,
   yPos: number
 ): number {
   // Section title
@@ -542,8 +606,10 @@ function createProductSection(
 
   // Product lines
   let lineCount = 0;
+  let partnershipDiscount = 0;
   productLines.forEach(line => {
     if (!line.product) return;
+    const product = line.product;
 
     lineCount++;
 
@@ -553,19 +619,7 @@ function createProductSection(
       doc.rect(40, yPos, 515, 12, 'F');
     }
 
-    // Calculate price based on product type
-    const product = line.product;
-    let unitPrice = 0;
-    if (product.isCustom && line.customPrice !== undefined) {
-      unitPrice = line.customPrice;
-    } else if (product.price !== undefined) {
-      unitPrice = product.price;
-    } else if (product.priceTitane !== undefined) {
-      unitPrice = product.priceTitane;
-    } else if (product.priceJablotron !== undefined) {
-      unitPrice = product.priceJablotron;
-    }
-    
+    const unitPrice = getLineUnitPrice(line, centralType);
     const lineTotal = unitPrice * line.quantity;
 
     doc.setFont('helvetica', 'normal');
@@ -586,19 +640,28 @@ function createProductSection(
     // Unit price
     doc.text(unitPrice.toFixed(2), 405, yPos + 8);
 
-    // Total or OFFERT
-    if (line.offered) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 485, yPos + 8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-    } else {
-      doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-    }
+    // Always show amount; partnership discount line will reflect offered items
+    doc.text(lineTotal.toFixed(2), 485, yPos + 8);
+    if (line.offered) partnershipDiscount += lineTotal;
 
     yPos += 12;
   });
+
+  // Partnership discount line (sum of offered product lines)
+  if (partnershipDiscount > 0) {
+    lineCount++;
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6);
+    doc.setTextColor(200, 0, 0);
+    doc.text('Rabais partenariat', 90, yPos + 8);
+    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
+    doc.setTextColor(0, 0, 0);
+    yPos += 12;
+  }
 
   // Discount line
   if (totals.discount > 0) {
@@ -687,11 +750,8 @@ function createAdminFeesSection(
     doc.text(item.price.toFixed(2), 405, yPos + 9);
 
     if (item.actual === 0) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 485, yPos + 9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
+      // Avoid "OFFERT" in PDF wording
+      doc.text('0.00', 485, yPos + 9);
     } else {
       doc.text(item.actual.toFixed(2), 485, yPos + 9);
     }
@@ -751,6 +811,7 @@ function createServicesSection(
   yPos += 14;
 
   let lineCount = 0;
+  let partnershipDiscount = 0;
 
   // Test Cyclique
   if (services.testCyclique?.selected) {
@@ -767,15 +828,9 @@ function createServicesSection(
     // Always show reference price
     doc.text(services.testCyclique.price.toFixed(2), 405, yPos + 8);
 
-    if (services.testCyclique.offered) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 485, yPos + 8);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-    } else {
-      doc.text(services.testCyclique.price.toFixed(2), 485, yPos + 8);
-    }
+    // Always show amount; partnership discount line will reflect offered items
+    doc.text(services.testCyclique.price.toFixed(2), 485, yPos + 8);
+    if (services.testCyclique.offered) partnershipDiscount += services.testCyclique.price;
 
     yPos += 12;
   }
@@ -806,16 +861,26 @@ function createServicesSection(
     // Always show reference price
     doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 405, yPos + 8);
 
-    if (services.surveillance.offered) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('OFFERT', 485, yPos + 8);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-    } else {
-      doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 485, yPos + 8);
-    }
+    // Always show amount; partnership discount line will reflect offered items
+    doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 485, yPos + 8);
+    if (services.surveillance.offered) partnershipDiscount += services.surveillance.price;
 
+    yPos += 12;
+  }
+
+  // Partnership discount line (sum of offered services)
+  if (partnershipDiscount > 0) {
+    lineCount++;
+    if (lineCount % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(40, yPos, 515, 12, 'F');
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6);
+    doc.setTextColor(200, 0, 0);
+    doc.text('Rabais partenariat', 90, yPos + 8);
+    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
+    doc.setTextColor(0, 0, 0);
     yPos += 12;
   }
 
@@ -857,7 +922,8 @@ function createOptionsSection(
     optionsList.push(`${options.interventionsQty || 1} intervention(s) par année des agents`);
   }
   if (options.serviceCles) {
-    optionsList.push('Service des clés offert');
+    // Avoid "offert" wording in PDF
+    optionsList.push('Service des clés inclus');
   }
 
   doc.text(optionsList.join(' | '), 165, yPos);
@@ -874,6 +940,7 @@ function createCameraInstallationSection(
   doc: jsPDF,
   installation: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
   isRental: boolean,
+  installationQty: number | undefined,
   yPos: number
 ): number {
   doc.setFont('helvetica', 'bold');
@@ -898,13 +965,17 @@ function createCameraInstallationSection(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.text('1', 55, yPos + 9);
-  doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 9);
+  const installLabel =
+    installationQty === 1 ? 'Installation 1/2 journée' :
+    installationQty === 2 ? 'Installation 1 journée' :
+    'Installation, paramétrages, tests, mise en service & formation';
+  doc.text(installLabel, 90, yPos + 9);
 
   if (isRental || isOffered) {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 150, 0);
-    doc.text(isRental ? 'Compris dans le forfait' : 'OFFERT', 395, yPos + 9);
-    doc.text(isRental ? 'Compris' : 'OFFERT', 475, yPos + 9);
+    doc.text(isRental ? 'Compris dans le forfait' : '0.00', 395, yPos + 9);
+    doc.text(isRental ? 'Compris' : '0.00', 475, yPos + 9);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
   } else {
@@ -975,11 +1046,9 @@ function createMaintenanceSection(doc: jsPDF, yPos: number): number {
   doc.setFontSize(7);
   doc.text('1', 55, yPos + 9);
   doc.text('Assistance hotline, déplacement(s), matériels pièce(s), main d\'œuvre et support téléphonique', 90, yPos + 9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 150, 0);
-  doc.text('OFFERT', 405, yPos + 9);
-  doc.text('OFFERT', 485, yPos + 9);
-  doc.setTextColor(0, 0, 0);
+  // Avoid "OFFERT" wording in PDF
+  doc.text('0.00', 405, yPos + 9);
+  doc.text('0.00', 485, yPos + 9);
   yPos += 14;
 
   return yPos + 15;
@@ -1096,6 +1165,38 @@ function createFinalSummary(
     doc.text(`Total TTC = ${totals.monthly.totalTTC.toFixed(2)} CHF`, 430, yPos + 51);
 
     yPos += 75;
+
+    // Facility payment / contract text (alarm only) - required by client feedback
+    if (type === 'alarm' && totals.monthly.months > 0) {
+      const alarmTotals = totals as AlarmTotals;
+      const monthsCount = totals.monthly.months;
+
+      // Finance amount is based on Total HT, excluding admin fees & SIM (as per Milestone formulas)
+      const facilityMonthlyHT = calculateFacilityPayment(
+        alarmTotals.totalHT,
+        alarmTotals.adminFees.processing,
+        alarmTotals.adminFees.simCard,
+        monthsCount
+      );
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+
+      // Keep text wording aligned with client checklist
+      doc.text(
+        `Possibilité de facilité de paiement sur ${monthsCount} mois pour le matériel supplémentaire hors frais de dossier`,
+        40,
+        yPos + 12
+      );
+      doc.text(
+        `La mensualité de CHF ${facilityMonthlyHT}.- HT est fixée et non indexable pendant la durée contractuelle de ${monthsCount} mois.`,
+        40,
+        yPos + 24
+      );
+
+      yPos += 30;
+    }
 
     // Cash payment (alarm only)
     if (type === 'alarm' && (totals as AlarmTotals).cash) {

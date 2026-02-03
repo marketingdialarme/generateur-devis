@@ -190,6 +190,84 @@ export async function getOrCreateCommercialFolder(commercialName: string): Promi
 }
 
 /**
+ * Get or create a folder for a commercial under a specific parent folder
+ * (used for special flows like XTO quotes).
+ */
+export async function getOrCreateCommercialFolderInParent(
+  commercialName: string,
+  parentFolderId: string
+): Promise<string> {
+  try {
+    console.log(`\n🔍 [FOLDER] Starting folder lookup for: "${commercialName}" (custom parent)`);
+    const drive = await getDriveClient();
+
+    console.log(`📂 [FOLDER] Parent folder ID: ${parentFolderId}`);
+    if (!parentFolderId) {
+      throw new Error('Parent folder ID not configured');
+    }
+
+    // Escape single quotes in commercial name for Drive API query
+    const escapedName = commercialName.replace(/'/g, "\\'");
+    console.log(`🔤 [FOLDER] Escaped name: "${escapedName}"`);
+
+    // Search for existing folder
+    const query = `name='${escapedName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    console.log(`🔎 [FOLDER] Search query: ${query}`);
+
+    const searchResponse = await drive.files.list({
+      q: query,
+      fields: 'files(id, name)',
+      spaces: 'drive',
+    });
+
+    console.log(`📊 [FOLDER] Search results: ${searchResponse.data.files?.length || 0} folders found`);
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      const folderId = searchResponse.data.files[0].id;
+      if (!folderId) {
+        throw new Error('Folder ID is undefined');
+      }
+      console.log(`✅ [FOLDER] Using existing folder: ${folderId}\n`);
+      return folderId;
+    }
+
+    // Create new folder
+    console.log(`📁 [FOLDER] No existing folder found. Creating new folder...`);
+    console.log(`📝 [FOLDER] Folder name: "${commercialName}"`);
+    console.log(`📝 [FOLDER] Parent ID: ${parentFolderId}`);
+
+    const createResponse = await drive.files.create({
+      requestBody: {
+        name: commercialName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentFolderId],
+      },
+      fields: 'id, name',
+    });
+
+    const newFolderId = createResponse.data.id;
+    const newFolderName = createResponse.data.name;
+
+    if (!newFolderId) {
+      throw new Error('Failed to create folder - no ID returned');
+    }
+
+    console.log(`✅ [FOLDER] Successfully created folder: "${newFolderName}" (ID: ${newFolderId})\n`);
+    return newFolderId;
+  } catch (error) {
+    console.error(`\n❌ [FOLDER] Error for "${commercialName}" (custom parent):`, error);
+    if (error instanceof Error) {
+      console.error(`❌ [FOLDER] Error message: ${error.message}`);
+      console.error(`❌ [FOLDER] Error stack:`, error.stack);
+    }
+    throw new Error(
+      `Folder operation failed for "${commercialName}" (custom parent): ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
  * Download a file from Google Drive by ID
  */
 export async function downloadFileFromDrive(fileId: string): Promise<Buffer> {

@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFileToDrive, getOrCreateCommercialFolder } from '@/lib/services/google-drive.service';
+import { uploadFileToDrive, getOrCreateCommercialFolder, getOrCreateCommercialFolderInParent } from '@/lib/services/google-drive.service';
 import { sendQuoteEmail } from '@/lib/services/email.service';
 import { logQuote } from '@/lib/services/database.service';
 import { config } from '@/lib/config';
@@ -25,6 +25,7 @@ interface SendQuoteRequest {
   clientName: string;
   type: 'alarme' | 'video';
   centralType?: 'titane' | 'jablotron';
+  isXtoAlarm?: boolean;
   produits: string[];
   addCommercialOverlay?: boolean;
   mergedByFrontend?: boolean;
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       clientName,
       type,
       centralType,
+      isXtoAlarm,
       produits,
       mergedByFrontend,
       frontendAssemblyInfo,
@@ -129,7 +131,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📂 [API] Getting folder for commercial: ${commercial} (attempt ${attempt}/${maxRetries})`);
-        const folderId = await getOrCreateCommercialFolder(commercial);
+        const parentFolderId = isXtoAlarm
+          ? (config.google.drive.folders.xto || config.google.drive.folders.devis)
+          : config.google.drive.folders.devis;
+        const folderId = isXtoAlarm
+          ? await getOrCreateCommercialFolderInParent(commercial, parentFolderId)
+          : await getOrCreateCommercialFolder(commercial);
         console.log(`✅ [API] Using folder ID: ${folderId}`);
         
         driveResult = await uploadFileToDrive(

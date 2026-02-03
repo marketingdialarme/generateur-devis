@@ -57,7 +57,7 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
   { id: 5, name: "Centrale Jablotron", price: 990.00 },
   { id: 6, name: "Centrale Titane", price: 690.00 },
   { id: 99, name: "Autre", price: 0.00, isCustom: true },
-  { id: 3, name: "Badge x 4", priceTitane: 190.00, priceJablotron: 200.00, monthlyTitane: 3, monthlyJablotron: 5 },
+  { id: 3, name: "Badge x 4", priceTitane: 100.00, priceJablotron: 200.00, monthlyTitane: 3, monthlyJablotron: 5 },
   { id: 2, name: "Barrière extérieur 2x12 m", priceTitane: 890.00, priceJablotron: 890.00, monthlyTitane: 22, monthlyJablotron: 22 },
   { id: 1, name: "Bouton panique", priceTitane: 190.00, priceJablotron: 190.00, monthlyTitane: 5, monthlyJablotron: 5 },
   { id: 7, name: "Clavier", priceTitane: 390.00, priceJablotron: 490.00, monthlyTitane: 10, monthlyJablotron: 12 },
@@ -76,10 +76,10 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
   { id: 21, name: "Sirène déportée grande", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
   { id: 17, name: "Sonde inondation", priceTitane: 290.00, priceJablotron: 390.00, monthlyTitane: 7, monthlyJablotron: 10 },
   { id: 19, name: "Télécommande", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
-  
-  // Installation options
-  { id: 101, name: "Installation 1/2 journée", price: 690.00 },
-  { id: 102, name: "Installation 1 journée", price: 1290.00 }
+
+  // Kit de base - always included items (client feedback)
+  { id: 110, name: "Application", price: 0.00 },
+  { id: 111, name: "Alimentation de secours", price: 0.00 },
 ];
 
 export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
@@ -113,9 +113,11 @@ export interface FogProduct {
   id: number;
   name: string;
   price: number;
+  isCustom?: boolean;
 }
 
 export const CATALOG_FOG_PRODUCTS: FogProduct[] = [
+  { id: 99, name: "Autre", price: 0, isCustom: true },
   { id: 200, name: "Générateur de brouillard", price: 2990 },
   { id: 201, name: "Clavier de porte", price: 390 },
   { id: 202, name: "Détecteur volumétrique", price: 240 },
@@ -131,9 +133,11 @@ export interface VisiophoProduct {
   id: number;
   name: string;
   price: number;
+  isCustom?: boolean;
 }
 
 export const CATALOG_VISIOPHONE_PRODUCTS: VisiophoProduct[] = [
+  { id: 99, name: "Autre", price: 0, isCustom: true },
   { id: 300, name: "Interphone", price: 990 },
   { id: 301, name: "Écran complémentaire", price: 490 },
 ];
@@ -153,13 +157,9 @@ export interface XTOProduct {
 }
 
 export const CATALOG_XTO_PRODUCTS: XTOProduct[] = [
-  { id: 400, name: "Centrale XTO", monthlyPrice: 0, description: "Inclus dans le kit de base" },
-  { id: 401, name: "Sirène extérieure avec gyrophare", monthlyPrice: 50, description: "50 CHF/mois HT" },
-  { id: 402, name: "Caméras à détection infrarouge", monthlyPrice: 100, description: "100 CHF/mois HT par caméra (4 inclus)" },
-  { id: 403, name: "Lecteur de badge + 8 badges", monthlyPrice: 30, description: "30 CHF/mois HT" },
-  { id: 404, name: "Connexion centre d'intervention GS", monthlyPrice: 0, description: "Inclus" },
-  { id: 405, name: "Mise en marche/arrêt automatique", monthlyPrice: 0, description: "Inclus" },
-  { id: 406, name: "Signalisations préventives", monthlyPrice: 0, description: "Inclus" },
+  { id: 401, name: "Caméras", monthlyPrice: 100, description: "100 CHF HT/mois" },
+  { id: 402, name: "Lecteur de badge", monthlyPrice: 30, description: "30 CHF HT/mois" },
+  { id: 403, name: "Sirène", monthlyPrice: 50, description: "50 CHF HT/mois" },
 ];
 
 // ============================================

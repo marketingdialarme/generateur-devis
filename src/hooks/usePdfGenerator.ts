@@ -11,6 +11,8 @@ import type { jsPDF } from 'jspdf';
 import {
   generateQuotePDF,
   generateQuoteNumber,
+  getAlarmQuoteNumberPrefix,
+  getCameraQuoteNumberPrefix,
   generateFilename,
   type PDFGenerationOptions
 } from '@/lib/pdf-generator';
@@ -44,9 +46,18 @@ export function usePdfGenerator(): UsePdfGeneratorResult {
         throw new Error('Client name and commercial are required');
       }
 
+      const prefix =
+        options.quoteNumberPrefixOverride ??
+        (options.type === 'alarm'
+          ? getAlarmQuoteNumberPrefix(options.services?.surveillance?.type ?? null)
+          : getCameraQuoteNumberPrefix());
+      const quoteNumber = generateQuoteNumber(prefix);
+
       // Generate PDF
-      const blob = await generateQuotePDF(options, window.jspdf.jsPDF);
-      const quoteNumber = generateQuoteNumber();
+      const blob = await generateQuotePDF(
+        { ...options, quoteNumberOverride: quoteNumber },
+        window.jspdf.jsPDF
+      );
       const filename = generateFilename(quoteNumber, options.clientName);
 
       setIsGenerating(false);

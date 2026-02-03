@@ -1728,9 +1728,25 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.name || ''}
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
                       const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_CAMERA_MATERIAL.find(p => p.id === 99); // Autre
+                        const newLines = [...cameraMaterialLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setCameraMaterialLines(newLines);
+                        return;
+                      }
+                      
                       const product = CATALOG_CAMERA_MATERIAL.find(p => p.name === productName);
                       const newLines = [...cameraMaterialLines];
                       newLines[index] = { ...line, product: product || null };
@@ -1738,11 +1754,14 @@ export default function CreateDevisPage() {
                     }}
                   >
                     <option value="">Sélectionner un produit</option>
-                    {CATALOG_CAMERA_MATERIAL.map(product => (
-                      <option key={product.name} value={product.name}>
-                        {product.name} - {(product.price || 0).toFixed(2)} CHF
-                      </option>
-                    ))}
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_CAMERA_MATERIAL
+                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .map(product => (
+                        <option key={product.name} value={product.name}>
+                          {product.name} - {(product.price || 0).toFixed(2)} CHF
+                        </option>
+                      ))}
                   </select>
                   <input 
                     type="number"
@@ -2145,25 +2164,45 @@ export default function CreateDevisPage() {
           </h3>
           <div id="fog-material-products">
             {fogLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName);
-                    const newLines = [...fogLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setFogLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_FOG_PRODUCTS.map(product => (
-                    <option key={product.name} value={product.name}>
-                      {product.name} - {product.price.toFixed(2)} CHF
-                    </option>
-                  ))}
-                </select>
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    onChange={(e) => {
+                      const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                        const newLines = [...fogLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setFogLines(newLines);
+                        return;
+                      }
+                      
+                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName);
+                      const newLines = [...fogLines];
+                      newLines[index] = { ...line, product: product || null };
+                      setFogLines(newLines);
+                    }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_FOG_PRODUCTS
+                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .map(product => (
+                        <option key={product.name} value={product.name}>
+                          {product.name} - {product.price.toFixed(2)} CHF
+                        </option>
+                      ))}
+                  </select>
                 <input 
                   type="number" 
                   className="quantity-input"
@@ -2190,7 +2229,7 @@ export default function CreateDevisPage() {
                   <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                 </div>
                 <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
                 </div>
                 <button 
                   className="remove-btn"
@@ -2202,6 +2241,48 @@ export default function CreateDevisPage() {
                   ×
                 </button>
               </div>
+              {line.product?.isCustom && (
+                <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <input 
+                    type="text"
+                    placeholder="Nom du produit personnalisé"
+                    value={line.customName || ''}
+                    onChange={(e) => {
+                      const newLines = [...fogLines];
+                      newLines[index] = { ...line, customName: e.target.value };
+                      setFogLines(newLines);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      border: '2px solid #007bff',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <input 
+                    type="number"
+                    placeholder="Prix (CHF)"
+                    value={line.customPrice || ''}
+                    onChange={(e) => {
+                      const newLines = [...fogLines];
+                      newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                      setFogLines(newLines);
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    min="0"
+                    step="0.01"
+                    style={{
+                      width: '150px',
+                      padding: '8px 12px',
+                      border: '2px solid #007bff',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             ))}
           </div>
         </div>
@@ -2261,62 +2342,124 @@ export default function CreateDevisPage() {
           </h3>
           <div id="fog-additional-products">
             {fogAdditionalLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName && p.id !== 200);
-                    const newLines = [...fogAdditionalLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setFogAdditionalLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_FOG_PRODUCTS.filter(p => p.id !== 200).map(product => (
-                    <option key={product.name} value={product.name}>
-                      {product.name} - {product.price.toFixed(2)} CHF
-                    </option>
-                  ))}
-                </select>
-                <input 
-                  type="number" 
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...fogAdditionalLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setFogAdditionalLines(newLines);
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  min="1"
-                />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    className="offered-checkbox"
-                    checked={line.offered}
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
+                      const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                        const newLines = [...fogAdditionalLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setFogAdditionalLines(newLines);
+                        return;
+                      }
+                      
+                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName && p.id !== 200);
                       const newLines = [...fogAdditionalLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
+                      newLines[index] = { ...line, product: product || null };
                       setFogAdditionalLines(newLines);
                     }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_FOG_PRODUCTS
+                      .filter(p => p.id !== 200 && !p.isCustom) // Exclude main fog generator and "Autre"
+                      .map(product => (
+                        <option key={product.name} value={product.name}>
+                          {product.name} - {product.price.toFixed(2)} CHF
+                        </option>
+                      ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...fogAdditionalLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setFogAdditionalLines(newLines);
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    min="1"
                   />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...fogAdditionalLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setFogAdditionalLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  </div>
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setFogAdditionalLines(fogAdditionalLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
                 </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setFogAdditionalLines(fogAdditionalLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...fogAdditionalLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setFogAdditionalLines(newLines);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...fogAdditionalLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setFogAdditionalLines(newLines);
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      min="0"
+                      step="0.01"
+                      style={{
+                        width: '150px',
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -2494,62 +2637,124 @@ export default function CreateDevisPage() {
           </h3>
           <div id="visiophone-material-products">
             {visiophoLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.name === productName);
-                    const newLines = [...visiophoLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setVisiophoLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_VISIOPHONE_PRODUCTS.map(product => (
-                    <option key={product.name} value={product.name}>
-                      {product.name} - {product.price.toFixed(2)} CHF
-                    </option>
-                  ))}
-                </select>
-                <input 
-                  type="number" 
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...visiophoLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setVisiophoLines(newLines);
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  min="1"
-                />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    className="offered-checkbox"
-                    checked={line.offered}
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
+                      const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === 99); // Autre
+                        const newLines = [...visiophoLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setVisiophoLines(newLines);
+                        return;
+                      }
+                      
+                      const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.name === productName);
                       const newLines = [...visiophoLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
+                      newLines[index] = { ...line, product: product || null };
                       setVisiophoLines(newLines);
                     }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_VISIOPHONE_PRODUCTS
+                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .map(product => (
+                        <option key={product.name} value={product.name}>
+                          {product.name} - {product.price.toFixed(2)} CHF
+                        </option>
+                      ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...visiophoLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setVisiophoLines(newLines);
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    min="1"
                   />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...visiophoLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setVisiophoLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  </div>
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setVisiophoLines(visiophoLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
                 </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setVisiophoLines(visiophoLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...visiophoLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setVisiophoLines(newLines);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...visiophoLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setVisiophoLines(newLines);
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      min="0"
+                      step="0.01"
+                      style={{
+                        width: '150px',
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

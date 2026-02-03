@@ -27,12 +27,14 @@ export interface AppConfig {
         titane: string;
         jablotron: string;
         video: string;
+        xto?: string;
       };
       baseDocuments: {
         alarmTitane: string;
         alarmJablotron: string;
         video: string;
         accessories: string;
+        propertyTypeDocs?: Partial<Record<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise', string>>;
       };
     };
   };
@@ -90,6 +92,11 @@ export const config: AppConfig = {
          * Video surveillance quotes folder
          */
         video: process.env.GOOGLE_DRIVE_FOLDER_VIDEO || '',
+
+        /**
+         * XTO alarm quotes folder (optional; used when XTO kit is selected)
+         */
+        xto: process.env.GOOGLE_DRIVE_FOLDER_XTO || process.env.GOOGLE_DRIVE_FOLDER_DEVIS_XTO || '',
       },
       baseDocuments: {
         /**
@@ -114,6 +121,18 @@ export const config: AppConfig = {
          * Accessories sheet (ONDULEURS - COFFRET - SWITCH)
          */
         accessories: process.env.GOOGLE_DRIVE_FILE_ACCESSORIES || '',
+
+        /**
+         * Optional documents to append based on selected "Type de bien"
+         * (If a fileId is empty, no document will be added.)
+         */
+        propertyTypeDocs: {
+          locaux: process.env.GOOGLE_DRIVE_FILE_PROPERTY_LOCAUX || '',
+          habitation: process.env.GOOGLE_DRIVE_FILE_PROPERTY_HABITATION || '',
+          villa: process.env.GOOGLE_DRIVE_FILE_PROPERTY_VILLA || '',
+          commerce: process.env.GOOGLE_DRIVE_FILE_PROPERTY_COMMERCE || '',
+          entreprise: process.env.GOOGLE_DRIVE_FILE_PROPERTY_ENTREPRISE || '',
+        },
       },
     },
   },

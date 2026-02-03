@@ -6,6 +6,7 @@
  */
 
 import { ProductLineData, Product } from '@/components/ProductLine';
+import { calculateInstallationPrice } from './quote-generator';
 
 // Calculation-compatible format
 export interface CalcProductLine {
@@ -28,7 +29,8 @@ export function toCalcFormat(
     let price = 0;
     
     if (line.product) {
-      if (line.product.isCustom && line.customPrice !== undefined) {
+      // Treat customPrice as an explicit override (even for non-custom products)
+      if (line.customPrice !== undefined) {
         price = line.customPrice;
       } else if (line.product.price !== undefined) {
         price = line.product.price;
@@ -86,7 +88,8 @@ export function getProductLinePrice(
 ): number {
   if (!line.product) return 0;
   
-  if (line.product.isCustom && line.customPrice !== undefined) {
+  // Treat customPrice as an explicit override (even for non-custom products)
+  if (line.customPrice !== undefined) {
     return line.customPrice;
   }
   
@@ -119,50 +122,68 @@ export function calculateLineTotal(
 
 /**
  * Calculate camera installation price with tiered pricing
- * - 1 camera = 350 CHF
- * - 1/2 journée (half-day) = 690 CHF
- * - 1 journée (full day) = 1290 CHF
- * - Additional half-days use tiered logic
+ * Client feedback (global): installation pricing by half-day/day applies to cameras.
+ * - 1 = 1/2 journée (690 CHF)
+ * - 2 = 1 journée (1290 CHF)
+ * - Additional half-days follow the same tiered logic
  */
 export function calculateCameraInstallation(cameraLines: ProductLineData[], halfDays?: number): number {
-  const cameraCount = cameraLines.reduce((sum, line) => {
-    return sum + (line.product && !line.offered ? line.quantity : 0);
-  }, 0);
-  
-  // If only 1 camera, charge 350 CHF
-  if (cameraCount === 1) {
-    return 350;
-  }
-  
-  // Otherwise, use half-day pricing with tiered system
-  const days = halfDays || 1;
-  let total = 0;
-  for (let i = 0; i < days; i += 2) {
-    if (i + 2 <= days) {
-      // Complete pair (full day)
-      total += 1290;
-    } else {
-      // Single half-day
-      total += 690;
-    }
-  }
-  return total;
+  // NOTE: cameraLines currently not used for installation pricing; pricing is driven
+  // by the selected installation duration (halfDays).
+  void cameraLines;
+  return calculateInstallationPrice(halfDays || 1);
 }
 
 /**
- * Calculate remote access price based on camera count
- * - 1 camera = 20 CHF/mois
- * - 2-7 cameras = 35 CHF/mois
- * - 8+ cameras = 60 CHF/mois
+ * Calculate remote access ("vision à distance") price.
+ *
+ * Client feedback:
+ * - 20 CHF/mois per 4G camera
+ * - For non-4G ("classic") cameras, remote access is only priced if a Modem 4G is selected
+ * - The 20 CHF is for cameras only (NOT for the modem)
+ * - Example: 1 classic cam (with modem) + 1 4G cam => 20 + 20 = 40 CHF/mois
  */
 export function calculateRemoteAccessPrice(cameraLines: ProductLineData[]): number {
-  const cameraCount = cameraLines.reduce((sum, line) => {
-    return sum + (line.product && !line.offered ? line.quantity : 0);
-  }, 0);
-  
-  if (cameraCount === 0) return 0;
-  if (cameraCount === 1) return 20;
-  if (cameraCount >= 2 && cameraCount <= 7) return 35;
-  return 60; // 8+
+  const CAMERA_DEVICE_IDS = new Set<number>([
+    23, // Bullet Mini
+    24, // Dôme Mini
+    26, // Dôme Antivandale
+    46, // Dôme Night
+    47, // Bullet XL Varifocale
+    53, // Dôme XL Varifocale
+    31, // Bullet Zoom x23 PTZ
+    32, // Mini Solar 4G + P. Solaire
+    33, // Solar 4G XL
+    28  // Solar 4G XL PTZ
+  ]);
+
+  const hasModem = cameraLines.some(
+    (line) =>
+      !line.offered &&
+      (line.quantity || 0) > 0 &&
+      line.product?.name === 'Modem 4G'
+  );
+
+  let fourGCameraCount = 0;
+  let classicCameraCount = 0;
+
+  cameraLines.forEach((line) => {
+    if (line.offered || !line.product) return;
+    if ((line.quantity || 0) <= 0) return;
+    if (typeof line.product.id !== 'number') return;
+
+    // Only count actual camera devices, not NVR/accessories/modem
+    if (!CAMERA_DEVICE_IDS.has(line.product.id)) return;
+
+    const is4G = line.product.name.includes('4G');
+    if (is4G) {
+      fourGCameraCount += line.quantity;
+    } else {
+      classicCameraCount += line.quantity;
+    }
+  });
+
+  const billableCameras = fourGCameraCount + (hasModem ? classicCameraCount : 0);
+  return billableCameras * 20;
 }
 

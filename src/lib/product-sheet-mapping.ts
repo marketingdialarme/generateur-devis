@@ -73,11 +73,12 @@ export const PRODUCT_SHEET_NAME_MAP: Record<string, string> = {
   'HDMI Ext.': 'MONITEUR 22_DISQUE DUR_SUPPORT MURAL_HDMI',
   
   // Accessories group - in: "ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed.pdf"
-  // NOTE: Filename has SPACE before "compressed" not hyphen!
-  'Switch POE': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
-  'Coffret NVR 4P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
-  'Coffret NVR 8P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
-  'Onduleur 1000 - 60min': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE compressed',
+  // IMPORTANT: Map to the BASE filename (without "compressed") because the Drive search logic
+  // normalizes away " - compressed"/" compressed" when matching.
+  'Switch POE': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE',
+  'Coffret NVR 4P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE',
+  'Coffret NVR 8P': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE',
+  'Onduleur 1000 - 60min': 'ONDULEUR - Coffret NVR 4P - Coffret NVR 8P - SWITCH POE',
   
   // Modem has its own sheet
   'Modem 4G': 'Modem 4G',

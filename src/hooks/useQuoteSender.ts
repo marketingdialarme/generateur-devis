@@ -17,6 +17,7 @@ interface SendQuoteParams {
   clientName: string;
   type: 'alarme' | 'video';
   centralType?: 'titane' | 'jablotron';
+  isXtoAlarm?: boolean;
   products: string[];
   assemblyInfo?: {
     baseDossier: string;
@@ -128,6 +129,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     clientName: string,
     type: 'alarme' | 'video',
     centralType: 'titane' | 'jablotron' | undefined,
+    isXtoAlarm: boolean | undefined,
     products: string[],
     assemblyInfo?: {
       baseDossier: string;
@@ -149,6 +151,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         clientName,
         type,
         centralType,
+        isXtoAlarm,
         produits: products,
         frontendAssemblyInfo: assemblyInfo
       }),
@@ -255,6 +258,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       clientName,
       type,
       centralType,
+      isXtoAlarm,
       products,
       assemblyInfo
     } = params;
@@ -290,6 +294,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
           clientName,
           type,
           centralType,
+          isXtoAlarm,
           products,
           assemblyInfo
         );
@@ -314,6 +319,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
           clientName,
           type,
           centralType,
+          isXtoAlarm,
           produits: products,
           addCommercialOverlay: false,
           mergedByFrontend: true,

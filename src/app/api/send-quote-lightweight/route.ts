@@ -15,7 +15,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuoteEmail } from '@/lib/services/email.service';
 import { logQuote } from '@/lib/services/database.service';
-import { uploadFileToDrive, getOrCreateCommercialFolder } from '@/lib/services/google-drive.service';
+import { uploadFileToDrive, getOrCreateCommercialFolder, getOrCreateCommercialFolderInParent } from '@/lib/services/google-drive.service';
+import { config } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ interface SendQuoteLightweightRequest {
   clientName: string;
   type: 'alarme' | 'video';
   centralType?: 'titane' | 'jablotron';
+  isXtoAlarm?: boolean;
   produits: string[];
   frontendAssemblyInfo?: {
     baseDossier: string;
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       clientName,
       type,
       centralType,
+      isXtoAlarm,
       produits,
       frontendAssemblyInfo
     } = body;
@@ -111,7 +114,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`📤 [API] Uploading to Google Drive (attempt ${attempt}/${maxRetries})...`);
-          const folderId = await getOrCreateCommercialFolder(commercial);
+          const parentFolderId = isXtoAlarm
+            ? (config.google.drive.folders.xto || config.google.drive.folders.devis)
+            : config.google.drive.folders.devis;
+          const folderId = isXtoAlarm
+            ? await getOrCreateCommercialFolderInParent(commercial, parentFolderId)
+            : await getOrCreateCommercialFolder(commercial);
           const driveFile = await uploadFileToDrive(
             pdfBuffer,
             filename,

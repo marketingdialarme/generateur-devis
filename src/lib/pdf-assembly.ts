@@ -98,6 +98,28 @@ export async function assemblePdf(
   }
 }
 
+async function addPropertyTypeDocumentIfConfigured(
+  pdfDoc: PDFDocument,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
+): Promise<void> {
+  try {
+    const fileId = config.google.drive.baseDocuments.propertyTypeDocs?.[propertyType] || '';
+    if (!fileId) {
+      console.log('ℹ️ No propertyType document configured for:', propertyType);
+      return;
+    }
+
+    console.log('📥 Fetching propertyType document for:', propertyType, 'fileId:', fileId);
+    const arrayBuffer = await fetchDocumentFromDrive(fileId);
+    const propPdf = await PDFDocument.load(arrayBuffer);
+    const propPages = await pdfDoc.copyPages(propPdf, propPdf.getPageIndices());
+    propPages.forEach((p) => pdfDoc.addPage(p));
+    console.log('✅ PropertyType document appended:', propertyType, `(${propPages.length} page(s))`);
+  } catch (error) {
+    console.warn('⚠️ Could not append propertyType document (non-critical):', error);
+  }
+}
+
 /**
  * Assemble alarm PDF
  * 
@@ -149,6 +171,9 @@ async function assembleAlarmPdf(
     const [quotePage] = await pdfDoc.copyPages(quotePdf, [0]);
     pdfDoc.addPage(quotePage);
     console.log('✅ Generated quote inserted as page 6');
+
+    // 6b. Append property-type specific document (if configured)
+    await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
     
     // 7. Add remaining pages from base document
     if (basePageCount > 5) {
@@ -166,8 +191,8 @@ async function assembleAlarmPdf(
     // 8. Add commercial overlay to page 2 (index 1)
     await addCommercialOverlay(pdfDoc, commercial, 1);
     
-    // 9. Add property type text to intro paragraph on page 1 (index 0)
-    await addPropertyTypeOverlay(pdfDoc, propertyType, 0);
+    // 9. Add property type text on page 2 (index 1) per client feedback
+    await addPropertyTypeOverlay(pdfDoc, propertyType, 1);
     
     // 9. Generate final PDF with compression
     const mergedPdfBytes = await pdfDoc.save({
@@ -244,6 +269,9 @@ async function assembleVideoPdf(
     const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
     quotePages.forEach(page => pdfDoc.addPage(page));
     console.log('✅ Generated quote inserted as page 6');
+
+    // 5b. Append property-type specific document (if configured)
+    await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
     
     // 6. Add product sheets (deduplicated by sheet name to avoid duplicate sheets)
     // Now that product-collector applies mapping, each product name in the array
@@ -299,8 +327,8 @@ async function assembleVideoPdf(
     // 9. Add commercial overlay to page 2 (index 1)
     await addCommercialOverlay(pdfDoc, commercial, 1);
     
-    // 10. Add property type text to intro paragraph on page 1 (index 0)
-    await addPropertyTypeOverlay(pdfDoc, propertyType, 0);
+    // 10. Add property type text on page 2 (index 1) per client feedback
+    await addPropertyTypeOverlay(pdfDoc, propertyType, 1);
     
     console.log('📊 Total pages in final document:', pdfDoc.getPageCount());
     
