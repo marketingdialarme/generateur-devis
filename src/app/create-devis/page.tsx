@@ -834,9 +834,25 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.name || ''}
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
                       const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                        const newLines = [...alarmMaterialLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setAlarmMaterialLines(newLines);
+                        return;
+                      }
+                      
                       // Try to find in alarm catalog first, then XTO catalog
                       let product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
                       if (!product) {
@@ -855,7 +871,10 @@ export default function CreateDevisPage() {
                     }}
                   >
                     <option value="">Sélectionner un produit</option>
-                    {CATALOG_ALARM_PRODUCTS.map(product => {
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_ALARM_PRODUCTS
+                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .map(product => {
                       const price = product.price || product.priceTitane || product.priceJablotron || 0;
                       return (
                         <option key={product.name} value={product.name}>
