@@ -147,6 +147,7 @@ export default function CreateDevisPage() {
   
   // Fog generator state
   const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
+  const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
   const [fogProcessingFee, setFogProcessingFee] = useState(190);
   const [fogSimCard, setFogSimCard] = useState(50);
@@ -2205,9 +2206,9 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Installation et matériel divers */}
+        {/* Installation */}
         <div className="quote-section">
-          <h3>🔧 Installation et matériel divers</h3>
+          <h3>🔧 Installation</h3>
           <div className="product-line">
             <div>Installation et paramétrage</div>
             <input 
@@ -2236,6 +2237,88 @@ export default function CreateDevisPage() {
             <div className="price-display">
               {fogInstallationPrice.toFixed(2)} CHF
             </div>
+          </div>
+        </div>
+
+        {/* Additional Materials */}
+        <div className="quote-section">
+          <h3>
+            Matériel supplémentaire
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                setFogAdditionalLines([...fogAdditionalLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              title="Ajouter un produit"
+            >
+              +
+            </button>
+          </h3>
+          <div id="fog-additional-products">
+            {fogAdditionalLines.map((line, index) => (
+              <div key={line.id} className="product-line">
+                <select 
+                  className="product-select"
+                  value={line.product?.name || ''}
+                  onChange={(e) => {
+                    const productName = e.target.value;
+                    const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName && p.id !== 200);
+                    const newLines = [...fogAdditionalLines];
+                    newLines[index] = { ...line, product: product || null };
+                    setFogAdditionalLines(newLines);
+                  }}
+                >
+                  <option value="">Sélectionner un produit</option>
+                  {CATALOG_FOG_PRODUCTS.filter(p => p.id !== 200).map(product => (
+                    <option key={product.name} value={product.name}>
+                      {product.name} - {product.price.toFixed(2)} CHF
+                    </option>
+                  ))}
+                </select>
+                <input 
+                  type="number" 
+                  className="quantity-input"
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const newLines = [...fogAdditionalLines];
+                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                    setFogAdditionalLines(newLines);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  min="1"
+                />
+                <div className="checkbox-option" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    className="offered-checkbox"
+                    checked={line.offered}
+                    onChange={(e) => {
+                      const newLines = [...fogAdditionalLines];
+                      newLines[index] = { ...line, offered: e.target.checked };
+                      setFogAdditionalLines(newLines);
+                    }}
+                  />
+                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                </div>
+                <div className="price-display">
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                </div>
+                <button 
+                  className="remove-btn"
+                  onClick={() => {
+                    setFogAdditionalLines(fogAdditionalLines.filter((_, i) => i !== index));
+                  }}
+                  title="Supprimer"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
