@@ -289,7 +289,13 @@ export function OptionsSection(props: OptionsSectionProps) {
             type="checkbox"
             id="option-intervention-police"
             checked={interventionPolice}
-            onChange={(e) => onInterventionPoliceChange(e.target.checked)}
+            onChange={(e) => {
+              onInterventionPoliceChange(e.target.checked);
+              // If unchecking police intervention, also uncheck telesurveillance option
+              if (!e.target.checked && telesurveillanceOption) {
+                onTelesurveillanceOptionChange(false);
+              }
+            }}
             style={{ 
               margin: 0,
               marginRight: '12px',
@@ -340,46 +346,49 @@ export function OptionsSection(props: OptionsSectionProps) {
           )}
         </div>
 
-        {/* NEW: Télésurveillance 99 CHF / 48 mois */}
-        <div className="option-item" style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 12px',
-          background: telesurveillanceOption ? '#f0f8ff' : 'transparent',
-          borderRadius: '6px',
-          transition: 'all 0.2s'
-        }}>
-          <input
-            type="checkbox"
-            id="option-telesurveillance-99"
-            checked={telesurveillanceOption}
-            onChange={(e) => onTelesurveillanceOptionChange(e.target.checked)}
-            style={{ 
-              margin: 0,
-              marginRight: '12px',
-              cursor: 'pointer',
-              width: '16px',
-              height: '16px',
-              flexShrink: 0,
-              verticalAlign: 'middle'
-            }}
-          />
-          <label
-            htmlFor="option-telesurveillance-99"
-            style={{ 
-              cursor: 'pointer', 
-              fontSize: '14px', 
-              fontWeight: telesurveillanceOption ? 600 : 400,
-              lineHeight: '1.4',
-              flex: 1,
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            Télésurveillance (99 CHF / 48 mois)
-          </label>
-        </div>
+        {/* NEW: Télésurveillance 99 CHF / 48 mois - Only shown when police intervention is selected */}
+        {interventionPolice && (
+          <div className="option-item" style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 12px',
+            background: telesurveillanceOption ? '#f0f8ff' : 'transparent',
+            borderRadius: '6px',
+            transition: 'all 0.2s',
+            marginLeft: '32px' // Indent to show it's sub-option
+          }}>
+            <input
+              type="checkbox"
+              id="option-telesurveillance-99"
+              checked={telesurveillanceOption}
+              onChange={(e) => onTelesurveillanceOptionChange(e.target.checked)}
+              style={{ 
+                margin: 0,
+                marginRight: '12px',
+                cursor: 'pointer',
+                width: '16px',
+                height: '16px',
+                flexShrink: 0,
+                verticalAlign: 'middle'
+              }}
+            />
+            <label
+              htmlFor="option-telesurveillance-99"
+              style={{ 
+                cursor: 'pointer', 
+                fontSize: '14px', 
+                fontWeight: telesurveillanceOption ? 600 : 400,
+                lineHeight: '1.4',
+                flex: 1,
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              Télésurveillance (99 CHF / 48 mois)
+            </label>
+          </div>
+        )}
       </div>
     </div>
   );
