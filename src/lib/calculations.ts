@@ -133,7 +133,8 @@ export function calculateSectionTotal(
     
     // Calculate price based on product
     let price = 0;
-    if (line.product.isCustom && line.customPrice !== undefined) {
+    // Treat customPrice as an explicit override (even for non-custom products)
+    if (line.customPrice !== undefined) {
       price = line.customPrice;
     } else if (line.product.price !== undefined) {
       price = line.product.price;
@@ -190,7 +191,8 @@ export function calculateSectionMonthlyPrice(
     
     // Get price for this line
     let price = 0;
-    if (product.isCustom && line.customPrice !== undefined) {
+    // Treat customPrice as an explicit override (even for non-custom products)
+    if (line.customPrice !== undefined) {
       price = line.customPrice;
     } else if (product.price !== undefined) {
       price = product.price;
@@ -201,7 +203,7 @@ export function calculateSectionMonthlyPrice(
     }
 
     // Custom product - calculate monthly from price
-    if (product.isCustom) {
+    if (product.isCustom || line.customPrice !== undefined) {
       const monthlyPrice = price / months;
       monthlyTotal += roundToFiveCents(monthlyPrice) * line.quantity;
       return;
@@ -326,9 +328,13 @@ export function calculateAlarmTotals(
       'alarm-installation'
     );
 
-    const mainInstallMonthlyHT = installation.isOffered 
-      ? 0 
-      : roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths));
+    // If installation has an explicit price but no half-day quantity, compute monthly as price/months.
+    // This supports alarm installation pricing that is not based on half-days.
+    const mainInstallMonthlyHT = installation.isOffered
+      ? 0
+      : installation.quantity > 0
+        ? roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths))
+        : roundToFiveCents((installation.price || 0) / paymentMonths);
 
     const totalMonthlyHT = roundToFiveCents(materialMonthlyHT + installationProductsMonthlyHT + mainInstallMonthlyHT + surveillanceTotal);
     const totalMonthlyTTC = roundToFiveCents(totalMonthlyHT * (1 + TVA_RATE));
@@ -366,6 +372,7 @@ export function calculateCameraTotals(
   materialDiscount: DiscountConfig | undefined,
   installation: InstallationConfig,
   installationDiscount: DiscountConfig | undefined,
+  installationPayCash: boolean,
   remoteAccessEnabled: boolean,
   paymentMonths: number,
   isRentalMode: boolean,
@@ -433,9 +440,11 @@ export function calculateCameraTotals(
       'camera-material'
     );
 
-    const installationMonthlyHT = installation.isOffered 
-      ? 0 
-      : roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths));
+    const installationMonthlyHT = installationPayCash
+      ? 0
+      : installation.isOffered
+        ? 0
+        : roundToFiveCents(getInstallationMonthlyPrice(installation.quantity, paymentMonths));
 
     const totalMonthlyHT = roundToFiveCents(materialMonthlyHT + installationMonthlyHT + remoteAccessPrice);
     const totalMonthlyTTC = roundToFiveCents(totalMonthlyHT * (1 + TVA_RATE));
