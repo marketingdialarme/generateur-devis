@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, UNINSTALL_PRICE, calculateInstallationPrice, TVA_RATE, roundToFiveCents } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
@@ -76,22 +76,30 @@ export default function CreateDevisPage() {
   
   // Installation state
   const [alarmInstallationInMonthly, setAlarmInstallationInMonthly] = useState(false);
+  const [alarmInstallationPrice, setAlarmInstallationPrice] = useState(300); // 300 CHF editable (client feedback)
+  const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
   const [isCustomKit, setIsCustomKit] = useState(false); // Track if "à partir de rien" was selected
   const [customSurveillanceType, setCustomSurveillanceType] = useState<'autosurveillance' | 'telesurveillance'>('autosurveillance');
   const [customSurveillancePrice, setCustomSurveillancePrice] = useState(0);
   
-  const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
+  // Camera installation: demi-journée / journée lines (like alarm was - client feedback)
+  const [cameraInstallationLines, setCameraInstallationLines] = useState<ProductLineData[]>([]);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
-  const [cameraInstallationPriceOverride, setCameraInstallationPriceOverride] = useState<number | null>(null);
   const [cameraInstallationPayCash, setCameraInstallationPayCash] = useState(false); // Pay installation cash, exclude from payment facilities
 
-  // Calculate camera installation price with tiered pricing (or use override)
-  const cameraInstallationPrice = useMemo(() => {
-    if (cameraInstallationPriceOverride !== null) {
-      return cameraInstallationPriceOverride;
+  // Compute camera installation total and half-days from lines (for totals)
+  const { cameraInstallationTotalFromLines, cameraInstallationHalfDays } = useMemo(() => {
+    let total = 0;
+    let halfDays = 0;
+    for (const line of cameraInstallationLines) {
+      if (line.offered || !line.product) continue;
+      const price = (line.product as { price?: number }).price ?? 0;
+      total += price * line.quantity;
+      const name = line.product.name || '';
+      halfDays += name.includes('1 journée') ? line.quantity * 2 : line.quantity;
     }
-    return calculateCameraInstallation(cameraMaterialLines, cameraInstallationQty);
-  }, [cameraMaterialLines, cameraInstallationQty, cameraInstallationPriceOverride]);
+    return { cameraInstallationTotalFromLines: total, cameraInstallationHalfDays: halfDays };
+  }, [cameraInstallationLines]);
   
   // Admin fees state
   const [simcardSelected, setSimcardSelected] = useState(false); // Whether SIM card is selected at all
@@ -238,13 +246,13 @@ export default function CreateDevisPage() {
     try {
       return calculateAlarmTotals(
         alarmMaterialLines,
-        alarmInstallationLines,
+        alarmInstallationLines.filter(l => l.product && l.product.id !== 101 && l.product.id !== 102), // Matériel divers only (no half-day lines)
         alarmMaterialDiscount,
         alarmInstallationDiscount,
         {
-          quantity: 0, // Not used anymore - installation is now in alarmInstallationLines
-          isOffered: false,
-          price: 0
+          quantity: 0,
+          isOffered: alarmInstallationOffered,
+          price: alarmInstallationPrice
         },
         {
           simCardSelected: simcardSelected,
@@ -282,6 +290,8 @@ export default function CreateDevisPage() {
   }, [
     alarmMaterialLines,
     alarmInstallationLines,
+    alarmInstallationPrice,
+    alarmInstallationOffered,
     alarmMaterialDiscount,
     alarmInstallationDiscount,
     simcardSelected,
@@ -407,9 +417,9 @@ export default function CreateDevisPage() {
         cameraMaterialLines,
         cameraMaterialDiscount,
         {
-          quantity: cameraInstallationQty,
+          quantity: cameraInstallationHalfDays,
           isOffered: cameraInstallationOffered,
-          price: cameraInstallationPrice
+          price: cameraInstallationTotalFromLines
         },
         cameraInstallationDiscount,
         cameraInstallationPayCash,
@@ -424,16 +434,17 @@ export default function CreateDevisPage() {
         material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         remoteAccess: { enabled: false, price: 0 },
-        totalHT: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationPrice),
-        totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(cameraInstallationPrice) * (1 + TVA_RATE))
+        totalHT: cameraInstallationOffered ? 0 : roundToFiveCents(cameraInstallationTotalFromLines),
+        totalTTC: cameraInstallationOffered ? 0 : roundToFiveCents(roundToFiveCents(cameraInstallationTotalFromLines) * (1 + TVA_RATE))
       };
     }
   }, [
     cameraMaterialLines,
     cameraMaterialDiscount,
-    cameraInstallationQty,
+    cameraInstallationLines,
+    cameraInstallationTotalFromLines,
+    cameraInstallationHalfDays,
     cameraInstallationOffered,
-    cameraInstallationPrice,
     cameraInstallationDiscount,
     cameraInstallationPayCash,
     cameraRemoteAccess,
@@ -532,7 +543,9 @@ export default function CreateDevisPage() {
         commercial: finalCommercial,
         isRental: currentTab === 'alarm' ? alarmRentalMode : cameraRentalMode,
         materialLines: currentTab === 'alarm' ? alarmMaterialLines : cameraMaterialLines,
-        installationLines: currentTab === 'alarm' ? alarmInstallationLines : [],
+        installationLines: currentTab === 'alarm' ? alarmInstallationLines : cameraInstallationLines,
+        installationQty: currentTab === 'camera' ? cameraInstallationHalfDays : undefined,
+        remoteAccess: currentTab === 'camera' ? cameraVisionDistance : undefined,
         totals: totals as any,
         paymentMonths: currentTab === 'alarm' ? alarmPaymentMonths : cameraPaymentMonths
       });
@@ -541,7 +554,7 @@ export default function CreateDevisPage() {
       console.log('🔄 Step 2: Collecting products...');
       const allProductLines = currentTab === 'alarm' 
         ? { material: alarmMaterialLines, installation: alarmInstallationLines }
-        : { material: cameraMaterialLines, installation: [] };
+        : { material: cameraMaterialLines, installation: cameraInstallationLines };
       const products = collectAllProducts(allProductLines);
       
       // Step 3: Assemble PDF (add base docs, product sheets, overlay)
@@ -1096,165 +1109,48 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Installation Section - Half-Day and Full-Day Lines */}
+        {/* Installation - 300 CHF editable (client feedback) */}
         <div className="quote-section">
-          <h3>
-            🔧 Installation
-            <button 
-              className="add-product-btn" 
-              onClick={() => {
-                // Add Installation 1/2 journée by default
-                const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                if (halfDayProduct) {
-                  setAlarmInstallationLines([...alarmInstallationLines, {
-                    id: Date.now(),
-                    product: halfDayProduct,
-                    quantity: 1,
-                    offered: true // Offered by default
-                  }]);
-                }
+          <h3>🔧 Installation</h3>
+          <div className="product-line" style={{ background: '#f0f8ff' }}>
+            <div>Installation et paramétrage</div>
+            <input 
+              type="number" 
+              value={1}
+              className="quantity-input"
+              readOnly
+              style={{ background: '#e9ecef' }}
+            />
+            <input 
+              type="number" 
+              value={alarmInstallationPrice}
+              onChange={(e) => setAlarmInstallationPrice(parseFloat(e.target.value) || 300)}
+              onFocus={(e) => e.target.select()}
+              className="discount-input"
+              placeholder="300"
+              min="0"
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #007bff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                width: '120px'
               }}
-              title="Ajouter une ligne d'installation"
-            >
-              +
-            </button>
-          </h3>
-          
-          {/* Installation lines (half-day/full-day) */}
-          <div id="alarm-installation-lines">
-            {alarmInstallationLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
-                    const newLines = [...alarmInstallationLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setAlarmInstallationLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un type d&apos;installation</option>
-                  <option value="Installation 1/2 journée">Installation 1/2 journée - 690.00 CHF</option>
-                  <option value="Installation 1 journée">Installation 1 journée - 1290.00 CHF</option>
-                </select>
-                <input 
-                  type="number" 
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...alarmInstallationLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setAlarmInstallationLines(newLines);
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  min="1"
-                  max="10"
-                />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox"
-                    checked={line.offered}
-                    onChange={(e) => {
-                      const newLines = [...alarmInstallationLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
-                      setAlarmInstallationLines(newLines);
-                    }}
-                  />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-                </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setAlarmInstallationLines(alarmInstallationLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-          
-          {/* Quick add buttons for common installation options */}
-          {alarmInstallationLines.length === 0 && (
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button 
-                onClick={() => {
-                  const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                  if (halfDayProduct) {
-                    setAlarmInstallationLines([{
-                      id: Date.now(),
-                      product: halfDayProduct,
-                      quantity: 1,
-                      offered: true
-                    }]);
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px dashed #28a745',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: '#28a745',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f0fff4';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                + Installation 1/2 journée (690 CHF)
-              </button>
-              <button 
-                onClick={() => {
-                  const fullDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
-                  if (fullDayProduct) {
-                    setAlarmInstallationLines([{
-                      id: Date.now(),
-                      product: fullDayProduct,
-                      quantity: 1,
-                      offered: true
-                    }]);
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'white',
-                  border: '2px dashed #007bff',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: '#007bff',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f0f8ff';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                + Installation 1 journée (1290 CHF)
-              </button>
+            />
+            <div className="checkbox-option" style={{ margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={alarmInstallationOffered}
+                onChange={(e) => setAlarmInstallationOffered(e.target.checked)}
+                className="offered-checkbox" 
+              />
+              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
             </div>
-          )}
+            <div className="price-display">
+              {alarmInstallationOffered ? 'OFFERT' : `${alarmInstallationPrice.toFixed(2)} CHF`}
+            </div>
+          </div>
           
           <div style={{ marginTop: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
@@ -1324,9 +1220,18 @@ export default function CreateDevisPage() {
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
                     {CATALOG_ALARM_PRODUCTS
-                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .filter(product => {
+                        if (product.isCustom || product.id === 101 || product.id === 102) return false;
+                        if (selectedCentral === 'titane' && product.id === 5) return false; // Hide Centrale Jablotron when Titane
+                        if (selectedCentral === 'jablotron' && product.id === 6) return false; // Hide Centrale Titane when Jablotron
+                        return true;
+                      })
                       .map(product => {
-                        const price = product.price || product.priceTitane || product.priceJablotron || 0;
+                        const price = selectedCentral === 'titane'
+                          ? (product.priceTitane ?? product.price ?? 0)
+                          : selectedCentral === 'jablotron'
+                          ? (product.priceJablotron ?? product.price ?? 0)
+                          : (product.price ?? product.priceTitane ?? product.priceJablotron ?? 0);
                         return (
                           <option key={product.name} value={product.name}>
                             {product.name} - {price.toFixed(2)} CHF
@@ -1360,7 +1265,11 @@ export default function CreateDevisPage() {
                     <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
                   <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                    {line.offered ? 'OFFERT' : line.product ? (() => {
+                      const p = line.product as AlarmProduct;
+                      const unitPrice = line.customPrice ?? (selectedCentral === 'titane' ? (p.priceTitane ?? p.price) : selectedCentral === 'jablotron' ? (p.priceJablotron ?? p.price) : (p.price ?? p.priceTitane ?? p.priceJablotron)) ?? 0;
+                      return `${(unitPrice * line.quantity).toFixed(2)} CHF`;
+                    })() : '0.00 CHF'}
                   </div>
                   <button 
                     className="remove-btn"
@@ -1916,52 +1825,113 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Installation Section */}
+        {/* Installation - demi-journée / journée (like alarm - client feedback) */}
         <div className="quote-section">
-          <h3>🔧 Installation</h3>
-          <div className="product-line" style={{ background: '#f0f8ff' }}>
-            <div>Installation caméra</div>
-            <div>
-              <label style={{ marginRight: '5px', fontSize: '12px' }}>Demi-journées:</label>
-              <input 
-                type="number" 
-                value={cameraInstallationQty}
-                onChange={(e) => setCameraInstallationQty(parseInt(e.target.value) || 1)}
-                onFocus={(e) => e.target.select()}
-                min="1" 
-                max="10" 
-                className="quantity-input" 
-              />
-            </div>
-            <input 
-              type="number" 
-              value={cameraInstallationPrice}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                setCameraInstallationPriceOverride(isNaN(val) ? null : val);
+          <h3>
+            🔧 Installation
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
+                if (halfDayProduct) {
+                  setCameraInstallationLines([...cameraInstallationLines, {
+                    id: Date.now(),
+                    product: halfDayProduct,
+                    quantity: 1,
+                    offered: false
+                  }]);
+                }
               }}
-              onFocus={(e) => e.target.select()}
-              className="discount-input" 
-              placeholder="Prix" 
-              style={{ background: cameraInstallationPriceOverride !== null ? '#fff3cd' : '#f0f0f0' }}
-              title={cameraInstallationPriceOverride !== null ? 'Prix personnalisé' : 'Prix automatique (1 cam=350, 1/2j=690, 1j=1290)'}
-            />
-            <div className="checkbox-option" style={{ margin: 0 }}>
-              <input 
-                type="checkbox" 
-                checked={cameraInstallationOffered}
-                onChange={(e) => setCameraInstallationOffered(e.target.checked)}
-                className="offered-checkbox" 
-              />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-            </div>
-            <div className="price-display">
-              {cameraInstallationOffered ? 'OFFERT' : `${cameraInstallationPrice.toFixed(2)} CHF`}
-            </div>
+              title="Ajouter une ligne d'installation"
+            >
+              +
+            </button>
+          </h3>
+          <div id="camera-installation-lines">
+            {cameraInstallationLines.map((line, index) => (
+              <div key={line.id} className="product-line">
+                <select 
+                  className="product-select"
+                  value={line.product?.name || ''}
+                  onChange={(e) => {
+                    const productName = e.target.value;
+                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                    const newLines = [...cameraInstallationLines];
+                    newLines[index] = { ...line, product: product || null };
+                    setCameraInstallationLines(newLines);
+                  }}
+                >
+                  <option value="">Sélectionner un type d&apos;installation</option>
+                  <option value="Installation 1/2 journée">Installation 1/2 journée - 690.00 CHF</option>
+                  <option value="Installation 1 journée">Installation 1 journée - 1290.00 CHF</option>
+                </select>
+                <input 
+                  type="number" 
+                  className="quantity-input"
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const newLines = [...cameraInstallationLines];
+                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                    setCameraInstallationLines(newLines);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  min="1"
+                  max="10"
+                />
+                <div className="checkbox-option" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox"
+                    checked={line.offered}
+                    onChange={(e) => {
+                      const newLines = [...cameraInstallationLines];
+                      newLines[index] = { ...line, offered: e.target.checked };
+                      setCameraInstallationLines(newLines);
+                    }}
+                  />
+                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                </div>
+                <div className="price-display">
+                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                </div>
+                <button 
+                  className="remove-btn"
+                  onClick={() => setCameraInstallationLines(cameraInstallationLines.filter((_, i) => i !== index))}
+                  title="Supprimer"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
+          {cameraInstallationLines.length === 0 && (
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button 
+                onClick={() => {
+                  const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
+                  if (halfDayProduct) {
+                    setCameraInstallationLines([{ id: Date.now(), product: halfDayProduct, quantity: 1, offered: false }]);
+                  }
+                }}
+                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #28a745', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#28a745' }}
+              >
+                + Installation 1/2 journée (690 CHF)
+              </button>
+              <button 
+                onClick={() => {
+                  const fullDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
+                  if (fullDayProduct) {
+                    setCameraInstallationLines([{ id: Date.now(), product: fullDayProduct, quantity: 1, offered: false }]);
+                  }
+                }}
+                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #007bff', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#007bff' }}
+              >
+                + Installation 1 journée (1290 CHF)
+              </button>
+            </div>
+          )}
           
           {/* Discount section */}
-          <div className="discount-section">
+          <div className="discount-section" style={{ marginTop: '15px' }}>
             <label>Réduction:</label>
             <select 
               value={cameraInstallationDiscount.type}
@@ -1980,46 +1950,37 @@ export default function CreateDevisPage() {
               className="discount-input" 
             />
           </div>
+
+          {/* Paiement comptant - inside same frame (client feedback) */}
+          {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
+            <div style={{ marginTop: '15px', padding: '12px', background: '#fffef0', border: '1px solid #f4e600', borderRadius: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={cameraInstallationPayCash}
+                  onChange={(e) => setCameraInstallationPayCash(e.target.checked)}
+                  style={{ marginRight: '10px', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontWeight: 500, fontSize: '14px' }}>
+                  Paiement comptant de l&apos;installation
+                </span>
+              </label>
+              {cameraInstallationPayCash && (
+                <div style={{ marginTop: '8px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+                  Installation à régler comptant: {roundToFiveCents(roundToFiveCents(cameraInstallationTotalFromLines) * (1 + TVA_RATE)).toFixed(2)} CHF TTC
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Installation paid cash option - only show if not rental and payment months > 0 and not offered */}
-        {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
-          <div className="quote-section" style={{ background: '#fffef0', border: '2px solid #f4e600', padding: '15px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={cameraInstallationPayCash}
-                onChange={(e) => setCameraInstallationPayCash(e.target.checked)}
-                style={{ marginRight: '10px', width: '16px', height: '16px' }}
-              />
-              <span style={{ fontWeight: 500, fontSize: '14px' }}>
-                Paiement comptant de l&apos;installation (exclure des facilités de paiement)
-              </span>
-            </label>
-            {cameraInstallationPayCash && (
-              <div style={{ marginTop: '10px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
-                Installation à régler comptant: {roundToFiveCents(roundToFiveCents(cameraInstallationPrice) * (1 + TVA_RATE)).toFixed(2)} CHF TTC
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Vision à distance (only in sale mode) */}
         {!cameraRentalMode && (
           <div className="quote-section">
             <h3>📡 Vision à distance</h3>
             <div className="product-line">
-              <div>
-                Vision à distance
-                {cameraVisionDistance && cameraVisionPrice > 0 && (
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
-                    <strong>Prix calculé: {cameraVisionPrice} CHF/mois</strong>
-                    <div style={{ fontSize: '11px', marginTop: '3px' }}>
-                      (20 CHF par caméra 4G + 20 CHF par caméra classique si Modem 4G)
-                    </div>
-                  </div>
-                )}
-              </div>
+              <div>Vision à distance</div>
               <div></div>
               <div></div>
               <div className="checkbox-option" style={{ margin: 0 }}>

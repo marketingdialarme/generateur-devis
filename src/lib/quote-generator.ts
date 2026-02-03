@@ -80,6 +80,9 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
   // Kit de base - always included items (client feedback)
   { id: 110, name: "Application", price: 0.00 },
   { id: 111, name: "Alimentation de secours", price: 0.00 },
+  // Installation (demi-journée / journée) - used for camera installation section
+  { id: 101, name: "Installation 1/2 journée", price: 690.00 },
+  { id: 102, name: "Installation 1 journée", price: 1290.00 },
 ];
 
 export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
