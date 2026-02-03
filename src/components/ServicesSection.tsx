@@ -28,9 +28,6 @@ interface ServicesSectionProps {
   centralType: 'titane' | 'jablotron' | null;
   rentalMode: boolean;
   simCardSelected: boolean; // For Titane autosurveillance pricing
-
-  // Admin fees selection can affect surveillance price (client feedback)
-  simCardSelected: boolean;
 }
 
 // Surveillance pricing constants from script.js lines 136-177
