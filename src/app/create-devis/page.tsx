@@ -853,18 +853,22 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      // Try to find in alarm catalog first, then XTO catalog
+                      // Try to find in alarm catalog first
                       let product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      
+                      // Then try XTO catalog
                       if (!product) {
                         const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productName);
                         if (xtoProduct) {
                           product = {
                             id: xtoProduct.id,
                             name: xtoProduct.name,
-                            price: xtoProduct.monthlyPrice
+                            price: xtoProduct.monthlyPrice,
+                            isXTO: true
                           } as any;
                         }
                       }
+                      
                       const newLines = [...alarmMaterialLines];
                       newLines[index] = { ...line, product: product || null };
                       setAlarmMaterialLines(newLines);
@@ -873,17 +877,38 @@ export default function CreateDevisPage() {
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
                     {CATALOG_ALARM_PRODUCTS
-                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .filter(product => {
+                        // Hide "Autre" from regular list
+                        if (product.isCustom) return false;
+                        // Hide auto-included items
+                        if (product.id === 110 || product.id === 111) return false;
+                        // If a central is selected, filter to relevant catalog entries
+                        if (selectedCentral === 'titane') {
+                          return product.price !== undefined || product.priceTitane !== undefined;
+                        }
+                        if (selectedCentral === 'jablotron') {
+                          return (
+                            product.price !== undefined ||
+                            product.priceJablotron !== undefined ||
+                            product.requiresJablotron
+                          );
+                        }
+                        return true;
+                      })
                       .map(product => {
-                      const price = product.price || product.priceTitane || product.priceJablotron || 0;
+                      const price = selectedCentral === 'titane' 
+                        ? (product.priceTitane || product.price || 0)
+                        : selectedCentral === 'jablotron'
+                        ? (product.priceJablotron || product.price || 0)
+                        : (product.price || product.priceTitane || product.priceJablotron || 0);
                       return (
                         <option key={product.name} value={product.name}>
                           {product.name} - {price.toFixed(2)} CHF
                         </option>
                       );
                     })}
-                    {/* Add XTO products if XTO is selected */}
-                    {CATALOG_XTO_PRODUCTS.map(product => (
+                    {/* Add XTO products only if at least one XTO product is in the lines */}
+                    {alarmMaterialLines.some(l => l.product && (l.product as any).isXTO) && CATALOG_XTO_PRODUCTS.map(product => (
                       <option key={`xto-${product.name}`} value={product.name}>
                         {product.name} - {product.monthlyPrice.toFixed(2)} CHF/mois
                       </option>
