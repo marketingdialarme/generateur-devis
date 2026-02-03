@@ -296,35 +296,29 @@ export default function CreateDevisPage() {
     selectedCentral
   ]);
   
-  // Auto-calculate vision à distance price (4G cameras + modem if selected)
+  // Auto-calculate vision à distance price using correct logic
   useEffect(() => {
     if (!cameraVisionDistance) {
       setCameraVisionPrice(0);
       return;
     }
     
-    // Count 4G cameras
-    const fourGCameras = cameraMaterialLines.filter(
-      (line) => line.product && line.product.name.includes('4G')
-    ).reduce((sum, line) => sum + line.quantity, 0);
-    
-    // Count modems (20 CHF per modem, NOT per camera)
-    const modemCount = cameraMaterialLines.filter(
-      (line) => line.product && line.product.name.toLowerCase().includes('modem')
-    ).reduce((sum, line) => sum + line.quantity, 0);
-    
-    // Price: 20 CHF per 4G camera + 20 CHF per modem
-    const totalPrice = (fourGCameras + modemCount) * 20;
+    // Use the correct calculation function
+    const totalPrice = calculateRemoteAccessPrice(cameraMaterialLines);
     setCameraVisionPrice(totalPrice);
   }, [cameraMaterialLines, cameraVisionDistance]);
   
-  // Auto-check vision à distance when modem is selected
+  // Auto-check vision à distance when modem or 4G camera is selected
   useEffect(() => {
     const hasModem = cameraMaterialLines.some(
       (line) => line.product && line.product.name.toLowerCase().includes('modem')
     );
     
-    if (hasModem && !cameraVisionDistance) {
+    const has4GCamera = cameraMaterialLines.some(
+      (line) => line.product && line.product.name.includes('4G')
+    );
+    
+    if ((hasModem || has4GCamera) && !cameraVisionDistance) {
       setCameraVisionDistance(true);
     }
   }, [cameraMaterialLines, cameraVisionDistance]);
@@ -1909,12 +1903,12 @@ export default function CreateDevisPage() {
             <h3>📡 Vision à distance</h3>
             <div className="product-line">
               <div>
-                Vision à distance (4G cameras + modem)
+                Vision à distance
                 {cameraVisionDistance && cameraVisionPrice > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
                     <strong>Prix calculé: {cameraVisionPrice} CHF/mois</strong>
                     <div style={{ fontSize: '11px', marginTop: '3px' }}>
-                      (20 CHF par caméra 4G + 20 CHF par modem)
+                      (20 CHF par caméra 4G + 20 CHF par caméra classique si Modem 4G)
                     </div>
                   </div>
                 )}
