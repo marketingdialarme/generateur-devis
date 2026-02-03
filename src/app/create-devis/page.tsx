@@ -1475,6 +1475,7 @@ export default function CreateDevisPage() {
           onSurveillanceOfferedChange={setSurveillanceOffered}
           centralType={selectedCentral}
           rentalMode={alarmRentalMode}
+          simCardSelected={simcardSelected}
         />
 
         {/* Options Section */}

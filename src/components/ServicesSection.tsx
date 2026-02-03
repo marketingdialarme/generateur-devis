@@ -5,7 +5,7 @@
  * Converted from script.js lines 543-817
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ServicesSectionProps {
   // Test Cyclique
@@ -27,6 +27,10 @@ interface ServicesSectionProps {
   // Central type for pricing
   centralType: 'titane' | 'jablotron' | null;
   rentalMode: boolean;
+  simCardSelected: boolean; // For Titane autosurveillance pricing
+
+  // Admin fees selection can affect surveillance price (client feedback)
+  simCardSelected: boolean;
 }
 
 // Surveillance pricing constants from script.js lines 136-177
@@ -83,8 +87,12 @@ export function ServicesSection(props: ServicesSectionProps) {
     onSurveillancePriceChange,
     onSurveillanceOfferedChange,
     centralType,
-    rentalMode
+    rentalMode,
+    simCardSelected
   } = props;
+
+  // Track the last auto-calculated price so we don't overwrite manual edits.
+  const lastAutoSurveillancePriceRef = useRef<number | null>(null);
 
   // Get available surveillance options based on central type
   const getSurveillanceOptions = () => {
@@ -124,6 +132,7 @@ export function ServicesSection(props: ServicesSectionProps) {
   useEffect(() => {
     if (!surveillanceType) {
       onSurveillancePriceChange(0);
+      lastAutoSurveillancePriceRef.current = null;
       return;
     }
     
@@ -157,8 +166,21 @@ export function ServicesSection(props: ServicesSectionProps) {
       price = (prices.default as any)[priceKey] || 0;
     }
 
-    onSurveillancePriceChange(price);
-  }, [surveillanceType, centralType, rentalMode, onSurveillancePriceChange]);
+    // Client feedback: Titane autosurveillance depends on SIM selection
+    // - Autosurveillance WITHOUT SIM: 59 CHF/mois
+    // - Autosurveillance WITH SIM: 64 CHF/mois
+    if (!rentalMode && centralType === 'titane' && surveillanceType === 'autosurveillance') {
+      price = simCardSelected ? 64 : 59;
+    }
+
+    // Only auto-update if the user hasn't manually overridden the price.
+    const lastAuto = lastAutoSurveillancePriceRef.current;
+    const shouldAutoUpdate = surveillancePrice === 0 || lastAuto === null || surveillancePrice === lastAuto;
+    if (shouldAutoUpdate) {
+      lastAutoSurveillancePriceRef.current = price;
+      onSurveillancePriceChange(price);
+    }
+  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
