@@ -76,6 +76,7 @@ export interface UseCameraCalculationsParams {
   materialDiscount?: DiscountConfig;
   installation: InstallationConfig;
   installationDiscount?: DiscountConfig;
+  installationPayCash?: boolean;
   remoteAccessEnabled: boolean;
   paymentMonths: number;
   isRentalMode: boolean;
@@ -88,6 +89,7 @@ export function useCameraCalculations(params: UseCameraCalculationsParams): Came
       params.materialDiscount,
       params.installation,
       params.installationDiscount,
+      Boolean(params.installationPayCash),
       params.remoteAccessEnabled,
       params.paymentMonths,
       params.isRentalMode,
@@ -98,6 +100,7 @@ export function useCameraCalculations(params: UseCameraCalculationsParams): Came
     params.materialDiscount,
     params.installation,
     params.installationDiscount,
+    params.installationPayCash,
     params.remoteAccessEnabled,
     params.paymentMonths,
     params.isRentalMode
