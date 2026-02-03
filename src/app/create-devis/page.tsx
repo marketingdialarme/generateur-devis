@@ -83,6 +83,7 @@ export default function CreateDevisPage() {
   const [cameraInstallationQty, setCameraInstallationQty] = useState(1);
   const [cameraInstallationOffered, setCameraInstallationOffered] = useState(false);
   const [cameraInstallationPriceOverride, setCameraInstallationPriceOverride] = useState<number | null>(null);
+  const [cameraInstallationPayCash, setCameraInstallationPayCash] = useState(false); // Pay installation cash, exclude from payment facilities
 
   // Calculate camera installation price with tiered pricing (or use override)
   const cameraInstallationPrice = useMemo(() => {
@@ -410,6 +411,7 @@ export default function CreateDevisPage() {
           price: cameraInstallationPrice
         },
         cameraInstallationDiscount,
+        cameraInstallationPayCash,
         cameraRemoteAccess,
         cameraPaymentMonths,
         cameraRentalMode,
@@ -432,6 +434,7 @@ export default function CreateDevisPage() {
     cameraInstallationOffered,
     cameraInstallationPrice,
     cameraInstallationDiscount,
+    cameraInstallationPayCash,
     cameraRemoteAccess,
     cameraPaymentMonths,
     cameraRentalMode
@@ -1896,6 +1899,28 @@ export default function CreateDevisPage() {
             />
           </div>
         </div>
+
+        {/* Installation paid cash option - only show if not rental and payment months > 0 and not offered */}
+        {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
+          <div className="quote-section" style={{ background: '#fffef0', border: '2px solid #f4e600', padding: '15px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={cameraInstallationPayCash}
+                onChange={(e) => setCameraInstallationPayCash(e.target.checked)}
+                style={{ marginRight: '10px', width: '16px', height: '16px' }}
+              />
+              <span style={{ fontWeight: 500, fontSize: '14px' }}>
+                Paiement comptant de l&apos;installation (exclure des facilités de paiement)
+              </span>
+            </label>
+            {cameraInstallationPayCash && (
+              <div style={{ marginTop: '10px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+                Installation à régler comptant: {roundToFiveCents(roundToFiveCents(cameraInstallationPrice) * (1 + TVA_RATE)).toFixed(2)} CHF TTC
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Vision à distance (only in sale mode) */}
         {!cameraRentalMode && (
