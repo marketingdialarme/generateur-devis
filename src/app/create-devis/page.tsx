@@ -1292,65 +1292,127 @@ export default function CreateDevisPage() {
           {/* Material lines */}
           <div id="alarm-installation-products">
             {alarmInstallationLines.map((line, index) => (
-              <div key={line.id} className="product-line">
-                <select 
-                  className="product-select"
-                  value={line.product?.name || ''}
-                  onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
-                    const newLines = [...alarmInstallationLines];
-                    newLines[index] = { ...line, product: product || null };
-                    setAlarmInstallationLines(newLines);
-                  }}
-                >
-                  <option value="">Sélectionner un produit</option>
-                  {CATALOG_ALARM_PRODUCTS.map(product => {
-                    const price = product.price || product.priceTitane || product.priceJablotron || 0;
-                    return (
-                      <option key={product.name} value={product.name}>
-                        {product.name} - {price.toFixed(2)} CHF
-                      </option>
-                    );
-                  })}
-                </select>
-                <input 
-                  type="number" 
-                  className="quantity-input"
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const newLines = [...alarmInstallationLines];
-                    newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                    setAlarmInstallationLines(newLines);
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  min="1"
-                />
-                <div className="checkbox-option" style={{ margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    className="offered-checkbox"
-                    checked={line.offered}
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
+                      const productName = e.target.value;
+                      
+                      // Custom product creation sentinel
+                      if (productName === '__create_custom__') {
+                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                        const newLines = [...alarmInstallationLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setAlarmInstallationLines(newLines);
+                        return;
+                      }
+                      
+                      const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
                       const newLines = [...alarmInstallationLines];
-                      newLines[index] = { ...line, offered: e.target.checked };
+                      newLines[index] = { ...line, product: product || null };
                       setAlarmInstallationLines(newLines);
                     }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {CATALOG_ALARM_PRODUCTS
+                      .filter(product => !product.isCustom) // Hide "Autre" from regular list
+                      .map(product => {
+                        const price = product.price || product.priceTitane || product.priceJablotron || 0;
+                        return (
+                          <option key={product.name} value={product.name}>
+                            {product.name} - {price.toFixed(2)} CHF
+                          </option>
+                        );
+                      })}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...alarmInstallationLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setAlarmInstallationLines(newLines);
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    min="1"
                   />
-                  <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...alarmInstallationLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setAlarmInstallationLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  </div>
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setAlarmInstallationLines(alarmInstallationLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
                 </div>
-                <div className="price-display">
-                  {line.offered ? 'OFFERT' : line.product ? `${((line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                </div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => {
-                    setAlarmInstallationLines(alarmInstallationLines.filter((_, i) => i !== index));
-                  }}
-                  title="Supprimer"
-                >
-                  ×
-                </button>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...alarmInstallationLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setAlarmInstallationLines(newLines);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...alarmInstallationLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setAlarmInstallationLines(newLines);
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      min="0"
+                      step="0.01"
+                      style={{
+                        width: '150px',
+                        padding: '8px 12px',
+                        border: '2px solid #007bff',
+                        borderRadius: '6px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
