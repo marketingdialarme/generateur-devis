@@ -45,3 +45,9 @@ next-env.d.ts
 Thumbs.db
 
 oauth-credentials.json
+
+# Dev rendering artifacts (PDFs / PNGs from scripts/render-quote.ts + pdf-to-png.mjs)
+scripts/_out/
+
+# Local preview server config
+.claude/

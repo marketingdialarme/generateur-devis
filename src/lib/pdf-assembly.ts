@@ -55,7 +55,8 @@ export async function assemblePdf(
   centralType: 'titane' | 'jablotron' | null,
   products: string[],
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise' = 'locaux'
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise' = 'locaux',
+  addPoliceDoc: boolean = false
 ): Promise<AssemblyResult> {
   console.log('🔧 Starting PDF assembly with pdf-lib...');
   console.log('📋 Assembly parameters:', {
@@ -67,7 +68,7 @@ export async function assemblePdf(
   
   try {
     if (quoteType === 'alarme') {
-      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType);
+      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType, addPoliceDoc);
     } else if (quoteType === 'video') {
       return await assembleVideoPdf(pdfBlob, products, commercial, propertyType);
     } else {
@@ -121,6 +122,28 @@ async function addPropertyTypeDocumentIfConfigured(
 }
 
 /**
+ * Append the police-intervention document when the option is selected.
+ * Set GOOGLE_DRIVE_FILE_POLICE to the Drive file ID once the client provides it.
+ */
+async function addPoliceDocumentIfConfigured(pdfDoc: PDFDocument): Promise<void> {
+  try {
+    const fileId = config.google.drive.baseDocuments.policeDoc || '';
+    if (!fileId) {
+      console.log('ℹ️ Police-intervention selected but no document configured (set GOOGLE_DRIVE_FILE_POLICE)');
+      return;
+    }
+    console.log('📥 Fetching police-intervention document, fileId:', fileId);
+    const arrayBuffer = await fetchDocumentFromDrive(fileId);
+    const policePdf = await PDFDocument.load(arrayBuffer);
+    const pages = await pdfDoc.copyPages(policePdf, policePdf.getPageIndices());
+    pages.forEach((p) => pdfDoc.addPage(p));
+    console.log('✅ Police-intervention document appended', `(${pages.length} page(s))`);
+  } catch (error) {
+    console.warn('⚠️ Could not append police document (non-critical):', error);
+  }
+}
+
+/**
  * Assemble alarm PDF
  * 
  * Structure:
@@ -133,7 +156,8 @@ async function assembleAlarmPdf(
   pdfBlob: Blob,
   centralType: 'titane' | 'jablotron',
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  addPoliceDoc: boolean = false
 ): Promise<AssemblyResult> {
   console.log('🚨 Assembling alarm PDF with central type:', centralType);
   
@@ -174,7 +198,10 @@ async function assembleAlarmPdf(
 
     // 6b. Append property-type specific document (if configured)
     await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
-    
+
+    // 6c. Append police-intervention document when the option is selected
+    if (addPoliceDoc) await addPoliceDocumentIfConfigured(pdfDoc);
+
     // 7. Add remaining pages from base document
     if (basePageCount > 5) {
       for (let i = 5; i < basePageCount; i++) {

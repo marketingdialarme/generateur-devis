@@ -35,6 +35,8 @@ export interface AppConfig {
         video: string;
         accessories: string;
         propertyTypeDocs?: Partial<Record<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise', string>>;
+        /** Document appended to alarm quotes when "Intervention de la police" is selected. */
+        policeDoc?: string;
       };
     };
   };
@@ -133,6 +135,12 @@ export const config: AppConfig = {
           commerce: process.env.GOOGLE_DRIVE_FILE_PROPERTY_COMMERCE || '',
           entreprise: process.env.GOOGLE_DRIVE_FILE_PROPERTY_ENTREPRISE || '',
         },
+
+        /**
+         * Document appended when "Intervention de la police" option is selected.
+         * Set GOOGLE_DRIVE_FILE_POLICE to the Drive file ID once provided.
+         */
+        policeDoc: process.env.GOOGLE_DRIVE_FILE_POLICE || '',
       },
     },
   },

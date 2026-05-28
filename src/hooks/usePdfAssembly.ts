@@ -17,6 +17,7 @@ interface AssemblePdfParams {
   products: string[];
   commercial: CommercialInfo;
   propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise';
+  addPoliceDoc?: boolean;
 }
 
 interface UsePdfAssemblyReturn {
@@ -51,7 +52,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
       centralType,
       products,
       commercial,
-      propertyType
+      propertyType,
+      addPoliceDoc
     } = params;
     
     setIsAssembling(true);
@@ -75,7 +77,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
         centralType,
         products,
         commercial,
-        propertyType
+        propertyType,
+        addPoliceDoc
       );
       
       setProgress('Assembly complete!');

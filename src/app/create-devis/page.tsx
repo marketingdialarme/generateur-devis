@@ -21,7 +21,7 @@ import { usePdfGenerator } from '@/hooks/usePdfGenerator';
 import { usePdfAssembly } from '@/hooks/usePdfAssembly';
 import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
-import { getCommercialInfo } from '@/lib/config';
+import { getAllCommercials, getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
 import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
@@ -33,25 +33,9 @@ import { PaymentSelector } from '@/components/PaymentSelector';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { detectCentralType, calculateCameraInstallation, toCalcFormat, calculateRemoteAccessPrice } from '@/lib/product-line-adapter';
 
-// Commercial list
-const COMMERCIALS_LIST = [
-  "Arnaud Bloch",
-  "Benali Kodad",
-  "Bryan Debrosse",
-  "Cédric Boldron",
-  "Emin Comert",
-  "Gérald Clausen",
-  "Heythem Ziaya",
-  "Iyed Baccouche",
-  "Matys Goiot",
-  "Mohamed Tartik",
-  "Nora Sassi",
-  "Rodolphe De Vito",
-  "Samir Ouhameni",
-  "Thilan Curt",
-  "Thomas Garcia",
-  "Wassim Tahiri"
-];
+// Commercial list — derived from the authoritative config.commercials map so
+// the dropdown can never drift out of sync with getCommercialInfo() lookups.
+const COMMERCIALS_LIST = getAllCommercials();
 
 export default function CreateDevisPage() {
   const [mounted, setMounted] = useState(false);
@@ -235,7 +219,20 @@ export default function CreateDevisPage() {
         });
       }
     });
-    
+
+    // Always-included base-kit items (Malt brief): Application + Alimentation de secours
+    [110, 111].forEach((id, i) => {
+      const product = CATALOG_ALARM_PRODUCTS.find(p => p.id === id);
+      if (product) {
+        newLines.push({
+          id: Date.now() + 1000 + i,
+          product,
+          quantity: 1,
+          offered: true
+        });
+      }
+    });
+
     setAlarmMaterialLines(newLines);
     setShowKitModal(false);
     setIsCustomKit(false); // Reset custom kit flag for normal kits
@@ -461,13 +458,6 @@ export default function CreateDevisPage() {
     setMounted(true);
   }, []);
   
-  // Debug log
-  useEffect(() => {
-    if (mounted) {
-      console.log('Page mounted, currentTab:', currentTab);
-      console.log('Alarm totals:', alarmTotals);
-    }
-  }, [mounted, currentTab, alarmTotals]);
   
   // Get current date
   const getCurrentDate = () => {
@@ -495,7 +485,7 @@ export default function CreateDevisPage() {
   const handleGenerateAndSend = async () => {
     try {
       // Validate inputs
-      const finalClientName = currentTab === 'alarm' ? clientName : clientName;
+      const finalClientName = clientName;
       const finalCommercial = showCustomCommercial ? customCommercial : commercial;
       
       if (!finalClientName) {
@@ -535,76 +525,103 @@ export default function CreateDevisPage() {
       
       // Step 1: Generate PDF
       console.log('🔄 Step 1: Generating PDF...');
-      const totals = currentTab === 'alarm' ? alarmTotals : cameraTotals;
-      
+      const isAlarm = currentTab === 'alarm';
+      const isCamera = currentTab === 'camera';
+      const isFog = currentTab === 'fog';
+      const isVisio = currentTab === 'visiophone';
+      const isXto = isAlarm && alarmMaterialLines.some(l => l.product && l.product.isXTO);
+      const totals = isAlarm ? alarmTotals : isCamera ? cameraTotals : undefined;
+
       const generatedPdf = await generatePDF({
-        type: currentTab === 'alarm' ? 'alarm' : 'camera',
+        type: currentTab,
         clientName: finalClientName,
         commercial: finalCommercial,
-        isRental: currentTab === 'alarm' ? alarmRentalMode : cameraRentalMode,
-        materialLines: currentTab === 'alarm' ? alarmMaterialLines : cameraMaterialLines,
-        installationLines: currentTab === 'alarm' ? alarmInstallationLines : cameraInstallationLines,
-        installationQty: currentTab === 'camera' ? cameraInstallationHalfDays : undefined,
-        remoteAccess: currentTab === 'camera' ? cameraVisionDistance : undefined,
-        totals: totals as any,
-        paymentMonths: currentTab === 'alarm' ? alarmPaymentMonths : cameraPaymentMonths
+        isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
+        materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
+        installationLines: isAlarm ? alarmInstallationLines : isCamera ? cameraInstallationLines : isFog ? fogAdditionalLines : [],
+        installationQty: isCamera ? cameraInstallationHalfDays : undefined,
+        remoteAccess: isCamera ? cameraVisionDistance : undefined,
+        totals,
+        simCardSelected: isAlarm ? simcardSelected : undefined,
+        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : undefined,
+        quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
+        feesConfig: isFog ? {
+          installationPrice: fogInstallationPrice,
+          processingFee: fogProcessingFee,
+          processingOffered: fogProcessingOffered,
+          simCard: fogSimCard,
+          simCardSelected: fogSimCardSelected,
+          simCardOffered: fogSimCardOffered,
+        } : isVisio ? {
+          installationPrice: visiophoInstallationPrice,
+        } : undefined,
+        services: isAlarm ? {
+          testCyclique: { selected: testCycliqueSelected, price: testCycliquePrice, offered: testCycliqueOffered },
+          surveillance: { type: surveillanceType || null, price: surveillancePrice, offered: surveillanceOffered }
+        } : undefined,
+        options: isAlarm ? {
+          interventionsGratuites,
+          interventionsAnnee,
+          interventionsQty,
+          serviceCles
+        } : undefined
       });
-      
-      // Step 2: Collect products for assembly
-      console.log('🔄 Step 2: Collecting products...');
-      const allProductLines = currentTab === 'alarm' 
-        ? { material: alarmMaterialLines, installation: alarmInstallationLines }
-        : { material: cameraMaterialLines, installation: cameraInstallationLines };
-      const products = collectAllProducts(allProductLines);
-      
-      // Step 3: Assemble PDF (add base docs, product sheets, overlay)
-      console.log('🔄 Step 3: Assembling PDF...');
-      
-      // Get validated commercial info
-      const validatedCommercialInfo = commercialInfo || {
-        phone: '06 XX XX XX XX',
-        email: `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`
-      };
-      
-      console.log('📝 Commercial info for PDF assembly:', {
-        name: finalCommercial,
-        phone: validatedCommercialInfo.phone,
-        email: validatedCommercialInfo.email
-      });
-      
-      const assembled = await assemblePdf({
-        pdfBlob: generatedPdf.blob,
-        quoteType: currentTab === 'alarm' ? 'alarme' : 'video',
-        centralType: selectedCentral || null,
-        products,
-        commercial: {
-          name: finalCommercial,
-          phone: validatedCommercialInfo.phone,
-          email: validatedCommercialInfo.email
-        },
-        propertyType
-      });
-      
+
+      const filename = `devis-${finalClientName.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+      let finalBlob = generatedPdf.blob;
+      let products: string[] = [];
+      let assemblyInfo: { baseDossier: string; productsFound: number; totalPages: number } | undefined;
+
+      // Steps 2-3: Assemble with the Drive base template (alarm/camera only;
+      // fog & visiophone are self-contained, no base template).
+      if (isAlarm || isCamera) {
+        console.log('🔄 Step 2: Collecting products...');
+        const allProductLines = isAlarm
+          ? { material: alarmMaterialLines, installation: alarmInstallationLines }
+          : { material: cameraMaterialLines, installation: cameraInstallationLines };
+        products = collectAllProducts(allProductLines);
+
+        console.log('🔄 Step 3: Assembling PDF...');
+        const validatedCommercialInfo = commercialInfo || {
+          phone: '06 XX XX XX XX',
+          email: `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`
+        };
+        const assembled = await assemblePdf({
+          pdfBlob: generatedPdf.blob,
+          quoteType: isAlarm ? 'alarme' : 'video',
+          centralType: selectedCentral || null,
+          products,
+          commercial: {
+            name: finalCommercial,
+            phone: validatedCommercialInfo.phone,
+            email: validatedCommercialInfo.email
+          },
+          propertyType,
+          addPoliceDoc: isAlarm && interventionPolice
+        });
+        finalBlob = assembled.blob;
+        assemblyInfo = assembled.info;
+      }
+
       // Step 4: Send quote (upload to Drive, send email, log to DB)
       console.log('🔄 Step 4: Sending quote...');
-      const filename = `devis-${finalClientName.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
-      
       const result = await sendQuote({
-        pdfBlob: assembled.blob,
+        pdfBlob: finalBlob,
         filename,
         commercial: finalCommercial,
         clientName: finalClientName,
-        type: currentTab === 'alarm' ? 'alarme' : 'video',
+        type: isCamera ? 'video' : 'alarme',
         centralType: selectedCentral || undefined,
+        isXtoAlarm: isXto || undefined,
         products,
-        assemblyInfo: assembled.info
+        assemblyInfo
       });
       
       if (result.success) {
         // Step 5: Trigger automatic download
         console.log('🔄 Step 5: Triggering automatic PDF download...');
         try {
-          const pdfBytes = await assembled.blob.arrayBuffer();
+          const pdfBytes = await finalBlob.arrayBuffer();
           const blob = new Blob([pdfBytes], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -891,8 +908,10 @@ export default function CreateDevisPage() {
                       .filter(product => {
                         // Hide "Autre" from regular list
                         if (product.isCustom) return false;
-                        // Hide auto-included items
-                        if (product.id === 110 || product.id === 111) return false;
+                        // Application (110) + Alimentation de secours (111) are auto-added base-kit
+                        // items: show each only on the line that already holds it (so it displays),
+                        // never as a manually-selectable option (avoids duplicate 0 CHF rows).
+                        if (product.id === 110 || product.id === 111) return line.product?.id === product.id;
                         // If a central is selected, filter to relevant catalog entries
                         if (selectedCentral === 'titane') {
                           return product.price !== undefined || product.priceTitane !== undefined;
@@ -1221,7 +1240,7 @@ export default function CreateDevisPage() {
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
                     {CATALOG_ALARM_PRODUCTS
                       .filter(product => {
-                        if (product.isCustom || product.id === 101 || product.id === 102) return false;
+                        if (product.isCustom || product.id === 101 || product.id === 102 || product.id === 110 || product.id === 111) return false;
                         if (selectedCentral === 'titane' && product.id === 5) return false; // Hide Centrale Jablotron when Titane
                         if (selectedCentral === 'jablotron' && product.id === 6) return false; // Hide Centrale Titane when Jablotron
                         return true;

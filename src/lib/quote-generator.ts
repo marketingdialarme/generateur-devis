@@ -40,6 +40,7 @@ export interface AlarmProduct {
   monthlyJablotron?: number;
   requiresJablotron?: boolean;
   isCustom?: boolean;
+  isXTO?: boolean;
 }
 
 export interface CameraProduct {

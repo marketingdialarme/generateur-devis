@@ -123,23 +123,32 @@ export interface CameraTotals {
  */
 export function calculateSectionTotal(
   productLines: ProductLineData[],
-  discount?: DiscountConfig
+  discount?: DiscountConfig,
+  selectedCentral?: string | null
 ): SectionTotals {
   // Calculate subtotal from product lines
   let subtotal = 0;
-  
+
   productLines.forEach(line => {
     if (line.offered || !line.product) return;
-    
-    // Calculate price based on product
+
+    // Resolve unit price — mirrors getLineUnitPrice so totals match the PDF.
+    // customPrice overrides; then flat price; then central-specific price.
     let price = 0;
-    // Treat customPrice as an explicit override (even for non-custom products)
     if (line.customPrice !== undefined) {
       price = line.customPrice;
     } else if (line.product.price !== undefined) {
       price = line.product.price;
+    } else if (selectedCentral === 'titane' && line.product.priceTitane !== undefined) {
+      price = line.product.priceTitane;
+    } else if (selectedCentral === 'jablotron' && line.product.priceJablotron !== undefined) {
+      price = line.product.priceJablotron;
+    } else if (line.product.priceTitane !== undefined) {
+      price = line.product.priceTitane;
+    } else if (line.product.priceJablotron !== undefined) {
+      price = line.product.priceJablotron;
     }
-    
+
     const lineTotal = price * line.quantity;
     subtotal += lineTotal;
   });
@@ -199,6 +208,11 @@ export function calculateSectionMonthlyPrice(
     } else if (selectedCentral === 'titane' && product.priceTitane !== undefined) {
       price = product.priceTitane;
     } else if (selectedCentral === 'jablotron' && product.priceJablotron !== undefined) {
+      price = product.priceJablotron;
+    } else if (selectedCentral == null && product.priceTitane !== undefined) {
+      // No central yet selected — mirror getLineUnitPrice's fallback so monthly stays consistent
+      price = product.priceTitane;
+    } else if (selectedCentral == null && product.priceJablotron !== undefined) {
       price = product.priceJablotron;
     }
 
@@ -264,10 +278,10 @@ export function calculateAlarmTotals(
   alarmCatalog: AlarmProduct[]
 ): AlarmTotals {
   // Material totals
-  const material = calculateSectionTotal(materialLines, materialDiscount);
+  const material = calculateSectionTotal(materialLines, materialDiscount, selectedCentral);
 
   // Installation totals
-  const installationProductsTotal = calculateSectionTotal(installationLines, installationDiscount);
+  const installationProductsTotal = calculateSectionTotal(installationLines, installationDiscount, selectedCentral);
   const mainInstallTotal = isRentalMode ? 0 : (installation.isOffered ? 0 : (installation.price || calculateInstallationPrice(installation.quantity)));
   
   const installationTotal = {

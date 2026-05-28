@@ -17,6 +17,7 @@ export interface Product {
   monthlyJablotron?: number;
   isCustom?: boolean;
   requiresJablotron?: boolean;
+  isXTO?: boolean;
 }
 
 export interface ProductLineData {

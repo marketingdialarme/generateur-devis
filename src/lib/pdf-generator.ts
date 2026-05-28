@@ -12,6 +12,7 @@ import type { AlarmTotals, CameraTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
 import { TVA_RATE, ADMIN_FEES, UNINSTALL_PRICE, roundToFiveCents, calculateFacilityPayment } from './quote-generator';
 import { calculateRemoteAccessPrice, detectCentralType } from './product-line-adapter';
+import { getCommercialInfo } from './config';
 
 // ============================================
 // INTERFACES
@@ -22,18 +23,27 @@ export interface QuoteInfo {
   commercial: string;
   quoteNumber: string;
   date: string;
-  type: 'alarm' | 'camera';
+  type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   isRental: boolean;
 }
 
 export interface PDFGenerationOptions {
-  type: 'alarm' | 'camera';
+  type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   clientName: string;
   commercial: string;
   isRental: boolean;
   materialLines: ProductLineData[];
   installationLines?: ProductLineData[];
-  totals: AlarmTotals | CameraTotals;
+  totals?: AlarmTotals | CameraTotals;
+  /** Fog/visiophone fee config — these products compute their totals from the table rows. */
+  feesConfig?: {
+    installationPrice?: number;
+    processingFee?: number;
+    processingOffered?: boolean;
+    simCard?: number;
+    simCardSelected?: boolean;
+    simCardOffered?: boolean;
+  };
   /**
    * Optional installation duration (in half-days) for camera quotes.
    * Used only for display wording in the PDF.
@@ -58,6 +68,8 @@ export interface PDFGenerationOptions {
     serviceCles?: boolean;
   };
   remoteAccess?: boolean;
+  /** Alarm: whether a Carte SIM is part of the quote (controls whether its row is shown). */
+  simCardSelected?: boolean;
   paymentMonths?: number;
   /**
    * Optional overrides to keep quote number consistent across:
@@ -148,7 +160,11 @@ export async function generateQuotePDF(
     options.quoteNumberPrefixOverride ??
     (options.type === 'alarm'
       ? getAlarmQuoteNumberPrefix(options.services?.surveillance?.type ?? null)
-      : getCameraQuoteNumberPrefix());
+      : options.type === 'camera'
+      ? getCameraQuoteNumberPrefix()
+      : options.type === 'fog'
+      ? 'GB'
+      : 'VISIO');
   const quoteNumber = options.quoteNumberOverride ?? generateQuoteNumber(prefix, now);
   const date = options.dateOverride ?? now.toLocaleDateString('fr-CH');
 
@@ -162,7 +178,7 @@ export async function generateQuotePDF(
     isRental: options.isRental
   });
 
-  let yPos = 110;
+  let yPos = 165;
 
   // Add rental mode notice
   if (options.isRental) {
@@ -177,6 +193,10 @@ export async function generateQuotePDF(
     yPos = createAlarmPDFSections(doc, options, yPos);
   } else if (options.type === 'camera') {
     yPos = createCameraPDFSections(doc, options, yPos);
+  } else if (options.type === 'fog') {
+    yPos = createFogPDFSections(doc, options, yPos);
+  } else if (options.type === 'visiophone') {
+    yPos = createVisioPDFSections(doc, options, yPos);
   }
 
   // Create footer
@@ -190,47 +210,95 @@ export async function generateQuotePDF(
 // ============================================
 
 function createPDFHeader(doc: jsPDF, info: QuoteInfo): void {
-  // Dark header background
-  doc.setFillColor(51, 51, 51);
-  doc.rect(0, 0, 595, 70, 'F');
-
-  // Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-
-  let title = '';
-  if (info.isRental) {
-    title = info.type === 'camera' 
-      ? 'OFFRE LOCATION VIDÉO SURVEILLANCE'
-      : 'OFFRE LOCATION MATÉRIEL DE SÉCURITÉ';
-  } else {
-    title = info.type === 'camera'
-      ? 'OFFRE DE PARTENARIAT VIDÉOSURVEILLANCE'
-      : 'OFFRE DE PARTENARIAT MATÉRIEL DE SÉCURITÉ';
-  }
-  doc.text(title, 40, 25);
-
-  // Quote number and client
-  doc.setFontSize(10);
-  doc.text(info.quoteNumber, 40, 42);
-  doc.text(`DIALARME | A L'ATTENTION DE ${info.clientName.toUpperCase()}`, 40, 56);
-
-  // Yellow separator
-  doc.setFillColor(244, 230, 0);
-  doc.rect(0, 70, 595, 6, 'F');
-
-  // Commercial and date
   doc.setTextColor(0, 0, 0);
+
+  // Brand (logo asset lives in the Drive base template; render wordmark here)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('DIALARME', 40, 40);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.text('Votre sécurité, ça nous regarde', 40, 51);
+
+  // Conseiller block (top-right)
+  const info_c = getCommercialInfo(info.commercial);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(`NOM DU CONSEILLER : ${info.commercial}`, 40, 90);
-  doc.text(`DATE (Devis valable 30 jours) : ${info.date}`, 350, 90);
+  doc.text(`Votre conseiller : ${info.commercial}`, 360, 30);
+  if (info_c?.phone) doc.text(info_c.phone, 360, 42);
+  if (info_c?.email) doc.text(info_c.email, 360, 54);
+
+  // Yellow rule
+  doc.setFillColor(244, 230, 0);
+  doc.rect(0, 64, 595, 4, 'F');
+
+  // A l'attention de (left)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text("A l'attention de :", 40, 90);
+  doc.setFont('helvetica', 'bold');
+  doc.text(info.clientName, 40, 103);
+
+  // Title (right)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  const title = info.isRental ? 'Offre Location' : 'Offre Partenariat';
+  doc.text(title, 300, 90);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  const subtitle = doc.splitTextToSize(
+    "Installation et kit de base prise en charge, sous réserve de souscrire à l'un de nos contrats de service.",
+    255
+  );
+  doc.text(subtitle, 300, 102);
+
+  // Quote meta
+  doc.setFontSize(9);
+  doc.text('N° de devis', 300, 132);
+  doc.setFont('helvetica', 'bold');
+  doc.text(info.quoteNumber, 370, 132);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Date', 300, 145);
+  doc.text(`${info.date}`, 370, 145);
+  const dateW = doc.getTextWidth(info.date); // measured at size 9
+  doc.setFontSize(7);
+  doc.setTextColor(120, 120, 120);
+  doc.text('(valable 3 mois)', 370 + dateW + 8, 145);
+  doc.setTextColor(0, 0, 0);
 }
 
 // ============================================
 // ALARM PDF SECTIONS
 // ============================================
+
+interface TableRow {
+  name: string;
+  qty: number;
+  unitPrice: number;
+  offered: boolean;
+  note?: string;
+}
+
+// Colors
+const C_YELLOW: [number, number, number] = [244, 230, 0];
+const C_GREEN: [number, number, number] = [0, 140, 70];
+const C_GREY_ROW: [number, number, number] = [245, 245, 245];
+
+const LEFT = 40;
+const RIGHT = 555; // 40 + 515
+const COL_QTY = 360;
+const COL_PU = 420;
+const MAX_Y = 700; // content must stay above the footer band (footer drawn at y=720)
+const TOP_Y = 50; // top margin on continuation pages
+
+/** Add a page and reset to the top margin if `needed` points won't fit before the footer. */
+function ensureSpace(doc: jsPDF, yPos: number, needed: number): number {
+  if (yPos + needed > MAX_Y) {
+    doc.addPage();
+    return TOP_Y;
+  }
+  return yPos;
+}
 
 function createAlarmPDFSections(
   doc: jsPDF,
@@ -239,40 +307,108 @@ function createAlarmPDFSections(
 ): number {
   const alarmTotals = options.totals as AlarmTotals;
   const centralType = detectCentralType(options.materialLines);
+  const months = options.paymentMonths ?? 0;
 
-  // Material section (only if kit/base material is present)
-  if (options.materialLines.length > 0) {
-    yPos = createProductSection(
-      doc,
-      'KIT DE BASE',
-      options.materialLines,
-      alarmTotals.material,
-      centralType,
-      yPos
-    );
+  // ---- Build unified material table rows ----
+  const rows: TableRow[] = [];
+
+  // KIT DE BASE items
+  options.materialLines.forEach((line) => {
+    if (!line.product) return;
+    const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
+    rows.push({
+      name: `KIT DE BASE - ${name}`,
+      qty: line.quantity,
+      unitPrice: getLineUnitPrice(line, centralType),
+      offered: line.offered,
+    });
+  });
+
+  // Supplementary materials (matériel divers)
+  (options.installationLines || []).forEach((line) => {
+    if (!line.product) return;
+    const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
+    rows.push({
+      name,
+      qty: line.quantity,
+      unitPrice: getLineUnitPrice(line, centralType),
+      offered: line.offered,
+    });
+  });
+
+  // Main installation line ("Installation et paramétrage")
+  const supplementaryTotal = (options.installationLines || []).reduce((sum, line) => {
+    if (!line.product || line.offered) return sum;
+    return sum + getLineUnitPrice(line, centralType) * line.quantity;
+  }, 0);
+  const mainInstallationTotal = Math.max(0, alarmTotals.installation.totalBeforeDiscount - supplementaryTotal);
+  if (mainInstallationTotal > 0 || options.isRental) {
+    rows.push({
+      name: 'Installation et paramétrage',
+      qty: 1,
+      unitPrice: options.isRental ? 0 : mainInstallationTotal,
+      offered: options.isRental,
+    });
   }
 
-  // Installation section (with main installation line)
-  yPos = createAlarmInstallationSection(
-    doc,
-    options.installationLines || [],
-    alarmTotals.installation,
-    options.isRental,
-    centralType,
-    yPos
-  );
-
-  // Admin fees
-  yPos = createAdminFeesSection(doc, alarmTotals.adminFees, yPos);
-
-  // Services
-  if (options.services) {
-    yPos = createServicesSection(doc, options.services, yPos);
+  // Frais de dossier + Carte SIM (admin) — always listed, payable at install
+  rows.push({
+    name: 'Frais de dossier',
+    qty: 1,
+    unitPrice: ADMIN_FEES.processingFee,
+    offered: alarmTotals.adminFees.processing === 0,
+    note: '(à régler à l\'installation)',
+  });
+  if (options.simCardSelected) {
+    rows.push({
+      name: 'Carte SIM*',
+      qty: 1,
+      unitPrice: ADMIN_FEES.simCard,
+      offered: alarmTotals.adminFees.simCard === 0,
+      note: '(à régler à l\'installation)',
+    });
   }
 
-  // Options
+  // Maintenance (always offered/included)
+  rows.push({
+    name: `Maintenance et garantie sur ${months > 0 ? months : 48} mois`,
+    qty: 1,
+    unitPrice: 0,
+    offered: true,
+  });
+
+  // ---- Render table ----
+  yPos = drawItemTable(doc, rows, yPos);
+
+  // ---- Summary box (Total HT / Rabais / Après rabais / TVA / TTC) ----
+  const totalBeforeRabais = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const totalAfterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  const rabais = totalBeforeRabais - totalAfterRabais;
+  yPos = ensureSpace(doc, yPos, 110);
+  yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos);
+
+  // ---- Télésurveillance + Test Cyclique block ----
+  if (options.services?.surveillance?.type) {
+    yPos = ensureSpace(doc, yPos, 75);
+    yPos = drawSurveillanceBlock(doc, options.services, months, yPos);
+  }
+
+  // ---- Options block ----
   if (options.options) {
-    yPos = createOptionsSection(doc, options.options, yPos);
+    yPos = ensureSpace(doc, yPos, 60);
+    yPos = drawOptionsBlock(doc, options.options, yPos);
+  }
+
+  // ---- Facilité de paiement block ----
+  if (!options.isRental && months > 0) {
+    const facilityHT = calculateFacilityPayment(
+      totalAfterRabais,
+      alarmTotals.adminFees.processing,
+      alarmTotals.adminFees.simCard,
+      months
+    );
+    yPos = ensureSpace(doc, yPos, 70);
+    yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
   }
 
   // Uninstall notice for rental mode
@@ -280,182 +416,217 @@ function createAlarmPDFSections(
     yPos = createUninstallNotice(doc, yPos);
   }
 
-  // Final summary
-  yPos = createFinalSummary(doc, alarmTotals, options.type, options.isRental, yPos);
-
   return yPos;
 }
 
-// ============================================
-// ALARM INSTALLATION SECTION
-// ============================================
-
-function createAlarmInstallationSection(
+// Right-aligned label/value pair helper
+function drawLabelValue(
   doc: jsPDF,
-  productLines: ProductLineData[],
-  installationTotals: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
-  isRental: boolean,
-  centralType: 'titane' | 'jablotron' | null,
-  yPos: number
-): number {
-  // Section title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  label: string,
+  value: string,
+  y: number,
+  bold = false,
+  valueColor: [number, number, number] = [0, 0, 0]
+): void {
+  doc.setFont('helvetica', bold ? 'bold' : 'normal');
+  doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
-  doc.text('INSTALLATION & MATERIEL DIVERS', 40, yPos);
-  yPos += 12;
+  doc.text(label, COL_PU, y);
+  doc.setTextColor(...valueColor);
+  doc.text(value, RIGHT, y, { align: 'right' });
+  doc.setTextColor(0, 0, 0);
+}
 
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 14, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Qté', 50, yPos + 9);
-  doc.text('Désignation du matériel', 90, yPos + 9);
-  doc.text('Prix uni. HT', 400, yPos + 9);
-  doc.text('Total HT', 480, yPos + 9);
-  yPos += 14;
-
-  let lineCount = 0;
-  let partnershipDiscount = 0;
-
-  // Product lines (supplementary materials)
-  productLines.forEach(line => {
-    if (!line.product) return;
-    const product = line.product;
-
-    lineCount++;
-
-    // Alternating row colors
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
-    const unitPrice = getLineUnitPrice(line, centralType);
-    const lineTotal = unitPrice * line.quantity;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
+function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
+  const drawHeader = (y: number): number => {
+    doc.setFillColor(...C_YELLOW);
+    doc.rect(LEFT, y, RIGHT - LEFT, 16, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
+    doc.text('Désignation du matériel', LEFT + 6, y + 11);
+    doc.text('Qté', COL_QTY, y + 11);
+    doc.text('P.U HT', COL_PU, y + 11);
+    doc.text('TOTAL H.T.', RIGHT, y + 11, { align: 'right' });
+    return y + 16;
+  };
 
-    // Quantity
-    doc.text(line.quantity.toString(), 55, yPos + 8);
-
-    // Product name (truncate if too long)
-    const maxNameLength = 45;
-    const productName = product.isCustom && line.customName ? line.customName : product.name;
-    const displayName = productName.length > maxNameLength
-      ? productName.substring(0, maxNameLength - 3) + '...'
-      : productName;
-    doc.text(displayName, 90, yPos + 8);
-
-    // Unit price
-    doc.text(unitPrice.toFixed(2), 405, yPos + 8);
-
-    // Always show amount; partnership discount line will reflect offered items
-    doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-    if (line.offered) partnershipDiscount += lineTotal;
-
-    yPos += 12;
-  });
-
-  // Add main installation line: "Installation, paramétrages, tests, mise en service & formation"
-  // Calculate the installation base amount (total minus supplementary materials)
-  let supplementaryTotal = 0;
-  productLines.forEach(line => {
-    if (!line.product || line.offered) return;
-    const unitPrice = getLineUnitPrice(line, centralType);
-    supplementaryTotal += unitPrice * line.quantity;
-  });
-
-  const mainInstallationTotal = installationTotals.totalBeforeDiscount - supplementaryTotal;
-
-  if (mainInstallationTotal > 0 || isRental) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
+  yPos = drawHeader(yPos);
+  const rowH = 14;
+  rows.forEach((row, i) => {
+    // Page break before a row would collide with the footer; re-draw the column header
+    if (yPos + rowH > MAX_Y) {
+      doc.addPage();
+      yPos = drawHeader(TOP_Y);
     }
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
+    if (i % 2 === 1) {
+      doc.setFillColor(...C_GREY_ROW);
+      doc.rect(LEFT, yPos, RIGHT - LEFT, rowH, 'F');
+    }
     doc.setTextColor(0, 0, 0);
-
-    doc.text('1', 55, yPos + 8);
-    doc.text('Installation, paramétrages, tests, mise en service & formation', 90, yPos + 8);
-
-    // Keep existing rental behavior, but avoid "OFFERT" wording
-    if (isRental) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 150, 0);
-      doc.text('Compris', 405, yPos + 8);
-      doc.text('Compris', 485, yPos + 8);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    // Name (+ optional note in grey italic)
+    doc.text(row.name, LEFT + 6, yPos + 9);
+    if (row.note) {
+      const nameW = doc.getTextWidth(row.name);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6);
+      doc.setTextColor(120, 120, 120);
+      doc.text(row.note, LEFT + 6 + nameW + 4, yPos + 9);
+      doc.setFontSize(7.5);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
-    } else {
-      // If offered, total is 0 in calculations; display 0 without "OFFERT"
-      const displayAmount = mainInstallationTotal;
-      doc.text(displayAmount.toFixed(2), 405, yPos + 8);
-      doc.text(displayAmount.toFixed(2), 485, yPos + 8);
     }
-
-    yPos += 12;
-  }
-
-  // Partnership discount line (sum of offered supplementary products)
-  if (partnershipDiscount > 0) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(6);
-    doc.setTextColor(200, 0, 0);
-    doc.text('Rabais partenariat', 90, yPos + 8);
-    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
+    doc.text(String(row.qty), COL_QTY, yPos + 9);
+    doc.text(`${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
+    // Total column: green text (matches reference)
+    doc.setTextColor(...C_GREEN);
+    doc.text(`${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     doc.setTextColor(0, 0, 0);
-    yPos += 12;
-  }
+    yPos += rowH;
+  });
 
-  // Discount line
-  if (installationTotals.discount > 0) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
+  // Footnote (only when a Carte SIM line is present) — guard against footer collision
+  if (rows.some((r) => r.name.includes('Carte SIM'))) {
+    yPos = ensureSpace(doc, yPos, 16);
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(6);
-    doc.setTextColor(200, 0, 0);
-    doc.text(`Réduction ${installationTotals.discountDisplay}`, 90, yPos + 8);
-    doc.text(`-${installationTotals.discount.toFixed(2)}`, 485, yPos + 8);
+    doc.setFontSize(6.5);
+    doc.setTextColor(90, 90, 90);
+    doc.text('*Carte SIM si le réseau le permet', LEFT + 6, yPos + 8);
     doc.setTextColor(0, 0, 0);
-    yPos += 12;
+    yPos += 10;
   }
 
-  // Section totals
-  const totalHT = roundToFiveCents(installationTotals.total);
-  const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
-  const tva = roundToFiveCents(totalTTC - totalHT);
+  return yPos + 6;
+}
 
-  doc.setFillColor(230, 230, 230);
-  doc.rect(390, yPos, 165, 36, 'F');
+function drawSummary(
+  doc: jsPDF,
+  totalHT: number,
+  rabais: number,
+  afterRabais: number,
+  yPos: number
+): number {
+  const tva = roundToFiveCents(afterRabais * TVA_RATE);
+  const ttc = roundToFiveCents(afterRabais + tva);
+
+  if (rabais > 0) {
+    drawLabelValue(doc, 'Total HT', `${totalHT.toFixed(2)} CHF`, yPos + 8);
+    yPos += 14;
+    drawLabelValue(doc, 'Rabais partenariat', `- ${rabais.toFixed(2)} CHF`, yPos + 8, true, C_GREEN);
+    yPos += 14;
+    drawLabelValue(doc, 'Total après rabais', `${afterRabais.toFixed(2)} CHF`, yPos + 8);
+    yPos += 14;
+  } else {
+    drawLabelValue(doc, 'Total HT', `${afterRabais.toFixed(2)} CHF`, yPos + 8);
+    yPos += 14;
+  }
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 8);
+  yPos += 16;
+  // Total TTC highlighted yellow
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(COL_PU - 10, yPos - 2, RIGHT - (COL_PU - 10), 16, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 9, true);
+  return yPos + 22;
+}
+
+function drawSurveillanceBlock(
+  doc: jsPDF,
+  services: NonNullable<PDFGenerationOptions['services']>,
+  months: number,
+  yPos: number
+): number {
+  yPos += 6;
+  const surveillanceHT =
+    (services.surveillance?.offered ? 0 : (services.surveillance?.price || 0)) +
+    (services.testCyclique?.selected && !services.testCyclique?.offered
+      ? services.testCyclique.price
+      : 0);
+  const tva = roundToFiveCents(surveillanceHT * TVA_RATE);
+  const ttc = roundToFiveCents(surveillanceHT + tva);
+
+  const boxH = 44;
+  // Yellow left accent
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, 4, boxH, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(totalHT.toFixed(2), 485, yPos + 12);
-  doc.text('TVA 8.1%', 400, yPos + 24);
-  doc.text(tva.toFixed(2), 485, yPos + 24);
-  doc.text('Total T.T.C.', 400, yPos + 32);
-  doc.text(totalTTC.toFixed(2), 485, yPos + 32);
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text('TÉLÉSURVEILLANCE + TEST CYCLIQUE', LEFT + 12, yPos + 16);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 30);
 
-  yPos += 45;
+  drawLabelValue(doc, 'Total HT', `${surveillanceHT.toFixed(2)} CHF`, yPos + 10);
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(COL_PU - 10, yPos + 28, RIGHT - (COL_PU - 10), 14, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
+  yPos += boxH + 4;
 
-  return yPos;
+  // Mensualité text (amount = surveillance HT, duration = payment months)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(0, 0, 0);
+  doc.text(
+    `La mensualité de CHF ${surveillanceHT.toFixed(0)}.- HT est fixée et non indexable pendant la durée contractuelle de ${months > 0 ? months : 48} mois.`,
+    LEFT,
+    yPos + 8
+  );
+  return yPos + 16;
+}
+
+function drawOptionsBlock(
+  doc: jsPDF,
+  options: NonNullable<PDFGenerationOptions['options']>,
+  yPos: number
+): number {
+  const items: string[] = [];
+  if (options.interventionsGratuites) items.push('Interventions gratuites & illimitées des agents');
+  if (options.interventionsAnnee)
+    items.push(`${options.interventionsQty || 1} intervention(s) par année des agents`);
+  if (options.serviceCles) items.push('Service des clés inclus');
+  if (items.length === 0) return yPos;
+
+  yPos += 6;
+  const boxH = items.length * 12 + 8;
+  doc.setFillColor(100, 100, 100);
+  doc.rect(LEFT, yPos, 4, boxH, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(0, 0, 0);
+  items.forEach((it, i) => {
+    doc.text(it, LEFT + 12, yPos + 12 + i * 12);
+  });
+  return yPos + boxH + 4;
+}
+
+function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos: number): number {
+  yPos += 6;
+  const tva = roundToFiveCents(facilityHT * TVA_RATE);
+  const ttc = roundToFiveCents(facilityHT + tva);
+  const boxH = 44;
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, 4, boxH, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  const wrapped = doc.splitTextToSize(
+    `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire hors frais de dossier`,
+    300
+  );
+  doc.text(wrapped, LEFT + 12, yPos + 16);
+
+  drawLabelValue(doc, 'Total HT', `${facilityHT.toFixed(2)} CHF`, yPos + 10);
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(COL_PU - 10, yPos + 28, RIGHT - (COL_PU - 10), 14, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
+
+  return yPos + boxH + 6;
 }
 
 // ============================================
@@ -468,590 +639,203 @@ function createCameraPDFSections(
   yPos: number
 ): number {
   const cameraTotals = options.totals as CameraTotals;
+  const months = options.paymentMonths ?? 0;
 
-  // Material section
-  if (options.materialLines.length > 0) {
-    yPos = createProductSection(
+  // ---- Unified material + installation table ----
+  const rows: TableRow[] = [];
+  options.materialLines.forEach((line) => {
+    if (!line.product) return;
+    const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
+    rows.push({
+      name,
+      qty: line.quantity,
+      unitPrice: getLineUnitPrice(line, null),
+      offered: line.offered,
+    });
+  });
+
+  const installBefore = cameraTotals.installation.totalBeforeDiscount;
+  const installLabel =
+    options.installationQty === 1 ? 'Installation 1/2 journée' :
+    options.installationQty === 2 ? 'Installation 1 journée' :
+    'Installation, paramétrages, tests, mise en service & formation';
+  if (installBefore > 0 || options.isRental) {
+    rows.push({
+      name: installLabel,
+      qty: 1,
+      unitPrice: options.isRental ? 0 : installBefore,
+      offered: options.isRental || installBefore === 0,
+    });
+  }
+
+  rows.push({
+    name: `Maintenance et garantie sur ${months > 0 ? months : 48} mois`,
+    qty: 1,
+    unitPrice: 0,
+    offered: true,
+  });
+
+  yPos = drawItemTable(doc, rows, yPos);
+
+  // ---- Summary ----
+  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const afterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  const rabais = totalBefore - afterRabais;
+  yPos = ensureSpace(doc, yPos, 110);
+  yPos = drawSummary(doc, totalBefore, rabais, afterRabais, yPos);
+
+  // ---- Vision à distance (monthly) ----
+  if (!options.isRental && options.remoteAccess) {
+    const remoteAccessPrice = calculateRemoteAccessPrice(options.materialLines);
+    yPos = ensureSpace(doc, yPos, 60);
+    yPos = drawMonthlyBlock(
       doc,
-      'MATERIEL',
-      options.materialLines,
-      cameraTotals.material,
-      null,
+      'VISION À DISTANCE',
+      remoteAccessPrice,
+      `Mensualité fixée et non indexable pendant la durée contractuelle de ${months} mois.`,
       yPos
     );
   }
 
-  // Installation
-  yPos = createCameraInstallationSection(
-    doc,
-    cameraTotals.installation,
-    options.isRental,
-    options.installationQty,
-    yPos
-  );
-
-  // Remote access
-  if (!options.isRental && options.remoteAccess) {
-    yPos += 15;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const remoteAccessPrice = calculateRemoteAccessPrice(options.materialLines);
-    doc.text(`Vision à distance : ${remoteAccessPrice.toFixed(2)} CHF/mois`, 40, yPos);
-    doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text('(20 CHF/mois par caméra 4G + 20 CHF/mois par caméra classique si Modem 4G)', 40, yPos + 10);
-    doc.setTextColor(0, 0, 0);
-    yPos += 20;
-  }
-
-  // Warning if no modem and no remote access selected
+  // ---- Warning when no modem & no remote access ----
   if (!options.isRental && !options.remoteAccess) {
-    // Check if there's a modem in the materials
     const hasModem = options.materialLines.some(
-      line => line.product && line.product.name.toLowerCase().includes('modem')
+      (line) => line.product && line.product.name.toLowerCase().includes('modem')
     );
-    
-    // Only show warning if no modem is present
-    if (!hasModem) {
-      yPos += 15;
-      
-      // Warning box with yellow/orange background
-      doc.setFillColor(255, 243, 205); // Light orange/yellow
-      doc.rect(40, yPos, 515, 85, 'F');
-      
-      // Border
-      doc.setDrawColor(255, 193, 7); // Orange border
-      doc.setLineWidth(2);
-      doc.rect(40, yPos, 515, 85, 'S');
-      
-      // Warning title
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(200, 100, 0); // Orange text
-      doc.text('⚠️ ATTENTION - VISION À DISTANCE', 50, yPos + 15);
-      
-      // Warning text
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(0, 0, 0);
-      
-      const warningLines = [
-        'Si le client ne souscrit pas la vision à distance par le biais de Dialarme, la société Dialarme',
-        'décline toutes responsabilités dû aux pertes de connexion à distance des caméras.',
-        '',
-        'Un forfait unique de CHF 150 HT par déplacement sera facturé au client pour la remise en réseau',
-        'des caméras.',
-        '',
-        'Pour les caméras classiques, la vision à distance nécessite un Modem 4G (CHF 290.- HT).'
-      ];
-      
-      let lineYPos = yPos + 30;
-      warningLines.forEach(line => {
-        doc.text(line, 50, lineYPos);
-        lineYPos += 10;
-      });
-      
-      // Reset colors
-      doc.setTextColor(0, 0, 0);
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      
-      yPos += 100;
-    }
+    if (!hasModem) yPos = drawCameraWarning(doc, yPos);
   }
 
-  // Maintenance
-  yPos = createMaintenanceSection(doc, yPos);
-
-  // Uninstall notice for rental mode
-  if (options.isRental) {
-    yPos = createUninstallNotice(doc, yPos);
-  }
-
-  // Final summary
-  yPos = createFinalSummary(doc, cameraTotals, options.type, options.isRental, yPos);
+  if (options.isRental) yPos = createUninstallNotice(doc, yPos);
 
   return yPos;
 }
 
-// ============================================
-// PRODUCT SECTION
-// ============================================
-
-function createProductSection(
-  doc: jsPDF,
-  title: string,
-  productLines: ProductLineData[],
-  totals: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
-  centralType: 'titane' | 'jablotron' | null,
-  yPos: number
-): number {
-  // Section title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text(title, 40, yPos);
-  yPos += 12;
-
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 14, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Qté', 50, yPos + 9);
-  doc.text('Désignation du matériel', 90, yPos + 9);
-  doc.text('Prix uni. HT', 400, yPos + 9);
-  doc.text('Total HT', 480, yPos + 9);
-  yPos += 14;
-
-  // Product lines
-  let lineCount = 0;
-  let partnershipDiscount = 0;
-  productLines.forEach(line => {
-    if (!line.product) return;
-    const product = line.product;
-
-    lineCount++;
-
-    // Alternating row colors
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
-    const unitPrice = getLineUnitPrice(line, centralType);
-    const lineTotal = unitPrice * line.quantity;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(0, 0, 0);
-
-    // Quantity
-    doc.text(line.quantity.toString(), 55, yPos + 8);
-
-    // Product name (truncate if too long)
-    const maxNameLength = 45;
-    const productName = product.isCustom && line.customName ? line.customName : product.name;
-    const displayName = productName.length > maxNameLength
-      ? productName.substring(0, maxNameLength - 3) + '...'
-      : productName;
-    doc.text(displayName, 90, yPos + 8);
-
-    // Unit price
-    doc.text(unitPrice.toFixed(2), 405, yPos + 8);
-
-    // Always show amount; partnership discount line will reflect offered items
-    doc.text(lineTotal.toFixed(2), 485, yPos + 8);
-    if (line.offered) partnershipDiscount += lineTotal;
-
-    yPos += 12;
-  });
-
-  // Partnership discount line (sum of offered product lines)
-  if (partnershipDiscount > 0) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(6);
-    doc.setTextColor(200, 0, 0);
-    doc.text('Rabais partenariat', 90, yPos + 8);
-    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
-    doc.setTextColor(0, 0, 0);
-    yPos += 12;
-  }
-
-  // Discount line
-  if (totals.discount > 0) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(6);
-    doc.setTextColor(200, 0, 0);
-    doc.text(`Réduction ${totals.discountDisplay}`, 90, yPos + 8);
-    doc.text(`-${totals.discount.toFixed(2)}`, 485, yPos + 8);
-    doc.setTextColor(0, 0, 0);
-    yPos += 12;
-  }
-
-  // Section totals
-  const totalHT = roundToFiveCents(totals.total);
-  const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
-  const tva = roundToFiveCents(totalTTC - totalHT);
-
-  doc.setFillColor(230, 230, 230);
-  doc.rect(390, yPos, 165, 36, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(totalHT.toFixed(2), 485, yPos + 12);
-  doc.text('TVA 8.1%', 400, yPos + 24);
-  doc.text(tva.toFixed(2), 485, yPos + 24);
-  doc.text('Total T.T.C.', 400, yPos + 32);
-  doc.text(totalTTC.toFixed(2), 485, yPos + 32);
-
-  yPos += 45;
-
-  return yPos;
+// Map product lines to table rows (no central pricing for fog/visiophone)
+function linesToRows(lines: ProductLineData[] | undefined): TableRow[] {
+  return (lines || [])
+    .filter((l) => l.product)
+    .map((l) => ({
+      name: l.product!.isCustom && l.customName ? l.customName : l.product!.name,
+      qty: l.quantity,
+      unitPrice: getLineUnitPrice(l, null),
+      offered: l.offered,
+    }));
 }
 
 // ============================================
-// ADMIN FEES SECTION
+// FOG (GÉNÉRATEUR DE BROUILLARD) SECTIONS
 // ============================================
 
-function createAdminFeesSection(
-  doc: jsPDF,
-  adminFees: { simCard: number; processing: number; total: number },
-  yPos: number
-): number {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('FRAIS DE DOSSIER (UNIQUE)', 40, yPos);
-  yPos += 15;
-
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 16, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('Qté', 50, yPos + 10);
-  doc.text('Description', 90, yPos + 10);
-  doc.text('Prix uni. HT', 400, yPos + 10);
-  doc.text('Total HT', 480, yPos + 10);
-  yPos += 16;
-
-  const items = [
-    { desc: 'Carte SIM + Activation', price: ADMIN_FEES.simCard, actual: adminFees.simCard },
-    { desc: 'Frais de dossier', price: ADMIN_FEES.processingFee, actual: adminFees.processing }
+function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
+  const fees = options.feesConfig || {};
+  const rows: TableRow[] = [
+    ...linesToRows(options.materialLines),
+    ...linesToRows(options.installationLines), // matériel supplémentaire
   ];
 
-  let lineCount = 0;
-  items.forEach(item => {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 14, 'F');
-    }
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    doc.text('1', 55, yPos + 9);
-    doc.text(item.desc, 90, yPos + 9);
-
-    // Always show unit price, even when offered
-    doc.text(item.price.toFixed(2), 405, yPos + 9);
-
-    if (item.actual === 0) {
-      // Avoid "OFFERT" in PDF wording
-      doc.text('0.00', 485, yPos + 9);
-    } else {
-      doc.text(item.actual.toFixed(2), 485, yPos + 9);
-    }
-
-    yPos += 14;
+  if ((fees.installationPrice ?? 0) > 0) {
+    rows.push({ name: 'Installation et paramétrage', qty: 1, unitPrice: fees.installationPrice!, offered: false });
+  }
+  rows.push({
+    name: 'Frais de dossier',
+    qty: 1,
+    unitPrice: fees.processingFee ?? 0,
+    offered: !!fees.processingOffered,
+    note: "(à régler à l'installation)",
   });
+  if (fees.simCardSelected) {
+    rows.push({
+      name: 'Carte SIM*',
+      qty: 1,
+      unitPrice: fees.simCard ?? 0,
+      offered: !!fees.simCardOffered,
+      note: "(à régler à l'installation)",
+    });
+  }
 
-  // Totals
-  const adminTotalHT = roundToFiveCents(adminFees.total);
-  const adminTotalTTC = roundToFiveCents(adminTotalHT * (1 + TVA_RATE));
-  const adminTVA = roundToFiveCents(adminTotalTTC - adminTotalHT);
-
-  doc.setFillColor(230, 230, 230);
-  doc.rect(390, yPos, 165, 36, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Total H.T.', 400, yPos + 12);
-  doc.text(adminTotalHT.toFixed(2), 485, yPos + 12);
-  doc.text('TVA 8.1%', 400, yPos + 24);
-  doc.text(adminTVA.toFixed(2), 485, yPos + 24);
-  doc.text('Total T.T.C.', 400, yPos + 32);
-  doc.text(adminTotalTTC.toFixed(2), 485, yPos + 32);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.text('Montant à régler à l\'installation', 50, yPos + 32);
-
-  return yPos + 50;
+  yPos = drawItemTable(doc, rows, yPos);
+  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  yPos = ensureSpace(doc, yPos, 110);
+  return drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
 }
 
 // ============================================
-// SERVICES SECTION
+// VISIOPHONE SECTIONS
 // ============================================
 
-function createServicesSection(
-  doc: jsPDF,
-  services: {
-    testCyclique?: { selected: boolean; price: number; offered: boolean };
-    surveillance?: { type: string | null; price: number; offered: boolean };
-  },
-  yPos: number
-): number {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('SERVICES', 40, yPos);
-  yPos += 12;
-
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 14, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Service', 90, yPos + 9);
-  doc.text('Prix', 400, yPos + 9);
-  doc.text('Total', 480, yPos + 9);
-  yPos += 14;
-
-  let lineCount = 0;
-  let partnershipDiscount = 0;
-
-  // Test Cyclique
-  if (services.testCyclique?.selected) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.text('Test Cyclique', 90, yPos + 8);
-
-    // Always show reference price
-    doc.text(services.testCyclique.price.toFixed(2), 405, yPos + 8);
-
-    // Always show amount; partnership discount line will reflect offered items
-    doc.text(services.testCyclique.price.toFixed(2), 485, yPos + 8);
-    if (services.testCyclique.offered) partnershipDiscount += services.testCyclique.price;
-
-    yPos += 12;
+function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
+  const fees = options.feesConfig || {};
+  const rows: TableRow[] = [...linesToRows(options.materialLines)];
+  if ((fees.installationPrice ?? 0) > 0) {
+    rows.push({ name: 'Installation et paramétrage', qty: 1, unitPrice: fees.installationPrice!, offered: false });
   }
-
-  // Surveillance
-  if (services.surveillance?.type) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-
-    let serviceName = '';
-    if (services.surveillance.type === 'telesurveillance') {
-      serviceName = 'Télésurveillance Particulier';
-    } else if (services.surveillance.type === 'telesurveillance-pro') {
-      serviceName = 'Télésurveillance Professionnel';
-    } else if (services.surveillance.type === 'autosurveillance') {
-      serviceName = 'Autosurveillance';
-    } else if (services.surveillance.type === 'autosurveillance-pro') {
-      serviceName = 'Autosurveillance Professionnel';
-    }
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.text(serviceName, 90, yPos + 8);
-
-    // Always show reference price
-    doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 405, yPos + 8);
-
-    // Always show amount; partnership discount line will reflect offered items
-    doc.text(`${services.surveillance.price.toFixed(2)}/mois`, 485, yPos + 8);
-    if (services.surveillance.offered) partnershipDiscount += services.surveillance.price;
-
-    yPos += 12;
-  }
-
-  // Partnership discount line (sum of offered services)
-  if (partnershipDiscount > 0) {
-    lineCount++;
-    if (lineCount % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 12, 'F');
-    }
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(6);
-    doc.setTextColor(200, 0, 0);
-    doc.text('Rabais partenariat', 90, yPos + 8);
-    doc.text(`-${partnershipDiscount.toFixed(2)}`, 485, yPos + 8);
-    doc.setTextColor(0, 0, 0);
-    yPos += 12;
-  }
-
-  return yPos + 5;
+  yPos = drawItemTable(doc, rows, yPos);
+  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  yPos = ensureSpace(doc, yPos, 110);
+  return drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
 }
 
-// ============================================
-// OPTIONS SECTION
-// ============================================
-
-function createOptionsSection(
+// Generic monthly (mensualité) block: title + HT/TVA/TTC + optional sub-text
+function drawMonthlyBlock(
   doc: jsPDF,
-  options: {
-    interventionsGratuites?: boolean;
-    interventionsAnnee?: boolean;
-    interventionsQty?: number;
-    serviceCles?: boolean;
-  },
+  title: string,
+  ht: number,
+  subtext: string,
   yPos: number
 ): number {
-  if (!options.interventionsGratuites && !options.interventionsAnnee && !options.serviceCles) {
-    return yPos;
+  yPos += 6;
+  const tva = roundToFiveCents(ht * TVA_RATE);
+  const ttc = roundToFiveCents(ht + tva);
+  const boxH = 44;
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, 4, boxH, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(title, LEFT + 12, yPos + 16);
+  if (subtext) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(doc.splitTextToSize(subtext, 300), LEFT + 12, yPos + 30);
   }
+  drawLabelValue(doc, 'Total HT', `${ht.toFixed(2)} CHF`, yPos + 10);
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(COL_PU - 10, yPos + 28, RIGHT - (COL_PU - 10), 14, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
+  return yPos + boxH + 6;
+}
 
+function drawCameraWarning(doc: jsPDF, yPos: number): number {
   yPos += 10;
-
+  doc.setFillColor(255, 243, 205);
+  doc.rect(LEFT, yPos, RIGHT - LEFT, 78, 'F');
+  doc.setDrawColor(255, 193, 7);
+  doc.setLineWidth(2);
+  doc.rect(LEFT, yPos, RIGHT - LEFT, 78, 'S');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text('OPTIONS DE L\'OFFRE : ', 40, yPos);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-
-  const optionsList: string[] = [];
-  if (options.interventionsGratuites) {
-    optionsList.push('Interventions gratuites & illimitées des agents');
-  }
-  if (options.interventionsAnnee) {
-    optionsList.push(`${options.interventionsQty || 1} intervention(s) par année des agents`);
-  }
-  if (options.serviceCles) {
-    // Avoid "offert" wording in PDF
-    optionsList.push('Service des clés inclus');
-  }
-
-  doc.text(optionsList.join(' | '), 165, yPos);
-  yPos += 20;
-
-  return yPos;
-}
-
-// ============================================
-// CAMERA INSTALLATION SECTION
-// ============================================
-
-function createCameraInstallationSection(
-  doc: jsPDF,
-  installation: { total: number; totalBeforeDiscount: number; discount: number; discountDisplay: string },
-  isRental: boolean,
-  installationQty: number | undefined,
-  yPos: number
-): number {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('INSTALLATION', 40, yPos);
-  yPos += 15;
-
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 16, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('Qté', 50, yPos + 10);
-  doc.text('Désignation', 90, yPos + 10);
-  doc.text('Prix uni. HT', 400, yPos + 10);
-  doc.text('Total HT', 480, yPos + 10);
-  yPos += 16;
-
-  const isOffered = installation.totalBeforeDiscount === 0;
-
-  // Installation line
+  doc.setTextColor(200, 100, 0);
+  doc.text('ATTENTION - VISION À DISTANCE', LEFT + 10, yPos + 15);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.text('1', 55, yPos + 9);
-  const installLabel =
-    installationQty === 1 ? 'Installation 1/2 journée' :
-    installationQty === 2 ? 'Installation 1 journée' :
-    'Installation, paramétrages, tests, mise en service & formation';
-  doc.text(installLabel, 90, yPos + 9);
-
-  if (isRental || isOffered) {
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 150, 0);
-    doc.text(isRental ? 'Compris dans le forfait' : '0.00', 395, yPos + 9);
-    doc.text(isRental ? 'Compris' : '0.00', 475, yPos + 9);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-  } else {
-    doc.text(installation.totalBeforeDiscount.toFixed(2), 405, yPos + 9);
-    doc.text(installation.totalBeforeDiscount.toFixed(2), 485, yPos + 9);
-  }
-
-  yPos += 14;
-
-  // Discount line
-  if (installation.discount > 0) {
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(7);
-    doc.setTextColor(200, 0, 0);
-    doc.text(`Réduction ${installation.discountDisplay}`, 90, yPos + 9);
-    doc.text(`-${installation.discount.toFixed(2)}`, 485, yPos + 9);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    yPos += 14;
-  }
-
-  if (!isRental) {
-    const installTotalHT = roundToFiveCents(installation.total);
-    const installTotalTTC = roundToFiveCents(installTotalHT * (1 + TVA_RATE));
-    const installTVA = roundToFiveCents(installTotalTTC - installTotalHT);
-
-    doc.setFillColor(200, 200, 200);
-    doc.rect(390, yPos, 165, 42, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('Total H.T.', 400, yPos + 9);
-    doc.text(installTotalHT.toFixed(2), 485, yPos + 9);
-    doc.text('TVA 8.1%', 400, yPos + 21);
-    doc.text(installTVA.toFixed(2), 485, yPos + 21);
-    doc.text('Total T.T.C.', 400, yPos + 35);
-    doc.text(installTotalTTC.toFixed(2), 485, yPos + 35);
-
-    yPos += 42;
-  }
-
-  return yPos + 15;
-}
-
-// ============================================
-// MAINTENANCE SECTION
-// ============================================
-
-function createMaintenanceSection(doc: jsPDF, yPos: number): number {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('MAINTENANCE ET GARANTIE', 40, yPos);
-  yPos += 15;
-
-  // Table header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 16, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('Qté', 50, yPos + 10);
-  doc.text('Désignation', 90, yPos + 10);
-  doc.text('Prix uni. HT', 400, yPos + 10);
-  doc.text('Total HT', 480, yPos + 10);
-  yPos += 16;
-
-  // Maintenance line
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.text('1', 55, yPos + 9);
-  doc.text('Assistance hotline, déplacement(s), matériels pièce(s), main d\'œuvre et support téléphonique', 90, yPos + 9);
-  // Avoid "OFFERT" wording in PDF
-  doc.text('0.00', 405, yPos + 9);
-  doc.text('0.00', 485, yPos + 9);
-  yPos += 14;
-
-  return yPos + 15;
+  doc.setTextColor(0, 0, 0);
+  const warningLines = [
+    'Si le client ne souscrit pas la vision à distance par le biais de Dialarme, la société Dialarme',
+    'décline toutes responsabilités dû aux pertes de connexion à distance des caméras.',
+    'Un forfait unique de CHF 150 HT par déplacement sera facturé au client pour la remise en réseau des caméras.',
+    'Pour les caméras classiques, la vision à distance nécessite un Modem 4G (CHF 290.- HT).',
+  ];
+  let lineYPos = yPos + 30;
+  warningLines.forEach((line) => {
+    doc.text(line, LEFT + 10, lineYPos);
+    lineYPos += 11;
+  });
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.5);
+  return yPos + 88;
 }
 
 // ============================================
@@ -1080,176 +864,6 @@ function createUninstallNotice(doc: jsPDF, yPos: number): number {
   doc.setTextColor(0, 0, 0);
   yPos += 45;
   
-  return yPos;
-}
-
-// ============================================
-// FINAL SUMMARY
-// ============================================
-
-function createFinalSummary(
-  doc: jsPDF,
-  totals: AlarmTotals | CameraTotals,
-  type: 'alarm' | 'camera',
-  isRental: boolean,
-  yPos: number
-): number {
-  yPos += 15;
-
-  // Header
-  doc.setFillColor(244, 230, 0);
-  doc.rect(40, yPos, 515, 16, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('RÉCAPITULATIF GÉNÉRAL', 50, yPos + 10);
-  yPos += 16;
-
-  // Monthly payments section
-  if (!isRental && totals.monthly) {
-    doc.setFillColor(245, 245, 245);
-    doc.rect(40, yPos, 515, 75, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(`MENSUALITÉS GLOBALES (${totals.monthly.months} mois)`, 50, yPos + 18);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    
-    const serviceName = type === 'alarm' ? 'Surveillance' : 'Vision à distance';
-    const serviceAmount = type === 'alarm' 
-      ? (totals as AlarmTotals).monthly?.surveillanceHT || 0
-      : (totals as CameraTotals).monthly?.remoteAccessHT || 0;
-    
-    if (type === 'camera') {
-      const cameraMonthly = (totals as CameraTotals).monthly!;
-      // Show separate monthly amounts for material and installation
-      doc.text(
-        `Matériel = ${cameraMonthly.materialHT.toFixed(2)} CHF HT   |   Installation = ${cameraMonthly.installationHT.toFixed(2)} CHF HT`,
-        50,
-        yPos + 35
-      );
-      // Optional vision à distance line
-      if (serviceAmount > 0) {
-        doc.text(
-          `${serviceName} = ${serviceAmount.toFixed(2)} CHF HT`,
-          50,
-          yPos + 48
-        );
-      }
-    } else {
-      // Alarm: keep original wording
-      if (serviceAmount > 0) {
-        doc.text(
-          `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT   |   ${serviceName} = ${serviceAmount?.toFixed(2) || '0.00'} CHF HT`,
-          50,
-          yPos + 35
-        );
-      } else {
-        doc.text(
-          `Installation et matériel supp. = ${totals.monthly.installationHT?.toFixed(2) || '0.00'} CHF HT`,
-          50,
-          yPos + 35
-        );
-      }
-    }
-
-    doc.text(`Total mensualité HT = ${totals.monthly.totalHT.toFixed(2)} CHF`, 50, yPos + 48);
-    doc.text(`TVA 8,1% = ${roundToFiveCents(totals.monthly.totalTTC - totals.monthly.totalHT).toFixed(2)} CHF`, 250, yPos + 48);
-
-    doc.setFillColor(255, 255, 255);
-    doc.rect(420, yPos + 38, 120, 20, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(`Total TTC = ${totals.monthly.totalTTC.toFixed(2)} CHF`, 430, yPos + 51);
-
-    yPos += 75;
-
-    // Facility payment / contract text (alarm only) - required by client feedback
-    if (type === 'alarm' && totals.monthly.months > 0) {
-      const alarmTotals = totals as AlarmTotals;
-      const monthsCount = totals.monthly.months;
-
-      // Finance amount is based on Total HT, excluding admin fees & SIM (as per Milestone formulas)
-      const facilityMonthlyHT = calculateFacilityPayment(
-        alarmTotals.totalHT,
-        alarmTotals.adminFees.processing,
-        alarmTotals.adminFees.simCard,
-        monthsCount
-      );
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-
-      // Keep text wording aligned with client checklist
-      doc.text(
-        `Possibilité de facilité de paiement sur ${monthsCount} mois pour le matériel supplémentaire hors frais de dossier`,
-        40,
-        yPos + 12
-      );
-      doc.text(
-        `La mensualité de CHF ${facilityMonthlyHT}.- HT est fixée et non indexable pendant la durée contractuelle de ${monthsCount} mois.`,
-        40,
-        yPos + 24
-      );
-
-      yPos += 30;
-    }
-
-    // Cash payment (alarm only)
-    if (type === 'alarm' && (totals as AlarmTotals).cash) {
-      yPos += 15;
-
-      doc.setFillColor(245, 245, 245);
-      doc.rect(40, yPos, 515, 45, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.text('MONTANT À RÉGLER COMPTANT', 50, yPos + 18);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      const cash = (totals as AlarmTotals).cash!;
-      doc.text(`Total HT = ${cash.totalHT.toFixed(2)} CHF`, 50, yPos + 30);
-      doc.text(`TVA 8,1% = ${roundToFiveCents(cash.totalTTC - cash.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
-
-      doc.setFillColor(255, 255, 255);
-      doc.rect(420, yPos + 20, 120, 20, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total TTC = ${cash.totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
-
-      yPos += 50;
-    }
-  } else {
-    // Cash payment only
-    doc.setFillColor(245, 245, 245);
-    doc.rect(40, yPos, 515, 45, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(
-      isRental ? 'MONTANT TOTAL LOCATION (PAIEMENT COMPTANT)' : 'MONTANT TOTAL (PAIEMENT COMPTANT)',
-      50,
-      yPos + 18
-    );
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Total HT = ${totals.totalHT.toFixed(2)} CHF`, 50, yPos + 30);
-    doc.text(`TVA 8,1% = ${roundToFiveCents(totals.totalTTC - totals.totalHT).toFixed(2)} CHF`, 250, yPos + 30);
-
-    doc.setFillColor(255, 255, 255);
-    doc.rect(420, yPos + 20, 120, 20, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total TTC = ${totals.totalTTC.toFixed(2)} CHF`, 430, yPos + 33);
-
-    yPos += 50;
-  }
-
   return yPos;
 }
 
