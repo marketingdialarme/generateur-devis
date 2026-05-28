@@ -479,10 +479,12 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
       doc.setFont('helvetica', 'normal');
     }
     doc.text(String(row.qty), COL_QTY, yPos + 9);
-    doc.text(`${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
+    // Zero-priced rows (maintenance, Alimentation) render a dash, matching the client reference
+    const showDash = row.unitPrice === 0;
+    doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
     // Total column: green text (matches reference)
     doc.setTextColor(...C_GREEN);
-    doc.text(`${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
+    doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     doc.setTextColor(0, 0, 0);
     yPos += rowH;
   });

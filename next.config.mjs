@@ -30,7 +30,10 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          // No cookie/credential-based auth on the API — don't advertise credentials
+          // support. Wildcard origin retained because the API has no auth and serves
+          // the SPA on the same deployment. Migrate to Vercel Password Protection
+          // before exposing publicly (see HANDOFF.md security section).
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'X-Requested-With, Content-Type, Authorization' },

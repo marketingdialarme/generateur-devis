@@ -79,7 +79,7 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
   { id: 19, name: "Télécommande", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
 
   // Kit de base - always included items (client feedback)
-  { id: 110, name: "Application", price: 0.00 },
+  { id: 110, name: "Application", price: 100.00 },
   { id: 111, name: "Alimentation de secours", price: 0.00 },
   // Installation (demi-journée / journée) - used for camera installation section
   { id: 101, name: "Installation 1/2 journée", price: 690.00 },

@@ -18,6 +18,16 @@ import { logQuote } from '@/lib/services/database.service';
 import { uploadFileToDrive, getOrCreateCommercialFolder, getOrCreateCommercialFolderInParent } from '@/lib/services/google-drive.service';
 import { config } from '@/lib/config';
 
+/** SSRF guard — only accept URLs pointing at our own Vercel Blob storage. */
+function isValidBlobUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && u.hostname.endsWith('.public.blob.vercel-storage.com');
+  } catch {
+    return false;
+  }
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -76,6 +86,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<SendQuote
           message: 'Missing required fields',
           error: 'blobUrl, filename, commercial, clientName, and type are required'
         },
+        { status: 400 }
+      );
+    }
+
+    // SSRF guard — only fetch from our own Vercel Blob storage
+    if (!isValidBlobUrl(blobUrl)) {
+      console.error('❌ [API] Invalid blob URL:', blobUrl);
+      return NextResponse.json(
+        { success: false, message: 'Invalid blob URL', error: 'blobUrl must be a Vercel Blob storage URL' },
+        { status: 400 }
+      );
+    }
+
+    // Length sanity — prevent abuse-sized fields landing in Drive/email/DB
+    if (filename.length > 255 || commercial.length > 100 || clientName.length > 200) {
+      return NextResponse.json(
+        { success: false, message: 'Field too long', error: 'filename/commercial/clientName exceed length limits' },
+        { status: 400 }
+      );
+    }
+
+    // Type allowlist
+    if (type !== 'alarme' && type !== 'video') {
+      return NextResponse.json(
+        { success: false, message: 'Invalid type', error: "type must be 'alarme' or 'video'" },
         { status: 400 }
       );
     }
