@@ -62,7 +62,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Length': fileBuffer.length.toString(),
-        'Cache-Control': 'public, max-age=86400, immutable', // Cache for 24 hours
+        // Drive file content can change while the file ID stays the same
+        // (client re-uploads the same base template in place). Previously this
+        // route returned `immutable, max-age=86400`, which made Vercel's edge
+        // serve stale PDF bytes for 24h after the Drive file was updated —
+        // visible as "the dossier is still the old one" complaints.
+        //
+        // New policy: keep a tight edge window with stale-while-revalidate so
+        // Drive updates propagate within ~1 minute under typical load while
+        // still amortising the multi-MB fetch across same-session quotes.
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600',
       },
     });
   } catch (error) {

@@ -84,7 +84,11 @@ export async function assemblePdf(
         console.warn('⚠️ No visiophone base template configured (GOOGLE_DRIVE_FILE_VISIOPHONE). Shipping standalone PDF.');
         return { blob: pdfBlob, info: { baseDossier: 'Standalone (no visiophone template)', productsFound: 0, totalPages: 1, overlayAdded: false } };
       }
-      return await assembleSimplePdf(pdfBlob, id, commercial, propertyType, 'Devis_VISIOPHONE.pdf');
+      // The current visiophone base template has a leftover "vidéo" word on page 2
+      // (carry-over from when it was copied from the video template). The mask
+      // option below paints over it with a matching "visiophone" replacement so
+      // the client doesn't see a camera-typed dossier on a visiophone quote.
+      return await assembleSimplePdf(pdfBlob, id, commercial, propertyType, 'Devis_VISIOPHONE.pdf', { maskVideoWord: true });
     } else {
       console.log('⚠️ No assembly needed for this quote type, returning original PDF');
       return {
@@ -174,6 +178,7 @@ async function assembleSimplePdf(
   commercial: CommercialInfo,
   propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
   dossierName: string,
+  opts: { maskVideoWord?: boolean } = {},
 ): Promise<AssemblyResult> {
   console.log('📄 assembleSimplePdf —', dossierName, 'base:', baseFileId);
   const baseBuf = await fetchDocumentFromDrive(baseFileId);
@@ -201,6 +206,7 @@ async function assembleSimplePdf(
   }
   // Overlays on page 2 (index 1)
   await addCommercialOverlay(pdfDoc, commercial, 1);
+  if (opts.maskVideoWord) await maskVideoWordOnPage2(pdfDoc, 1);
   await addPropertyTypeOverlay(pdfDoc, propertyType, 1);
 
   const bytes = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false });
@@ -629,6 +635,39 @@ async function addPropertyTypeOverlay(
   } catch (error) {
     console.error('❌ Error adding property type overlay:', error);
     // Non-critical, don't throw
+  }
+}
+
+/**
+ * Mask the leftover "vidéo" word on page 2 of the visiophone base template.
+ *
+ * The current Drive base template (file id `10GvZ8...`) was copied from the
+ * video template and the body text on page 2 still reads
+ * "votre devis vidéo concernant la sécurité". This paints a white rectangle
+ * over the "vidéo" word so the visiophone dossier doesn't read as a camera
+ * quote. Coordinates measured against the live base (A4 595x842,
+ * x≈426, baseline y≈542, width≈26, height≈11).
+ *
+ * Remove this once the client updates the visiophone base PDF in Drive
+ * to either drop "vidéo" or replace it with the visiophone wording.
+ */
+async function maskVideoWordOnPage2(pdfDoc: PDFDocument, pageIndex: number): Promise<void> {
+  try {
+    const pages = pdfDoc.getPages();
+    if (pageIndex >= pages.length) return;
+    const page = pages[pageIndex];
+    // White rectangle covering the "vidéo" word at its measured position.
+    page.drawRectangle({
+      x: 423,
+      y: 538,
+      width: 32,
+      height: 14,
+      color: rgb(1, 1, 1),
+      borderWidth: 0,
+    });
+    console.log('✅ Masked "vidéo" word on visiophone page 2');
+  } catch (error) {
+    console.warn('⚠️ Could not mask "vidéo" word (non-critical):', error);
   }
 }
 

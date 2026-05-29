@@ -39,6 +39,8 @@ export interface PDFGenerationOptions {
   feesConfig?: {
     installationPrice?: number;
     processingFee?: number;
+    /** Whether "Frais de dossier" is included on the quote. Defaults to true. */
+    processingSelected?: boolean;
     processingOffered?: boolean;
     simCard?: number;
     simCardSelected?: boolean;
@@ -70,6 +72,8 @@ export interface PDFGenerationOptions {
   remoteAccess?: boolean;
   /** Alarm: whether a Carte SIM is part of the quote (controls whether its row is shown). */
   simCardSelected?: boolean;
+  /** Alarm: whether "Frais de dossier" is included (controls whether its row is shown). Defaults to true. */
+  processingSelected?: boolean;
   paymentMonths?: number;
   /**
    * Optional overrides to keep quote number consistent across:
@@ -277,10 +281,20 @@ interface TableRow {
   unitPrice: number;
   offered: boolean;
   note?: string;
+  /**
+   * Visual category for table rows:
+   *   - 'material'  : kit + supplementary material (default). Offered rows print
+   *                   the TOTAL column in green; non-offered rows print in black.
+   *   - 'utility'   : Installation, Frais de dossier, Carte SIM, Maintenance.
+   *                   Row gets a light-yellow background so it reads as a
+   *                   distinct fee/service line vs the catalog material.
+   */
+  kind?: 'material' | 'utility';
 }
 
 // Colors
 const C_YELLOW: [number, number, number] = [244, 230, 0];
+const C_YELLOW_LIGHT: [number, number, number] = [255, 248, 196]; // utility row bg
 const C_GREEN: [number, number, number] = [0, 140, 70];
 const C_GREY_ROW: [number, number, number] = [245, 245, 245];
 
@@ -348,17 +362,21 @@ function createAlarmPDFSections(
       qty: 1,
       unitPrice: options.isRental ? 0 : mainInstallationTotal,
       offered: options.isRental,
+      kind: 'utility',
     });
   }
 
-  // Frais de dossier + Carte SIM (admin) — always listed, payable at install
-  rows.push({
-    name: 'Frais de dossier',
-    qty: 1,
-    unitPrice: ADMIN_FEES.processingFee,
-    offered: alarmTotals.adminFees.processing === 0,
-    note: '(à régler à l\'installation)',
-  });
+  // Frais de dossier + Carte SIM (admin) — listed only when selected, payable at install
+  if (options.processingSelected !== false) {
+    rows.push({
+      name: 'Frais de dossier',
+      qty: 1,
+      unitPrice: ADMIN_FEES.processingFee,
+      offered: alarmTotals.adminFees.processing === 0,
+      note: '(à régler à l\'installation)',
+      kind: 'utility',
+    });
+  }
   if (options.simCardSelected) {
     rows.push({
       name: 'Carte SIM*',
@@ -366,6 +384,7 @@ function createAlarmPDFSections(
       unitPrice: ADMIN_FEES.simCard,
       offered: alarmTotals.adminFees.simCard === 0,
       note: '(à régler à l\'installation)',
+      kind: 'utility',
     });
   }
 
@@ -375,6 +394,7 @@ function createAlarmPDFSections(
     qty: 1,
     unitPrice: 0,
     offered: true,
+    kind: 'utility',
   });
 
   // ---- Render table ----
@@ -459,7 +479,11 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
       doc.addPage();
       yPos = drawHeader(TOP_Y);
     }
-    if (i % 2 === 1) {
+    // Row background priority: utility (light yellow) overrides grey-stripe.
+    if (row.kind === 'utility') {
+      doc.setFillColor(...C_YELLOW_LIGHT);
+      doc.rect(LEFT, yPos, RIGHT - LEFT, rowH, 'F');
+    } else if (i % 2 === 1) {
       doc.setFillColor(...C_GREY_ROW);
       doc.rect(LEFT, yPos, RIGHT - LEFT, rowH, 'F');
     }
@@ -482,8 +506,14 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     // Zero-priced rows (maintenance, Alimentation) render a dash, matching the client reference
     const showDash = row.unitPrice === 0;
     doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
-    // Total column: green text (matches reference)
-    doc.setTextColor(...C_GREEN);
+    // Total column: green only when the row is offered (i.e. included in the
+    // rabais partenariat). Non-offered rows print in black so the client can
+    // distinguish what is actually being paid.
+    if (row.offered) {
+      doc.setTextColor(...C_GREEN);
+    } else {
+      doc.setTextColor(0, 0, 0);
+    }
     doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     doc.setTextColor(0, 0, 0);
     yPos += rowH;
@@ -667,6 +697,7 @@ function createCameraPDFSections(
       qty: 1,
       unitPrice: options.isRental ? 0 : installBefore,
       offered: options.isRental || installBefore === 0,
+      kind: 'utility',
     });
   }
 
@@ -739,21 +770,31 @@ function linesToRows(lines: ProductLineData[] | undefined): TableRow[] {
 
 function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
   const fees = options.feesConfig || {};
+  const months = options.paymentMonths ?? 0;
   const rows: TableRow[] = [
     ...linesToRows(options.materialLines),
     ...linesToRows(options.installationLines), // matériel supplémentaire
   ];
 
   if ((fees.installationPrice ?? 0) > 0) {
-    rows.push({ name: 'Installation et paramétrage', qty: 1, unitPrice: fees.installationPrice!, offered: false });
+    rows.push({
+      name: 'Installation et paramétrage',
+      qty: 1,
+      unitPrice: fees.installationPrice!,
+      offered: false,
+      kind: 'utility',
+    });
   }
-  rows.push({
-    name: 'Frais de dossier',
-    qty: 1,
-    unitPrice: fees.processingFee ?? 0,
-    offered: !!fees.processingOffered,
-    note: "(à régler à l'installation)",
-  });
+  if (fees.processingSelected !== false) {
+    rows.push({
+      name: 'Frais de dossier',
+      qty: 1,
+      unitPrice: fees.processingFee ?? 0,
+      offered: !!fees.processingOffered,
+      note: "(à régler à l'installation)",
+      kind: 'utility',
+    });
+  }
   if (fees.simCardSelected) {
     rows.push({
       name: 'Carte SIM*',
@@ -761,6 +802,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
       unitPrice: fees.simCard ?? 0,
       offered: !!fees.simCardOffered,
       note: "(à régler à l'installation)",
+      kind: 'utility',
     });
   }
 
@@ -768,7 +810,21 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
   yPos = ensureSpace(doc, yPos, 110);
-  return drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
+  yPos = drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
+
+  // Facilité de paiement — fog quotes can be financed over `months` like alarm/camera.
+  // Excludes the admin frais de dossier (already paid up-front at install).
+  if (!options.isRental && months > 0) {
+    const processingInQuote = fees.processingSelected !== false && !fees.processingOffered
+      ? (fees.processingFee ?? 0) : 0;
+    const simCardInQuote = fees.simCardSelected && !fees.simCardOffered ? (fees.simCard ?? 0) : 0;
+    const facilityHT = calculateFacilityPayment(after, processingInQuote, simCardInQuote, months);
+    if (facilityHT > 0) {
+      yPos = ensureSpace(doc, yPos, 70);
+      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+    }
+  }
+  return yPos;
 }
 
 // ============================================
@@ -777,15 +833,33 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
 
 function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
   const fees = options.feesConfig || {};
+  const months = options.paymentMonths ?? 0;
   const rows: TableRow[] = [...linesToRows(options.materialLines)];
   if ((fees.installationPrice ?? 0) > 0) {
-    rows.push({ name: 'Installation et paramétrage', qty: 1, unitPrice: fees.installationPrice!, offered: false });
+    rows.push({
+      name: 'Installation et paramétrage',
+      qty: 1,
+      unitPrice: fees.installationPrice!,
+      offered: false,
+      kind: 'utility',
+    });
   }
   yPos = drawItemTable(doc, rows, yPos);
   const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
   yPos = ensureSpace(doc, yPos, 110);
-  return drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
+  yPos = drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
+
+  // Facilité de paiement — visiophone quotes mirror alarm/camera behaviour.
+  // No frais de dossier on visiophone, so pass 0 for admin lines.
+  if (!options.isRental && months > 0) {
+    const facilityHT = calculateFacilityPayment(after, 0, 0, months);
+    if (facilityHT > 0) {
+      yPos = ensureSpace(doc, yPos, 70);
+      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+    }
+  }
+  return yPos;
 }
 
 // Generic monthly (mensualité) block: title + HT/TVA/TTC + optional sub-text

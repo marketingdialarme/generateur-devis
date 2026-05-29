@@ -111,12 +111,14 @@ const jabTotals = calculateAlarmTotals(
   await write('fog', {
     type: 'fog', clientName: 'NOM Prénom', commercial: 'Arnaud Bloch', isRental: false,
     materialLines: fogMaterial, installationLines: fogAdditional,
-    feesConfig: { installationPrice: 490, processingFee: 190, processingOffered: false, simCard: 50, simCardSelected: true, simCardOffered: false },
+    feesConfig: { installationPrice: 490, processingFee: 190, processingSelected: true, processingOffered: false, simCard: 50, simCardSelected: true, simCardOffered: false },
+    paymentMonths: 48,
   });
   await write('visiophone', {
     type: 'visiophone', clientName: 'NOM Prénom', commercial: 'Arnaud Bloch', isRental: false,
     materialLines: visioMaterial,
     feesConfig: { installationPrice: 690 },
+    paymentMonths: 48,
   });
   await write('alarm-big', {
     type: 'alarm', clientName: 'Client Très Long Nom De Famille', commercial: 'Arnaud Bloch', isRental: false,

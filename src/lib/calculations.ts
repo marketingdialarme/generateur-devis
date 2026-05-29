@@ -43,6 +43,13 @@ export interface InstallationConfig {
 export interface AdminFeesConfig {
   simCardSelected: boolean; // Whether SIM card is selected at all
   simCardOffered: boolean;
+  /**
+   * Whether "Frais de dossier" is included on this quote. Defaults to true
+   * when the field is missing (backwards-compat for callers that predate the
+   * include/exclude checkbox). When false, the fee is fully excluded from
+   * totals AND the PDF row is suppressed.
+   */
+  processingSelected?: boolean;
   processingOffered: boolean;
 }
 
@@ -290,9 +297,10 @@ export function calculateAlarmTotals(
     totalBeforeDiscount: installationProductsTotal.totalBeforeDiscount + mainInstallTotal
   };
 
-  // Admin fees (only include SIM card if selected)
+  // Admin fees (only include SIM card / processing fee if selected)
   const simCard = !adminFees.simCardSelected ? 0 : (adminFees.simCardOffered ? 0 : ADMIN_FEES.simCard);
-  const processing = adminFees.processingOffered ? 0 : ADMIN_FEES.processingFee;
+  const processingSelected = adminFees.processingSelected ?? true;
+  const processing = !processingSelected ? 0 : (adminFees.processingOffered ? 0 : ADMIN_FEES.processingFee);
   const adminTotal = simCard + processing;
 
   // Services

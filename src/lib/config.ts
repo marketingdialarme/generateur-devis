@@ -82,9 +82,27 @@ export const config: AppConfig = {
   // PDF RENDERING CONFIGURATION
   // ==========================================================================
   pdf: {
+    /**
+     * "de vos locaux / habitation / villa / ..." overlay on page 2.
+     *
+     * Page 2 of every base template has the sentence:
+     *   "votre devis [TYPE] concernant la sécurité"
+     * which wraps to two lines. The second line ends with a "sécurité"
+     * token at the left margin. The overlay must land RIGHT AFTER that
+     * final word, at the same baseline.
+     *
+     * Measured (PDF coords, A4 595x842) against the live prod templates:
+     *   alarm Titane/Jablotron  → "la sécurité" ends ~x=121
+     *   fog                     → " sécurité"   ends ~x=113
+     *   visiophone              → "sécurité"    ends ~x=110
+     *   baseline y ≈ 527  →  yFromTop = 842 - 527 ≈ 315
+     *
+     * x=126 clears the longest case (alarm) by ~4pt and leaves a slightly
+     * wider gap on the others. Override via env if a future base shifts.
+     */
     propertyTypeOverlay: {
-      x: Number(process.env.PDF_PROPERTY_TYPE_X) || 285,
-      yFromTop: Number(process.env.PDF_PROPERTY_TYPE_Y) || 220,
+      x: Number(process.env.PDF_PROPERTY_TYPE_X) || 126,
+      yFromTop: Number(process.env.PDF_PROPERTY_TYPE_Y) || 315,
       fontSize: Number(process.env.PDF_PROPERTY_TYPE_FONT_SIZE) || 11,
     },
   },
@@ -132,27 +150,21 @@ export const config: AppConfig = {
       },
       baseDocuments: {
         /**
-         * Base template for Titane Alarm quotes.
+         * Base template for Titane Alarm quotes (file ID provided by client 2026-05-29).
          *
-         * Note (2026-05-29): the client sent us a refreshed ID
-         * `1Dscba9DsFZviqGCRux2TXInreek8CqnD`, but that file is NOT
-         * accessible to the OAuth account currently used in prod, so it
-         * 404s. We keep the prior ID `12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S`
-         * which is verified working in prod. Once the client re-shares
-         * the new file with the OAuth account, set `GOOGLE_DRIVE_FILE_ALARME_TITANE`
-         * to the new ID in Vercel env.
+         * The previous default `12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S` pointed at
+         * the older dossier the client said was wrong. The new ID below points
+         * at the updated dossier. Requires the file to be shared with the
+         * OAuth account `devis.dialarme@gmail.com`; otherwise `/api/drive-fetch`
+         * returns 500 and the assembled PDF falls back to the standalone quote.
          */
-        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S',
+        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '1Dscba9DsFZviqGCRux2TXInreek8CqnD',
 
         /**
-         * Base template for Jablotron Alarm quotes.
-         *
-         * Note (2026-05-29): same as alarmTitane above — the refreshed
-         * ID `1xAA0dRnhaiUYau-x1H5Yr4DQrk24FZiO` 404s for the OAuth
-         * account; reverted to the prior working ID `1enFlLv9q681uGBSwdRu43r8Co2nWytFf`.
-         * Set `GOOGLE_DRIVE_FILE_ALARME_JABLOTRON` once the client re-shares.
+         * Base template for Jablotron Alarm quotes (file ID provided by client 2026-05-29).
+         * Same sharing requirement as alarmTitane above.
          */
-        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1enFlLv9q681uGBSwdRu43r8Co2nWytFf',
+        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1xAA0dRnhaiUYau-x1H5Yr4DQrk24FZiO',
 
         /**
          * Base template for Video surveillance quotes.

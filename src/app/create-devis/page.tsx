@@ -59,7 +59,6 @@ export default function CreateDevisPage() {
   const [cameraInstallationDiscount, setCameraInstallationDiscount] = useState<{ type: 'percent' | 'fixed'; value: number }>({ type: 'percent', value: 0 });
   
   // Installation state
-  const [alarmInstallationInMonthly, setAlarmInstallationInMonthly] = useState(false);
   const [alarmInstallationPrice, setAlarmInstallationPrice] = useState(300); // 300 CHF editable (client feedback)
   const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
   const [isCustomKit, setIsCustomKit] = useState(false); // Track if "à partir de rien" was selected
@@ -88,6 +87,7 @@ export default function CreateDevisPage() {
   // Admin fees state
   const [simcardSelected, setSimcardSelected] = useState(false); // Whether SIM card is selected at all
   const [simcardOffered, setSimcardOffered] = useState(false);
+  const [processingSelected, setProcessingSelected] = useState(true); // Frais de dossier included by default
   const [processingOffered, setProcessingOffered] = useState(false);
   
   // Services state
@@ -143,6 +143,7 @@ export default function CreateDevisPage() {
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
   const [fogProcessingFee, setFogProcessingFee] = useState(190);
   const [fogSimCard, setFogSimCard] = useState(50);
+  const [fogProcessingSelected, setFogProcessingSelected] = useState(true);
   const [fogProcessingOffered, setFogProcessingOffered] = useState(false);
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
   const [fogSimCardSelected, setFogSimCardSelected] = useState(false); // Whether SIM card is selected
@@ -256,6 +257,7 @@ export default function CreateDevisPage() {
         {
           simCardSelected: simcardSelected,
           simCardOffered: simcardOffered,
+          processingSelected: processingSelected,
           processingOffered: processingOffered
         },
         {
@@ -295,6 +297,7 @@ export default function CreateDevisPage() {
     alarmInstallationDiscount,
     simcardSelected,
     simcardOffered,
+    processingSelected,
     processingOffered,
     testCycliqueSelected,
     testCycliquePrice,
@@ -545,11 +548,13 @@ export default function CreateDevisPage() {
         remoteAccess: isCamera ? cameraVisionDistance : undefined,
         totals,
         simCardSelected: isAlarm ? simcardSelected : undefined,
+        processingSelected: isAlarm ? processingSelected : undefined,
         paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
           processingFee: fogProcessingFee,
+          processingSelected: fogProcessingSelected,
           processingOffered: fogProcessingOffered,
           simCard: fogSimCard,
           simCardSelected: fogSimCardSelected,
@@ -1175,18 +1180,6 @@ export default function CreateDevisPage() {
               {alarmInstallationOffered ? 'OFFERT' : `${alarmInstallationPrice.toFixed(2)} CHF`}
             </div>
           </div>
-          
-          <div style={{ marginTop: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
-              <input 
-                type="checkbox" 
-                checked={alarmInstallationInMonthly}
-                onChange={(e) => setAlarmInstallationInMonthly(e.target.checked)}
-                style={{ marginRight: '8px' }}
-              />
-              <span>Inclure l&apos;installation dans les mensualités</span>
-            </label>
-          </div>
         </div>
 
         {/* Material Divers Section */}
@@ -1412,18 +1405,38 @@ export default function CreateDevisPage() {
           </div>
           <div className="product-line">
             <div>Frais de dossier</div>
-            <input type="number" defaultValue="1" className="quantity-input" readOnly />
-            <div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="checkbox"
+                checked={processingSelected}
+                onChange={(e) => {
+                  setProcessingSelected(e.target.checked);
+                  if (!e.target.checked) setProcessingOffered(false);
+                }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                title="Inclure les frais de dossier"
+              />
+              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
+                const next = !processingSelected;
+                setProcessingSelected(next);
+                if (!next) setProcessingOffered(false);
+              }}>
+                Inclure
+              </label>
+            </div>
             <div className="checkbox-option" style={{ margin: 0 }}>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={processingOffered}
                 onChange={(e) => setProcessingOffered(e.target.checked)}
-                className="offered-checkbox" 
+                disabled={!processingSelected}
+                className="offered-checkbox"
               />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+              <label style={{ margin: 0, fontSize: '12px', color: !processingSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display">{processingOffered ? 'OFFERT' : '190.00 CHF HT'}</div>
+            <div className="price-display">
+              {!processingSelected ? '-' : processingOffered ? 'OFFERT' : '190.00 CHF HT'}
+            </div>
           </div>
           <p style={{ fontSize: '12px', color: '#6c757d', marginTop: '10px' }}>
             * Les frais de dossier se payent à l&apos;installation
@@ -1980,14 +1993,14 @@ export default function CreateDevisPage() {
         {/* Vision à distance (only in sale mode) */}
         {!cameraRentalMode && (
           <div className="quote-section">
-            <h3>🛠️ Contrat de maintenance</h3>
+            <h3>📡 Vision à distance</h3>
             <div className="product-line">
-              <div>Contrat de maintenance</div>
+              <div>Vision à distance</div>
               <div></div>
               <div></div>
               <div className="checkbox-option" style={{ margin: 0 }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={cameraVisionDistance}
                   onChange={(e) => setCameraVisionDistance(e.target.checked)}
                 />
@@ -1997,11 +2010,11 @@ export default function CreateDevisPage() {
                 {cameraVisionDistance && cameraVisionPrice > 0 ? `${cameraVisionPrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
-            
+
             {/* Maintenance option */}
             <div className="product-line" style={{ marginTop: '15px' }}>
               <div>
-                Vision à distance
+                Contrat de maintenance
                 {cameraMaintenance && cameraMaintenancePrice > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
                     <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
@@ -2094,10 +2107,16 @@ export default function CreateDevisPage() {
                     <span>Installation</span>
             <span>{roundToFiveCents(roundToFiveCents(cameraTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
                   </div>
-          {cameraRemoteAccess && !cameraRentalMode && (
+          {cameraVisionDistance && !cameraRentalMode && (
+            <div className="summary-item">
+              <span>Vision à distance</span>
+              <span>{calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois</span>
+                  </div>
+          )}
+          {cameraMaintenance && !cameraRentalMode && cameraMaintenancePrice > 0 && (
             <div className="summary-item">
               <span>Contrat de maintenance</span>
-              <span>{calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois</span>
+              <span>{cameraMaintenancePrice.toFixed(2)} CHF/mois</span>
                   </div>
           )}
           <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
@@ -2520,17 +2539,24 @@ export default function CreateDevisPage() {
           <h3>📄 Frais de dossier</h3>
           <div className="product-line">
             <div>Frais de dossier</div>
-            <input 
-              type="number" 
-              value={1}
-              className="quantity-input"
-              readOnly
-              style={{ background: '#e9ecef' }}
-            />
-            <input 
-              type="number" 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="checkbox"
+                checked={fogProcessingSelected}
+                onChange={(e) => {
+                  setFogProcessingSelected(e.target.checked);
+                  if (!e.target.checked) setFogProcessingOffered(false);
+                }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                title="Inclure les frais de dossier"
+              />
+              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }}>Inclure</label>
+            </div>
+            <input
+              type="number"
               value={fogProcessingFee}
               onChange={(e) => setFogProcessingFee(parseFloat(e.target.value) || 190)}
+              disabled={!fogProcessingSelected}
               className="price-input"
               onFocus={(e) => e.target.select()}
               style={{
@@ -2539,20 +2565,22 @@ export default function CreateDevisPage() {
                 borderRadius: '6px',
                 fontSize: '14px',
                 fontWeight: 500,
-                width: '100px'
+                width: '100px',
+                opacity: fogProcessingSelected ? 1 : 0.5
               }}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={fogProcessingOffered}
                 onChange={(e) => setFogProcessingOffered(e.target.checked)}
-                className="offered-checkbox" 
+                disabled={!fogProcessingSelected}
+                className="offered-checkbox"
               />
-              <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+              <label style={{ margin: 0, fontSize: '12px', color: !fogProcessingSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
             <div className="price-display">
-              {fogProcessingOffered ? 'OFFERT' : `${fogProcessingFee.toFixed(2)} CHF`}
+              {!fogProcessingSelected ? '-' : fogProcessingOffered ? 'OFFERT' : `${fogProcessingFee.toFixed(2)} CHF`}
             </div>
           </div>
 
