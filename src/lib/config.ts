@@ -54,6 +54,8 @@ export interface AppConfig {
         propertyTypeDocs?: Partial<Record<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise', string>>;
         /** Document appended to alarm quotes when "Intervention de la police" is selected. */
         policeDoc?: string;
+        /** Direct Drive file IDs for camera fiches techniques, keyed on catalog product name. */
+        cameraSheetIds?: Record<string, string>;
       };
     };
   };
@@ -131,35 +133,33 @@ export const config: AppConfig = {
       baseDocuments: {
         /**
          * Base template for Titane Alarm quotes
-         * File ID: 12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S
+         * File ID provided by client 2026-05-29 (refreshed from prior 12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S)
          */
-        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S',
-        
+        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '1Dscba9DsFZviqGCRux2TXInreek8CqnD',
+
         /**
          * Base template for Jablotron Alarm quotes
-         * File ID: 1enFlLv9q681uGBSwdRu43r8Co2nWytFf
+         * File ID provided by client 2026-05-29 (refreshed from prior 1enFlLv9q681uGBSwdRu43r8Co2nWytFf)
          */
-        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1enFlLv9q681uGBSwdRu43r8Co2nWytFf',
-        
+        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1xAA0dRnhaiUYau-x1H5Yr4DQrk24FZiO',
+
         /**
          * Base template for Video surveillance quotes
-         * File ID: 15daREPnmbS1T76DLUpUxBLWahWIyq_cn
+         * File ID provided by client 2026-05-29 (refreshed from prior 15daREPnmbS1T76DLUpUxBLWahWIyq_cn which 404'd)
          */
-        video: process.env.GOOGLE_DRIVE_FILE_VIDEO || '15daREPnmbS1T76DLUpUxBLWahWIyq_cn',
+        video: process.env.GOOGLE_DRIVE_FILE_VIDEO || '1zbuCpITKYE7JAWQ__RH6MaKbNRr40II6',
 
         /**
-         * Optional base template for Brouillard (fog) quotes.
-         * Set GOOGLE_DRIVE_FILE_FOG to the Drive file ID once a template exists.
-         * If empty, the fog quote ships as a standalone PDF (no dossier).
+         * Base template for Brouillard (fog) quotes.
+         * File ID provided by client 2026-05-29.
          */
-        fog: process.env.GOOGLE_DRIVE_FILE_FOG || '',
+        fog: process.env.GOOGLE_DRIVE_FILE_FOG || '1mXvbIiTYZZyV5Pmqw22rIS4zguAyZtaq',
 
         /**
-         * Optional base template for Visiophone quotes.
-         * Set GOOGLE_DRIVE_FILE_VISIOPHONE to the Drive file ID once a template exists.
-         * If empty, the visiophone quote ships as a standalone PDF (no dossier).
+         * Base template for Visiophone (interphone) quotes.
+         * File ID provided by client 2026-05-29.
          */
-        visiophone: process.env.GOOGLE_DRIVE_FILE_VISIOPHONE || '',
+        visiophone: process.env.GOOGLE_DRIVE_FILE_VISIOPHONE || '10GvZ8ctB7EBZxED9jILegbRZ3Fom4WiV',
         
         /**
          * Accessories sheet (ONDULEURS - COFFRET - SWITCH)
@@ -183,6 +183,22 @@ export const config: AppConfig = {
          * Set GOOGLE_DRIVE_FILE_POLICE to the Drive file ID once provided.
          */
         policeDoc: process.env.GOOGLE_DRIVE_FILE_POLICE || '',
+
+        /**
+         * Direct Drive file IDs for camera fiches techniques (provided by client 2026-05-29).
+         * Keyed on the catalog product name (must match CATALOG_CAMERA_MATERIAL).
+         * Preferred over name-based folder search to avoid silent mismatches.
+         */
+        cameraSheetIds: {
+          'Bullet Mini': process.env.GOOGLE_DRIVE_FILE_BULLET_MINI || '1tZpgVA4_ZeJb6CcVMzslT7evHqZ_oLfJ',
+          'Dôme Mini': process.env.GOOGLE_DRIVE_FILE_DOME_MINI || '1mpYHRAkb31VWqZIdqriE5VDdkQcqBxlo',
+          'Dôme Antivandale': process.env.GOOGLE_DRIVE_FILE_DOME_ANTIVANDALE || '1211TvE9FlDEfBB5aO4ViO0zXRvSBB3C-',
+          'Dôme Night': process.env.GOOGLE_DRIVE_FILE_DOME_NIGHT || '1WOojaD7vljXd38a3BkC53bfHCUbn7boy',
+          'Bullet XL Varifocale': process.env.GOOGLE_DRIVE_FILE_BULLET_XL_VARIFOCALE || '1cG0zZBem_5bqWuN-i8hK3czIPxnCc2a3',
+          'Dôme XL Varifocale': process.env.GOOGLE_DRIVE_FILE_DOME_XL_VARIFOCALE || '1HoKl7Ca51GF-09bRr3kyePVPqkjp_3Ib',
+          'Bullet Zoom x23 PTZ': process.env.GOOGLE_DRIVE_FILE_BULLET_ZOOM_PTZ || '1j-vLOoHeWal9zrlvLBPumzjmbF0fxp6h',
+          'Mini Solar 4G + P. Solaire': process.env.GOOGLE_DRIVE_FILE_MINI_SOLAR || '1u_o8wUtYFqJjRpVqFQGUgoysMMZK1Lp6',
+        } as Record<string, string>,
       },
     },
   },

@@ -27,16 +27,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     
     console.log('📥 [API] Fetching product sheet for:', productName);
-    
-    // Search for the product sheet in the product sheets folder
+
+    // Prefer direct Drive ID lookup when configured (more reliable than name search).
+    const directId = config.google.drive.baseDocuments.cameraSheetIds?.[productName];
+    if (directId) {
+      try {
+        console.log('🎯 [API] Direct ID lookup for:', productName, '→', directId);
+        const buffer = await googleDriveService.downloadFile(directId);
+        console.log('✅ [API] Product sheet fetched via direct ID:', buffer.length, 'bytes');
+        return new NextResponse(Buffer.from(buffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Length': buffer.length.toString(),
+            'X-File-Id': directId,
+            'Cache-Control': 'public, max-age=86400, immutable',
+          },
+        });
+      } catch (directErr) {
+        console.warn('⚠️ [API] Direct ID fetch failed, falling back to name search:', directErr);
+        // fall through to legacy name-based search
+      }
+    }
+
+    // Legacy fallback: search by product name in the product sheets folder.
     const productSheetsFolderId = config.google.drive.folders.productSheets;
-    
+
     try {
       const result = await googleDriveService.findAndDownloadFileWithMetadata(
         productSheetsFolderId,
         productName
       );
-      
+
       if (!result) {
         console.warn('⚠️ [API] Product sheet not found:', productName);
         return NextResponse.json(
@@ -44,9 +66,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           { status: 404 }
         );
       }
-      
+
       console.log('✅ [API] Product sheet fetched:', result.buffer.length, 'bytes', `(fileId: ${result.fileId})`);
-      
+
       // Return the PDF as ArrayBuffer with fileId in headers
       return new NextResponse(Buffer.from(result.buffer), {
         status: 200,

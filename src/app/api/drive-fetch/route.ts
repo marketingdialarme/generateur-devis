@@ -22,9 +22,12 @@ function getAllowedFileIds(): Set<string> {
   if (docs.alarmTitane) ids.add(docs.alarmTitane);
   if (docs.alarmJablotron) ids.add(docs.alarmJablotron);
   if (docs.video) ids.add(docs.video);
+  if (docs.fog) ids.add(docs.fog);
+  if (docs.visiophone) ids.add(docs.visiophone);
   if (docs.accessories) ids.add(docs.accessories);
   if (docs.policeDoc) ids.add(docs.policeDoc);
   Object.values(docs.propertyTypeDocs || {}).forEach((id) => { if (id) ids.add(id); });
+  Object.values(docs.cameraSheetIds || {}).forEach((id) => { if (id) ids.add(id); });
   return ids;
 }
 
