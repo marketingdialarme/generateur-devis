@@ -866,7 +866,7 @@ function createUninstallNotice(doc: jsPDF, yPos: number): number {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.text('⚠ DÉSINSTALLATION', 50, yPos + 15);
+  doc.text('DÉSINSTALLATION', 50, yPos + 15);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);

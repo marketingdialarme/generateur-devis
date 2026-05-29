@@ -574,14 +574,17 @@ export default function CreateDevisPage() {
       let products: string[] = [];
       let assemblyInfo: { baseDossier: string; productsFound: number; totalPages: number } | undefined;
 
-      // Steps 2-3: Assemble with the Drive base template (alarm/camera only;
-      // fog & visiophone are self-contained, no base template).
-      if (isAlarm || isCamera) {
+      // Steps 2-3: Assemble with the Drive base template. Fog + visiophone
+      // assemble too IF GOOGLE_DRIVE_FILE_FOG / GOOGLE_DRIVE_FILE_VISIOPHONE
+      // are set; otherwise assemblePdf falls back to the standalone PDF.
+      if (isAlarm || isCamera || isFog || isVisio) {
         console.log('🔄 Step 2: Collecting products...');
         const allProductLines = isAlarm
           ? { material: alarmMaterialLines, installation: alarmInstallationLines }
-          : { material: cameraMaterialLines, installation: cameraInstallationLines };
-        products = collectAllProducts(allProductLines);
+          : isCamera
+          ? { material: cameraMaterialLines, installation: cameraInstallationLines }
+          : { material: [], installation: [] }; // fog/visio: no product sheets
+        products = isAlarm || isCamera ? collectAllProducts(allProductLines) : [];
 
         console.log('🔄 Step 3: Assembling PDF...');
         const validatedCommercialInfo = commercialInfo || {
@@ -590,7 +593,7 @@ export default function CreateDevisPage() {
         };
         const assembled = await assemblePdf({
           pdfBlob: generatedPdf.blob,
-          quoteType: isAlarm ? 'alarme' : 'video',
+          quoteType: isAlarm ? 'alarme' : isCamera ? 'video' : isFog ? 'fog' : 'visiophone',
           centralType: selectedCentral || null,
           products,
           commercial: {

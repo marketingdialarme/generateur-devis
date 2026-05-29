@@ -51,7 +51,7 @@ interface FetchedDocuments {
  */
 export async function assemblePdf(
   pdfBlob: Blob,
-  quoteType: 'alarme' | 'video',
+  quoteType: 'alarme' | 'video' | 'fog' | 'visiophone',
   centralType: 'titane' | 'jablotron' | null,
   products: string[],
   commercial: CommercialInfo,
@@ -65,12 +65,26 @@ export async function assemblePdf(
     productsCount: products.length,
     products
   });
-  
+
   try {
     if (quoteType === 'alarme') {
       return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType, addPoliceDoc);
     } else if (quoteType === 'video') {
       return await assembleVideoPdf(pdfBlob, products, commercial, propertyType);
+    } else if (quoteType === 'fog') {
+      const id = config.google.drive.baseDocuments.fog;
+      if (!id) {
+        console.warn('⚠️ No fog base template configured (GOOGLE_DRIVE_FILE_FOG). Shipping standalone PDF.');
+        return { blob: pdfBlob, info: { baseDossier: 'Standalone (no fog template)', productsFound: 0, totalPages: 1, overlayAdded: false } };
+      }
+      return await assembleSimplePdf(pdfBlob, id, commercial, propertyType, 'Devis_BROUILLARD.pdf');
+    } else if (quoteType === 'visiophone') {
+      const id = config.google.drive.baseDocuments.visiophone;
+      if (!id) {
+        console.warn('⚠️ No visiophone base template configured (GOOGLE_DRIVE_FILE_VISIOPHONE). Shipping standalone PDF.');
+        return { blob: pdfBlob, info: { baseDossier: 'Standalone (no visiophone template)', productsFound: 0, totalPages: 1, overlayAdded: false } };
+      }
+      return await assembleSimplePdf(pdfBlob, id, commercial, propertyType, 'Devis_VISIOPHONE.pdf');
     } else {
       console.log('⚠️ No assembly needed for this quote type, returning original PDF');
       return {
@@ -146,6 +160,64 @@ async function addPoliceDocumentIfConfigured(pdfDoc: PDFDocument): Promise<void>
 /**
  * Assemble alarm PDF
  * 
+/**
+ * Generic assembly used by Brouillard + Visiophone quotes.
+ *
+ * Pulls the base template from Drive, inserts the generated quote page as
+ * page 6 (same layout as Alarm / Video), appends property-type doc when
+ * configured, then layers the commercial + property-type overlays on page 2.
+ * No product-sheets, no central-type branching.
+ */
+async function assembleSimplePdf(
+  pdfBlob: Blob,
+  baseFileId: string,
+  commercial: CommercialInfo,
+  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  dossierName: string,
+): Promise<AssemblyResult> {
+  console.log('📄 assembleSimplePdf —', dossierName, 'base:', baseFileId);
+  const baseBuf = await fetchDocumentFromDrive(baseFileId);
+  const basePdf = await PDFDocument.load(baseBuf);
+  const basePages = basePdf.getPageCount();
+  const quotePdf = await PDFDocument.load(await pdfBlob.arrayBuffer());
+  const pdfDoc = await PDFDocument.create();
+
+  // Pages 1..5 of the base template
+  for (let i = 0; i < 5 && i < basePages; i++) {
+    const [p] = await pdfDoc.copyPages(basePdf, [i]);
+    pdfDoc.addPage(p);
+  }
+  // Generated quote page
+  const [qp] = await pdfDoc.copyPages(quotePdf, [0]);
+  pdfDoc.addPage(qp);
+  // Optional property-type document
+  await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
+  // Remaining base pages
+  if (basePages > 5) {
+    for (let i = 5; i < basePages; i++) {
+      const [p] = await pdfDoc.copyPages(basePdf, [i]);
+      pdfDoc.addPage(p);
+    }
+  }
+  // Overlays on page 2 (index 1)
+  await addCommercialOverlay(pdfDoc, commercial, 1);
+  await addPropertyTypeOverlay(pdfDoc, propertyType, 1);
+
+  const bytes = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false });
+  return {
+    blob: new Blob([Buffer.from(bytes)], { type: 'application/pdf' }),
+    info: {
+      baseDossier: dossierName,
+      productsFound: 0,
+      totalPages: pdfDoc.getPageCount(),
+      overlayAdded: true,
+    },
+  };
+}
+
+/**
+ * Assemble alarm PDF
+ *
  * Structure:
  * - Pages 1-5: Base document
  * - Page 6: Generated quote (inserted)
@@ -537,12 +609,13 @@ async function addPropertyTypeOverlay(
     
     const propertyText = propertyTextMap[propertyType];
     
-    // Position the text after "concernant la sécurité" on page 1
-    // The intro paragraph is typically around y=620-640 from bottom
-    // Adjust these coordinates based on your actual PDF layout
-    const textX = 285; // Adjust X position to align after "sécurité"
-    const textY = height - 220; // Adjust Y from top (595 height - 220 = 375 from bottom)
-    const fontSize = 11;
+    // Position is env-configurable so it can be retuned without code changes
+    // when the Drive base template is updated. See config.ts > pdf.propertyTypeOverlay
+    // (PDF_PROPERTY_TYPE_X, PDF_PROPERTY_TYPE_Y, PDF_PROPERTY_TYPE_FONT_SIZE).
+    const overlay = config.pdf.propertyTypeOverlay;
+    const textX = overlay.x;
+    const textY = height - overlay.yFromTop;
+    const fontSize = overlay.fontSize;
     
     page.drawText(propertyText, {
       x: textX,

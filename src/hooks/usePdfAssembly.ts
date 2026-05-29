@@ -12,7 +12,7 @@ import { assemblePdf, CommercialInfo, AssemblyResult } from '@/lib/pdf-assembly'
 
 interface AssemblePdfParams {
   pdfBlob: Blob;
-  quoteType: 'alarme' | 'video';
+  quoteType: 'alarme' | 'video' | 'fog' | 'visiophone';
   centralType: 'titane' | 'jablotron' | null;
   products: string[];
   commercial: CommercialInfo;

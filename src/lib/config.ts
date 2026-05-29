@@ -18,6 +18,19 @@ export interface CommercialInfo {
 }
 
 export interface AppConfig {
+  /** PDF rendering configuration. */
+  pdf: {
+    /**
+     * Position of the "de vos locaux / habitation / villa / ..." overlay
+     * on the assembled PDF (page 2). Tunable via env so the client can
+     * realign without code changes when the Drive base template moves.
+     */
+    propertyTypeOverlay: {
+      x: number;
+      yFromTop: number;
+      fontSize: number;
+    };
+  };
   google: {
     drive: {
       folders: {
@@ -33,6 +46,10 @@ export interface AppConfig {
         alarmTitane: string;
         alarmJablotron: string;
         video: string;
+        /** Optional base template for Brouillard quotes. Empty string → standalone PDF. */
+        fog?: string;
+        /** Optional base template for Visiophone quotes. Empty string → standalone PDF. */
+        visiophone?: string;
         accessories: string;
         propertyTypeDocs?: Partial<Record<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise', string>>;
         /** Document appended to alarm quotes when "Intervention de la police" is selected. */
@@ -59,6 +76,17 @@ export interface AppConfig {
  * Values are loaded from environment variables
  */
 export const config: AppConfig = {
+  // ==========================================================================
+  // PDF RENDERING CONFIGURATION
+  // ==========================================================================
+  pdf: {
+    propertyTypeOverlay: {
+      x: Number(process.env.PDF_PROPERTY_TYPE_X) || 285,
+      yFromTop: Number(process.env.PDF_PROPERTY_TYPE_Y) || 220,
+      fontSize: Number(process.env.PDF_PROPERTY_TYPE_FONT_SIZE) || 11,
+    },
+  },
+
   // ==========================================================================
   // GOOGLE DRIVE CONFIGURATION
   // ==========================================================================
@@ -118,6 +146,20 @@ export const config: AppConfig = {
          * File ID: 15daREPnmbS1T76DLUpUxBLWahWIyq_cn
          */
         video: process.env.GOOGLE_DRIVE_FILE_VIDEO || '15daREPnmbS1T76DLUpUxBLWahWIyq_cn',
+
+        /**
+         * Optional base template for Brouillard (fog) quotes.
+         * Set GOOGLE_DRIVE_FILE_FOG to the Drive file ID once a template exists.
+         * If empty, the fog quote ships as a standalone PDF (no dossier).
+         */
+        fog: process.env.GOOGLE_DRIVE_FILE_FOG || '',
+
+        /**
+         * Optional base template for Visiophone quotes.
+         * Set GOOGLE_DRIVE_FILE_VISIOPHONE to the Drive file ID once a template exists.
+         * If empty, the visiophone quote ships as a standalone PDF (no dossier).
+         */
+        visiophone: process.env.GOOGLE_DRIVE_FILE_VISIOPHONE || '',
         
         /**
          * Accessories sheet (ONDULEURS - COFFRET - SWITCH)
