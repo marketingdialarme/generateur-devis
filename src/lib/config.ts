@@ -132,20 +132,35 @@ export const config: AppConfig = {
       },
       baseDocuments: {
         /**
-         * Base template for Titane Alarm quotes
-         * File ID provided by client 2026-05-29 (refreshed from prior 12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S)
+         * Base template for Titane Alarm quotes.
+         *
+         * Note (2026-05-29): the client sent us a refreshed ID
+         * `1Dscba9DsFZviqGCRux2TXInreek8CqnD`, but that file is NOT
+         * accessible to the OAuth account currently used in prod, so it
+         * 404s. We keep the prior ID `12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S`
+         * which is verified working in prod. Once the client re-shares
+         * the new file with the OAuth account, set `GOOGLE_DRIVE_FILE_ALARME_TITANE`
+         * to the new ID in Vercel env.
          */
-        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '1Dscba9DsFZviqGCRux2TXInreek8CqnD',
+        alarmTitane: process.env.GOOGLE_DRIVE_FILE_ALARME_TITANE || '12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S',
 
         /**
-         * Base template for Jablotron Alarm quotes
-         * File ID provided by client 2026-05-29 (refreshed from prior 1enFlLv9q681uGBSwdRu43r8Co2nWytFf)
+         * Base template for Jablotron Alarm quotes.
+         *
+         * Note (2026-05-29): same as alarmTitane above — the refreshed
+         * ID `1xAA0dRnhaiUYau-x1H5Yr4DQrk24FZiO` 404s for the OAuth
+         * account; reverted to the prior working ID `1enFlLv9q681uGBSwdRu43r8Co2nWytFf`.
+         * Set `GOOGLE_DRIVE_FILE_ALARME_JABLOTRON` once the client re-shares.
          */
-        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1xAA0dRnhaiUYau-x1H5Yr4DQrk24FZiO',
+        alarmJablotron: process.env.GOOGLE_DRIVE_FILE_ALARME_JABLOTRON || '1enFlLv9q681uGBSwdRu43r8Co2nWytFf',
 
         /**
-         * Base template for Video surveillance quotes
-         * File ID provided by client 2026-05-29 (refreshed from prior 15daREPnmbS1T76DLUpUxBLWahWIyq_cn which 404'd)
+         * Base template for Video surveillance quotes.
+         *
+         * Note (2026-05-29): both the prior ID `15daREPnmbS1T76DLUpUxBLWahWIyq_cn`
+         * AND the client's refreshed ID `1zbuCpITKYE7JAWQ__RH6MaKbNRr40II6`
+         * 404 for the OAuth account. Camera quotes silently ship without
+         * the base dossier until the client re-shares one of these.
          */
         video: process.env.GOOGLE_DRIVE_FILE_VIDEO || '1zbuCpITKYE7JAWQ__RH6MaKbNRr40II6',
 
