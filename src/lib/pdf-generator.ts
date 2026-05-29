@@ -670,13 +670,6 @@ function createCameraPDFSections(
     });
   }
 
-  rows.push({
-    name: `Maintenance et garantie sur ${months > 0 ? months : 48} mois`,
-    qty: 1,
-    unitPrice: 0,
-    offered: true,
-  });
-
   yPos = drawItemTable(doc, rows, yPos);
 
   // ---- Summary ----
@@ -698,6 +691,22 @@ function createCameraPDFSections(
       yPos
     );
   }
+
+  // ---- Maintenance et garantie — own block after Vision à distance, with a line break ----
+  yPos += 14; // extra vertical breathing room between vision and maintenance
+  yPos = ensureSpace(doc, yPos, 38);
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, 4, 30, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`MAINTENANCE ET GARANTIE SUR ${months > 0 ? months : 48} MOIS`, LEFT + 12, yPos + 14);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text("Compris dans l'offre — assistance, déplacements, pièces, main d'œuvre", LEFT + 12, yPos + 26);
+  doc.setTextColor(0, 0, 0);
+  yPos += 38;
 
   // ---- Warning when no modem & no remote access ----
   if (!options.isRental && !options.remoteAccess) {

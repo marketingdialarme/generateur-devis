@@ -146,10 +146,12 @@ export default function CreateDevisPage() {
   const [fogProcessingOffered, setFogProcessingOffered] = useState(false);
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
   const [fogSimCardSelected, setFogSimCardSelected] = useState(false); // Whether SIM card is selected
+  const [fogPaymentMonths, setFogPaymentMonths] = useState(48);
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
+  const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
   
   // Auto-detect selected central from product lines
   const selectedCentral = useMemo(() => {
@@ -543,7 +545,7 @@ export default function CreateDevisPage() {
         remoteAccess: isCamera ? cameraVisionDistance : undefined,
         totals,
         simCardSelected: isAlarm ? simcardSelected : undefined,
-        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : undefined,
+        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
@@ -1366,28 +1368,6 @@ export default function CreateDevisPage() {
             />
           </div>
           
-          {/* Include installation in monthly checkbox - NEW */}
-          {!alarmRentalMode && (
-            <div style={{ 
-              marginTop: '15px',
-              padding: '12px',
-              background: '#f0f8ff',
-              borderRadius: '6px',
-              border: '1px solid #007bff'
-            }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={alarmInstallationInMonthly}
-                  onChange={(e) => setAlarmInstallationInMonthly(e.target.checked)}
-                  style={{ marginRight: '8px', cursor: 'pointer' }}
-                />
-                <span style={{ fontSize: '14px', fontWeight: 500 }}>
-                  Inclure le prix de l&apos;installation dans les mensualités
-                </span>
-              </label>
-            </div>
-          )}
         </div>
 
         {/* Admin Fees */}
@@ -1997,9 +1977,9 @@ export default function CreateDevisPage() {
         {/* Vision à distance (only in sale mode) */}
         {!cameraRentalMode && (
           <div className="quote-section">
-            <h3>📡 Vision à distance</h3>
+            <h3>🛠️ Contrat de maintenance</h3>
             <div className="product-line">
-              <div>Vision à distance</div>
+              <div>Contrat de maintenance</div>
               <div></div>
               <div></div>
               <div className="checkbox-option" style={{ margin: 0 }}>
@@ -2018,7 +1998,7 @@ export default function CreateDevisPage() {
             {/* Maintenance option */}
             <div className="product-line" style={{ marginTop: '15px' }}>
               <div>
-                Contrat de maintenance
+                Vision à distance
                 {cameraMaintenance && cameraMaintenancePrice > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
                     <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
@@ -2042,6 +2022,31 @@ export default function CreateDevisPage() {
                 {cameraMaintenance && cameraMaintenancePrice > 0 ? `${cameraMaintenancePrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Engagement Duration */}
+        {!cameraRentalMode && (
+          <div className="quote-section">
+            <h3>⏱️ Durée d'engagement</h3>
+            <select
+              value={cameraPaymentMonths || 48}
+              onChange={(e) => setCameraPaymentMonths(parseInt(e.target.value))}
+              style={{
+                padding: '10px',
+                fontSize: '14px',
+                border: '2px solid #e9ecef',
+                borderRadius: '8px',
+                width: '200px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value={12}>12 mois</option>
+              <option value={24}>24 mois</option>
+              <option value={36}>36 mois</option>
+              <option value={48}>48 mois</option>
+              <option value={60}>60 mois</option>
+            </select>
           </div>
         )}
 
@@ -2088,7 +2093,7 @@ export default function CreateDevisPage() {
                   </div>
           {cameraRemoteAccess && !cameraRentalMode && (
             <div className="summary-item">
-              <span>Vision à distance</span>
+              <span>Contrat de maintenance</span>
               <span>{calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois</span>
                   </div>
           )}
@@ -2601,9 +2606,33 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
+        {/* Engagement Duration */}
+        <div className="quote-section">
+          <h3>⏱️ Durée d'engagement</h3>
+          <select
+            value={fogPaymentMonths || 48}
+            onChange={(e) => setFogPaymentMonths(parseInt(e.target.value))}
+            style={{ padding: '10px', fontSize: '14px', border: '2px solid #e9ecef', borderRadius: '8px', width: '200px', cursor: 'pointer' }}
+          >
+            <option value={12}>12 mois</option>
+            <option value={24}>24 mois</option>
+            <option value={36}>36 mois</option>
+            <option value={48}>48 mois</option>
+            <option value={60}>60 mois</option>
+          </select>
+        </div>
+
+        {/* Payment Mode */}
+        <PaymentSelector
+          selectedMonths={fogPaymentMonths}
+          onSelect={setFogPaymentMonths}
+          label="Mode de paiement"
+          excludeComptant={true}
+        />
+
         <div className="action-buttons">
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
@@ -2836,9 +2865,33 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
+        {/* Engagement Duration */}
+        <div className="quote-section">
+          <h3>⏱️ Durée d'engagement</h3>
+          <select
+            value={visiophoPaymentMonths || 48}
+            onChange={(e) => setVisiophoPaymentMonths(parseInt(e.target.value))}
+            style={{ padding: '10px', fontSize: '14px', border: '2px solid #e9ecef', borderRadius: '8px', width: '200px', cursor: 'pointer' }}
+          >
+            <option value={12}>12 mois</option>
+            <option value={24}>24 mois</option>
+            <option value={36}>36 mois</option>
+            <option value={48}>48 mois</option>
+            <option value={60}>60 mois</option>
+          </select>
+        </div>
+
+        {/* Payment Mode */}
+        <PaymentSelector
+          selectedMonths={visiophoPaymentMonths}
+          onSelect={setVisiophoPaymentMonths}
+          label="Mode de paiement"
+          excludeComptant={true}
+        />
+
         <div className="action-buttons">
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
