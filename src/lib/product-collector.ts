@@ -6,7 +6,8 @@
  */
 
 import { ProductLineData } from '@/components/ProductLine';
-import { getSheetNameForProduct, getUniqueSheetNames } from './product-sheet-mapping';
+import { getSheetNameForProduct, PRODUCTS_WITHOUT_INDIVIDUAL_SHEETS } from './product-sheet-mapping';
+import { config } from './config';
 
 /**
  * Collect product names for backend assembly
@@ -78,15 +79,43 @@ export function collectAllProducts(sections: Record<string, ProductLineData[]>):
     allProducts.push(...sectionProducts);
   });
   
-  console.log(`✅ Total products collected (before mapping): ${allProducts.length}`);
+  console.log(`✅ Total products collected (before dedup): ${allProducts.length}`);
   console.log('📝 Products:', allProducts);
-  
-  // Apply product sheet mapping and deduplication
-  const uniqueSheetNames = getUniqueSheetNames(allProducts);
-  
-  console.log(`✅ Unique technical sheets needed (after mapping & dedup): ${uniqueSheetNames.length}`);
-  console.log('📑 Sheet names:', uniqueSheetNames);
-  
-  return uniqueSheetNames;
+
+  // Prefer raw product names when a direct Drive ID exists in cameraSheetIds
+  // so the assembly fetches the per-product fiche directly via /api/drive-fetch-product.
+  // This bypasses the legacy "shared sheet" name mapping (e.g. "Bullet Mini et Dôme Mini"),
+  // which is incorrect now that the client ships one fiche per product.
+  //
+  // For products NOT in cameraSheetIds (NVR, accessories, modem, etc.) we keep the legacy
+  // mapped sheet name so the folder-name search still works.
+  const directIds = config.google.drive.baseDocuments.cameraSheetIds || {};
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const productName of allProducts) {
+    if (PRODUCTS_WITHOUT_INDIVIDUAL_SHEETS.has(productName)) continue;
+
+    // Has a direct ID? send raw product name (route resolves via cameraSheetIds map)
+    if (directIds[productName]) {
+      if (!seen.has(productName)) {
+        seen.add(productName);
+        result.push(productName);
+      }
+      continue;
+    }
+
+    // Otherwise fall back to legacy sheet-name mapping (dedupes shared sheets)
+    const sheetName = getSheetNameForProduct(productName);
+    if (sheetName && !seen.has(sheetName)) {
+      seen.add(sheetName);
+      result.push(sheetName);
+    }
+  }
+
+  console.log(`✅ Names to fetch (after direct-ID resolution & dedup): ${result.length}`);
+  console.log('📑 Names:', result);
+
+  return result;
 }
 
