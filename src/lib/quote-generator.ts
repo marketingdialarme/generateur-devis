@@ -166,6 +166,28 @@ export const CATALOG_XTO_PRODUCTS: XTOProduct[] = [
   { id: 403, name: "Sirène", monthlyPrice: 50, description: "50 CHF HT/mois" },
 ];
 
+/**
+ * XTO base-kit contents — the five lines promised by the kit-selection modal
+ * (client sheet, Alarme tab: "Ajouter un Kit XTO avec ..."). Injected into the
+ * material lines when "Kit Complet XTO" is selected. Zero-price entries
+ * (centrale, centre d'intervention) are part of the kit and render as "-" on
+ * the quote, like the other always-included base-kit items.
+ */
+export interface XTOKitLine {
+  xtoId: number;
+  name: string;
+  monthlyPrice: number;
+  quantity: number;
+}
+
+export const XTO_KIT_LINES: XTOKitLine[] = [
+  { xtoId: 400, name: "Centrale XTO", monthlyPrice: 0, quantity: 1 },
+  { xtoId: 403, name: "Sirène extérieure avec gyrophare", monthlyPrice: 50, quantity: 1 },
+  { xtoId: 401, name: "Caméras à détection infrarouge", monthlyPrice: 100, quantity: 4 },
+  { xtoId: 402, name: "Lecteur de badge + 8 badges", monthlyPrice: 30, quantity: 1 },
+  { xtoId: 404, name: "Centre d'intervention GS", monthlyPrice: 0, quantity: 1 },
+];
+
 // ============================================
 // PRICING CONFIGURATION
 // ============================================

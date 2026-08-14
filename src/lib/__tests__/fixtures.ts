@@ -2,7 +2,7 @@
  * Shared test fixtures: build realistic ProductLineData + PDFGenerationOptions
  * for each product type. Used by calculations + pdf-content tests.
  */
-import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
+import { calculateAlarmTotals, calculateCameraTotals, type DiscountConfig } from '@/lib/calculations';
 import {
   CATALOG_ALARM_PRODUCTS,
   CATALOG_CAMERA_MATERIAL,
@@ -16,7 +16,15 @@ let _id = 1;
 const nextId = () => _id++;
 const find = (cat: Array<{ id: number }>, id: number) => cat.find((x) => x.id === id) as unknown as Product;
 
-export function alarmFixture(opts: { simCardSelected?: boolean } = {}) {
+export function alarmFixture(opts: {
+  simCardSelected?: boolean;
+  /** Adds two non-offered material lines so a material réduction has a base. */
+  extraMaterial?: boolean;
+  materialDiscount?: DiscountConfig;
+  installationDiscount?: DiscountConfig;
+  surveillanceType?: string;
+  surveillancePrice?: number;
+} = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
   const material: ProductLineData[] = [
     { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 6), quantity: 1, offered: true }, // Centrale Titane 690
@@ -26,19 +34,27 @@ export function alarmFixture(opts: { simCardSelected?: boolean } = {}) {
     { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 110), quantity: 1, offered: true }, // Application
     { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 111), quantity: 1, offered: true }, // Alimentation de secours
   ];
+  if (opts.extraMaterial) {
+    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 14), quantity: 1, offered: false }); // Mouvement ext photo 690
+    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 2, offered: false }); // fumée Titane 190
+  }
   const install: ProductLineData[] = [
     { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 11), quantity: 1, offered: false }, // choc Titane 290
     { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 3, offered: false }, // fumée Titane 190
   ];
   const services = {
     testCyclique: { selected: true, price: 0, offered: true },
-    surveillance: { type: 'telesurveillance', price: 129, offered: false },
+    surveillance: {
+      type: opts.surveillanceType ?? 'telesurveillance',
+      price: opts.surveillancePrice ?? 129,
+      offered: false,
+    },
   };
   const totals = calculateAlarmTotals(
     material,
     install,
-    undefined,
-    undefined,
+    opts.materialDiscount,
+    opts.installationDiscount,
     { quantity: 0, isOffered: false, price: 300 },
     { simCardSelected, simCardOffered: false, processingOffered: false },
     services,

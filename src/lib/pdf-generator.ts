@@ -8,7 +8,7 @@
  */
 
 import type { jsPDF } from 'jspdf';
-import type { AlarmTotals, CameraTotals } from './calculations';
+import type { AlarmTotals, CameraTotals, SectionTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
 import { TVA_RATE, ADMIN_FEES, UNINSTALL_PRICE, roundToFiveCents, calculateFacilityPayment } from './quote-generator';
 import { calculateRemoteAccessPrice, detectCentralType } from './product-line-adapter';
@@ -400,12 +400,16 @@ function createAlarmPDFSections(
   // ---- Render table ----
   yPos = drawItemTable(doc, rows, yPos);
 
-  // ---- Summary box (Total HT / Rabais / Après rabais / TVA / TTC) ----
+  // ---- Summary box (Total HT / Rabais / Réductions / Après rabais / TVA / TTC) ----
   const totalBeforeRabais = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const totalAfterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
   const rabais = totalBeforeRabais - totalAfterRabais;
-  yPos = ensureSpace(doc, yPos, 110);
-  yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos);
+  // Percent/fixed réductions live only in the totals object — the rows display
+  // pre-discount prices, so they cannot be derived from the table.
+  const reductions = sectionReductions(alarmTotals.material, alarmTotals.installation);
+  const netAfterReductions = Math.max(0, totalAfterRabais - reductionsTotal(reductions));
+  yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
+  yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos, reductions);
 
   // ---- Télésurveillance + Test Cyclique block ----
   if (options.services?.surveillance?.type) {
@@ -421,8 +425,10 @@ function createAlarmPDFSections(
 
   // ---- Facilité de paiement block ----
   if (!options.isRental && months > 0) {
+    // Sheet formula: ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
+    // "Total après rabais" is the summary's net figure, réductions included.
     const facilityHT = calculateFacilityPayment(
-      totalAfterRabais,
+      netAfterReductions,
       alarmTotals.adminFees.processing,
       alarmTotals.adminFees.simCard,
       months
@@ -439,19 +445,22 @@ function createAlarmPDFSections(
   return yPos;
 }
 
-// Right-aligned label/value pair helper
+// Right-aligned label/value pair helper. `labelX` lets long labels (e.g.
+// "Réduction matériel (10%)") start further left so they never collide with
+// the right-aligned value.
 function drawLabelValue(
   doc: jsPDF,
   label: string,
   value: string,
   y: number,
   bold = false,
-  valueColor: [number, number, number] = [0, 0, 0]
+  valueColor: [number, number, number] = [0, 0, 0],
+  labelX: number = COL_PU
 ): void {
   doc.setFont('helvetica', bold ? 'bold' : 'normal');
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
-  doc.text(label, COL_PU, y);
+  doc.text(label, labelX, y);
   doc.setTextColor(...valueColor);
   doc.text(value, RIGHT, y, { align: 'right' });
   doc.setTextColor(0, 0, 0);
@@ -533,25 +542,64 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
   return yPos + 6;
 }
 
+/**
+ * A percent/fixed "Réduction" typed by the commercial, carried by the totals
+ * object. Rendered as its own deduction line in the summary — distinct from the
+ * "Rabais partenariat" line, which per the client sheet covers OFFERT rows only.
+ */
+interface SummaryReduction {
+  label: string;
+  amount: number;
+}
+
+function sectionReductions(
+  material: SectionTotals | undefined,
+  installation: SectionTotals | undefined
+): SummaryReduction[] {
+  const out: SummaryReduction[] = [];
+  // The parenthetical only adds information for percent discounts; a fixed
+  // discount's display ("100.00 CHF") would duplicate the amount column.
+  const suffix = (s: SectionTotals) => (s.discountDisplay.includes('%') ? ` (${s.discountDisplay})` : '');
+  if (material && material.discount > 0) {
+    out.push({ label: `Réduction matériel${suffix(material)}`, amount: material.discount });
+  }
+  if (installation && installation.discount > 0) {
+    out.push({ label: `Réduction installation${suffix(installation)}`, amount: installation.discount });
+  }
+  return out;
+}
+
+function reductionsTotal(reductions: SummaryReduction[]): number {
+  return reductions.reduce((s, r) => s + r.amount, 0);
+}
+
 function drawSummary(
   doc: jsPDF,
   totalHT: number,
   rabais: number,
   afterRabais: number,
-  yPos: number
+  yPos: number,
+  reductions: SummaryReduction[] = []
 ): number {
-  const tva = roundToFiveCents(afterRabais * TVA_RATE);
-  const ttc = roundToFiveCents(afterRabais + tva);
+  const netTotal = Math.max(0, afterRabais - reductionsTotal(reductions));
+  const tva = roundToFiveCents(netTotal * TVA_RATE);
+  const ttc = roundToFiveCents(netTotal + tva);
 
-  if (rabais > 0) {
+  if (rabais > 0 || reductions.length > 0) {
     drawLabelValue(doc, 'Total HT', `${totalHT.toFixed(2)} CHF`, yPos + 8);
     yPos += 14;
-    drawLabelValue(doc, 'Rabais partenariat', `- ${rabais.toFixed(2)} CHF`, yPos + 8, true, C_GREEN);
-    yPos += 14;
-    drawLabelValue(doc, 'Total après rabais', `${afterRabais.toFixed(2)} CHF`, yPos + 8);
+    if (rabais > 0) {
+      drawLabelValue(doc, 'Rabais partenariat', `- ${rabais.toFixed(2)} CHF`, yPos + 8, true, C_GREEN);
+      yPos += 14;
+    }
+    for (const reduction of reductions) {
+      drawLabelValue(doc, reduction.label, `- ${reduction.amount.toFixed(2)} CHF`, yPos + 8, true, C_GREEN, COL_PU - 45);
+      yPos += 14;
+    }
+    drawLabelValue(doc, 'Total après rabais', `${netTotal.toFixed(2)} CHF`, yPos + 8);
     yPos += 14;
   } else {
-    drawLabelValue(doc, 'Total HT', `${afterRabais.toFixed(2)} CHF`, yPos + 8);
+    drawLabelValue(doc, 'Total HT', `${netTotal.toFixed(2)} CHF`, yPos + 8);
     yPos += 14;
   }
   drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 8);
@@ -586,7 +634,13 @@ function drawSurveillanceBlock(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  doc.text('TÉLÉSURVEILLANCE + TEST CYCLIQUE', LEFT + 12, yPos + 16);
+  // Title follows the selected surveillance mode (quote prefix already does: DIA-AUTO / DIA-TELES)
+  const isAutosurveillance = services.surveillance?.type?.startsWith('autosurveillance') ?? false;
+  doc.text(
+    isAutosurveillance ? 'AUTOSURVEILLANCE + TEST CYCLIQUE' : 'TÉLÉSURVEILLANCE + TEST CYCLIQUE',
+    LEFT + 12,
+    yPos + 16
+  );
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 30);
@@ -707,8 +761,9 @@ function createCameraPDFSections(
   const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const afterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
   const rabais = totalBefore - afterRabais;
-  yPos = ensureSpace(doc, yPos, 110);
-  yPos = drawSummary(doc, totalBefore, rabais, afterRabais, yPos);
+  const reductions = sectionReductions(cameraTotals.material, cameraTotals.installation);
+  yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
+  yPos = drawSummary(doc, totalBefore, rabais, afterRabais, yPos, reductions);
 
   // ---- Vision à distance (monthly) ----
   if (!options.isRental && options.remoteAccess) {

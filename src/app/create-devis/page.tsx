@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getAllCommercials, getCommercialInfo } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
@@ -953,6 +953,16 @@ export default function CreateDevisPage() {
                         {product.name} - {product.monthlyPrice.toFixed(2)} CHF/mois
                       </option>
                     ))}
+                    {/* XTO kit lines carry richer names than the supplementary XTO
+                        catalog (e.g. "Caméras à détection infrarouge"); render the
+                        held name so the select does not display blank. */}
+                    {line.product && (line.product as any).isXTO &&
+                      !CATALOG_XTO_PRODUCTS.some(p => p.name === line.product!.name) && (
+                      <option value={line.product.name}>
+                        {line.product.name}
+                        {(line.product.price || 0) > 0 ? ` - ${(line.product.price || 0).toFixed(2)} CHF/mois` : ''}
+                      </option>
+                    )}
                   </select>
                   <input 
                     type="number" 
@@ -3166,16 +3176,18 @@ export default function CreateDevisPage() {
               </h3>
               <button
                 onClick={() => {
-                  // Add XTO products to alarm lines - use proper XTO product structure
-                  const xtoProducts = CATALOG_XTO_PRODUCTS.map((prod, index) => ({
+                  // Inject the five kit lines promised by the visualization below
+                  // (client sheet, Alarme tab) — names, quantities and monthly
+                  // prices come from the single XTO_KIT_LINES source.
+                  const xtoProducts = XTO_KIT_LINES.map((kitLine, index) => ({
                     id: Date.now() + index,
                     product: {
-                      id: prod.id,
-                      name: prod.name,
-                      price: prod.monthlyPrice,
+                      id: kitLine.xtoId,
+                      name: kitLine.name,
+                      price: kitLine.monthlyPrice,
                       isXTO: true // Flag to identify XTO products
                     } as any,
-                    quantity: prod.id === 402 ? 4 : 1, // 4 cameras by default
+                    quantity: kitLine.quantity,
                     offered: false
                   }));
                   setAlarmMaterialLines(xtoProducts);
