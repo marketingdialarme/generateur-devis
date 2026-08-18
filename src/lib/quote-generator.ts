@@ -11,25 +11,6 @@
 // CATALOGUES - Product Data
 // ============================================
 
-export const COMMERCIALS_LIST = [
-  "Arnaud Bloch",
-  "Benali Kodad",
-  "Bryan Debrosse",
-  "Cédric Boldron",
-  "Emin Comert",
-  "Gérald Clausen",
-  "Heythem Ziaya",
-  "Iyed Baccouche",
-  "Matys Goiot",
-  "Mohamed Tartik",
-  "Nora Sassi",
-  "Rodolphe De Vito",
-  "Samir Ouhameni",
-  "Thilan Curt",
-  "Thomas Garcia",
-  "Wassim Tahiri"
-];
-
 export interface AlarmProduct {
   id: number;
   name: string;
@@ -194,24 +175,6 @@ export const XTO_KIT_LINES: XTOKitLine[] = [
 
 export const TVA_RATE = 0.081; // 8.1%
 
-export const INSTALLATION_PRICES: Record<number, number> = {
-  1: 690,   // 1/2 journée
-  2: 1290,  // 1 jour
-  3: 1980,  // 1.5 jours
-  4: 2580,  // 2 jours
-  5: 3270,  // 2.5 jours
-  6: 3870   // 3 jours
-};
-
-export const INSTALLATION_MONTHLY_PRICES: Record<number, Record<number, number>> = {
-  1: { 12: 61, 24: 32, 36: 23, 48: 18, 60: 14 },
-  2: { 12: 114, 24: 60, 36: 42, 48: 33, 60: 27 },
-  3: { 12: 174, 24: 91, 36: 64, 48: 50, 60: 41 },
-  4: { 12: 228, 24: 119, 36: 83, 48: 65, 60: 54 },
-  5: { 12: 288, 24: 151, 36: 106, 48: 83, 60: 68 },
-  6: { 12: 341, 24: 179, 36: 125, 48: 98, 60: 81 }
-};
-
 export const HALF_DAY_PRICE = 690;
 export const FULL_DAY_PRICE = 1290;
 export const HALF_DAY_MONTHLY_12 = 61;
@@ -232,8 +195,6 @@ export const ADMIN_FEES = {
   processingFee: 190.00
 };
 
-export const CAMERA_INSTALL_BASE_PRICE = 690.00;
-export const CAMERA_INSTALL_ONE_CAMERA = 350.00;
 export const REMOTE_ACCESS_PRICE = 20.00;
 export const REMOTE_ACCESS_PRICE_2_7 = 35.00;
 export const REMOTE_ACCESS_PRICE_8_PLUS = 60.00;

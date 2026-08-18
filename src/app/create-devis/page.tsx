@@ -21,25 +21,26 @@ import { usePdfGenerator } from '@/hooks/usePdfGenerator';
 import { usePdfAssembly } from '@/hooks/usePdfAssembly';
 import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
-import { getAllCommercials, getCommercialInfo } from '@/lib/config';
+import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
 import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
-import { ProductSection } from '@/components/ProductSection';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { detectCentralType, calculateCameraInstallation, toCalcFormat, calculateRemoteAccessPrice } from '@/lib/product-line-adapter';
-
-// Commercial list — derived from the authoritative config.commercials map so
-// the dropdown can never drift out of sync with getCommercialInfo() lookups.
-const COMMERCIALS_LIST = getAllCommercials();
+import { detectCentralType, calculateRemoteAccessPrice } from '@/lib/product-line-adapter';
 
 export default function CreateDevisPage() {
   const [mounted, setMounted] = useState(false);
-  
+
+  // Commercials directory — fetched live from the "Conseiller" Google Sheet
+  // via /api/commercials (see useEffect below). No static fallback: an
+  // empty list / commercialsError means the sheet fetch failed.
+  const [commercialsList, setCommercialsList] = useState<string[]>([]);
+  const [commercialsError, setCommercialsError] = useState<string | null>(null);
+
   // Client info state
   const [clientName, setClientName] = useState('');
   const [commercial, setCommercial] = useState('');
@@ -462,7 +463,25 @@ export default function CreateDevisPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
+  useEffect(() => {
+    fetch('/api/commercials')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success) {
+          throw new Error(result.error || 'Échec du chargement des commerciaux');
+        }
+        setCommercials(result.data.commercials);
+        setCommercialsList(Object.keys(result.data.commercials));
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load commercials from Google Sheet:', error);
+        setCommercialsError(
+          error instanceof Error ? error.message : 'Échec du chargement des commerciaux'
+        );
+      });
+  }, []);
+
   
   // Get current date
   const getCurrentDate = () => {
@@ -708,6 +727,19 @@ export default function CreateDevisPage() {
         </div>
       )}
 
+      {commercialsError && (
+        <div style={{
+          background: '#f8d7da',
+          color: '#721c24',
+          padding: '15px',
+          margin: '20px 0',
+          borderRadius: '8px',
+          border: '1px solid #f5c6cb'
+        }}>
+          ❌ Impossible de charger la liste des commerciaux depuis Google Sheets : {commercialsError}
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="nav-tabs">
         <button 
@@ -793,7 +825,7 @@ export default function CreateDevisPage() {
                   style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
                 >
                   <option value="">Sélectionner un commercial</option>
-                  {COMMERCIALS_LIST.map(name => (
+                  {commercialsList.map(name => (
                     <option key={name} value={name}>{name}</option>
                   ))}
                   <option value="autre" style={{ fontStyle: 'italic', color: '#007bff' }}>
@@ -1678,7 +1710,7 @@ export default function CreateDevisPage() {
                   style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
                 >
                   <option value="">Sélectionner un commercial</option>
-                  {COMMERCIALS_LIST.map(name => (
+                  {commercialsList.map(name => (
                     <option key={name} value={name}>{name}</option>
                   ))}
                   <option value="autre" style={{ fontStyle: 'italic', color: '#007bff' }}>
@@ -2218,7 +2250,7 @@ export default function CreateDevisPage() {
             onValueChange={setCommercial}
             onCustomValueChange={setCustomCommercial}
             onShowCustomChange={setShowCustomCommercial}
-            commercialsList={COMMERCIALS_LIST}
+            commercialsList={commercialsList}
           />
         </div>
 
@@ -2724,7 +2756,7 @@ export default function CreateDevisPage() {
             onValueChange={setCommercial}
             onCustomValueChange={setCustomCommercial}
             onShowCustomChange={setShowCustomCommercial}
-            commercialsList={COMMERCIALS_LIST}
+            commercialsList={commercialsList}
           />
         </div>
 

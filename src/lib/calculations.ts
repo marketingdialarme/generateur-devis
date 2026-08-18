@@ -484,31 +484,4 @@ export function calculateCameraTotals(
   return result;
 }
 
-// ============================================
-// DISPLAY HELPERS
-// ============================================
-
-/**
- * Format section total with discount display
- */
-export function formatSectionTotal(totals: SectionTotals): string {
-  if (totals.discount > 0) {
-    return `${totals.totalBeforeDiscount.toFixed(2)} CHF - Réduction ${totals.discountDisplay} = ${totals.total.toFixed(2)} CHF`;
-  }
-  return `${totals.total.toFixed(2)} CHF`;
-}
-
-/**
- * Format price with "OFFERT" if offered
- */
-export function formatPrice(price: number, isOffered: boolean): string {
-  return isOffered ? 'OFFERT' : `${price.toFixed(2)} CHF`;
-}
-
-/**
- * Format monthly price
- */
-export function formatMonthlyPrice(price: number, isOffered: boolean): string {
-  return isOffered ? 'OFFERT' : `${price.toFixed(2)} CHF/mois`;
-}
 

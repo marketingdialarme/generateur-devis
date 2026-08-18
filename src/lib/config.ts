@@ -243,84 +243,12 @@ export const config: AppConfig = {
   // ==========================================================================
   // COMMERCIALS INFORMATION
   // ==========================================================================
-  commercials: {
-    'Arnaud Bloch': {
-      phone: '076 595 51 06',
-      email: 'arnaud.bloch@dialarme.ch',
-    },
-    'Benali Kodad': {
-      phone: '076 401 36 54',
-      email: 'benali.kodad@dialarme.ch',
-    },
-    'Bryan Debrosse': {
-      phone: '076 811 23 42',
-      email: 'bryan.debrosse@dialarme.ch',
-    },
-    'Cédric Boldron': {
-      phone: '076 811 23 41',
-      email: 'cedric.boldron@dialarme.ch',
-    },
-    'Emin Comert': {
-      phone: '076 541 13 60',
-      email: 'emin.comert@dialarme.ch',
-    },
-    'Gérald Clausen': {
-      phone: '079 416 22 22',
-      email: 'gc.rocsecurite@bluewin.ch',
-    },
-    'Heythem Ziaya': {
-      phone: '076 656 55 28',
-      email: 'heythem.ziaya@dialarme.ch',
-    },
-    'Iyed Baccouche': {
-      phone: '076 393 08 98',
-      email: 'iyed.baccouche@dialarme.ch',
-    },
-    'Matys Goiot': {
-      phone: '076 811 23 38',
-      email: 'matys.goiot@dialarme.ch',
-    },
-    'Mohamed Tartik': {
-      phone: '076 592 87 64',
-      email: 'mohamed.tartik@dialarme.ch',
-    },
-    'Nora Sassi': {
-      phone: '076 656 80 10',
-      email: 'nora.sassi@dialarme.ch',
-    },
-    'Rodolphe De Vito': {
-      phone: '076 559 61 32',
-      email: 'rodolphe.devito@dialarme.ch',
-    },
-    'Dorian Afonso': {
-      phone: '076 266 37 25',
-      email: 'dorian.afonso@dialarme.ch',
-    },
-    'Thilan Curt': {
-      phone: '076 355 27 32',
-      email: 'thilan.curt@dialarme.ch',
-    },
-    'Thomas Garcia': {
-      phone: '076 656 55 28',
-      email: 'thomas.garcia@dialarme.ch',
-    },
-    'Wassim Tahiri': {
-      phone: '076 408 36 54',
-      email: 'tahiri@dialarme.ch',
-    },
-    'Alexandre Bentejac': {
-      phone: '076 510 98 78',
-      email: 'alexandre.bentejac@dialarme.ch',
-    },
-    'Mattia Cazeres': {
-      phone: '076 248 20 42',
-      email: 'mattia.cazeres@dialarme.ch',
-    },
-    'Brahim Martin': {
-      phone: '076 596 24 26',
-      email: 'b.martin@dialarme.ch',
-    },
-  },
+  // Populated live from the "Conseiller" tab of the Google Sheet
+  // (GOOGLE_SHEETS_ID) via setCommercials() below — see
+  // src/lib/services/google-sheets.service.ts and /api/commercials.
+  // Starts empty on purpose: no static fallback, so a sheet-fetch failure
+  // is visible (empty dropdown) instead of silently serving stale names.
+  commercials: {},
   
   // ==========================================================================
   // APPLICATION PARAMETERS
@@ -355,6 +283,19 @@ export function commercialExists(commercialName: string): boolean {
  */
 export function getAllCommercials(): string[] {
   return Object.keys(config.commercials);
+}
+
+/**
+ * Replace the in-memory commercials directory (e.g. with data fetched
+ * live from the "Conseiller" Google Sheet via /api/commercials). Mutates
+ * config.commercials in place so getAllCommercials()/getCommercialInfo()
+ * pick up the new data without needing to be called again.
+ */
+export function setCommercials(data: Record<string, CommercialInfo>): void {
+  for (const key of Object.keys(config.commercials)) {
+    delete config.commercials[key];
+  }
+  Object.assign(config.commercials, data);
 }
 
 /**
