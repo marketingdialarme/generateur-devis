@@ -1,56 +1,11 @@
 /**
  * Product Line Data Adapter
- * 
+ *
  * Converts between ProductLineData (component format) and calculation format
  * Provides utility functions for working with product lines
  */
 
-import { ProductLineData, Product } from '@/components/ProductLine';
-import { calculateInstallationPrice } from './quote-generator';
-
-// Calculation-compatible format
-export interface CalcProductLine {
-  id: number;
-  productId: number | null;
-  price: number;
-  quantity: number;
-  isOffered: boolean;
-  isCustom?: boolean;
-}
-
-/**
- * Convert ProductLineData to calculation-compatible format
- */
-export function toCalcFormat(
-  lines: ProductLineData[],
-  centralType: 'titane' | 'jablotron' | null
-): CalcProductLine[] {
-  return lines.map(line => {
-    let price = 0;
-    
-    if (line.product) {
-      // Treat customPrice as an explicit override (even for non-custom products)
-      if (line.customPrice !== undefined) {
-        price = line.customPrice;
-      } else if (line.product.price !== undefined) {
-        price = line.product.price;
-      } else if (centralType === 'titane' && line.product.priceTitane !== undefined) {
-        price = line.product.priceTitane;
-      } else if (centralType === 'jablotron' && line.product.priceJablotron !== undefined) {
-        price = line.product.priceJablotron;
-      }
-    }
-    
-    return {
-      id: line.id,
-      productId: line.product?.id || null,
-      price,
-      quantity: line.quantity,
-      isOffered: line.offered,
-      isCustom: line.product?.isCustom
-    };
-  });
-}
+import { ProductLineData } from '@/components/ProductLine';
 
 /**
  * Detect the selected central type from product lines
@@ -67,71 +22,6 @@ export function detectCentralType(lines: ProductLineData[]): 'titane' | 'jablotr
     }
   }
   return null;
-}
-
-/**
- * Get display name for a product line
- */
-export function getProductLineName(line: ProductLineData): string {
-  if (line.product?.isCustom && line.customName) {
-    return line.customName;
-  }
-  return line.product?.name || 'Produit non sélectionné';
-}
-
-/**
- * Get price for a product line based on central type
- */
-export function getProductLinePrice(
-  line: ProductLineData,
-  centralType: 'titane' | 'jablotron' | null
-): number {
-  if (!line.product) return 0;
-  
-  // Treat customPrice as an explicit override (even for non-custom products)
-  if (line.customPrice !== undefined) {
-    return line.customPrice;
-  }
-  
-  if (line.product.price !== undefined) {
-    return line.product.price;
-  }
-  
-  if (centralType === 'titane' && line.product.priceTitane !== undefined) {
-    return line.product.priceTitane;
-  }
-  
-  if (centralType === 'jablotron' && line.product.priceJablotron !== undefined) {
-    return line.product.priceJablotron;
-  }
-  
-  return 0;
-}
-
-/**
- * Calculate total for a single product line
- */
-export function calculateLineTotal(
-  line: ProductLineData,
-  centralType: 'titane' | 'jablotron' | null
-): number {
-  if (line.offered) return 0;
-  const price = getProductLinePrice(line, centralType);
-  return price * line.quantity;
-}
-
-/**
- * Calculate camera installation price with tiered pricing
- * Client feedback (global): installation pricing by half-day/day applies to cameras.
- * - 1 = 1/2 journée (690 CHF)
- * - 2 = 1 journée (1290 CHF)
- * - Additional half-days follow the same tiered logic
- */
-export function calculateCameraInstallation(cameraLines: ProductLineData[], halfDays?: number): number {
-  // NOTE: cameraLines currently not used for installation pricing; pricing is driven
-  // by the selected installation duration (halfDays).
-  void cameraLines;
-  return calculateInstallationPrice(halfDays || 1);
 }
 
 /**
@@ -186,4 +76,3 @@ export function calculateRemoteAccessPrice(cameraLines: ProductLineData[]): numb
   const billableCameras = fourGCameraCount + (hasModem ? classicCameraCount : 0);
   return billableCameras * 20;
 }
-

@@ -116,23 +116,3 @@ export function getSheetNameForProduct(productName: string): string {
   // Return original name
   return productName;
 }
-
-/**
- * Deduplicate sheet names - products with same sheet name should only appear once
- * @param productNames - Array of product names
- * @returns Array of unique sheet names to fetch
- */
-export function getUniqueSheetNames(productNames: string[]): string[] {
-  const uniqueSheets = new Set<string>();
-  
-  for (const productName of productNames) {
-    const sheetName = getSheetNameForProduct(productName);
-    
-    // Only add non-empty sheet names
-    if (sheetName && sheetName.trim() !== '') {
-      uniqueSheets.add(sheetName);
-    }
-  }
-  
-  return Array.from(uniqueSheets);
-}
