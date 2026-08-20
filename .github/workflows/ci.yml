@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Unit tests
+        run: npm test
+
+      # The build is the only gate that catches a deleted module that is still
+      # imported, or a dependency removed from package.json while still in use.
+      - name: Production build
+        run: npm run build
+        env:
+          # The build must not depend on real credentials. Any value here is a
+          # placeholder: routes are dynamic and only read env at request time.
+          GOOGLE_CLIENT_ID: ci-placeholder
+          GOOGLE_CLIENT_SECRET: ci-placeholder
+          GOOGLE_REFRESH_TOKEN: ci-placeholder

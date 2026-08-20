@@ -1,435 +1,148 @@
-# 🚀 Dialarme Quote Generator v2.0
+# Dialarme — Générateur de devis
 
-Modern serverless PDF quote generator for Dialarme - rebuilt with Next.js 14, TypeScript, and modern cloud architecture.
+Internal web app used by Dialarme's conseillers to build a security-system
+quote (alarme, caméra, générateur de brouillard, visiophone), turn it into a
+branded PDF, save it to Google Drive and email it to the client.
 
-## 📋 Overview
-
-This application completely replaces the previous Google Apps Script-based system with a modern, fully serverless architecture that eliminates slow execution times and improves reliability.
-
-### Key Features
-
-- ✅ **PDF Generation** - Server-side PDF creation with pdf-lib (no client-side generation)
-- ✅ **Google Drive Integration** - Direct API integration via service account
-- ✅ **Email Delivery** - Professional emails via Resend API
-- ✅ **Database Logging** - Supabase for analytics and dashboard
-- ✅ **Modern UI** - React, TailwindCSS, Shadcn UI components
-- ✅ **Performance** - PDF generation + upload + email in ~3 seconds
-- ✅ **Responsive** - Works on desktop, tablet (iPad), and mobile
-
-### Architecture Improvements
-
-| Feature | Old System | New System |
-|---------|-----------|------------|
-| Backend | Google Apps Script | Next.js API Routes (Serverless) |
-| PDF Generation | Client-side (jsPDF) | Server-side (pdf-lib) |
-| Execution Time | ~30 seconds | ~3 seconds |
-| Drive Access | Apps Script DriveApp | Google Drive REST API |
-| Email | Apps Script MailApp | Resend API |
-| Logging | Google Sheets | Supabase Database |
-| Deployment | Script Editor | Vercel (auto-deploy) |
-| Configuration | Hardcoded IDs | Environment variables |
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: TailwindCSS + Shadcn UI
-- **PDF**: pdf-lib (server-side)
-- **Google Drive**: googleapis (REST API)
-- **Email**: Resend
-- **Database**: Supabase
-- **Deployment**: Vercel
-- **Validation**: Zod
-
-## 📦 Installation
-
-### Prerequisites
-
-- Node.js 18.17 or higher
-- npm or yarn
-- Google Cloud Service Account (for Drive API)
-- Resend API key (for emails)
-- Supabase project (for database)
-
-### Step 1: Clone and Install
-
-```bash
-git clone <your-repo-url>
-cd dialarm
-npm install
-```
-
-### Step 2: Set Up Google Service Account
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable **Google Drive API**
-4. Create a **Service Account**:
-   - Navigate to "IAM & Admin" → "Service Accounts"
-   - Click "Create Service Account"
-   - Give it a name (e.g., "dialarme-drive-service")
-   - Grant role: "Editor" or specific Drive permissions
-5. Create JSON key:
-   - Click on the service account
-   - Go to "Keys" tab
-   - "Add Key" → "Create new key" → JSON
-   - Download the JSON file
-6. Share your Google Drive folders with the service account email:
-   - Open your "Devis" folder in Google Drive
-   - Click "Share"
-   - Add the service account email (looks like `name@project-id.iam.gserviceaccount.com`)
-   - Give "Editor" access
-
-### Step 3: Set Up Resend
-
-1. Go to [Resend](https://resend.com)
-2. Sign up and verify your email
-3. Add and verify your domain (e.g., `dialarme.fr`)
-4. Create an API key
-5. Copy the API key for `.env.local`
-
-### Step 4: Set Up Supabase
-
-1. Go to [Supabase](https://supabase.com)
-2. Create a new project
-3. Go to "SQL Editor" and run this SQL:
-
-```sql
-CREATE TABLE IF NOT EXISTS quotes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  client_name TEXT NOT NULL,
-  commercial TEXT NOT NULL,
-  quote_type TEXT NOT NULL,
-  central_type TEXT,
-  products TEXT[] DEFAULT '{}',
-  products_count INTEGER DEFAULT 0,
-  file_name TEXT NOT NULL,
-  drive_url TEXT NOT NULL,
-  email_sent BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_quotes_commercial ON quotes(commercial);
-CREATE INDEX IF NOT EXISTS idx_quotes_created_at ON quotes(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_quotes_type ON quotes(quote_type);
-```
-
-4. Copy your project URL and service role key from Settings → API
-
-### Step 5: Configure Environment Variables
-
-Create `.env.local` in the project root:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local` with your actual values:
-
-```env
-# Google Service Account (paste entire JSON as single line)
-GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
-
-# Google Drive Folder IDs (from URLs)
-DRIVE_FOLDER_DEVIS='1BoUAYoJa6uING8-GKZo-ZEPhqql_7SkX'
-DRIVE_FOLDER_TECH_SHEETS='1weDBc3uH8FXzrEET1oLrWajFoSstzQTx'
-DRIVE_FILE_ALARME_TITANE='12Ntu8bsVpO_CXdAOvL2V_AZcnGo6sA-S'
-DRIVE_FILE_ALARME_JABLOTRON='1enFlLv9q681uGBSwdRu43r8Co2nWytFf'
-DRIVE_FILE_VIDEO='15daREPnmbS1T76DLUpUxBLWahWIyq_cn'
-
-# Resend API
-RESEND_API_KEY='re_xxxxxxxxxxxx'
-EMAIL_FROM='devis@dialarme.fr'
-EMAIL_DESTINATION='devis.dialarme@gmail.com'
-
-# Supabase
-SUPABASE_URL='https://xxxxx.supabase.co'
-SUPABASE_SERVICE_ROLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-
-# App
-NEXT_PUBLIC_APP_URL='http://localhost:3000'
-```
-
-### Step 6: Run Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000)
-
-## 🚀 Deployment to Vercel
-
-### One-Click Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<your-repo-url>)
-
-### Manual Deployment
-
-1. Install Vercel CLI:
-```bash
-npm i -g vercel
-```
-
-2. Login to Vercel:
-```bash
-vercel login
-```
-
-3. Deploy:
-```bash
-vercel
-```
-
-4. Set environment variables in Vercel Dashboard:
-   - Go to your project settings
-   - Navigate to "Environment Variables"
-   - Add all variables from `.env.local`
-
-5. Redeploy:
-```bash
-vercel --prod
-```
-
-## 📁 Project Structure
-
-```
-dialarm/
-├── src/
-│   ├── app/                      # Next.js App Router
-│   │   ├── api/                  # API Routes
-│   │   │   ├── pdf/              # PDF generation
-│   │   │   ├── drive-upload/     # Drive upload
-│   │   │   ├── email/            # Email sending
-│   │   │   ├── log/              # Database logging
-│   │   │   ├── dashboard/        # Dashboard data
-│   │   │   └── config/           # Configuration
-│   │   ├── create-devis/         # Main quote creation page
-│   │   ├── dashboard/            # Analytics dashboard
-│   │   ├── settings/             # Settings page
-│   │   ├── layout.tsx            # Root layout
-│   │   ├── page.tsx              # Home page
-│   │   └── globals.css           # Global styles
-│   ├── components/
-│   │   └── ui/                   # Shadcn UI components
-│   ├── lib/
-│   │   ├── config.ts             # Configuration (converted from config.gs)
-│   │   ├── utils.ts              # Utility functions
-│   │   ├── products/             # Product catalog
-│   │   └── services/             # Core services
-│   │       ├── google-drive.service.ts
-│   │       ├── pdf.service.ts
-│   │       ├── email.service.ts
-│   │       └── database.service.ts
-├── public/                       # Static assets
-├── .env.example                  # Environment template
-├── .env.local                    # Your local environment (git-ignored)
-├── next.config.mjs               # Next.js configuration
-├── tailwind.config.ts            # Tailwind configuration
-├── tsconfig.json                 # TypeScript configuration
-└── package.json                  # Dependencies
-```
-
-## 🔧 Configuration
-
-### Adding Commercials
-
-Edit `src/lib/config.ts`:
-
-```typescript
-commercials: {
-  'New Commercial': {
-    phone: '06 XX XX XX XX',
-    email: 'new@dialarme.fr',
-    folder: undefined,
-  },
-  // ... existing commercials
-}
-```
-
-### Adding Products
-
-Edit `src/lib/products/catalog.ts`:
-
-```typescript
-export const CAMERA_PRODUCTS: Product[] = [
-  { id: 'new-camera', name: 'New Camera', price: 850, category: 'camera' },
-  // ... existing products
-];
-```
-
-### Modifying Prices
-
-Update prices in `src/lib/products/catalog.ts`:
-
-```typescript
-export const SERVICES = {
-  alarm: {
-    installation: { base: 690, perUnit: 690 },
-    // ... other services
-  },
-};
-```
-
-## 🧪 Testing
-
-### Test API Endpoints
-
-```bash
-# PDF Generation
-curl -X POST http://localhost:3000/api/pdf \
-  -H "Content-Type: application/json" \
-  -d '{"clientName":"Test","commercial":"Test Commercial","quoteType":"alarme","products":[]}'
-
-# Email Test
-curl -X POST http://localhost:3000/api/email \
-  -H "Content-Type: application/json" \
-  -d '{"toEmail":"your@email.com"}'
-
-# Dashboard Stats
-curl http://localhost:3000/api/dashboard?action=stats
-```
-
-### Test Complete Flow
-
-1. Open `/create-devis`
-2. Fill in client information
-3. Select products
-4. Generate PDF
-5. Check:
-   - PDF downloads locally
-   - Email received
-   - File in Google Drive
-   - Entry in Supabase database
-
-## 📊 API Documentation
-
-### POST /api/pdf
-
-Generate PDF with assembly.
-
-**Request:**
-```json
-{
-  "clientName": "Client Name",
-  "commercial": "Commercial Name",
-  "quoteType": "alarme" | "video",
-  "centralType": "titane" | "jablotron",
-  "products": ["product1", "product2"],
-  "includeAccessories": true,
-  "addCommercialOverlay": true
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "pdfBase64": "JVBERi0x...",
-  "fileName": "Devis_Client_2024-11-05.pdf",
-  "assemblyInfo": {
-    "baseDossier": "ALARME_TITANE",
-    "productsFound": 2,
-    "totalPages": 15
-  },
-  "duration": 2.45
-}
-```
-
-### POST /api/drive-upload
-
-Upload PDF to Google Drive.
-
-**Request:**
-```json
-{
-  "pdfBase64": "JVBERi0x...",
-  "fileName": "Devis_Client.pdf",
-  "commercial": "Commercial Name"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "file": {
-    "id": "1ABC...",
-    "name": "Devis_Client.pdf",
-    "url": "https://drive.google.com/...",
-    "downloadUrl": "https://drive.google.com/..."
-  }
-}
-```
-
-### POST /api/email
-
-Send quote email.
-
-### POST /api/log
-
-Log quote to database.
-
-### GET /api/dashboard?action=stats
-
-Get dashboard statistics.
-
-### GET /api/config
-
-Get public configuration (commercials list, etc.).
-
-## 🐛 Troubleshooting
-
-### "GOOGLE_SERVICE_ACCOUNT_JSON not configured"
-
-Make sure your `.env.local` file has the complete JSON on a single line:
-```env
-GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"..."}'
-```
-
-### "Permission denied" on Google Drive
-
-Ensure you've shared your Drive folders with the service account email address.
-
-### "Invalid API key" for Resend
-
-Verify your domain is verified in Resend dashboard and API key is correct.
-
-### PDF generation timeout
-
-Increase timeout in `next.config.mjs` and `.env.local`:
-```env
-PDF_TIMEOUT_MS=60000
-```
-
-## 📈 Performance
-
-- **Development**: First load ~1-2s, subsequent loads ~200ms
-- **Production**: SSR ~500ms, API routes ~200-500ms each
-- **PDF Generation**: 1-3s depending on number of products
-- **Total workflow**: ~3-5s (vs 30s in old system)
-
-## 🤝 Contributing
-
-This is a proprietary project for Dialarme. For modifications:
-
-1. Update code in `src/`
-2. Test locally
-3. Update documentation
-4. Deploy to staging first
-5. Test in production
-
-## 📄 License
-
-Proprietary - Dialarme © 2024
-
-## 👥 Support
-
-For issues or questions:
-- Technical: Contact development team
-- Business: Contact Dialarme management
+Live: https://generateur-devis.vercel.app
 
 ---
 
-**Migrated from Google Apps Script to Next.js 14** • **Version 2.0** • **Built with ❤️ for Dialarme**
+## How a quote is actually produced
 
+This is the mental model to hold before touching anything. The PDF a client
+receives is **two documents stitched together**:
+
+1. **The quote page** is drawn with **jsPDF, in the browser**
+   (`src/lib/pdf-generator.ts`). Rows, totals, rabais, surveillance block.
+2. **The dossier** is a pre-made presentation PDF stored in **Google Drive**.
+   `src/lib/pdf-assembly.ts` downloads it and **inserts the quote page at
+   page 6**, then appends optional documents (type de bien, intervention
+   police).
+3. The result is uploaded to a Drive subfolder and emailed (SMTP/nodemailer).
+
+Consequence worth remembering: if Drive cannot serve the dossier, assembly
+**silently ships the bare quote page instead of failing**. That is exactly
+what "il n'y a pas de dossier, seulement le devis chiffré" means when a
+conseiller reports it. Nothing is broken in the code, a Drive ID or a
+permission is wrong. See *Gotchas*.
+
+## Stack
+
+| Concern | What is actually used |
+|---|---|
+| Framework | Next.js 14, App Router |
+| Language | TypeScript |
+| Quote page | jsPDF (client-side) |
+| Assembly | pdf-lib (merges Drive template + quote page) |
+| Drive | Google Drive REST API, **OAuth refresh token** (not a service account) |
+| Conseillers list | Google Sheets, read live at runtime |
+| Email | nodemailer over SMTP |
+| Logging (optional) | Supabase |
+| Hosting | Vercel, auto-deploy on push to `main` |
+
+## Getting started
+
+```bash
+npm install
+cp .env.example .env.local   # then fill it, see below
+npm run dev                  # http://localhost:3000/create-devis
+```
+
+The UI renders without Google credentials, but PDF assembly, Drive upload and
+email will fail. Production values live in **Vercel > Settings > Environment
+Variables** and are the source of truth. Every variable is documented in
+[`.env.example`](.env.example).
+
+```bash
+npm run type-check   # tsc --noEmit
+npm test             # vitest, unit + PDF content assertions
+npm run build        # catches deleted-but-still-imported modules
+```
+
+## Repo map
+
+```
+src/
+  app/
+    create-devis/page.tsx     Main UI. All four product tabs, all form state.
+    api/
+      commercials/            Conseillers, read live from the Google Sheet
+      drive-fetch/            Proxies a Drive file by ID (allowlisted, see Gotchas)
+      drive-fetch-product/    Camera fiches techniques, by name or direct ID
+      drive-upload/           Saves the assembled PDF to the right subfolder
+      send-quote/             Orchestrates upload + email
+      config/                 Public config for the frontend
+  lib/
+    quote-generator.ts        Product catalogs, prices, kits, quote numbers,
+                              facilité-de-paiement formulas. Prices live HERE.
+    calculations.ts           Pure totals: sections, réductions, mensualités
+    pdf-generator.ts          jsPDF rendering of the quote page, per product type
+    pdf-assembly.ts           pdf-lib merge: Drive template + quote page + extras
+    config.ts                 Every env var + Drive IDs + conseillers cache
+    product-line-adapter.ts   Adapts UI rows for calculations and rendering
+    product-sheet-mapping.ts  Camera product name -> Drive fiche filename
+    services/                 google-drive, google-sheets, email, database, pdf
+  hooks/                      Thin glue around generation, assembly, sending
+  components/                 Form sections (product line, services, options...)
+scripts/                      Dev utilities, see below
+```
+
+### Where things live, in practice
+
+| To change... | Edit |
+|---|---|
+| A product price or a catalog entry | `src/lib/quote-generator.ts` |
+| Base kit contents (incl. the XTO kit) | `src/lib/quote-generator.ts` (`CENTRALS_CONFIG`, `XTO_KIT_LINES`) |
+| Anything printed on the quote page | `src/lib/pdf-generator.ts` |
+| Totals, réductions, mensualités | `src/lib/calculations.ts` |
+| Which Drive document is used | **Vercel env vars**, not the code fallback |
+| The conseillers list | The "Conseiller" tab of the Google Sheet |
+
+## Gotchas
+
+These have each cost real debugging time. Read them before opening an issue.
+
+- **A Vercel env var overrides the ID you read in `config.ts`.** The values in
+  code are only fallbacks. `/api/drive-fetch` additionally serves **only IDs
+  present in the config allowlist**, and refuses anything else with
+  `404 {"error":"File not found"}`. So a stale `GOOGLE_DRIVE_FILE_*` in Vercel
+  makes the app return 404 for a file that is present and correctly shared in
+  Drive. Symptom: one product type loses its dossier while the others work.
+  A genuine Drive/permission failure looks different, it returns **500
+  `Failed to fetch document`**. Use that distinction to tell the two apart.
+- **The conseillers list has no static fallback.** It is fetched live from the
+  Google Sheet. If `GOOGLE_SHEETS_ID` is unset or the sheet is unreachable, the
+  dropdown is simply empty.
+- **A failed dossier fetch does not raise an error to the user.** The quote is
+  still generated and sent, just without its dossier.
+- **The OAuth account is a real Google user**, `devis.dialarme@gmail.com`.
+  Every Drive file the app touches must be readable by that account. The
+  refresh token is regenerated with `node scripts/get-refresh-token.mjs`.
+- **Prices are not in a database.** They are hardcoded catalogs in
+  `quote-generator.ts`, and they differ between Titane and Jablotron.
+- **Test the PDF by looking at it.** Unit tests assert on text present in the
+  content stream. They cannot tell you a column collides or a total is
+  visually wrong. Render and open the file.
+
+## Verifying a change to the PDF
+
+```bash
+npx tsx scripts/render-verify-aug.ts   # writes scripts/_out/*.pdf, then open it
+npx tsx scripts/render-quote.ts        # renders one sample per product type
+node scripts/smoke-prod.mjs            # hits the deployed app
+```
+
+`scripts/_out/` is gitignored. These scripts are dev utilities, they are not
+part of the build.
+
+## Deployment
+
+Push to `main`, Vercel builds and deploys. Environment variables are managed in
+the Vercel dashboard, changing one requires a redeploy to take effect.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Further documentation lives in
+[`docs/`](docs/): admin guide, deployment setup, OAuth setup and the developer
+handover note.
