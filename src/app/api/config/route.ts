@@ -12,6 +12,11 @@
 
 import { NextResponse } from 'next/server';
 import { getAllCommercials, CONFIG, validateConfig } from '@/lib/config';
+// Reads live external state, so it must not be statically prerendered at build
+// time. Without this, Next bakes the response into the deployed bundle and it
+// never refreshes until the next redeploy (proven in production: the sibling
+// /api/commercials route served a timestamp frozen at the previous deploy).
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {

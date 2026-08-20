@@ -14,7 +14,14 @@ console.log('🔍 Validating Environment Configuration...\n');
 // Load .env.local if it exists
 const envPath = path.join(__dirname, '..', '.env.local');
 if (fs.existsSync(envPath)) {
-  require('dotenv').config({ path: envPath });
+  // dotenv is not a declared dependency of this repo, so requiring it would
+  // crash this validator on the exact path the docs tell you to run.
+  try {
+    require('dotenv').config({ path: envPath });
+  } catch (err) {
+    console.log('dotenv not installed, reading already-exported env vars only.');
+    console.log('Install it with: npm i -D dotenv');
+  }
   console.log('✅ Found .env.local file\n');
 } else {
   console.log('⚠️  No .env.local file found. Checking process.env...\n');
@@ -43,6 +50,10 @@ console.log(`🔐 Authentication Method: ${hasOAuth ? 'OAuth 2.0' : 'Service Acc
 
 // Required environment variables
 const required = {
+  'GOOGLE_SHEETS_ID': {
+    description: 'Spreadsheet ID holding the Conseiller tab (no static fallback exists)',
+    validator: (val) => val && val.length > 10
+  },
   'GOOGLE_DRIVE_FOLDER_DEVIS': {
     description: 'Parent Drive folder ID for all quotes',
     validator: (val) => val && val.length > 10

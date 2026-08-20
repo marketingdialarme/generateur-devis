@@ -14,6 +14,14 @@
 import { NextResponse } from 'next/server';
 import { fetchCommercialsFromSheet } from '@/lib/services/google-sheets.service';
 
+// Without this, Next statically prerenders this handler at build time: the
+// conseillers are baked into the deployed bundle and an edit in the Google
+// Sheet never appears until the next redeploy, which defeats the point of
+// reading the sheet at all. Measured before the fix: /api/commercials in
+// production returned a frozen `timestamp` from the previous deploy.
+// Freshness is still bounded by the 5-minute cache in google-sheets.service.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const commercials = await fetchCommercialsFromSheet();
