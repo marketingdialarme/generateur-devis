@@ -514,6 +514,12 @@ export default function CreateDevisPage() {
           { id: 99, name: 'Autre', price: 0, isCustom: true },
         ]);
         setVisiophoneCatalogError(null);
+        // Seeds the price shown in "🔧 Installation et paramétrage" from the
+        // sheet's "Installation et paramétrage" row (client request) — the
+        // field stays editable, this only sets its starting value.
+        if (typeof result.data.installationPrice === 'number') {
+          setVisiophoInstallationPrice(result.data.installationPrice);
+        }
       })
       .catch((error) => {
         console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);

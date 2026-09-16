@@ -19,13 +19,52 @@ import { type VisiophoProduct, type FogProduct } from '../quote-generator';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '';
 const CONSEILLER_RANGE = 'Conseillers!A2:D';
-const VISIOPHONE_RANGE = 'Produits_Visiophone!A2:J';
-const FOG_RANGE = 'Produits_Générateur_de_brouillard!A2:J';
+// Includes the header row (row 1) on purpose — see rowsByHeader below.
+// Column *position* is never assumed for product sheets: after the
+// Visiophone PRIX column turning out to be F, not E as an earlier manual
+// read suggested, every product fetch below looks columns up by their
+// header text instead of a fixed index, so it stays correct regardless of
+// column order.
+const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
+const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
-let visiophoneCache: { data: VisiophoProduct[]; fetchedAt: number } | null = null;
+let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
+
+/**
+ * Turns [header, ...dataRows] into row objects keyed by header text
+ * ("Nom" -> value, "PRIX" -> value, ...) instead of by column position.
+ * Missing/blank headers are skipped. Throws if any of `required` headers
+ * is not found, so a renamed or reordered column fails loudly at the API
+ * boundary instead of silently reading the wrong cell.
+ */
+function rowsByHeader(rows: string[][], required: string[]): Record<string, string>[] {
+  const [header, ...dataRows] = rows;
+  if (!header) return [];
+
+  const indexOf: Record<string, number> = {};
+  header.forEach((h, i) => {
+    const key = (h || '').trim();
+    if (key) indexOf[key] = i;
+  });
+
+  const missing = required.filter((col) => !(col in indexOf));
+  if (missing.length > 0) {
+    throw new Error(`Colonne(s) introuvable(s) dans l'en-tête : ${missing.join(', ')}`);
+  }
+
+  return dataRows
+    .filter((row) => row.some((cell) => cell))
+    .map((row) => {
+      const obj: Record<string, string> = {};
+      Object.entries(indexOf).forEach(([colName, i]) => {
+        obj[colName] = row[i] ?? '';
+      });
+      return obj;
+    });
+}
 
 async function getSheetsClient() {
   if (
@@ -103,32 +142,33 @@ export async function fetchCommercialsFromSheet(): Promise<Record<string, Commer
 }
 
 /**
- * Fetch the "Produits_Visiophone" tab and return it as a VisiophoProduct[],
- * in the shape the app already expects (id, name, price). Chosen as the
- * first category wired to the Sheet because it has zero conditional logic
- * tied to product identity anywhere in the codebase (verified against
+ * Fetch the "Produits_Visiophone" tab and return it as a VisiophoProduct[]
+ * plus the separately-tracked Installation price. Chosen as the first
+ * category wired to the Sheet because it has zero conditional logic tied
+ * to product identity anywhere in the codebase (verified against
  * quote-generator.ts, calculations.ts, pdf-generator.ts and
  * product-line-adapter.ts) — the safest starting point before Caméras,
  * Alarme, or Fog, which do have such conditions and need their own
  * "rôle"/flag columns first.
  *
- * The sheet has no REF/ID column yet for this tab, so ids are assigned
- * deterministically by row order (300 + index) — nothing in the app reads
- * a specific numeric id for Visiophone products (unlike Alarme's central
- * detection or Caméras' CAMERA_DEVICE_IDS), so this is safe. The "Autre"
- * (id 99, custom product) entry is a code-level UI feature, not a real
- * product, and is not sourced from the sheet. "Installation et
- * paramétrage" is excluded from the catalog: it's priced separately via
- * feesConfig.installationPrice, not selectable as a material line.
+ * Columns are read by header text ("Nom", "PRIX"...), never by position —
+ * see rowsByHeader. Ids are assigned deterministically by row order (300 +
+ * index): nothing in the app reads a specific numeric id for Visiophone
+ * products (unlike Alarme's central detection or Caméras'
+ * CAMERA_DEVICE_IDS), so this is safe. The "Autre" (id 99, custom product)
+ * entry is a code-level UI feature, not a real product, and is not sourced
+ * from the sheet. The "Installation et paramétrage" row is excluded from
+ * `products` — its PRIX is returned separately as `installationPrice` and
+ * used to seed the Installation section's price in the UI.
  *
- * On any failure (sheet unreachable, credentials expired, tab renamed),
- * this throws rather than falling back to hardcoded data — there is no
- * hardcoded Visiophone catalog anymore. The Sheet is the single source of
- * truth by design (client decision); the caller (the API route, then the
- * UI) is responsible for showing a clear error rather than masking a
- * broken connection with stale duplicate data.
+ * On any failure (sheet unreachable, credentials expired, tab renamed,
+ * expected column missing), this throws rather than falling back to
+ * hardcoded data — there is no hardcoded Visiophone catalog anymore. The
+ * Sheet is the single source of truth by design (client decision); the
+ * caller (the API route, then the UI) is responsible for showing a clear
+ * error rather than masking a broken connection with stale duplicate data.
  */
-export async function fetchVisiophoneProductsFromSheet(): Promise<VisiophoProduct[]> {
+export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: VisiophoProduct[]; installationPrice: number | null }> {
   if (visiophoneCache && Date.now() - visiophoneCache.fetchedAt < CACHE_TTL_MS) {
     return visiophoneCache.data;
   }
@@ -144,16 +184,24 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<VisiophoProduc
     range: VISIOPHONE_RANGE,
   });
 
-  const rows = response.data.values || [];
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['Nom', 'PRIX']);
+
   const products: VisiophoProduct[] = [];
+  let installationPrice: number | null = null;
   let nextId = 300;
 
   for (const row of rows) {
-    const [, nom, , , prix] = row; // Groupe, Nom, Inclut kit de base, Quantite kit de base, PRIX
-    if (!nom || nom.includes('Installation')) continue;
+    const nom = row['Nom'];
+    if (!nom) continue;
 
-    const price = parseFloat(prix);
+    const price = parseFloat(row['PRIX']);
     if (isNaN(price)) continue;
+
+    if (nom.includes('Installation')) {
+      installationPrice = price;
+      continue;
+    }
 
     products.push({ id: nextId, name: nom.trim(), price });
     nextId += 1;
@@ -163,17 +211,20 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<VisiophoProduc
     throw new Error('Produits_Visiophone returned no usable rows');
   }
 
-  visiophoneCache = { data: products, fetchedAt: Date.now() };
-  return products;
+  const data = { products, installationPrice };
+  visiophoneCache = { data, fetchedAt: Date.now() };
+  return data;
 }
 
 /**
  * Fetch the "Produits_Générateur_de_brouillard" tab and return it as a
- * FogProduct[]. Unlike Visiophone, this sheet already has a REF column
- * (client added it), so every product carries its stable reference — the
- * app matches on `ref`, not `name`, wherever a ref exists. "Installation"
- * is excluded (priced via feesConfig, not a selectable material line,
- * same as Visiophone). "Autre" (id 99) stays code-defined.
+ * FogProduct[]. Columns are read by header text, not position (see
+ * rowsByHeader) — same reasoning as Visiophone. This sheet already has a
+ * REF column (client added it), so every product carries its stable
+ * reference — the app matches on `ref`, not `name`, wherever a ref exists.
+ * "Installation" is excluded (priced via feesConfig, not a selectable
+ * material line, same as Visiophone — not yet wired to live install
+ * pricing here). "Autre" (id 99) stays code-defined.
  *
  * No fallback on failure, same reasoning as fetchVisiophoneProductsFromSheet.
  */
@@ -193,17 +244,20 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
     range: FOG_RANGE,
   });
 
-  const rows = response.data.values || [];
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['Nom', 'PRIX']);
+
   const products: FogProduct[] = [];
   let nextId = 200;
 
   for (const row of rows) {
-    const [, nom, ref, , , prix] = row; // Groupe, Nom, REF, Inclut kit de base, Quantite kit de base, PRIX
+    const nom = row['Nom'];
     if (!nom || nom.includes('Installation')) continue;
 
-    const price = parseFloat(prix);
+    const price = parseFloat(row['PRIX']);
     if (isNaN(price)) continue;
 
+    const ref = row['REF'];
     products.push({ id: nextId, name: nom.trim(), price, ref: ref ? ref.trim() : undefined });
     nextId += 1;
   }
