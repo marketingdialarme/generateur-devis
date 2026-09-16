@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import { generateQuotePDF, type PDFGenerationOptions } from '@/lib/pdf-generator';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS } from '@/lib/quote-generator';
 import type { ProductLineData } from '@/components/ProductLine';
 
 const outDir = join(process.cwd(), 'scripts', '_out');
@@ -43,15 +43,20 @@ const alarmTotals = calculateAlarmTotals(
 );
 
 // ---------- CAMERA ----------
-const pc = (id: number) => CATALOG_CAMERA_MATERIAL.find((x) => x.id === id)!;
+const cameraProducts: Record<number, { id: number; ref: string; name: string; price: number; type: string; is4G?: boolean }> = {
+  23: { id: 23, ref: 'CAM-B-MINI', name: 'Bullet mini', price: 390, type: 'Caméra' },
+  50: { id: 50, ref: 'NVR-14', name: 'NVR 1 à 4 caméras', price: 990, type: 'NVR' },
+  38: { id: 38, ref: 'MODEM', name: 'Modem 4G', price: 290, type: 'Modem', is4G: true },
+};
+const pc = (id: number) => cameraProducts[id];
 const cl = (id: number, quantity: number, offered: boolean): ProductLineData => ({
-  id: _id++, product: pc(id), quantity, offered,
+  id: _id++, product: pc(id) as any, quantity, offered,
 });
 const cameraMaterial: ProductLineData[] = [cl(23, 2, false), cl(50, 1, false), cl(38, 1, false)];
 const cameraTotals = calculateCameraTotals(
   cameraMaterial, undefined,
   { quantity: 2, isOffered: false },
-  undefined, false, true, 48, false, CATALOG_CAMERA_MATERIAL,
+  undefined, false, true, 48, false, [],
 );
 
 // ---------- FOG ----------

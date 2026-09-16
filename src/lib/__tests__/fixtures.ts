@@ -5,14 +5,12 @@
 import { calculateAlarmTotals, calculateCameraTotals, type DiscountConfig } from '@/lib/calculations';
 import {
   CATALOG_ALARM_PRODUCTS,
-  CATALOG_CAMERA_MATERIAL,
 } from '@/lib/quote-generator';
 import type { ProductLineData, Product } from '@/components/ProductLine';
 import type { PDFGenerationOptions } from '@/lib/pdf-generator';
 
 let _id = 1;
 const nextId = () => _id++;
-const find = (cat: Array<{ id: number }>, id: number) => cat.find((x) => x.id === id) as unknown as Product;
 
 export function alarmFixture(opts: {
   simCardSelected?: boolean;
@@ -78,10 +76,12 @@ export function alarmFixture(opts: {
 }
 
 export function cameraFixture() {
+  const c = (ref: string, name: string, price: number, type: string, is4G = false): Product =>
+    ({ id: nextId(), ref, name, price, type, is4G } as unknown as Product);
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 23), quantity: 2, offered: false }, // Bullet Mini 390
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 50), quantity: 1, offered: false }, // NVR 990
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 38), quantity: 1, offered: false }, // Modem 290
+    { id: nextId(), product: c('CAM-B-MINI', 'Bullet mini', 390, 'Caméra'), quantity: 2, offered: false },
+    { id: nextId(), product: c('NVR-14', 'NVR 1 à 4 caméras', 990, 'NVR'), quantity: 1, offered: false },
+    { id: nextId(), product: c('MODEM', 'Modem 4G', 290, 'Modem', true), quantity: 1, offered: false },
   ];
   const totals = calculateCameraTotals(
     material,
@@ -92,7 +92,7 @@ export function cameraFixture() {
     true,
     48,
     false,
-    CATALOG_CAMERA_MATERIAL,
+    [],
   );
   const options: PDFGenerationOptions = {
     type: 'camera',

@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct, type FogProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -149,6 +149,9 @@ export default function CreateDevisPage() {
   const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
   const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
+  const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
+  const [cameraInstallationProducts, setCameraInstallationProducts] = useState<CameraProduct[]>([]);
+  const [cameraCatalogError, setCameraCatalogError] = useState<string | null>(null);
   const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
@@ -331,11 +334,11 @@ export default function CreateDevisPage() {
   // Auto-check vision à distance when modem or 4G camera is selected
   useEffect(() => {
     const hasModem = cameraMaterialLines.some(
-      (line) => line.product && line.product.name.toLowerCase().includes('modem')
+      (line) => line.product && (line.product as any).type === 'Modem'
     );
     
     const has4GCamera = cameraMaterialLines.some(
-      (line) => line.product && line.product.name.includes('4G')
+      (line) => line.product && (line.product as any).is4G
     );
     
     if ((hasModem || has4GCamera) && !cameraVisionDistance) {
@@ -352,18 +355,12 @@ export default function CreateDevisPage() {
     
     // Count cameras
     const cameraCount = cameraMaterialLines.filter(
-      (line) =>
-        line.product &&
-        (line.product.name.toLowerCase().includes('caméra') ||
-          line.product.name.includes('Bullet') ||
-          line.product.name.includes('Dôme') ||
-          line.product.name.includes('Solar') ||
-          line.product.name.includes('PTZ'))
+      (line) => line.product && (line.product as any).type === 'Caméra'
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     // Count NVRs
     const nvrCount = cameraMaterialLines.filter(
-      (line) => line.product && line.product.name.includes('NVR')
+      (line) => line.product && (line.product as any).type === 'NVR'
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     const totalItems = cameraCount + nvrCount;
@@ -440,7 +437,7 @@ export default function CreateDevisPage() {
         cameraRemoteAccess,
         cameraPaymentMonths,
         cameraRentalMode,
-        CATALOG_CAMERA_MATERIAL
+        cameraCatalog
       );
     } catch (error) {
       console.error('Error calculating camera totals:', error);
@@ -566,6 +563,30 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Alarm catalog from Google Sheet:', error);
         setAlarmCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Alarme'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/camera')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Caméras vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setCameraCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setCameraInstallationProducts(result.data.installationProducts || []);
+        setCameraCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Camera catalog from Google Sheet:', error);
+        setCameraCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Caméras'
         );
       });
   }, []);
@@ -1728,6 +1749,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'camera' ? 'block' : 'none' }}
       >
+        {cameraCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Caméras depuis Google Sheets : {cameraCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="rental-toggle-container">
           <span>Mode vente</span>
           <label className="toggle-switch">
@@ -1825,13 +1858,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_CAMERA_MATERIAL.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = cameraCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...cameraMaterialLines];
                         newLines[index] = { 
                           ...line, 
@@ -1844,7 +1877,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_CAMERA_MATERIAL.find(p => p.name === productName);
+                      const product = cameraCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       const newLines = [...cameraMaterialLines];
                       newLines[index] = { ...line, product: product || null };
                       setCameraMaterialLines(newLines);
@@ -1852,11 +1885,11 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_CAMERA_MATERIAL
+                    {cameraCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {(product.price || 0).toFixed(2)} CHF
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -1951,18 +1984,21 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Installation - demi-journée / journée (like alarm - client feedback) */}
+        {/* Installation — now sourced from Produits_Cameras (INS-1/INS-DEMI-J/
+            INS-J/INS-4G) instead of reaching into the Alarm catalog's ids
+            101/102. INS-4G only shown when Mini Solar (CAM-MINI-SOLAR) is
+            in the material lines, per the Sheet's note on that row. */}
         <div className="quote-section">
           <h3>
             🔧 Installation
             <button 
               className="add-product-btn" 
               onClick={() => {
-                const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                if (halfDayProduct) {
+                const defaultProduct = cameraInstallationProducts.find(p => p.ref === 'INS-DEMI-J') || cameraInstallationProducts[0];
+                if (defaultProduct) {
                   setCameraInstallationLines([...cameraInstallationLines, {
                     id: Date.now(),
-                    product: halfDayProduct,
+                    product: defaultProduct,
                     quantity: 1,
                     offered: false
                   }]);
@@ -1974,22 +2010,27 @@ export default function CreateDevisPage() {
             </button>
           </h3>
           <div id="camera-installation-lines">
-            {cameraInstallationLines.map((line, index) => (
+            {cameraInstallationLines.map((line, index) => {
+              const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
+              return (
               <div key={line.id} className="product-line">
                 <select 
                   className="product-select"
-                  value={line.product?.name || ''}
+                  value={(line.product as any)?.ref || ''}
                   onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                    const ref = e.target.value;
+                    const product = cameraInstallationProducts.find(p => p.ref === ref);
                     const newLines = [...cameraInstallationLines];
                     newLines[index] = { ...line, product: product || null };
                     setCameraInstallationLines(newLines);
                   }}
                 >
                   <option value="">Sélectionner un type d&apos;installation</option>
-                  <option value="Installation 1/2 journée">Installation 1/2 journée - 690.00 CHF</option>
-                  <option value="Installation 1 journée">Installation 1 journée - 1290.00 CHF</option>
+                  {cameraInstallationProducts
+                    .filter(p => p.ref !== 'INS-4G' || hasMiniSolar)
+                    .map(p => (
+                      <option key={p.ref} value={p.ref}>{p.name}</option>
+                    ))}
                 </select>
                 <input 
                   type="number" 
@@ -2027,32 +2068,24 @@ export default function CreateDevisPage() {
                   ×
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
           {cameraInstallationLines.length === 0 && (
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button 
-                onClick={() => {
-                  const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                  if (halfDayProduct) {
-                    setCameraInstallationLines([{ id: Date.now(), product: halfDayProduct, quantity: 1, offered: false }]);
-                  }
-                }}
-                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #28a745', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#28a745' }}
-              >
-                + Installation 1/2 journée (690 CHF)
-              </button>
-              <button 
-                onClick={() => {
-                  const fullDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
-                  if (fullDayProduct) {
-                    setCameraInstallationLines([{ id: Date.now(), product: fullDayProduct, quantity: 1, offered: false }]);
-                  }
-                }}
-                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #007bff', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#007bff' }}
-              >
-                + Installation 1 journée (1290 CHF)
-              </button>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {cameraInstallationProducts
+                .filter(p => p.ref !== 'INS-4G' || cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR'))
+                .map((product, i) => (
+                <button 
+                  key={product.ref}
+                  onClick={() => {
+                    setCameraInstallationLines([{ id: Date.now(), product, quantity: 1, offered: false }]);
+                  }}
+                  style={{ flex: 1, minWidth: '140px', padding: '12px', background: 'white', border: `2px dashed ${['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4]}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: ['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4] }}
+                >
+                  + {product.name} ({product.price.toFixed(0)} CHF)
+                </button>
+              ))}
             </div>
           )}
           
@@ -2391,7 +2424,7 @@ export default function CreateDevisPage() {
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.ref || product.name} value={product.ref || product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -2569,7 +2602,7 @@ export default function CreateDevisPage() {
                       .filter(p => p.ref !== 'GEN-BRO' && !p.isCustom) // Exclude main fog generator and "Autre"
                       .map(product => (
                         <option key={product.ref || product.name} value={product.ref || product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -2909,7 +2942,7 @@ export default function CreateDevisPage() {
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.name} value={product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                   </select>

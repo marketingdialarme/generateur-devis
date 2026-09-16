@@ -23,12 +23,27 @@ export interface CameraProduct {
   id: number;
   name: string;
   price: number;
-  monthly48?: number;
-  monthly36?: number;
-  monthly24?: number;
-  monthly12?: number;
+  ref?: string;
+  type?: string; // 'Caméra' | 'NVR' | 'Modem' | 'Accessoire' — drives vision à distance + maintenance counting
+  is4G?: boolean;
   isCustom?: boolean;
 }
+
+/**
+ * No hardcoded Camera product data — read live from the "Produits_Cameras"
+ * tab (see fetchCameraProductsFromSheet). The old monthly48/36/24/12
+ * stored-value fields are gone too: monthly prices are computed from
+ * `price` via calculateMonthlyFromCashPrice on branches that have that fix
+ * (this one doesn't yet — see fix/monthly-formula-all-categories, to be
+ * merged separately); until merged, Camera's on-screen monthly preview
+ * falls back to plain price/months here, same as it already did for the
+ * 12-month case before that fix.
+ *
+ * `type` and `is4G` come from the two columns the client added
+ * specifically for this migration, replacing CAMERA_DEVICE_IDS (a
+ * hardcoded id set) and name.includes('4G') for the vision-à-distance and
+ * maintenance-counting logic.
+ */
 
 /**
  * No hardcoded Titane/Jablotron product data — read live from the
@@ -57,29 +72,6 @@ export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
 
 export const CATALOG_CAMERA_MATERIAL: CameraProduct[] = [
   { id: 99, name: "Autre", price: 0.00, isCustom: true },
-  { id: 23, name: "Bullet Mini", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18, monthly12: 35 },
-  { id: 24, name: "Dôme Mini", price: 390.00, monthly48: 10, monthly36: 13, monthly24: 18, monthly12: 35 },
-  { id: 26, name: "Dôme Antivandale", price: 450.00, monthly48: 12, monthly36: 16, monthly24: 22, monthly12: 39 },
-  { id: 46, name: "Dôme Night", price: 540.00, monthly48: 14, monthly36: 18, monthly24: 25, monthly12: 48 },
-  { id: 47, name: "Bullet XL Varifocale", price: 690.00, monthly48: 18, monthly36: 22, monthly24: 32, monthly12: 61  },
-  { id: 53, name: "Dôme XL Varifocale", price: 690.00, monthly48: 18, monthly36: 22, monthly24: 32, monthly12: 61  },
-  { id: 31, name: "Bullet Zoom x23 PTZ", price: 990.00, monthly48: 25, monthly36: 32, monthly24: 46, monthly12: 87  },
-  { id: 32, name: "Mini Solar 4G + P. Solaire", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 43  },
-  { id: 33, name: "Solar 4G XL", price: 890.00, monthly48: 23, monthly36: 28, monthly24: 41, monthly12: 78  },
-  { id: 28, name: "Solar 4G XL PTZ", price: 1190.00, monthly48: 30, monthly36: 39, monthly24: 55, monthly12: 105  },
-  { id: 50, name: "NVR 1-4 Caméras (1 mois d'enregistrement)", price: 990.00, monthly48: 25, monthly36: 32, monthly24: 46, monthly12: 87  },
-  { id: 51, name: "NVR 4-8 Caméras (1 mois d'enregistrement)", price: 1390.00, monthly48: 35, monthly36: 45, monthly24: 64, monthly12: 122  },
-  { id: 52, name: "NVR 8-16 Caméras (1 mois d'enregistrement)", price: 1690.00, monthly48: 43, monthly36: 54, monthly24: 78, monthly12: 148  },
-  { id: 30, name: "Disque dur 4 To", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
-  { id: 38, name: "Modem 4G", price: 290.00, monthly48: 8, monthly36: 10, monthly24: 14, monthly12: 26  },
-  { id: 27, name: "Switch POE", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
-  { id: 37, name: "HDMI Ext.", price: 190.00, monthly48: 5, monthly36: 7, monthly24: 9, monthly12: 17  },
-  { id: 39, name: "Moniteur Vidéo 22\"", price: 270.00, monthly48: 7, monthly36: 9, monthly24: 13, monthly12: 24  },
-  { id: 48, name: "Support Mural Articulé", price: 100.00, monthly48: 3, monthly36: 4, monthly24: 5, monthly12: 9  },
-  { id: 42, name: "Onduleur 1000 - 60min", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
-  { id: 40, name: "Mat 3 mètre", price: 490.00, monthly48: 13, monthly36: 16, monthly24: 23, monthly12: 43  },
-  { id: 43, name: "Coffret NVR 4P", price: 240.00, monthly48: 6, monthly36: 8, monthly24: 11, monthly12: 21  },
-  { id: 44, name: "Coffret NVR 8P", price: 360.00, monthly48: 9, monthly36: 12, monthly24: 17, monthly12: 32  },
 ];
 
 export interface FogProduct {

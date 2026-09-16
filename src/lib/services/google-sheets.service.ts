@@ -15,7 +15,7 @@
 
 import { google } from 'googleapis';
 import { CommercialInfo } from '../config';
-import { type VisiophoProduct, type FogProduct, type AlarmProduct } from '../quote-generator';
+import { type VisiophoProduct, type FogProduct, type AlarmProduct, type CameraProduct } from '../quote-generator';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '';
 const CONSEILLER_RANGE = 'Conseillers!A2:D';
@@ -28,12 +28,14 @@ const CONSEILLER_RANGE = 'Conseillers!A2:D';
 const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
 const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const ALARM_RANGE = 'Produits_Alarme!A1:Z';
+const CAMERA_RANGE = 'Produits_Cameras!A1:Z';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
 let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
+let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -403,5 +405,100 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
 
   const data = { products, kits, installationPrices };
   alarmCache = { data, fetchedAt: Date.now() };
+  return data;
+}
+
+/**
+ * Fetch the "Produits_Cameras" tab. Columns matched by header text, not
+ * position (same lesson as Visiophone/Alarme): "Nom" and "REF" exact,
+ * "Prix de vente" as a substring (exact header is "Prix de vente (CHF)"),
+ * "Type" exact, "4G" as a substring (safe — no other header contains it).
+ *
+ * Installation rows (ref starting "INS-") are split out into
+ * installationProducts rather than the main catalog — matches how
+ * Visiophone/Alarme keep Installation out of the selectable material list.
+ * INS-4G ("Installation caméra 4G + P. solaire") carries a sheet note:
+ * "à ne montrer que si Mini Solar sélectionnée" — enforced in the UI by
+ * checking for CAM-MINI-SOLAR in the material lines, not here.
+ *
+ * `type` and `is4G` replace the old hardcoded CAMERA_DEVICE_IDS set and
+ * name.includes('4G') checks used by calculateRemoteAccessPrice and the
+ * maintenance-counting logic.
+ *
+ * No fallback on failure, same reasoning as the other categories.
+ */
+export async function fetchCameraProductsFromSheet(): Promise<{ products: CameraProduct[]; installationProducts: CameraProduct[] }> {
+  if (cameraCache && Date.now() - cameraCache.fetchedAt < CACHE_TTL_MS) {
+    return cameraCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: CAMERA_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const [headerRow] = rawRows;
+  if (!headerRow) {
+    throw new Error('Produits_Cameras: en-tête introuvable');
+  }
+
+  const findIdx = (needle: string, exact = false) =>
+    headerRow.findIndex((h: string) => {
+      const cell = (h || '').trim().toUpperCase();
+      return exact ? cell === needle.toUpperCase() : cell.includes(needle.toUpperCase());
+    });
+
+  const nomIdx = findIdx('Nom', true);
+  const refIdx = findIdx('REF', true);
+  const prixIdx = findIdx('Prix de vente');
+  const typeIdx = findIdx('Type', true);
+  const g4Idx = findIdx('4G');
+
+  const missingCols = [
+    ['Nom', nomIdx], ['REF', refIdx], ['Prix de vente', prixIdx], ['Type', typeIdx], ['4G', g4Idx],
+  ].filter(([, idx]) => idx === -1).map(([name]) => name);
+  if (missingCols.length > 0) {
+    throw new Error(`Produits_Cameras: colonne(s) introuvable(s) : ${missingCols.join(', ')}`);
+  }
+
+  const products: CameraProduct[] = [];
+  const installationProducts: CameraProduct[] = [];
+  let nextId = 700;
+
+  rawRows.slice(1).forEach((row) => {
+    const nom = (row[nomIdx] || '').trim();
+    const ref = (row[refIdx] || '').trim();
+    if (!nom || !ref) return;
+
+    const price = parseFloat(row[prixIdx as number] || '');
+    if (isNaN(price)) return;
+
+    const type = (row[typeIdx as number] || '').trim() || undefined;
+    const is4GRaw = String(row[g4Idx as number] ?? '').trim().toUpperCase();
+    const is4G = ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(is4GRaw);
+
+    const product: CameraProduct = { id: nextId, name: nom, price, ref, type, is4G };
+    nextId += 1;
+
+    if (ref.startsWith('INS-')) {
+      installationProducts.push(product);
+    } else {
+      products.push(product);
+    }
+  });
+
+  if (products.length === 0) {
+    throw new Error('Produits_Cameras: aucune ligne produit exploitable');
+  }
+
+  const data = { products, installationProducts };
+  cameraCache = { data, fetchedAt: Date.now() };
   return data;
 }
