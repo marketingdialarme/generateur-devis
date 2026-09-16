@@ -14,14 +14,9 @@
 export interface AlarmProduct {
   id: number;
   name: string;
-  price?: number;
-  priceTitane?: number;
-  priceJablotron?: number;
-  monthlyTitane?: number;
-  monthlyJablotron?: number;
-  requiresJablotron?: boolean;
+  price: number;
+  ref?: string;
   isCustom?: boolean;
-  isXTO?: boolean;
 }
 
 export interface CameraProduct {
@@ -35,34 +30,27 @@ export interface CameraProduct {
   isCustom?: boolean;
 }
 
+/**
+ * No hardcoded Titane/Jablotron product data — read live from the
+ * "Produits_Alarme" tab (see fetchAlarmProductsFromSheet). Titane and
+ * Jablotron are separate rows in the sheet (TIT-.../JAB-... refs), each
+ * with a single price — unlike the old CATALOG_ALARM_PRODUCTS, there is no
+ * more per-central priceTitane/priceJablotron pair on one entry. Central
+ * detection and kit membership are both driven by `ref` now (see
+ * detectCentralType in product-line-adapter.ts and the kit application
+ * logic in create-devis/page.tsx), not by hardcoded ids.
+ *
+ * XTO keeps its own hardcoded catalog below (CATALOG_XTO_PRODUCTS /
+ * XTO_KIT_LINES) for now — it's a monthly-only rental model, structurally
+ * unrelated to Titane/Jablotron pricing, and is being migrated separately.
+ *
+ * "Autre" (custom product) and the two "Installation X journée" entries
+ * used by the Caméras installation section stay code-defined below —
+ * neither is sourced from the sheet.
+ */
 export const CATALOG_ALARM_PRODUCTS: AlarmProduct[] = [
-  { id: 5, name: "Centrale Jablotron", price: 990.00 },
-  { id: 6, name: "Centrale Titane", price: 690.00 },
   { id: 99, name: "Autre", price: 0.00, isCustom: true },
-  { id: 3, name: "Badge x 4", priceTitane: 100.00, priceJablotron: 200.00, monthlyTitane: 3, monthlyJablotron: 5 },
-  { id: 2, name: "Barrière extérieur 2x12 m", priceTitane: 890.00, priceJablotron: 890.00, monthlyTitane: 22, monthlyJablotron: 22 },
-  { id: 1, name: "Bouton panique", priceTitane: 190.00, priceJablotron: 190.00, monthlyTitane: 5, monthlyJablotron: 5 },
-  { id: 7, name: "Clavier", priceTitane: 390.00, priceJablotron: 490.00, monthlyTitane: 10, monthlyJablotron: 12 },
-  { id: 12, name: "Détecteur de bris de verre", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
-  { id: 11, name: "Détecteur de choc", priceTitane: 290.00, priceJablotron: 290.00, monthlyTitane: 7, monthlyJablotron: 7 },
-  { id: 13, name: "Détecteur de fumée", priceTitane: 190.00, priceJablotron: 290.00, monthlyTitane: 5, monthlyJablotron: 7 },
-  { id: 14, name: "Détecteur de mouvement extérieur photo", priceTitane: 690.00, priceJablotron: 690.00, monthlyTitane: 17, monthlyJablotron: 17 },
-  { id: 10, name: "Détecteur ouverture", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
-  { id: 15, name: "Détecteur rideau intérieur", priceTitane: 290.00, monthlyTitane: 7 },
-  { id: 8, name: "Détecteur volumétrique", priceTitane: 240.00, priceJablotron: 290.00, monthlyTitane: 6, monthlyJablotron: 7 },
-  { id: 9, name: "Détecteur volumétrique caméra", priceTitane: 290.00, priceJablotron: 450.00, monthlyTitane: 7, monthlyJablotron: 11 },
-  { id: 23, name: "Interphonie", priceTitane: 490.00, monthlyTitane: 12 },
-  { id: 22, name: "Lecteur de badge intérieur", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
-  { id: 24, name: "Répéteur radio", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
-  { id: 18, name: "Sirène déportée", priceTitane: 390.00, priceJablotron: 390.00, monthlyTitane: 10, monthlyJablotron: 10 },
-  { id: 21, name: "Sirène déportée grande", priceJablotron: 490.00, requiresJablotron: true, monthlyJablotron: 12 },
-  { id: 17, name: "Sonde inondation", priceTitane: 290.00, priceJablotron: 390.00, monthlyTitane: 7, monthlyJablotron: 10 },
-  { id: 19, name: "Télécommande", priceTitane: 190.00, priceJablotron: 240.00, monthlyTitane: 5, monthlyJablotron: 6 },
-
-  // Kit de base - always included items (client feedback)
-  { id: 110, name: "Application", price: 100.00 },
-  { id: 111, name: "Alimentation de secours", price: 0.00 },
-  // Installation (demi-journée / journée) - used for camera installation section
+  // Installation (demi-journée / journée) - used for camera installation section only
   { id: 101, name: "Installation 1/2 journée", price: 690.00 },
   { id: 102, name: "Installation 1 journée", price: 1290.00 },
 ];
@@ -482,14 +470,6 @@ export function getInstallationMonthlyPrice(nbHalfDays: number, months: number):
 }
 
 export function getProductPrice(product: AlarmProduct | CameraProduct, selectedCentral?: string | null): number {
-  if ('priceTitane' in product && selectedCentral === 'titane' && product.priceTitane !== undefined) {
-    return product.priceTitane;
-  }
-  
-  if ('priceJablotron' in product && selectedCentral === 'jablotron' && product.priceJablotron !== undefined) {
-    return product.priceJablotron;
-  }
-  
   return product.price || 0;
 }
 
@@ -498,22 +478,12 @@ export function getFilteredProducts(
   selectedCentral: string | null,
   isInstallationSection: boolean
 ): AlarmProduct[] {
-  if (!selectedCentral) {
-    if (isInstallationSection) {
-      return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
-    }
-    return products.filter(p => !p.requiresJablotron);
-  }
-  
+  const ref = (p: AlarmProduct) => (p as any).ref as string | undefined;
   if (selectedCentral === 'jablotron') {
-    if (isInstallationSection) {
-      return products.filter(p => p.id !== 5 && p.id !== 6);
-    }
-    return products;
+    return products.filter(p => ref(p)?.startsWith('JAB-') ?? true);
   }
-  
-  if (isInstallationSection) {
-    return products.filter(p => p.id !== 5 && p.id !== 6 && !p.requiresJablotron);
+  if (selectedCentral === 'titane') {
+    return products.filter(p => ref(p)?.startsWith('TIT-') ?? true);
   }
-  return products.filter(p => !p.requiresJablotron);
+  return products;
 }

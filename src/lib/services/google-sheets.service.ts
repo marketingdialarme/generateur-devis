@@ -15,7 +15,7 @@
 
 import { google } from 'googleapis';
 import { CommercialInfo } from '../config';
-import { type VisiophoProduct, type FogProduct } from '../quote-generator';
+import { type VisiophoProduct, type FogProduct, type AlarmProduct } from '../quote-generator';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '';
 const CONSEILLER_RANGE = 'Conseillers!A2:D';
@@ -27,11 +27,13 @@ const CONSEILLER_RANGE = 'Conseillers!A2:D';
 // column order.
 const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
 const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
+const ALARM_RANGE = 'Produits_Alarme!A1:Z';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
+let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]> }; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -268,4 +270,117 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
 
   fogCache = { data: products, fetchedAt: Date.now() };
   return products;
+}
+
+/**
+ * Fetch the "Produits_Alarme" tab, scoped to Titane/Jablotron rows only
+ * (ref starting with TIT- or JAB-) — XTO rows in the same tab are ignored
+ * here; XTO keeps its own separate hardcoded rental-pricing model for now
+ * (see CATALOG_XTO_PRODUCTS / XTO_KIT_LINES in quote-generator.ts),
+ * migrated separately since it's structurally unrelated (monthly-only, no
+ * cash price).
+ *
+ * Returns both the flat product list (id, name, price, ref — one row per
+ * product, single price, since Titane and Jablotron are now separate rows
+ * rather than one entry with priceTitane/priceJablotron) and a `kits` map
+ * used to build the "Kit 1"/"Kit 2" quick-apply buttons: which refs are
+ * included in KIT-TIT-1/KIT-TIT-2/KIT-JAB-1/KIT-JAB-2, and at what
+ * quantity, replacing the old hardcoded kit1Products/kit2Products arrays.
+ *
+ * The sheet's kit-inclusion columns are matched by *pattern*
+ * (containing "KIT-TIT-1" etc., disambiguated by whether the header also
+ * contains "QTE"), not by an exact header string — the same lesson as
+ * Visiophone's PRIX column being in a different position than expected:
+ * safer to be robust to small wording differences than to assume exact text.
+ */
+export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]> }> {
+  if (alarmCache && Date.now() - alarmCache.fetchedAt < CACHE_TTL_MS) {
+    return alarmCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: ALARM_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const [headerRow] = rawRows;
+  if (!headerRow) {
+    throw new Error('Produits_Alarme: en-tête introuvable');
+  }
+
+  const idxOf: Record<string, number> = {};
+  headerRow.forEach((h: string, i: number) => {
+    const key = (h || '').trim();
+    if (key) idxOf[key] = i;
+  });
+  for (const col of ['Nom', 'REF', 'PRIX']) {
+    if (!(col in idxOf)) {
+      throw new Error(`Colonne introuvable dans Produits_Alarme : ${col}`);
+    }
+  }
+
+  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2'];
+  const kitColumns: Record<string, { incluIdx?: number; qteIdx?: number }> = {};
+  headerRow.forEach((h: string, i: number) => {
+    const cell = (h || '').toUpperCase();
+    for (const code of KIT_CODES) {
+      if (cell.includes(code)) {
+        kitColumns[code] = kitColumns[code] || {};
+        if (cell.includes('QTE')) {
+          kitColumns[code].qteIdx = i;
+        } else {
+          kitColumns[code].incluIdx = i;
+        }
+      }
+    }
+  });
+
+  const missingKitCols = KIT_CODES.filter((c) => kitColumns[c]?.incluIdx === undefined || kitColumns[c]?.qteIdx === undefined);
+  if (missingKitCols.length > 0) {
+    throw new Error(`Colonnes de kit introuvables dans Produits_Alarme : ${missingKitCols.join(', ')}`);
+  }
+
+  const products: AlarmProduct[] = [];
+  const kits: Record<string, { ref: string; quantity: number }[]> = {
+    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [],
+  };
+  let nextId = 600;
+
+  rawRows.slice(1).forEach((row) => {
+    const ref = (row[idxOf['REF']] || '').trim();
+    if (!ref || !(ref.startsWith('TIT-') || ref.startsWith('JAB-'))) return; // XTO or blank rows: skip
+
+    const nom = (row[idxOf['Nom']] || '').trim();
+    if (!nom) return;
+
+    const price = parseFloat(row[idxOf['PRIX']] || '');
+    if (!isNaN(price)) {
+      products.push({ id: nextId, name: nom, price, ref });
+      nextId += 1;
+    }
+
+    KIT_CODES.forEach((code) => {
+      const { incluIdx, qteIdx } = kitColumns[code];
+      const included = row[incluIdx!] === '1' || (row[incluIdx!] || '').toUpperCase() === 'TRUE';
+      if (included) {
+        const qty = parseInt(row[qteIdx!] || '1', 10) || 1;
+        kits[code].push({ ref, quantity: qty });
+      }
+    });
+  });
+
+  if (products.length === 0) {
+    throw new Error('Produits_Alarme: aucune ligne Titane/Jablotron exploitable');
+  }
+
+  const data = { products, kits };
+  alarmCache = { data, fetchedAt: Date.now() };
+  return data;
 }

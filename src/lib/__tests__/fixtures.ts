@@ -24,21 +24,21 @@ export function alarmFixture(opts: {
   surveillancePrice?: number;
 } = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
+  const p = (ref: string, name: string, price: number): Product => ({ id: nextId(), ref, name, price } as unknown as Product);
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 6), quantity: 1, offered: true }, // Centrale Titane 690
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 8), quantity: 2, offered: true }, // Vol 240
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 10), quantity: 1, offered: true }, // Ouverture 190
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 7), quantity: 1, offered: true }, // Clavier 390
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 110), quantity: 1, offered: true }, // Application
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 111), quantity: 1, offered: true }, // Alimentation de secours
+    { id: nextId(), product: p('TIT-CEN', 'Centrale Titane', 690), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-VOL-RADIO', 'Détecteur volumétrique (radio)', 240), quantity: 2, offered: true },
+    { id: nextId(), product: p('TIT-OUV', "Détecteur d'ouverture (radio)", 190), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-CLA', 'Clavier', 390), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-APP', 'Application', 0), quantity: 1, offered: true },
   ];
   if (opts.extraMaterial) {
-    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 14), quantity: 1, offered: false }); // Mouvement ext photo 690
-    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 2, offered: false }); // fumée Titane 190
+    material.push({ id: nextId(), product: p('TIT-MOU-EXT', 'Détecteur de mouvement extérieur', 690), quantity: 1, offered: false });
+    material.push({ id: nextId(), product: p('TIT-FUM', 'Détecteur de fumée', 190), quantity: 2, offered: false });
   }
   const install: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 11), quantity: 1, offered: false }, // choc Titane 290
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 3, offered: false }, // fumée Titane 190
+    { id: nextId(), product: p('TIT-CHO', 'Détecteur de choc', 290), quantity: 1, offered: false },
+    { id: nextId(), product: p('TIT-FUM', 'Détecteur de fumée', 190), quantity: 3, offered: false },
   ];
   const services = {
     testCyclique: { selected: true, price: 0, offered: true },

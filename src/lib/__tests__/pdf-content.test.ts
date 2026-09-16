@@ -24,9 +24,8 @@ describe('Alarm PDF content (new design)', () => {
   });
 
   it('uses DIA-TELES quote number', () => expect(pdf).toContain('DIA-TELES-'));
-  it('lists Application + Alimentation de secours in the kit', () => {
+  it('lists Application in the kit (Alimentation de secours no longer exists for Titane/Jablotron)', () => {
     expect(pdf).toContain('KIT DE BASE - Application');
-    expect(pdf).toContain('KIT DE BASE - Alimentation de secours');
   });
   it('shows the partnership-discount summary', () => {
     expect(pdf).toContain('Rabais partenariat');

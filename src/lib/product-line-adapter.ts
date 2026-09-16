@@ -8,18 +8,16 @@
 import { ProductLineData } from '@/components/ProductLine';
 
 /**
- * Detect the selected central type from product lines
+ * Detect the selected central type from product lines. Driven by the
+ * sheet's REF prefix (TIT-/JAB-) rather than a hardcoded id or a name
+ * substring — every Alarm product's ref now encodes its central directly,
+ * since Titane and Jablotron are separate rows in Produits_Alarme.
  */
 export function detectCentralType(lines: ProductLineData[]): 'titane' | 'jablotron' | null {
   for (const line of lines) {
-    if (line.product) {
-      if (line.product.id === 5 || line.product.name?.includes('Jablotron')) {
-        return 'jablotron';
-      }
-      if (line.product.id === 6 || line.product.name?.includes('Titane')) {
-        return 'titane';
-      }
-    }
+    const ref = (line.product as any)?.ref as string | undefined;
+    if (ref?.startsWith('JAB-')) return 'jablotron';
+    if (ref?.startsWith('TIT-')) return 'titane';
   }
   return null;
 }

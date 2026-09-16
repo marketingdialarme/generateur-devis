@@ -145,6 +145,10 @@ export default function CreateDevisPage() {
   // visible banner if the Sheet can't be reached.
   const [fogCatalog, setFogCatalog] = useState<FogProduct[]>([]);
   const [fogCatalogError, setFogCatalogError] = useState<string | null>(null);
+  // Titane/Jablotron only — XTO stays on its own hardcoded catalog for now.
+  const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
+  const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
+  const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
   const [fogProcessingFee, setFogProcessingFee] = useState(190);
@@ -174,9 +178,8 @@ export default function CreateDevisPage() {
   
   // Apply kit function
   const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
-    const centralProduct = CATALOG_ALARM_PRODUCTS.find(p => 
-      centralType === 'jablotron' ? p.id === 5 : p.id === 6
-    );
+    const centralRef = centralType === 'jablotron' ? 'JAB-CEN' : 'TIT-CEN';
+    const centralProduct = alarmCatalog.find(p => (p as any).ref === centralRef);
     
     // If 'none' is selected, add only the central and nothing else, not offered
     if (kitType === 'none') {
@@ -195,59 +198,22 @@ export default function CreateDevisPage() {
       return;
     }
     
-    const kit1Products = [
-      { id: 8, quantity: 2 }, // 2 Détecteurs volumétriques
-      { id: 10, quantity: 1 }, // 1 Détecteur d'ouverture
-      { id: 7, quantity: 1 }, // 1 Clavier
-      { id: 18, quantity: 1 }, // 1 Sirène
-    ];
-    
-    const kit2Products = [
-      { id: 8, quantity: 1 }, // 1 Détecteur volumétrique
-      { id: 10, quantity: 3 }, // 3 Détecteurs d'ouverture
-      { id: 7, quantity: 1 }, // 1 Clavier
-      { id: 18, quantity: 1 }, // 1 Sirène
-    ];
-    
-    const kitProducts = kitType === 'kit1' ? kit1Products : kit2Products;
-    
-    const newLines: ProductLineData[] = [];
+    // Kit contents (which refs, at what quantity — including the centrale
+    // itself and the auto-included Application/Installation lines) come
+    // straight from the Sheet's "Inclu"/"QTE" columns for the matching kit,
+    // instead of a hardcoded per-product list.
+    const kitKey = `KIT-${centralType === 'jablotron' ? 'JAB' : 'TIT'}-${kitType === 'kit1' ? '1' : '2'}`;
+    const kitItems = alarmKits[kitKey] || [];
 
-    // Add central
-    if (centralProduct) {
-      newLines.push({
-        id: Date.now(),
-        product: centralProduct,
-        quantity: 1,
+    const newLines: ProductLineData[] = kitItems.map((item, index) => {
+      const product = alarmCatalog.find(p => (p as any).ref === item.ref);
+      return {
+        id: Date.now() + index,
+        product: product || null,
+        quantity: item.quantity,
         offered: true
-      });
-    }
-    
-    // Add kit products
-    kitProducts.forEach((kp, index) => {
-      const product = CATALOG_ALARM_PRODUCTS.find(p => p.id === kp.id);
-      if (product) {
-        newLines.push({
-          id: Date.now() + index + 1,
-          product,
-          quantity: kp.quantity,
-          offered: true
-        });
-      }
-    });
-
-    // Always-included base-kit items (Malt brief): Application + Alimentation de secours
-    [110, 111].forEach((id, i) => {
-      const product = CATALOG_ALARM_PRODUCTS.find(p => p.id === id);
-      if (product) {
-        newLines.push({
-          id: Date.now() + 1000 + i,
-          product,
-          quantity: 1,
-          offered: true
-        });
-      }
-    });
+      };
+    }).filter(line => line.product);
 
     setAlarmMaterialLines(newLines);
     setShowKitModal(false);
@@ -288,7 +254,7 @@ export default function CreateDevisPage() {
         alarmPaymentMonths,
         alarmRentalMode,
         selectedCentral,
-        CATALOG_ALARM_PRODUCTS
+        alarmCatalog
       );
     } catch (error) {
       console.error('Error calculating alarm totals:', error);
@@ -548,6 +514,30 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Fog catalog from Google Sheet:', error);
         setFogCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Générateur de brouillard'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/alarm')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Alarme vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setAlarmCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setAlarmKits(result.data.kits || {});
+        setAlarmCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Alarm catalog from Google Sheet:', error);
+        setAlarmCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Alarme'
         );
       });
   }, []);
@@ -844,6 +834,18 @@ export default function CreateDevisPage() {
         className="tab-content" 
         style={{ display: currentTab === 'alarm' ? 'block' : 'none' }}
       >
+        {alarmCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Alarme (Titane/Jablotron) depuis Google Sheets : {alarmCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="rental-toggle-container">
           <span>Mode vente</span>
           <label className="toggle-switch">
@@ -974,13 +976,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = alarmCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...alarmMaterialLines];
                         newLines[index] = { 
                           ...line, 
@@ -993,12 +995,12 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      // Try to find in alarm catalog first
-                      let product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      // Try to find in alarm catalog first (by ref)
+                      let product = alarmCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       
-                      // Then try XTO catalog
+                      // Then try XTO catalog (untouched, own migration pass later)
                       if (!product) {
-                        const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productName);
+                        const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productKey);
                         if (xtoProduct) {
                           product = {
                             id: xtoProduct.id,
@@ -1016,39 +1018,25 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_ALARM_PRODUCTS
+                    {alarmCatalog
                       .filter(product => {
+                        const ref = (product as any).ref as string | undefined;
                         // Hide "Autre" from regular list
                         if (product.isCustom) return false;
-                        // Application (110) + Alimentation de secours (111) are auto-added base-kit
-                        // items: show each only on the line that already holds it (so it displays),
-                        // never as a manually-selectable option (avoids duplicate 0 CHF rows).
-                        if (product.id === 110 || product.id === 111) return line.product?.id === product.id;
-                        // If a central is selected, filter to relevant catalog entries
-                        if (selectedCentral === 'titane') {
-                          return product.price !== undefined || product.priceTitane !== undefined;
-                        }
-                        if (selectedCentral === 'jablotron') {
-                          return (
-                            product.price !== undefined ||
-                            product.priceJablotron !== undefined ||
-                            product.requiresJablotron
-                          );
-                        }
+                        // Application is an auto-added base-kit item: show it only on
+                        // the line that already holds it, never as a manual option
+                        // (avoids duplicate 0 CHF rows).
+                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return (line.product as any)?.ref === ref;
+                        // If a central is selected, filter to that central's refs only
+                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
+                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
                         return true;
                       })
-                      .map(product => {
-                      const price = selectedCentral === 'titane' 
-                        ? (product.priceTitane || product.price || 0)
-                        : selectedCentral === 'jablotron'
-                        ? (product.priceJablotron || product.price || 0)
-                        : (product.price || product.priceTitane || product.priceJablotron || 0);
-                      return (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {price.toFixed(2)} CHF
+                      .map(product => (
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name} - {product.price.toFixed(2)} CHF
                         </option>
-                      );
-                    })}
+                      ))}
                     {/* Add XTO products only if at least one XTO product is in the lines */}
                     {alarmMaterialLines.some(l => l.product && (l.product as any).isXTO) && CATALOG_XTO_PRODUCTS.map(product => (
                       <option key={`xto-${product.name}`} value={product.name}>
@@ -1092,7 +1080,7 @@ export default function CreateDevisPage() {
                     <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
                   <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
                   </div>
                   <button 
                     className="remove-btn"
@@ -1321,13 +1309,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = alarmCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...alarmInstallationLines];
                         newLines[index] = { 
                           ...line, 
@@ -1340,7 +1328,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      const product = alarmCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       const newLines = [...alarmInstallationLines];
                       newLines[index] = { ...line, product: product || null };
                       setAlarmInstallationLines(newLines);
@@ -1348,25 +1336,20 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_ALARM_PRODUCTS
+                    {alarmCatalog
                       .filter(product => {
-                        if (product.isCustom || product.id === 101 || product.id === 102 || product.id === 110 || product.id === 111) return false;
-                        if (selectedCentral === 'titane' && product.id === 5) return false; // Hide Centrale Jablotron when Titane
-                        if (selectedCentral === 'jablotron' && product.id === 6) return false; // Hide Centrale Titane when Jablotron
+                        const ref = (product as any).ref as string | undefined;
+                        if (product.isCustom) return false;
+                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return false; // Auto-kit item, not a manual option here
+                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
+                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
                         return true;
                       })
-                      .map(product => {
-                        const price = selectedCentral === 'titane'
-                          ? (product.priceTitane ?? product.price ?? 0)
-                          : selectedCentral === 'jablotron'
-                          ? (product.priceJablotron ?? product.price ?? 0)
-                          : (product.price ?? product.priceTitane ?? product.priceJablotron ?? 0);
-                        return (
-                          <option key={product.name} value={product.name}>
-                            {product.name} - {price.toFixed(2)} CHF
-                          </option>
-                        );
-                      })}
+                      .map(product => (
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name} - {product.price.toFixed(2)} CHF
+                        </option>
+                      ))}
                   </select>
                   <input 
                     type="number" 
@@ -1394,11 +1377,7 @@ export default function CreateDevisPage() {
                     <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
                   <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? (() => {
-                      const p = line.product as AlarmProduct;
-                      const unitPrice = line.customPrice ?? (selectedCentral === 'titane' ? (p.priceTitane ?? p.price) : selectedCentral === 'jablotron' ? (p.priceJablotron ?? p.price) : (p.price ?? p.priceTitane ?? p.priceJablotron)) ?? 0;
-                      return `${(unitPrice * line.quantity).toFixed(2)} CHF`;
-                    })() : '0.00 CHF'}
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice ?? line.product.price ?? 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
                   </div>
                   <button 
                     className="remove-btn"
