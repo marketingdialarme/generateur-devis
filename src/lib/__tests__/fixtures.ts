@@ -6,7 +6,6 @@ import { calculateAlarmTotals, calculateCameraTotals, type DiscountConfig } from
 import {
   CATALOG_ALARM_PRODUCTS,
   CATALOG_CAMERA_MATERIAL,
-  CATALOG_FOG_PRODUCTS,
 } from '@/lib/quote-generator';
 import type { ProductLineData, Product } from '@/components/ProductLine';
 import type { PDFGenerationOptions } from '@/lib/pdf-generator';
@@ -111,11 +110,11 @@ export function cameraFixture() {
 
 export function fogFixture() {
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 200), quantity: 1, offered: false }, // Générateur 2990
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 201), quantity: 1, offered: false }, // Clavier 390
+    { id: nextId(), product: { id: 200, name: 'Générateur de brouillard', price: 2990, ref: 'GEN-BRO' } as Product, quantity: 1, offered: false },
+    { id: nextId(), product: { id: 201, name: 'Clavier de porte', price: 390, ref: 'GEN-CLA' } as Product, quantity: 1, offered: false },
   ];
   const additional: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 205), quantity: 1, offered: false }, // Support 290
+    { id: nextId(), product: { id: 205, name: 'Support mural fixe', price: 290, ref: 'GEN-SUP-FIX' } as Product, quantity: 1, offered: false },
   ];
   const options: PDFGenerationOptions = {
     type: 'fog',

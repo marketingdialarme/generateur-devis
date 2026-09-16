@@ -98,21 +98,18 @@ export interface FogProduct {
   id: number;
   name: string;
   price: number;
+  ref?: string;
   isCustom?: boolean;
 }
 
-export const CATALOG_FOG_PRODUCTS: FogProduct[] = [
-  { id: 99, name: "Autre", price: 0, isCustom: true },
-  { id: 200, name: "Générateur de brouillard", price: 2990 },
-  { id: 201, name: "Clavier de porte", price: 390 },
-  { id: 202, name: "Détecteur volumétrique", price: 240 },
-  { id: 203, name: "Détecteur d'ouverture", price: 190 },
-  { id: 204, name: "Télécommande", price: 190 },
-  { id: 205, name: "Support mural fixe", price: 290 },
-  { id: 206, name: "Support mural articulé", price: 390 },
-  { id: 207, name: "Remplissage cartouche", price: 390 },
-  { id: 208, name: "Cartouche supplémentaire HY3", price: 990 },
-];
+/**
+ * No hardcoded product data — read live from the "Produits_Générateur_de_
+ * brouillard" tab (see fetchFogProductsFromSheet). Matched by `ref` (the
+ * Sheet's REF column) wherever possible, not by `name`: unlike Visiophone,
+ * this Sheet already has stable references, so there is no reason to key
+ * off text that editors may reword. No fallback catalog, same as
+ * Visiophone (client decision) — the Sheet is the single source of truth.
+ */
 
 export interface VisiophoProduct {
   id: number;

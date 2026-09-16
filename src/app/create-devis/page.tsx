@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct, type FogProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -140,6 +140,11 @@ export default function CreateDevisPage() {
   
   // Fog generator state
   const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
+  // No hardcoded fallback (same decision as Visiophone): starts empty,
+  // filled once /api/products/fog resolves. fogCatalogError drives a
+  // visible banner if the Sheet can't be reached.
+  const [fogCatalog, setFogCatalog] = useState<FogProduct[]>([]);
+  const [fogCatalogError, setFogCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
   const [fogProcessingFee, setFogProcessingFee] = useState(190);
@@ -375,17 +380,19 @@ export default function CreateDevisPage() {
     setCameraMaintenancePrice(totalPrice);
   }, [cameraMaterialLines, cameraMaintenance]);
   
-  // Initialize Fog kit de base on mount
+  // Initialize Fog kit de base on mount. Matches by REF (GEN-BRO/GEN-CLA/
+  // GEN-VOL) rather than a hardcoded id, since ids for sheet-sourced rows
+  // are assigned by row order — the REF is the stable key.
   useEffect(() => {
-    if (fogLines.length === 0 && CATALOG_FOG_PRODUCTS.length > 0) {
+    if (fogLines.length === 0 && fogCatalog.length > 0) {
       const fogKit = [
-        { id: 200, quantity: 1, offered: true }, // Générateur
-        { id: 201, quantity: 1, offered: true }, // Clavier
-        { id: 202, quantity: 1, offered: true }, // Détecteur
+        { ref: 'GEN-BRO', quantity: 1, offered: true }, // Générateur
+        { ref: 'GEN-CLA', quantity: 1, offered: true }, // Clavier
+        { ref: 'GEN-VOL', quantity: 1, offered: true }, // Détecteur
       ];
       
       const newLines: ProductLineData[] = fogKit.map((item, index) => {
-        const product = CATALOG_FOG_PRODUCTS.find(p => p.id === item.id);
+        const product = fogCatalog.find(p => p.ref === item.ref);
         return {
           id: Date.now() + index,
           product: product || null,
@@ -396,7 +403,7 @@ export default function CreateDevisPage() {
       
       setFogLines(newLines);
     }
-  }, []);
+  }, [fogCatalog]);
   
   // Initialize Visiophone products on mount. Matches by name rather than a
   // hardcoded id since ids for sheet-sourced products are assigned by row
@@ -512,6 +519,29 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
         setVisiophoneCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Visiophone'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/fog')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Fog vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setFogCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setFogCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Fog catalog from Google Sheet:', error);
+        setFogCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Générateur de brouillard'
         );
       });
   }, []);
@@ -2248,6 +2278,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'fog' ? 'block' : 'none' }}
       >
+        {fogCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Générateur de brouillard depuis Google Sheets : {fogCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="form-section">
           <h3>📋 Informations Client</h3>
           <div className="form-grid">
@@ -2313,13 +2355,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = fogCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...fogLines];
                         newLines[index] = { 
                           ...line, 
@@ -2332,7 +2374,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName);
+                      const product = fogCatalog.find(p => (p.ref || p.name) === productKey);
                       const newLines = [...fogLines];
                       newLines[index] = { ...line, product: product || null };
                       setFogLines(newLines);
@@ -2340,10 +2382,10 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_FOG_PRODUCTS
+                    {fogCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
-                        <option key={product.name} value={product.name}>
+                        <option key={product.ref || product.name} value={product.ref || product.name}>
                           {product.name} - {product.price.toFixed(2)} CHF
                         </option>
                       ))}
@@ -2491,13 +2533,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = fogCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...fogAdditionalLines];
                         newLines[index] = { 
                           ...line, 
@@ -2510,7 +2552,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName && p.id !== 200);
+                      const product = fogCatalog.find(p => (p.ref || p.name) === productKey && p.ref !== 'GEN-BRO');
                       const newLines = [...fogAdditionalLines];
                       newLines[index] = { ...line, product: product || null };
                       setFogAdditionalLines(newLines);
@@ -2518,10 +2560,10 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_FOG_PRODUCTS
-                      .filter(p => p.id !== 200 && !p.isCustom) // Exclude main fog generator and "Autre"
+                    {fogCatalog
+                      .filter(p => p.ref !== 'GEN-BRO' && !p.isCustom) // Exclude main fog generator and "Autre"
                       .map(product => (
-                        <option key={product.name} value={product.name}>
+                        <option key={product.ref || product.name} value={product.ref || product.name}>
                           {product.name} - {product.price.toFixed(2)} CHF
                         </option>
                       ))}

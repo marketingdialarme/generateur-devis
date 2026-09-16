@@ -15,15 +15,17 @@
 
 import { google } from 'googleapis';
 import { CommercialInfo } from '../config';
-import { type VisiophoProduct } from '../quote-generator';
+import { type VisiophoProduct, type FogProduct } from '../quote-generator';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '';
 const CONSEILLER_RANGE = 'Conseillers!A2:D';
 const VISIOPHONE_RANGE = 'Produits_Visiophone!A2:J';
+const FOG_RANGE = 'Produits_Générateur_de_brouillard!A2:J';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: VisiophoProduct[]; fetchedAt: number } | null = null;
+let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
 
 async function getSheetsClient() {
   if (
@@ -162,5 +164,54 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<VisiophoProduc
   }
 
   visiophoneCache = { data: products, fetchedAt: Date.now() };
+  return products;
+}
+
+/**
+ * Fetch the "Produits_Générateur_de_brouillard" tab and return it as a
+ * FogProduct[]. Unlike Visiophone, this sheet already has a REF column
+ * (client added it), so every product carries its stable reference — the
+ * app matches on `ref`, not `name`, wherever a ref exists. "Installation"
+ * is excluded (priced via feesConfig, not a selectable material line,
+ * same as Visiophone). "Autre" (id 99) stays code-defined.
+ *
+ * No fallback on failure, same reasoning as fetchVisiophoneProductsFromSheet.
+ */
+export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
+  if (fogCache && Date.now() - fogCache.fetchedAt < CACHE_TTL_MS) {
+    return fogCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: FOG_RANGE,
+  });
+
+  const rows = response.data.values || [];
+  const products: FogProduct[] = [];
+  let nextId = 200;
+
+  for (const row of rows) {
+    const [, nom, ref, , , prix] = row; // Groupe, Nom, REF, Inclut kit de base, Quantite kit de base, PRIX
+    if (!nom || nom.includes('Installation')) continue;
+
+    const price = parseFloat(prix);
+    if (isNaN(price)) continue;
+
+    products.push({ id: nextId, name: nom.trim(), price, ref: ref ? ref.trim() : undefined });
+    nextId += 1;
+  }
+
+  if (products.length === 0) {
+    throw new Error('Produits_Générateur_de_brouillard returned no usable rows');
+  }
+
+  fogCache = { data: products, fetchedAt: Date.now() };
   return products;
 }

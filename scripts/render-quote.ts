@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import { generateQuotePDF, type PDFGenerationOptions } from '@/lib/pdf-generator';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL } from '@/lib/quote-generator';
 import type { ProductLineData } from '@/components/ProductLine';
 
 const outDir = join(process.cwd(), 'scripts', '_out');
@@ -55,7 +55,13 @@ const cameraTotals = calculateCameraTotals(
 );
 
 // ---------- FOG ----------
-const pf = (id: number) => CATALOG_FOG_PRODUCTS.find((x) => x.id === id)!;
+const fogProducts: Record<number, { id: number; name: string; price: number; ref: string }> = {
+  200: { id: 200, name: 'Générateur de brouillard', price: 2990, ref: 'GEN-BRO' },
+  201: { id: 201, name: 'Clavier de porte', price: 390, ref: 'GEN-CLA' },
+  202: { id: 202, name: 'Détecteur volumétrique', price: 240, ref: 'GEN-VOL' },
+  205: { id: 205, name: 'Support mural fixe', price: 290, ref: 'GEN-SUP-FIX' },
+};
+const pf = (id: number) => fogProducts[id];
 const fl = (id: number, quantity: number): ProductLineData => ({ id: _id++, product: pf(id) as any, quantity, offered: false });
 const fogMaterial: ProductLineData[] = [fl(200, 1), fl(201, 1), fl(202, 1)];
 const fogAdditional: ProductLineData[] = [fl(205, 1)];
