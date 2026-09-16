@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -152,6 +152,11 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
+  // Starts from the hardcoded fallback so the dropdown is never empty while
+  // the live fetch below is in flight; replaced once /api/products/visiophone
+  // resolves. See fetchVisiophoneProductsFromSheet for why Visiophone was the
+  // first category moved off the hardcoded catalog.
+  const [visiophoneCatalog, setVisiophoneCatalog] = useState<VisiophoProduct[]>(CATALOG_VISIOPHONE_PRODUCTS);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
   
@@ -391,16 +396,20 @@ export default function CreateDevisPage() {
     }
   }, []);
   
-  // Initialize Visiophone products on mount
+  // Initialize Visiophone products on mount. Matches by name rather than a
+  // hardcoded id since ids for sheet-sourced products are assigned by row
+  // order, not fixed — see fetchVisiophoneProductsFromSheet. Depends on
+  // visiophoneCatalog so this still finds the right products once the live
+  // fetch replaces the static fallback the state started from.
   useEffect(() => {
-    if (visiophoLines.length === 0 && CATALOG_VISIOPHONE_PRODUCTS.length > 0) {
+    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0) {
       const visiophoKit = [
-        { id: 300, quantity: 1, offered: false }, // Interphone
-        { id: 301, quantity: 1, offered: false }, // Écran
+        { match: 'Interphone', quantity: 1, offered: false },
+        { match: 'Ecran', quantity: 1, offered: false }, // matches "Écran"/"Ecran complémentaire" either way
       ];
       
       const newLines: ProductLineData[] = visiophoKit.map((item, index) => {
-        const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === item.id);
+        const product = visiophoneCatalog.find(p => p.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(item.match));
         return {
           id: Date.now() + index,
           product: product || null,
@@ -411,7 +420,7 @@ export default function CreateDevisPage() {
       
       setVisiophoLines(newLines);
     }
-  }, []);
+  }, [visiophoneCatalog]);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -479,6 +488,26 @@ export default function CreateDevisPage() {
         setCommercialsError(
           error instanceof Error ? error.message : 'Échec du chargement des commerciaux'
         );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/visiophone')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Visiophone vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setVisiophoneCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+      })
+      .catch((error) => {
+        // Static fallback (set at declaration) stays in place — no UI change needed.
+        console.error('❌ Failed to load live Visiophone catalog, using fallback:', error);
       });
   }, []);
 
@@ -2791,7 +2820,7 @@ export default function CreateDevisPage() {
                       
                       // Custom product creation sentinel
                       if (productName === '__create_custom__') {
-                        const template = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === 99); // Autre
+                        const template = visiophoneCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...visiophoLines];
                         newLines[index] = { 
                           ...line, 
@@ -2804,7 +2833,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.name === productName);
+                      const product = visiophoneCatalog.find(p => p.name === productName);
                       const newLines = [...visiophoLines];
                       newLines[index] = { ...line, product: product || null };
                       setVisiophoLines(newLines);
@@ -2812,7 +2841,7 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_VISIOPHONE_PRODUCTS
+                    {visiophoneCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.name} value={product.name}>
