@@ -7,7 +7,6 @@ import {
   CATALOG_ALARM_PRODUCTS,
   CATALOG_CAMERA_MATERIAL,
   CATALOG_FOG_PRODUCTS,
-  CATALOG_VISIOPHONE_PRODUCTS,
 } from '@/lib/quote-generator';
 import type { ProductLineData, Product } from '@/components/ProductLine';
 import type { PDFGenerationOptions } from '@/lib/pdf-generator';
@@ -133,8 +132,8 @@ export function fogFixture() {
 
 export function visioFixture() {
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_VISIOPHONE_PRODUCTS, 300), quantity: 1, offered: false }, // Interphone 990
-    { id: nextId(), product: find(CATALOG_VISIOPHONE_PRODUCTS, 301), quantity: 1, offered: false }, // Écran 490
+    { id: nextId(), product: { id: 300, name: 'Interphone', price: 990 } as Product, quantity: 1, offered: false },
+    { id: nextId(), product: { id: 301, name: 'Ecran complémentaire', price: 490 } as Product, quantity: 1, offered: false },
   ];
   const options: PDFGenerationOptions = {
     type: 'visiophone',

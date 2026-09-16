@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -152,11 +152,13 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
-  // Starts from the hardcoded fallback so the dropdown is never empty while
-  // the live fetch below is in flight; replaced once /api/products/visiophone
-  // resolves. See fetchVisiophoneProductsFromSheet for why Visiophone was the
-  // first category moved off the hardcoded catalog.
-  const [visiophoneCatalog, setVisiophoneCatalog] = useState<VisiophoProduct[]>(CATALOG_VISIOPHONE_PRODUCTS);
+  // No hardcoded fallback (client decision): starts empty, filled once
+  // /api/products/visiophone resolves. visiophoneCatalogError drives a
+  // visible message in the UI if the Sheet can't be reached, instead of
+  // silently showing stale data. See fetchVisiophoneProductsFromSheet for
+  // why Visiophone was the first category moved off the hardcoded catalog.
+  const [visiophoneCatalog, setVisiophoneCatalog] = useState<VisiophoProduct[]>([]);
+  const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
   
@@ -504,10 +506,13 @@ export default function CreateDevisPage() {
           ...result.data.products,
           { id: 99, name: 'Autre', price: 0, isCustom: true },
         ]);
+        setVisiophoneCatalogError(null);
       })
       .catch((error) => {
-        // Static fallback (set at declaration) stays in place — no UI change needed.
-        console.error('❌ Failed to load live Visiophone catalog, using fallback:', error);
+        console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
+        setVisiophoneCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Visiophone'
+        );
       });
   }, []);
 
@@ -2749,6 +2754,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'visiophone' ? 'block' : 'none' }}
       >
+        {visiophoneCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Visiophone depuis Google Sheets : {visiophoneCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="form-section">
           <h3>📋 Informations Client</h3>
           <div className="form-grid">

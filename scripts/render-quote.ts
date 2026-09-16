@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import { generateQuotePDF, type PDFGenerationOptions } from '@/lib/pdf-generator';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS } from '@/lib/quote-generator';
 import type { ProductLineData } from '@/components/ProductLine';
 
 const outDir = join(process.cwd(), 'scripts', '_out');
@@ -61,7 +61,11 @@ const fogMaterial: ProductLineData[] = [fl(200, 1), fl(201, 1), fl(202, 1)];
 const fogAdditional: ProductLineData[] = [fl(205, 1)];
 
 // ---------- VISIOPHONE ----------
-const pv = (id: number) => CATALOG_VISIOPHONE_PRODUCTS.find((x) => x.id === id)!;
+const visioProducts: Record<number, { id: number; name: string; price: number }> = {
+  300: { id: 300, name: 'Interphone', price: 990 },
+  301: { id: 301, name: 'Ecran complémentaire', price: 490 },
+};
+const pv = (id: number) => visioProducts[id];
 const vl = (id: number, quantity: number): ProductLineData => ({ id: _id++, product: pv(id) as any, quantity, offered: false });
 const visioMaterial: ProductLineData[] = [vl(300, 1), vl(301, 1)];
 

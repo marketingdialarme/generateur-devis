@@ -15,7 +15,7 @@
 
 import { google } from 'googleapis';
 import { CommercialInfo } from '../config';
-import { CATALOG_VISIOPHONE_PRODUCTS, type VisiophoProduct } from '../quote-generator';
+import { type VisiophoProduct } from '../quote-generator';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '';
 const CONSEILLER_RANGE = 'Conseillers!A2:D';
@@ -120,52 +120,47 @@ export async function fetchCommercialsFromSheet(): Promise<Record<string, Commer
  * feesConfig.installationPrice, not selectable as a material line.
  *
  * On any failure (sheet unreachable, credentials expired, tab renamed),
- * falls back to the hardcoded CATALOG_VISIOPHONE_PRODUCTS rather than
- * throwing — unlike the Conseillers directory, an empty product list
- * would block conseillers from generating quotes at all, which is worse
- * than serving slightly-stale prices. The fallback is logged so it
- * doesn't go unnoticed.
+ * this throws rather than falling back to hardcoded data — there is no
+ * hardcoded Visiophone catalog anymore. The Sheet is the single source of
+ * truth by design (client decision); the caller (the API route, then the
+ * UI) is responsible for showing a clear error rather than masking a
+ * broken connection with stale duplicate data.
  */
 export async function fetchVisiophoneProductsFromSheet(): Promise<VisiophoProduct[]> {
   if (visiophoneCache && Date.now() - visiophoneCache.fetchedAt < CACHE_TTL_MS) {
     return visiophoneCache.data;
   }
 
-  try {
-    if (!SPREADSHEET_ID) {
-      throw new Error('GOOGLE_SHEETS_ID is not configured');
-    }
-
-    const sheets = await getSheetsClient();
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: VISIOPHONE_RANGE,
-    });
-
-    const rows = response.data.values || [];
-    const products: VisiophoProduct[] = [];
-    let nextId = 300;
-
-    for (const row of rows) {
-      const [, nom, , , prix] = row; // Groupe, Nom, Inclut kit de base, Quantite kit de base, PRIX
-      if (!nom || nom.includes('Installation')) continue;
-
-      const price = parseFloat(prix);
-      if (isNaN(price)) continue;
-
-      products.push({ id: nextId, name: nom.trim(), price });
-      nextId += 1;
-    }
-
-    if (products.length === 0) {
-      throw new Error('Produits_Visiophone returned no usable rows');
-    }
-
-    visiophoneCache = { data: products, fetchedAt: Date.now() };
-    return products;
-  } catch (error) {
-    console.error('⚠️ Falling back to hardcoded Visiophone catalog — live sheet fetch failed:', error);
-    return CATALOG_VISIOPHONE_PRODUCTS.filter((p) => !p.isCustom);
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
   }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: VISIOPHONE_RANGE,
+  });
+
+  const rows = response.data.values || [];
+  const products: VisiophoProduct[] = [];
+  let nextId = 300;
+
+  for (const row of rows) {
+    const [, nom, , , prix] = row; // Groupe, Nom, Inclut kit de base, Quantite kit de base, PRIX
+    if (!nom || nom.includes('Installation')) continue;
+
+    const price = parseFloat(prix);
+    if (isNaN(price)) continue;
+
+    products.push({ id: nextId, name: nom.trim(), price });
+    nextId += 1;
+  }
+
+  if (products.length === 0) {
+    throw new Error('Produits_Visiophone returned no usable rows');
+  }
+
+  visiophoneCache = { data: products, fetchedAt: Date.now() };
+  return products;
 }

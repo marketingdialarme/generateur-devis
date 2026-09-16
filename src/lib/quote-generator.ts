@@ -121,11 +121,13 @@ export interface VisiophoProduct {
   isCustom?: boolean;
 }
 
-export const CATALOG_VISIOPHONE_PRODUCTS: VisiophoProduct[] = [
-  { id: 99, name: "Autre", price: 0, isCustom: true },
-  { id: 300, name: "Interphone", price: 990 },
-  { id: 301, name: "Écran complémentaire", price: 490 },
-];
+/**
+ * Visiophone has no hardcoded product data anymore — it's read live from the
+ * "Produits_Visiophone" tab (see fetchVisiophoneProductsFromSheet in
+ * google-sheets.service.ts). No fallback catalog on purpose: the Sheet is
+ * the single source of truth, so a broken connection surfaces as a visible
+ * error in the app rather than silently serving stale duplicate data.
+ */
 
 /**
  * XTO Catalog - MONTHLY HT prices (rental model)
