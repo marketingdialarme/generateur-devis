@@ -689,7 +689,7 @@ function drawOptionsBlock(
   return yPos + boxH + 4;
 }
 
-function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos: number): number {
+function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos: number, label?: string): number {
   yPos += 6;
   const tva = roundToFiveCents(facilityHT * TVA_RATE);
   const ttc = roundToFiveCents(facilityHT + tva);
@@ -701,7 +701,7 @@ function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos:
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   const wrapped = doc.splitTextToSize(
-    `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire hors frais de dossier`,
+    label ?? `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire hors frais de dossier`,
     300
   );
   doc.text(wrapped, LEFT + 12, yPos + 16);
@@ -779,13 +779,15 @@ function createCameraPDFSections(
   }
 
   // ---- Facilité de paiement — same formula as Alarme/Fog/Visiophone, no frais
-  // de dossier or carte SIM on Caméras so both are passed as 0. ----
+  // de dossier or carte SIM on Caméras so both are passed as 0. Shorter label
+  // on Caméras specifically (client request) — other categories keep the
+  // default text via drawFacilityBlock's fallback. ----
   if (!options.isRental && months > 0) {
     const netAfterReductions = Math.max(0, afterRabais - reductionsTotal(reductions));
     const facilityHT = calculateFacilityPayment(netAfterReductions, 0, 0, months);
     if (facilityHT > 0) {
       yPos = ensureSpace(doc, yPos, 70);
-      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+      yPos = drawFacilityBlock(doc, facilityHT, months, yPos, `Facilité de paiement sur ${months} mois`);
     }
   }
 

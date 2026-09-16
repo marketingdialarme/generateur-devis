@@ -186,9 +186,10 @@ describe('Camera PDF content', () => {
     expect(pdf).toContain('VISION'); // "VISION À DISTANCE"
     expect(pdf).not.toContain('OFFERT');
   });
-  it('now shows the facilité-de-paiement block too (previously missing on Caméras)', async () => {
+  it('now shows the facilité-de-paiement block too (previously missing on Caméras) — short label, Caméras only', async () => {
     const pdf = await renderText(cameraFixture().options);
-    expect(pdf).toContain('Possibilit'); // "Possibilité de facilité de paiement..."
+    expect(pdf).toContain('Facilit'); // "Facilité de paiement sur 48 mois"
+    expect(pdf).not.toContain('Possibilit'); // long default label stays off Caméras
   });
 });
 
