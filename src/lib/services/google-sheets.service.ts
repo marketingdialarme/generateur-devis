@@ -33,7 +33,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
-let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]> }; fetchedAt: number } | null = null;
+let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -293,7 +293,7 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
  * Visiophone's PRIX column being in a different position than expected:
  * safer to be robust to small wording differences than to assume exact text.
  */
-export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]> }> {
+export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }> {
   if (alarmCache && Date.now() - alarmCache.fetchedAt < CACHE_TTL_MS) {
     return alarmCache.data;
   }
@@ -351,6 +351,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   const kits: Record<string, { ref: string; quantity: number }[]> = {
     'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [],
   };
+  const installationPrices: { titane: number | null; jablotron: number | null } = { titane: null, jablotron: null };
   let nextId = 600;
 
   rawRows.slice(1).forEach((row) => {
@@ -361,6 +362,18 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     if (!nom) return;
 
     const price = parseFloat(row[idxOf['PRIX']] || '');
+
+    // Installation (TIT-INS/JAB-INS) is not a selectable material line — its
+    // price feeds the separate "🔧 Installation" section instead (client
+    // request), same treatment as Visiophone's Installation et paramétrage.
+    if (ref === 'TIT-INS' || ref === 'JAB-INS') {
+      if (!isNaN(price)) {
+        if (ref === 'TIT-INS') installationPrices.titane = price;
+        else installationPrices.jablotron = price;
+      }
+      return;
+    }
+
     if (!isNaN(price)) {
       products.push({ id: nextId, name: nom, price, ref });
       nextId += 1;
@@ -380,7 +393,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     throw new Error('Produits_Alarme: aucune ligne Titane/Jablotron exploitable');
   }
 
-  const data = { products, kits };
+  const data = { products, kits, installationPrices };
   alarmCache = { data, fetchedAt: Date.now() };
   return data;
 }

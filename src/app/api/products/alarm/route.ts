@@ -22,11 +22,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { products, kits } = await fetchAlarmProductsFromSheet();
+    const { products, kits, installationPrices } = await fetchAlarmProductsFromSheet();
 
     return NextResponse.json({
       success: true,
-      data: { products, kits },
+      data: { products, kits, installationPrices },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

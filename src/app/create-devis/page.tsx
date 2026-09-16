@@ -148,6 +148,7 @@ export default function CreateDevisPage() {
   // Titane/Jablotron only — XTO stays on its own hardcoded catalog for now.
   const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
+  const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
   const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
@@ -180,6 +181,15 @@ export default function CreateDevisPage() {
   const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
     const centralRef = centralType === 'jablotron' ? 'JAB-CEN' : 'TIT-CEN';
     const centralProduct = alarmCatalog.find(p => (p as any).ref === centralRef);
+
+    // Installation (TIT-INS/JAB-INS) is not a material line — it feeds the
+    // separate "🔧 Installation" section's price instead (client request).
+    // Set whenever a kit or centrale is applied, same trigger as resetting
+    // the material lines, so it always matches the chosen central.
+    const installationPrice = alarmInstallationPrices[centralType];
+    if (installationPrice !== null) {
+      setAlarmInstallationPrice(installationPrice);
+    }
     
     // If 'none' is selected, add only the central and nothing else, not offered
     if (kitType === 'none') {
@@ -199,9 +209,10 @@ export default function CreateDevisPage() {
     }
     
     // Kit contents (which refs, at what quantity — including the centrale
-    // itself and the auto-included Application/Installation lines) come
-    // straight from the Sheet's "Inclu"/"QTE" columns for the matching kit,
-    // instead of a hardcoded per-product list.
+    // itself and the auto-included Application line) come straight from the
+    // Sheet's "Inclu"/"QTE" columns for the matching kit, instead of a
+    // hardcoded per-product list. Installation is excluded upstream (see
+    // fetchAlarmProductsFromSheet) even if flagged included in the sheet.
     const kitKey = `KIT-${centralType === 'jablotron' ? 'JAB' : 'TIT'}-${kitType === 'kit1' ? '1' : '2'}`;
     const kitItems = alarmKits[kitKey] || [];
 
@@ -219,6 +230,22 @@ export default function CreateDevisPage() {
     setShowKitModal(false);
     setIsCustomKit(false); // Reset custom kit flag for normal kits
   };
+
+  // Builds "2 Détecteur volumétrique (radio)" style lines for the kit
+  // preview cards in the "Sélectionner un kit de base" modal, straight from
+  // the Sheet's kit contents — replaces hardcoded descriptions that used to
+  // drift from reality (client feedback: kit contents must match the sheet
+  // exactly). Centrale and Application are omitted, matching the wording
+  // convention the old hardcoded text already used.
+  const kitSummaryLines = (kitKey: string): string[] =>
+    (alarmKits[kitKey] || [])
+      .filter(item => !item.ref.endsWith('-CEN') && !item.ref.endsWith('-APP'))
+      .map(item => {
+        const product = alarmCatalog.find(p => (p as any).ref === item.ref);
+        return `${item.quantity} ${product?.name || item.ref}`;
+      });
+  const titaneCentralProduct = alarmCatalog.find(p => (p as any).ref === 'TIT-CEN');
+  const jablotronCentralProduct = alarmCatalog.find(p => (p as any).ref === 'JAB-CEN');
 
   // Calculate alarm totals with default values
   const alarmTotals = useMemo(() => {
@@ -532,6 +559,7 @@ export default function CreateDevisPage() {
           { id: 99, name: 'Autre', price: 0, isCustom: true },
         ]);
         setAlarmKits(result.data.kits || {});
+        setAlarmInstallationPrices(result.data.installationPrices || { titane: null, jablotron: null });
         setAlarmCatalogError(null);
       })
       .catch((error) => {
@@ -1034,7 +1062,7 @@ export default function CreateDevisPage() {
                       })
                       .map(product => (
                         <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                     {/* Add XTO products only if at least one XTO product is in the lines */}
@@ -3117,7 +3145,7 @@ export default function CreateDevisPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Centrale Titane - 690.00 CHF
+                {titaneCentralProduct ? `${titaneCentralProduct.name} - ${titaneCentralProduct.price.toFixed(2)} CHF` : 'Centrale Titane'}
               </h3>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
@@ -3147,9 +3175,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    2 Détecteurs volumétriques<br />
-                    1 Détecteur d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-TIT-1').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
                 <button
@@ -3179,9 +3205,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    1 Détecteur volumétrique<br />
-                    3 Détecteurs d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-TIT-2').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
               </div>
@@ -3197,7 +3221,7 @@ export default function CreateDevisPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Centrale Jablotron - 990.00 CHF
+                {jablotronCentralProduct ? `${jablotronCentralProduct.name} - ${jablotronCentralProduct.price.toFixed(2)} CHF` : 'Centrale Jablotron'}
               </h3>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
@@ -3227,9 +3251,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    2 Détecteurs volumétriques<br />
-                    1 Détecteur d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-JAB-1').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
                 <button
@@ -3259,9 +3281,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    1 Détecteur volumétrique<br />
-                    3 Détecteurs d&apos;ouverture<br />
-                  1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-JAB-2').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
               </div>
