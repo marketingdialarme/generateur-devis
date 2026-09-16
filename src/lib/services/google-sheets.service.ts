@@ -388,7 +388,8 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
 
     KIT_CODES.forEach((code) => {
       const { incluIdx, qteIdx } = kitColumns[code];
-      const included = row[incluIdx!] === '1' || (row[incluIdx!] || '').toUpperCase() === 'TRUE';
+      const rawIncluValue = String(row[incluIdx!] ?? '').trim().toUpperCase();
+      const included = ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(rawIncluValue);
       if (included) {
         const qty = parseInt(row[qteIdx!] || '1', 10) || 1;
         kits[code].push({ ref, quantity: qty });

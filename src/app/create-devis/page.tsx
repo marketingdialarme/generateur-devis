@@ -239,7 +239,7 @@ export default function CreateDevisPage() {
   // convention the old hardcoded text already used.
   const kitSummaryLines = (kitKey: string): string[] =>
     (alarmKits[kitKey] || [])
-      .filter(item => !item.ref.endsWith('-CEN') && !item.ref.endsWith('-APP'))
+      .filter(item => !item.ref.endsWith('-APP'))
       .map(item => {
         const product = alarmCatalog.find(p => (p as any).ref === item.ref);
         return `${item.quantity} ${product?.name || item.ref}`;
@@ -1286,14 +1286,6 @@ export default function CreateDevisPage() {
               className="discount-input"
               placeholder="300"
               min="0"
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '120px'
-              }}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
@@ -1375,7 +1367,7 @@ export default function CreateDevisPage() {
                       })
                       .map(product => (
                         <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                   </select>
