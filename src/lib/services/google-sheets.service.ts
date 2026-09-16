@@ -326,25 +326,32 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     }
   }
 
+  // Columns confirmed directly by the client (Inclu/QTE pairs at fixed
+  // positions: D/E, F/G, H/I, J/K) — the previous approach tried to detect
+  // "QTE" vs "Inclu" by scanning header text, but that silently picked the
+  // wrong column for at least one kit (items with quantity 1 looked
+  // "included" by coincidence — their qty value "1" matched the inclusion
+  // check — while anything with quantity > 1, like "2 Détecteur
+  // volumétrique", was wrongly excluded). Fixed positions avoid guessing at
+  // header wording entirely. Still validated against the header text below,
+  // so a future column reorder fails loudly instead of repeating this bug.
+  const colIdx = (letter: string) => letter.charCodeAt(0) - 'A'.charCodeAt(0);
   const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2'];
-  const kitColumns: Record<string, { incluIdx?: number; qteIdx?: number }> = {};
-  headerRow.forEach((h: string, i: number) => {
-    const cell = (h || '').toUpperCase();
-    for (const code of KIT_CODES) {
-      if (cell.includes(code)) {
-        kitColumns[code] = kitColumns[code] || {};
-        if (cell.includes('QTE')) {
-          kitColumns[code].qteIdx = i;
-        } else {
-          kitColumns[code].incluIdx = i;
-        }
-      }
-    }
-  });
+  const kitColumns: Record<string, { incluIdx: number; qteIdx: number }> = {
+    'KIT-TIT-1': { incluIdx: colIdx('D'), qteIdx: colIdx('E') },
+    'KIT-TIT-2': { incluIdx: colIdx('F'), qteIdx: colIdx('G') },
+    'KIT-JAB-1': { incluIdx: colIdx('H'), qteIdx: colIdx('I') },
+    'KIT-JAB-2': { incluIdx: colIdx('J'), qteIdx: colIdx('K') },
+  };
 
-  const missingKitCols = KIT_CODES.filter((c) => kitColumns[c]?.incluIdx === undefined || kitColumns[c]?.qteIdx === undefined);
-  if (missingKitCols.length > 0) {
-    throw new Error(`Colonnes de kit introuvables dans Produits_Alarme : ${missingKitCols.join(', ')}`);
+  const misplacedKitCols = KIT_CODES.filter((code) => {
+    const { incluIdx, qteIdx } = kitColumns[code];
+    const incluHeader = (headerRow[incluIdx] || '').toUpperCase();
+    const qteHeader = (headerRow[qteIdx] || '').toUpperCase();
+    return !incluHeader.includes(code) || !qteHeader.includes(code);
+  });
+  if (misplacedKitCols.length > 0) {
+    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K)`);
   }
 
   const products: AlarmProduct[] = [];
