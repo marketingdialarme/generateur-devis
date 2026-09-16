@@ -29,6 +29,7 @@ const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
 const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const ALARM_RANGE = 'Produits_Alarme!A1:Z';
 const CAMERA_RANGE = 'Produits_Cameras!A1:Z';
+const CONFIG_RANGE = 'Config!A1:G';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
@@ -36,6 +37,7 @@ let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: n
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
 let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
+let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -501,4 +503,51 @@ export async function fetchCameraProductsFromSheet(): Promise<{ products: Camera
   const data = { products, installationProducts };
   cameraCache = { data, fetchedAt: Date.now() };
   return data;
+}
+
+/**
+ * Fetch the "Config" tab as a flat map keyed by REF (TVA, SIM, FD,
+ * TIT-AUTO-SIM, CAM-VIS-DIS, etc. -> numeric value). Backs the shared
+ * TVA/Carte SIM/Frais de dossier values (now single global rows, client
+ * consolidated the old per-category duplicates), the Alarme surveillance
+ * service prices, and the Camera vision-à-distance/maintenance prices.
+ *
+ * "Valeur" is parsed with comma-as-decimal-separator (Google Sheets
+ * exports "8,1" for 8.1 in this locale) — plain parseFloat would read
+ * "8,1" as 8, so the comma is replaced before parsing.
+ */
+export async function fetchConfigFromSheet(): Promise<Record<string, number>> {
+  if (configCache && Date.now() - configCache.fetchedAt < CACHE_TTL_MS) {
+    return configCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: CONFIG_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['REF', 'Valeur']);
+
+  const config: Record<string, number> = {};
+  for (const row of rows) {
+    const ref = (row['REF'] || '').trim();
+    if (!ref) continue;
+    const value = parseFloat((row['Valeur'] || '').replace(',', '.'));
+    if (isNaN(value)) continue;
+    config[ref] = value;
+  }
+
+  if (Object.keys(config).length === 0) {
+    throw new Error('Config: aucune ligne exploitable');
+  }
+
+  configCache = { data: config, fetchedAt: Date.now() };
+  return config;
 }

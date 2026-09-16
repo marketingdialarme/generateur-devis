@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, setTvaRate, setAdminFees, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -152,6 +152,10 @@ export default function CreateDevisPage() {
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
   const [cameraInstallationProducts, setCameraInstallationProducts] = useState<CameraProduct[]>([]);
   const [cameraCatalogError, setCameraCatalogError] = useState<string | null>(null);
+  // Flat REF -> value map from the Config sheet (TVA, SIM, FD, surveillance
+  // service prices, camera vision-à-distance/maintenance prices).
+  const [configValues, setConfigValues] = useState<Record<string, number>>({});
+  const [configError, setConfigError] = useState<string | null>(null);
   const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
@@ -326,10 +330,11 @@ export default function CreateDevisPage() {
       return;
     }
     
-    // Use the correct calculation function
-    const totalPrice = calculateRemoteAccessPrice(cameraMaterialLines);
+    // Use the correct calculation function — price per camera comes from
+    // Config (CAM-VIS-DIS), falls back to 20 if not loaded yet.
+    const totalPrice = calculateRemoteAccessPrice(cameraMaterialLines, configValues['CAM-VIS-DIS'] ?? 20);
     setCameraVisionPrice(totalPrice);
-  }, [cameraMaterialLines, cameraVisionDistance]);
+  }, [cameraMaterialLines, cameraVisionDistance, configValues]);
   
   // Auto-check vision à distance when modem or 4G camera is selected
   useEffect(() => {
@@ -364,11 +369,15 @@ export default function CreateDevisPage() {
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     const totalItems = cameraCount + nvrCount;
-    const pricePerItem = totalItems >= 5 ? 5 : 10;
+    // Tier prices from Config (CAM-CM-5 = up to 5 items, CAM-CM+5 = more
+    // than 5), falls back to the old hardcoded 10/5 if not loaded yet.
+    const pricePerItem = totalItems >= 5
+      ? (configValues['CAM-CM+5'] ?? 5)
+      : (configValues['CAM-CM-5'] ?? 10);
     const totalPrice = totalItems * pricePerItem;
     
     setCameraMaintenancePrice(totalPrice);
-  }, [cameraMaterialLines, cameraMaintenance]);
+  }, [cameraMaterialLines, cameraMaintenance, configValues]);
   
   // Initialize Fog kit de base on mount. Matches by REF (GEN-BRO/GEN-CLA/
   // GEN-VOL) rather than a hardcoded id, since ids for sheet-sourced rows
@@ -587,6 +596,39 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Camera catalog from Google Sheet:', error);
         setCameraCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Caméras'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/config-values')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !result.data?.config) {
+          throw new Error(result.error || 'Configuration vide ou invalide');
+        }
+        const config: Record<string, number> = result.data.config;
+        setConfigValues(config);
+        setConfigError(null);
+
+        // TVA and admin fees (Carte SIM + Activation, Frais de dossier) are
+        // now single global rows in Config (client consolidated what used
+        // to be separate per-category duplicates — they were all identical
+        // anyway). Applying them here updates every category at once.
+        if (typeof config['TVA'] === 'number') setTvaRate(config['TVA']);
+        if (typeof config['SIM'] === 'number' && typeof config['FD'] === 'number') {
+          setAdminFees(config['SIM'], config['FD']);
+        }
+        // Fog keeps its own editable state for these two fields (unlike
+        // Alarm, which reads ADMIN_FEES directly) — seed their starting
+        // value from Config too, field stays editable afterwards.
+        if (typeof config['SIM'] === 'number') setFogSimCard(config['SIM']);
+        if (typeof config['FD'] === 'number') setFogProcessingFee(config['FD']);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Config values from Google Sheet:', error);
+        setConfigError(
+          error instanceof Error ? error.message : 'Échec du chargement de la configuration'
         );
       });
   }, []);
@@ -846,6 +888,19 @@ export default function CreateDevisPage() {
           border: '1px solid #f5c6cb'
         }}>
           ❌ Impossible de charger la liste des commerciaux depuis Google Sheets : {commercialsError}
+        </div>
+      )}
+
+      {configError && (
+        <div style={{
+          background: '#f8d7da',
+          color: '#721c24',
+          padding: '15px',
+          margin: '20px 0',
+          borderRadius: '8px',
+          border: '1px solid #f5c6cb'
+        }}>
+          ❌ Impossible de charger la configuration (TVA, frais de dossier, carte SIM, services) depuis Google Sheets : {configError}. Les montants affichés utilisent les valeurs par défaut du code, pas forcément à jour.
         </div>
       )}
 
@@ -1592,6 +1647,7 @@ export default function CreateDevisPage() {
           centralType={selectedCentral}
           rentalMode={alarmRentalMode}
           simCardSelected={simcardSelected}
+          configValues={configValues}
         />
 
         {/* Options Section */}
@@ -2010,9 +2066,17 @@ export default function CreateDevisPage() {
             </button>
           </h3>
           <div id="camera-installation-lines">
-            {cameraInstallationLines.map((line, index) => {
+            {(() => {
               const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
-              return (
+              const cameraQty = cameraMaterialLines
+                .filter(l => l.product && (l.product as any).type === 'Caméra')
+                .reduce((sum, l) => sum + l.quantity, 0);
+              const availableInstallProducts = cameraInstallationProducts.filter(p => {
+                if (p.ref === 'INS-4G') return hasMiniSolar;
+                if (p.ref === 'INS-1') return cameraQty === 1;
+                return true;
+              });
+              return cameraInstallationLines.map((line, index) => (
               <div key={line.id} className="product-line">
                 <select 
                   className="product-select"
@@ -2026,8 +2090,7 @@ export default function CreateDevisPage() {
                   }}
                 >
                   <option value="">Sélectionner un type d&apos;installation</option>
-                  {cameraInstallationProducts
-                    .filter(p => p.ref !== 'INS-4G' || hasMiniSolar)
+                  {availableInstallProducts
                     .map(p => (
                       <option key={p.ref} value={p.ref}>{p.name}</option>
                     ))}
@@ -2068,14 +2131,23 @@ export default function CreateDevisPage() {
                   ×
                 </button>
               </div>
-              );
-            })}
+              ));
+            })()}
           </div>
           {cameraInstallationLines.length === 0 && (
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-              {cameraInstallationProducts
-                .filter(p => p.ref !== 'INS-4G' || cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR'))
-                .map((product, i) => (
+              {(() => {
+                const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
+                const cameraQty = cameraMaterialLines
+                  .filter(l => l.product && (l.product as any).type === 'Caméra')
+                  .reduce((sum, l) => sum + l.quantity, 0);
+                return cameraInstallationProducts
+                  .filter(p => {
+                    if (p.ref === 'INS-4G') return hasMiniSolar;
+                    if (p.ref === 'INS-1') return cameraQty === 1;
+                    return true;
+                  })
+                  .map((product, i) => (
                 <button 
                   key={product.ref}
                   onClick={() => {
@@ -2085,7 +2157,8 @@ export default function CreateDevisPage() {
                 >
                   + {product.name} ({product.price.toFixed(0)} CHF)
                 </button>
-              ))}
+                ));
+              })()}
             </div>
           )}
           
@@ -2254,7 +2327,7 @@ export default function CreateDevisPage() {
           {cameraVisionDistance && !cameraRentalMode && (
             <div className="summary-item">
               <span>Vision à distance</span>
-              <span>{calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois</span>
+              <span>{calculateRemoteAccessPrice(cameraMaterialLines, configValues['CAM-VIS-DIS'] ?? 20).toFixed(2)} CHF/mois</span>
                   </div>
           )}
           {cameraMaintenance && !cameraRentalMode && cameraMaintenancePrice > 0 && (

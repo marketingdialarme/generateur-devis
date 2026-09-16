@@ -26,17 +26,19 @@ export function detectCentralType(lines: ProductLineData[]): 'titane' | 'jablotr
  * Calculate remote access ("vision à distance") price.
  *
  * Client feedback:
- * - 20 CHF/mois per 4G camera
+ * - Per-camera monthly price is the Config sheet's CAM-VIS-DIS row
+ *   (was hardcoded to 20 CHF; still defaults to 20 if the caller doesn't
+ *   pass a live value, e.g. before Config has loaded)
  * - For non-4G ("classic") cameras, remote access is only priced if a Modem 4G is selected
- * - The 20 CHF is for cameras only (NOT for the modem)
- * - Example: 1 classic cam (with modem) + 1 4G cam => 20 + 20 = 40 CHF/mois
+ * - The price is for cameras only (NOT for the modem)
+ * - Example at 20 CHF: 1 classic cam (with modem) + 1 4G cam => 20 + 20 = 40 CHF/mois
  *
  * Driven by the Sheet's "Type" (Caméra/NVR/Modem/Accessoire) and "4G"
  * columns — replaces the old hardcoded CAMERA_DEVICE_IDS id set and
  * name.includes('4G') check, neither of which survives products coming
  * from the Sheet with freely assigned ids and wording.
  */
-export function calculateRemoteAccessPrice(cameraLines: ProductLineData[]): number {
+export function calculateRemoteAccessPrice(cameraLines: ProductLineData[], pricePerCamera: number = 20): number {
   const hasModem = cameraLines.some(
     (line) =>
       !line.offered &&
@@ -62,5 +64,5 @@ export function calculateRemoteAccessPrice(cameraLines: ProductLineData[]): numb
   });
 
   const billableCameras = fourGCameraCount + (hasModem ? classicCameraCount : 0);
-  return billableCameras * 20;
+  return billableCameras * pricePerCamera;
 }

@@ -152,7 +152,15 @@ export const XTO_KIT_LINES: XTOKitLine[] = [
 // PRICING CONFIGURATION
 // ============================================
 
-export const TVA_RATE = 0.081; // 8.1%
+// Mutable on purpose: overwritten once from the Config sheet's single "TVA"
+// row (see fetchConfigFromSheet / setTvaRate) instead of being a fixed
+// constant. Every importer reads the current value via ES module live
+// bindings, so nothing downstream needs to change to pick up the update.
+export let TVA_RATE = 0.081; // 8.1% — fallback until the Config fetch resolves
+
+export function setTvaRate(percent: number) {
+  TVA_RATE = percent / 100;
+}
 
 export const HALF_DAY_PRICE = 690;
 export const FULL_DAY_PRICE = 1290;
@@ -169,10 +177,19 @@ export const FULL_DAY_MONTHLY_60 = 27;
 
 export const UNINSTALL_PRICE = 290.00;
 
+// Fallback values until the Config fetch resolves — see setAdminFees, which
+// mutates this object's fields in place from the Config sheet's single
+// "SIM" (Carte SIM + Activation) and "FD" (Frais de dossier) rows (client
+// consolidated what used to be separate per-category duplicates).
 export const ADMIN_FEES = {
   simCard: 50.00,
   processingFee: 190.00
 };
+
+export function setAdminFees(simCard: number, processingFee: number) {
+  ADMIN_FEES.simCard = simCard;
+  ADMIN_FEES.processingFee = processingFee;
+}
 
 export const REMOTE_ACCESS_PRICE = 20.00;
 export const REMOTE_ACCESS_PRICE_2_7 = 35.00;
