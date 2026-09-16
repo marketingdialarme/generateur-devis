@@ -186,6 +186,10 @@ describe('Camera PDF content', () => {
     expect(pdf).toContain('VISION'); // "VISION À DISTANCE"
     expect(pdf).not.toContain('OFFERT');
   });
+  it('now shows the facilité-de-paiement block too (previously missing on Caméras)', async () => {
+    const pdf = await renderText(cameraFixture().options);
+    expect(pdf).toContain('Possibilit'); // "Possibilité de facilité de paiement..."
+  });
 });
 
 describe('Brouillard PDF content', () => {

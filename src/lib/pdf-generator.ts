@@ -778,6 +778,17 @@ function createCameraPDFSections(
     );
   }
 
+  // ---- Facilité de paiement — same formula as Alarme/Fog/Visiophone, no frais
+  // de dossier or carte SIM on Caméras so both are passed as 0. ----
+  if (!options.isRental && months > 0) {
+    const netAfterReductions = Math.max(0, afterRabais - reductionsTotal(reductions));
+    const facilityHT = calculateFacilityPayment(netAfterReductions, 0, 0, months);
+    if (facilityHT > 0) {
+      yPos = ensureSpace(doc, yPos, 70);
+      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+    }
+  }
+
   // ---- Maintenance et garantie — own block after Vision à distance, with a line break ----
   yPos += 14; // extra vertical breathing room between vision and maintenance
   yPos = ensureSpace(doc, yPos, 38);
