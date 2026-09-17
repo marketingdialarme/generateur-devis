@@ -24,9 +24,8 @@ describe('Alarm PDF content (new design)', () => {
   });
 
   it('uses DIA-TELES quote number', () => expect(pdf).toContain('DIA-TELES-'));
-  it('lists Application + Alimentation de secours in the kit', () => {
+  it('lists Application in the kit (Alimentation de secours no longer exists for Titane/Jablotron)', () => {
     expect(pdf).toContain('KIT DE BASE - Application');
-    expect(pdf).toContain('KIT DE BASE - Alimentation de secours');
   });
   it('shows the partnership-discount summary', () => {
     expect(pdf).toContain('Rabais partenariat');
@@ -185,6 +184,11 @@ describe('Camera PDF content', () => {
     expect(pdf).toContain('DIA-VID-');
     expect(pdf).toContain('VISION'); // "VISION À DISTANCE"
     expect(pdf).not.toContain('OFFERT');
+  });
+  it('now shows the facilité-de-paiement block too (previously missing on Caméras) — short label, Caméras only', async () => {
+    const pdf = await renderText(cameraFixture().options);
+    expect(pdf).toContain('Facilit'); // "Facilité de paiement sur 48 mois"
+    expect(pdf).not.toContain('Possibilit'); // long default label stays off Caméras
   });
 });
 

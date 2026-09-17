@@ -17,6 +17,7 @@ import {
   roundToFiveCents,
   calculateInstallationPrice,
   getInstallationMonthlyPrice,
+  calculateMonthlyFromCashPrice,
   type AlarmProduct,
   type CameraProduct
 } from './quote-generator';
@@ -140,21 +141,10 @@ export function calculateSectionTotal(
     if (line.offered || !line.product) return;
 
     // Resolve unit price — mirrors getLineUnitPrice so totals match the PDF.
-    // customPrice overrides; then flat price; then central-specific price.
-    let price = 0;
-    if (line.customPrice !== undefined) {
-      price = line.customPrice;
-    } else if (line.product.price !== undefined) {
-      price = line.product.price;
-    } else if (selectedCentral === 'titane' && line.product.priceTitane !== undefined) {
-      price = line.product.priceTitane;
-    } else if (selectedCentral === 'jablotron' && line.product.priceJablotron !== undefined) {
-      price = line.product.priceJablotron;
-    } else if (line.product.priceTitane !== undefined) {
-      price = line.product.priceTitane;
-    } else if (line.product.priceJablotron !== undefined) {
-      price = line.product.priceJablotron;
-    }
+    // customPrice overrides; otherwise the line's own price (every catalog
+    // product now carries a single `price`, since Titane/Jablotron are
+    // separate sheet rows rather than one entry with priceTitane/priceJablotron).
+    const price = line.customPrice !== undefined ? line.customPrice : (line.product.price ?? 0);
 
     const lineTotal = price * line.quantity;
     subtotal += lineTotal;
@@ -205,23 +195,10 @@ export function calculateSectionMonthlyPrice(
 
     const product = line.product;
     
-    // Get price for this line
-    let price = 0;
-    // Treat customPrice as an explicit override (even for non-custom products)
-    if (line.customPrice !== undefined) {
-      price = line.customPrice;
-    } else if (product.price !== undefined) {
-      price = product.price;
-    } else if (selectedCentral === 'titane' && product.priceTitane !== undefined) {
-      price = product.priceTitane;
-    } else if (selectedCentral === 'jablotron' && product.priceJablotron !== undefined) {
-      price = product.priceJablotron;
-    } else if (selectedCentral == null && product.priceTitane !== undefined) {
-      // No central yet selected — mirror getLineUnitPrice's fallback so monthly stays consistent
-      price = product.priceTitane;
-    } else if (selectedCentral == null && product.priceJablotron !== undefined) {
-      price = product.priceJablotron;
-    }
+    // Get price for this line — every catalog product now carries a single
+    // `price` (Titane/Jablotron are separate sheet rows, not one entry with
+    // priceTitane/priceJablotron); customPrice still overrides.
+    const price = line.customPrice !== undefined ? line.customPrice : (product.price ?? 0);
 
     // Custom product - calculate monthly from price
     if (product.isCustom || line.customPrice !== undefined) {
@@ -230,34 +207,13 @@ export function calculateSectionMonthlyPrice(
       return;
     }
 
-    let monthlyPrice = 0;
-
-    // Alarm products
-    if (sectionId === 'alarm-material' || sectionId === 'alarm-installation') {
-      if (selectedCentral === 'titane' && product.monthlyTitane !== undefined) {
-        monthlyPrice = product.monthlyTitane;
-      } else if (selectedCentral === 'jablotron' && product.monthlyJablotron !== undefined) {
-        monthlyPrice = product.monthlyJablotron;
-      }
-    }
-    // Camera products
-    else if (sectionId === 'camera-material') {
-      const cameraProduct = product as any; // Camera-specific monthly pricing
-      if (months === 48 && cameraProduct.monthly48 !== undefined) {
-        monthlyPrice = cameraProduct.monthly48;
-      } else if (months === 36 && cameraProduct.monthly36 !== undefined) {
-        monthlyPrice = cameraProduct.monthly36;
-      } else if (months === 24 && cameraProduct.monthly24 !== undefined) {
-        monthlyPrice = cameraProduct.monthly24;
-      }
-    }
-
-    // Fallback: calculate from total price
-    if (monthlyPrice === 0 && price > 0) {
-      monthlyPrice = price / months;
-    }
-
-    monthlyPrice = roundToFiveCents(monthlyPrice);
+    // Same Milestone-1 formula used everywhere else (Fog, Visiophone, and the
+    // PDF "Facilité de paiement" block for every category): (price * coef) / months,
+    // rounded up to the franc. Replaces the old per-category stored values
+    // (monthlyTitane/monthlyJablotron, monthly48/36/24 — the last of which had
+    // no case for 12 months and silently fell back to a plain, unmarked-up
+    // price / months) so the on-screen preview always matches the PDF.
+    const monthlyPrice = price > 0 ? calculateMonthlyFromCashPrice(price, months) : 0;
     monthlyTotal += monthlyPrice * line.quantity;
   });
 

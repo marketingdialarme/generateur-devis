@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, type AlarmProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, setTvaRate, setAdminFees, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -140,6 +140,23 @@ export default function CreateDevisPage() {
   
   // Fog generator state
   const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
+  // No hardcoded fallback (same decision as Visiophone): starts empty,
+  // filled once /api/products/fog resolves. fogCatalogError drives a
+  // visible banner if the Sheet can't be reached.
+  const [fogCatalog, setFogCatalog] = useState<FogProduct[]>([]);
+  const [fogCatalogError, setFogCatalogError] = useState<string | null>(null);
+  // Titane/Jablotron only — XTO stays on its own hardcoded catalog for now.
+  const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
+  const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
+  const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
+  const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
+  const [cameraInstallationProducts, setCameraInstallationProducts] = useState<CameraProduct[]>([]);
+  const [cameraCatalogError, setCameraCatalogError] = useState<string | null>(null);
+  // Flat REF -> value map from the Config sheet (TVA, SIM, FD, surveillance
+  // service prices, camera vision-à-distance/maintenance prices).
+  const [configValues, setConfigValues] = useState<Record<string, number>>({});
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
   const [fogProcessingFee, setFogProcessingFee] = useState(190);
@@ -152,6 +169,13 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
+  // No hardcoded fallback (client decision): starts empty, filled once
+  // /api/products/visiophone resolves. visiophoneCatalogError drives a
+  // visible message in the UI if the Sheet can't be reached, instead of
+  // silently showing stale data. See fetchVisiophoneProductsFromSheet for
+  // why Visiophone was the first category moved off the hardcoded catalog.
+  const [visiophoneCatalog, setVisiophoneCatalog] = useState<VisiophoProduct[]>([]);
+  const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
   
@@ -162,9 +186,17 @@ export default function CreateDevisPage() {
   
   // Apply kit function
   const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
-    const centralProduct = CATALOG_ALARM_PRODUCTS.find(p => 
-      centralType === 'jablotron' ? p.id === 5 : p.id === 6
-    );
+    const centralRef = centralType === 'jablotron' ? 'JAB-CEN' : 'TIT-CEN';
+    const centralProduct = alarmCatalog.find(p => (p as any).ref === centralRef);
+
+    // Installation (TIT-INS/JAB-INS) is not a material line — it feeds the
+    // separate "🔧 Installation" section's price instead (client request).
+    // Set whenever a kit or centrale is applied, same trigger as resetting
+    // the material lines, so it always matches the chosen central.
+    const installationPrice = alarmInstallationPrices[centralType];
+    if (installationPrice !== null) {
+      setAlarmInstallationPrice(installationPrice);
+    }
     
     // If 'none' is selected, add only the central and nothing else, not offered
     if (kitType === 'none') {
@@ -183,64 +215,44 @@ export default function CreateDevisPage() {
       return;
     }
     
-    const kit1Products = [
-      { id: 8, quantity: 2 }, // 2 Détecteurs volumétriques
-      { id: 10, quantity: 1 }, // 1 Détecteur d'ouverture
-      { id: 7, quantity: 1 }, // 1 Clavier
-      { id: 18, quantity: 1 }, // 1 Sirène
-    ];
-    
-    const kit2Products = [
-      { id: 8, quantity: 1 }, // 1 Détecteur volumétrique
-      { id: 10, quantity: 3 }, // 3 Détecteurs d'ouverture
-      { id: 7, quantity: 1 }, // 1 Clavier
-      { id: 18, quantity: 1 }, // 1 Sirène
-    ];
-    
-    const kitProducts = kitType === 'kit1' ? kit1Products : kit2Products;
-    
-    const newLines: ProductLineData[] = [];
+    // Kit contents (which refs, at what quantity — including the centrale
+    // itself and the auto-included Application line) come straight from the
+    // Sheet's "Inclu"/"QTE" columns for the matching kit, instead of a
+    // hardcoded per-product list. Installation is excluded upstream (see
+    // fetchAlarmProductsFromSheet) even if flagged included in the sheet.
+    const kitKey = `KIT-${centralType === 'jablotron' ? 'JAB' : 'TIT'}-${kitType === 'kit1' ? '1' : '2'}`;
+    const kitItems = alarmKits[kitKey] || [];
 
-    // Add central
-    if (centralProduct) {
-      newLines.push({
-        id: Date.now(),
-        product: centralProduct,
-        quantity: 1,
+    const newLines: ProductLineData[] = kitItems.map((item, index) => {
+      const product = alarmCatalog.find(p => (p as any).ref === item.ref);
+      return {
+        id: Date.now() + index,
+        product: product || null,
+        quantity: item.quantity,
         offered: true
-      });
-    }
-    
-    // Add kit products
-    kitProducts.forEach((kp, index) => {
-      const product = CATALOG_ALARM_PRODUCTS.find(p => p.id === kp.id);
-      if (product) {
-        newLines.push({
-          id: Date.now() + index + 1,
-          product,
-          quantity: kp.quantity,
-          offered: true
-        });
-      }
-    });
-
-    // Always-included base-kit items (Malt brief): Application + Alimentation de secours
-    [110, 111].forEach((id, i) => {
-      const product = CATALOG_ALARM_PRODUCTS.find(p => p.id === id);
-      if (product) {
-        newLines.push({
-          id: Date.now() + 1000 + i,
-          product,
-          quantity: 1,
-          offered: true
-        });
-      }
-    });
+      };
+    }).filter(line => line.product);
 
     setAlarmMaterialLines(newLines);
     setShowKitModal(false);
     setIsCustomKit(false); // Reset custom kit flag for normal kits
   };
+
+  // Builds "2 Détecteur volumétrique (radio)" style lines for the kit
+  // preview cards in the "Sélectionner un kit de base" modal, straight from
+  // the Sheet's kit contents — replaces hardcoded descriptions that used to
+  // drift from reality (client feedback: kit contents must match the sheet
+  // exactly). Centrale and Application are omitted, matching the wording
+  // convention the old hardcoded text already used.
+  const kitSummaryLines = (kitKey: string): string[] =>
+    (alarmKits[kitKey] || [])
+      .filter(item => !item.ref.endsWith('-APP'))
+      .map(item => {
+        const product = alarmCatalog.find(p => (p as any).ref === item.ref);
+        return `${item.quantity} ${product?.name || item.ref}`;
+      });
+  const titaneCentralProduct = alarmCatalog.find(p => (p as any).ref === 'TIT-CEN');
+  const jablotronCentralProduct = alarmCatalog.find(p => (p as any).ref === 'JAB-CEN');
 
   // Calculate alarm totals with default values
   const alarmTotals = useMemo(() => {
@@ -276,7 +288,7 @@ export default function CreateDevisPage() {
         alarmPaymentMonths,
         alarmRentalMode,
         selectedCentral,
-        CATALOG_ALARM_PRODUCTS
+        alarmCatalog
       );
     } catch (error) {
       console.error('Error calculating alarm totals:', error);
@@ -318,19 +330,20 @@ export default function CreateDevisPage() {
       return;
     }
     
-    // Use the correct calculation function
-    const totalPrice = calculateRemoteAccessPrice(cameraMaterialLines);
+    // Use the correct calculation function — price per camera comes from
+    // Config (CAM-VIS-DIS), falls back to 20 if not loaded yet.
+    const totalPrice = calculateRemoteAccessPrice(cameraMaterialLines, configValues['CAM-VIS-DIS'] ?? 20);
     setCameraVisionPrice(totalPrice);
-  }, [cameraMaterialLines, cameraVisionDistance]);
+  }, [cameraMaterialLines, cameraVisionDistance, configValues]);
   
   // Auto-check vision à distance when modem or 4G camera is selected
   useEffect(() => {
     const hasModem = cameraMaterialLines.some(
-      (line) => line.product && line.product.name.toLowerCase().includes('modem')
+      (line) => line.product && (line.product as any).type === 'Modem'
     );
     
     const has4GCamera = cameraMaterialLines.some(
-      (line) => line.product && line.product.name.includes('4G')
+      (line) => line.product && (line.product as any).is4G
     );
     
     if ((hasModem || has4GCamera) && !cameraVisionDistance) {
@@ -347,38 +360,38 @@ export default function CreateDevisPage() {
     
     // Count cameras
     const cameraCount = cameraMaterialLines.filter(
-      (line) =>
-        line.product &&
-        (line.product.name.toLowerCase().includes('caméra') ||
-          line.product.name.includes('Bullet') ||
-          line.product.name.includes('Dôme') ||
-          line.product.name.includes('Solar') ||
-          line.product.name.includes('PTZ'))
+      (line) => line.product && (line.product as any).type === 'Caméra'
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     // Count NVRs
     const nvrCount = cameraMaterialLines.filter(
-      (line) => line.product && line.product.name.includes('NVR')
+      (line) => line.product && (line.product as any).type === 'NVR'
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     const totalItems = cameraCount + nvrCount;
-    const pricePerItem = totalItems >= 5 ? 5 : 10;
+    // Tier prices from Config (CAM-CM-5 = up to 5 items, CAM-CM+5 = more
+    // than 5), falls back to the old hardcoded 10/5 if not loaded yet.
+    const pricePerItem = totalItems >= 5
+      ? (configValues['CAM-CM+5'] ?? 5)
+      : (configValues['CAM-CM-5'] ?? 10);
     const totalPrice = totalItems * pricePerItem;
     
     setCameraMaintenancePrice(totalPrice);
-  }, [cameraMaterialLines, cameraMaintenance]);
+  }, [cameraMaterialLines, cameraMaintenance, configValues]);
   
-  // Initialize Fog kit de base on mount
+  // Initialize Fog kit de base on mount. Matches by REF (GEN-BRO/GEN-CLA/
+  // GEN-VOL) rather than a hardcoded id, since ids for sheet-sourced rows
+  // are assigned by row order — the REF is the stable key.
   useEffect(() => {
-    if (fogLines.length === 0 && CATALOG_FOG_PRODUCTS.length > 0) {
+    if (fogLines.length === 0 && fogCatalog.length > 0) {
       const fogKit = [
-        { id: 200, quantity: 1, offered: true }, // Générateur
-        { id: 201, quantity: 1, offered: true }, // Clavier
-        { id: 202, quantity: 1, offered: true }, // Détecteur
+        { ref: 'GEN-BRO', quantity: 1, offered: true }, // Générateur
+        { ref: 'GEN-CLA', quantity: 1, offered: true }, // Clavier
+        { ref: 'GEN-VOL', quantity: 1, offered: true }, // Détecteur
       ];
       
       const newLines: ProductLineData[] = fogKit.map((item, index) => {
-        const product = CATALOG_FOG_PRODUCTS.find(p => p.id === item.id);
+        const product = fogCatalog.find(p => p.ref === item.ref);
         return {
           id: Date.now() + index,
           product: product || null,
@@ -389,18 +402,22 @@ export default function CreateDevisPage() {
       
       setFogLines(newLines);
     }
-  }, []);
+  }, [fogCatalog]);
   
-  // Initialize Visiophone products on mount
+  // Initialize Visiophone products on mount. Matches by name rather than a
+  // hardcoded id since ids for sheet-sourced products are assigned by row
+  // order, not fixed — see fetchVisiophoneProductsFromSheet. Depends on
+  // visiophoneCatalog so this still finds the right products once the live
+  // fetch replaces the static fallback the state started from.
   useEffect(() => {
-    if (visiophoLines.length === 0 && CATALOG_VISIOPHONE_PRODUCTS.length > 0) {
+    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0) {
       const visiophoKit = [
-        { id: 300, quantity: 1, offered: false }, // Interphone
-        { id: 301, quantity: 1, offered: false }, // Écran
+        { match: 'Interphone', quantity: 1, offered: false },
+        { match: 'Ecran', quantity: 1, offered: false }, // matches "Écran"/"Ecran complémentaire" either way
       ];
       
       const newLines: ProductLineData[] = visiophoKit.map((item, index) => {
-        const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === item.id);
+        const product = visiophoneCatalog.find(p => p.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(item.match));
         return {
           id: Date.now() + index,
           product: product || null,
@@ -411,7 +428,7 @@ export default function CreateDevisPage() {
       
       setVisiophoLines(newLines);
     }
-  }, []);
+  }, [visiophoneCatalog]);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -429,7 +446,7 @@ export default function CreateDevisPage() {
         cameraRemoteAccess,
         cameraPaymentMonths,
         cameraRentalMode,
-        CATALOG_CAMERA_MATERIAL
+        cameraCatalog
       );
     } catch (error) {
       console.error('Error calculating camera totals:', error);
@@ -478,6 +495,140 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load commercials from Google Sheet:', error);
         setCommercialsError(
           error instanceof Error ? error.message : 'Échec du chargement des commerciaux'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/visiophone')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Visiophone vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setVisiophoneCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setVisiophoneCatalogError(null);
+        // Seeds the price shown in "🔧 Installation et paramétrage" from the
+        // sheet's "Installation et paramétrage" row (client request) — the
+        // field stays editable, this only sets its starting value.
+        if (typeof result.data.installationPrice === 'number') {
+          setVisiophoInstallationPrice(result.data.installationPrice);
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
+        setVisiophoneCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Visiophone'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/fog')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Fog vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setFogCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setFogCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Fog catalog from Google Sheet:', error);
+        setFogCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Générateur de brouillard'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/alarm')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Alarme vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setAlarmCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setAlarmKits(result.data.kits || {});
+        setAlarmInstallationPrices(result.data.installationPrices || { titane: null, jablotron: null });
+        setAlarmCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Alarm catalog from Google Sheet:', error);
+        setAlarmCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Alarme'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/camera')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Caméras vide ou invalide');
+        }
+        // "Autre" (custom product) is a code-level UI feature, not a sheet
+        // product — always appended so the existing id===99 lookups keep working.
+        setCameraCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setCameraInstallationProducts(result.data.installationProducts || []);
+        setCameraCatalogError(null);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Camera catalog from Google Sheet:', error);
+        setCameraCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Caméras'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/config-values')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !result.data?.config) {
+          throw new Error(result.error || 'Configuration vide ou invalide');
+        }
+        const config: Record<string, number> = result.data.config;
+        setConfigValues(config);
+        setConfigError(null);
+
+        // TVA and admin fees (Carte SIM + Activation, Frais de dossier) are
+        // now single global rows in Config (client consolidated what used
+        // to be separate per-category duplicates — they were all identical
+        // anyway). Applying them here updates every category at once.
+        if (typeof config['TVA'] === 'number') setTvaRate(config['TVA']);
+        if (typeof config['SIM'] === 'number' && typeof config['FD'] === 'number') {
+          setAdminFees(config['SIM'], config['FD']);
+        }
+        // Fog keeps its own editable state for these two fields (unlike
+        // Alarm, which reads ADMIN_FEES directly) — seed their starting
+        // value from Config too, field stays editable afterwards.
+        if (typeof config['SIM'] === 'number') setFogSimCard(config['SIM']);
+        if (typeof config['FD'] === 'number') setFogProcessingFee(config['FD']);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Config values from Google Sheet:', error);
+        setConfigError(
+          error instanceof Error ? error.message : 'Échec du chargement de la configuration'
         );
       });
   }, []);
@@ -740,6 +891,19 @@ export default function CreateDevisPage() {
         </div>
       )}
 
+      {configError && (
+        <div style={{
+          background: '#f8d7da',
+          color: '#721c24',
+          padding: '15px',
+          margin: '20px 0',
+          borderRadius: '8px',
+          border: '1px solid #f5c6cb'
+        }}>
+          ❌ Impossible de charger la configuration (TVA, frais de dossier, carte SIM, services) depuis Google Sheets : {configError}. Les montants affichés utilisent les valeurs par défaut du code, pas forcément à jour.
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="nav-tabs">
         <button 
@@ -774,6 +938,18 @@ export default function CreateDevisPage() {
         className="tab-content" 
         style={{ display: currentTab === 'alarm' ? 'block' : 'none' }}
       >
+        {alarmCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Alarme (Titane/Jablotron) depuis Google Sheets : {alarmCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="rental-toggle-container">
           <span>Mode vente</span>
           <label className="toggle-switch">
@@ -904,13 +1080,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = alarmCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...alarmMaterialLines];
                         newLines[index] = { 
                           ...line, 
@@ -923,12 +1099,12 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      // Try to find in alarm catalog first
-                      let product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      // Try to find in alarm catalog first (by ref)
+                      let product = alarmCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       
-                      // Then try XTO catalog
+                      // Then try XTO catalog (untouched, own migration pass later)
                       if (!product) {
-                        const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productName);
+                        const xtoProduct = CATALOG_XTO_PRODUCTS.find(p => p.name === productKey);
                         if (xtoProduct) {
                           product = {
                             id: xtoProduct.id,
@@ -946,39 +1122,25 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_ALARM_PRODUCTS
+                    {alarmCatalog
                       .filter(product => {
+                        const ref = (product as any).ref as string | undefined;
                         // Hide "Autre" from regular list
                         if (product.isCustom) return false;
-                        // Application (110) + Alimentation de secours (111) are auto-added base-kit
-                        // items: show each only on the line that already holds it (so it displays),
-                        // never as a manually-selectable option (avoids duplicate 0 CHF rows).
-                        if (product.id === 110 || product.id === 111) return line.product?.id === product.id;
-                        // If a central is selected, filter to relevant catalog entries
-                        if (selectedCentral === 'titane') {
-                          return product.price !== undefined || product.priceTitane !== undefined;
-                        }
-                        if (selectedCentral === 'jablotron') {
-                          return (
-                            product.price !== undefined ||
-                            product.priceJablotron !== undefined ||
-                            product.requiresJablotron
-                          );
-                        }
+                        // Application is an auto-added base-kit item: show it only on
+                        // the line that already holds it, never as a manual option
+                        // (avoids duplicate 0 CHF rows).
+                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return (line.product as any)?.ref === ref;
+                        // If a central is selected, filter to that central's refs only
+                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
+                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
                         return true;
                       })
-                      .map(product => {
-                      const price = selectedCentral === 'titane' 
-                        ? (product.priceTitane || product.price || 0)
-                        : selectedCentral === 'jablotron'
-                        ? (product.priceJablotron || product.price || 0)
-                        : (product.price || product.priceTitane || product.priceJablotron || 0);
-                      return (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {price.toFixed(2)} CHF
+                      .map(product => (
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name}
                         </option>
-                      );
-                    })}
+                      ))}
                     {/* Add XTO products only if at least one XTO product is in the lines */}
                     {alarmMaterialLines.some(l => l.product && (l.product as any).isXTO) && CATALOG_XTO_PRODUCTS.map(product => (
                       <option key={`xto-${product.name}`} value={product.name}>
@@ -1022,7 +1184,7 @@ export default function CreateDevisPage() {
                     <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
                   <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || line.product.priceTitane || line.product.priceJablotron || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
                   </div>
                   <button 
                     className="remove-btn"
@@ -1200,14 +1362,6 @@ export default function CreateDevisPage() {
               className="discount-input"
               placeholder="300"
               min="0"
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '120px'
-              }}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
@@ -1251,13 +1405,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_ALARM_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = alarmCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...alarmInstallationLines];
                         newLines[index] = { 
                           ...line, 
@@ -1270,7 +1424,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                      const product = alarmCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       const newLines = [...alarmInstallationLines];
                       newLines[index] = { ...line, product: product || null };
                       setAlarmInstallationLines(newLines);
@@ -1278,25 +1432,20 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_ALARM_PRODUCTS
+                    {alarmCatalog
                       .filter(product => {
-                        if (product.isCustom || product.id === 101 || product.id === 102 || product.id === 110 || product.id === 111) return false;
-                        if (selectedCentral === 'titane' && product.id === 5) return false; // Hide Centrale Jablotron when Titane
-                        if (selectedCentral === 'jablotron' && product.id === 6) return false; // Hide Centrale Titane when Jablotron
+                        const ref = (product as any).ref as string | undefined;
+                        if (product.isCustom) return false;
+                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return false; // Auto-kit item, not a manual option here
+                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
+                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
                         return true;
                       })
-                      .map(product => {
-                        const price = selectedCentral === 'titane'
-                          ? (product.priceTitane ?? product.price ?? 0)
-                          : selectedCentral === 'jablotron'
-                          ? (product.priceJablotron ?? product.price ?? 0)
-                          : (product.price ?? product.priceTitane ?? product.priceJablotron ?? 0);
-                        return (
-                          <option key={product.name} value={product.name}>
-                            {product.name} - {price.toFixed(2)} CHF
-                          </option>
-                        );
-                      })}
+                      .map(product => (
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name}
+                        </option>
+                      ))}
                   </select>
                   <input 
                     type="number" 
@@ -1324,11 +1473,7 @@ export default function CreateDevisPage() {
                     <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                   </div>
                   <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? (() => {
-                      const p = line.product as AlarmProduct;
-                      const unitPrice = line.customPrice ?? (selectedCentral === 'titane' ? (p.priceTitane ?? p.price) : selectedCentral === 'jablotron' ? (p.priceJablotron ?? p.price) : (p.price ?? p.priceTitane ?? p.priceJablotron)) ?? 0;
-                      return `${(unitPrice * line.quantity).toFixed(2)} CHF`;
-                    })() : '0.00 CHF'}
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice ?? line.product.price ?? 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
                   </div>
                   <button 
                     className="remove-btn"
@@ -1502,6 +1647,7 @@ export default function CreateDevisPage() {
           centralType={selectedCentral}
           rentalMode={alarmRentalMode}
           simCardSelected={simcardSelected}
+          configValues={configValues}
         />
 
         {/* Options Section */}
@@ -1659,6 +1805,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'camera' ? 'block' : 'none' }}
       >
+        {cameraCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Caméras depuis Google Sheets : {cameraCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="rental-toggle-container">
           <span>Mode vente</span>
           <label className="toggle-switch">
@@ -1756,13 +1914,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_CAMERA_MATERIAL.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = cameraCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...cameraMaterialLines];
                         newLines[index] = { 
                           ...line, 
@@ -1775,7 +1933,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_CAMERA_MATERIAL.find(p => p.name === productName);
+                      const product = cameraCatalog.find(p => ((p as any).ref || p.name) === productKey);
                       const newLines = [...cameraMaterialLines];
                       newLines[index] = { ...line, product: product || null };
                       setCameraMaterialLines(newLines);
@@ -1783,11 +1941,11 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_CAMERA_MATERIAL
+                    {cameraCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {(product.price || 0).toFixed(2)} CHF
+                        <option key={(product as any).ref || product.name} value={(product as any).ref || product.name}>
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -1882,18 +2040,21 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Installation - demi-journée / journée (like alarm - client feedback) */}
+        {/* Installation — now sourced from Produits_Cameras (INS-1/INS-DEMI-J/
+            INS-J/INS-4G) instead of reaching into the Alarm catalog's ids
+            101/102. INS-4G only shown when Mini Solar (CAM-MINI-SOLAR) is
+            in the material lines, per the Sheet's note on that row. */}
         <div className="quote-section">
           <h3>
             🔧 Installation
             <button 
               className="add-product-btn" 
               onClick={() => {
-                const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                if (halfDayProduct) {
+                const defaultProduct = cameraInstallationProducts.find(p => p.ref === 'INS-DEMI-J') || cameraInstallationProducts[0];
+                if (defaultProduct) {
                   setCameraInstallationLines([...cameraInstallationLines, {
                     id: Date.now(),
-                    product: halfDayProduct,
+                    product: defaultProduct,
                     quantity: 1,
                     offered: false
                   }]);
@@ -1905,22 +2066,34 @@ export default function CreateDevisPage() {
             </button>
           </h3>
           <div id="camera-installation-lines">
-            {cameraInstallationLines.map((line, index) => (
+            {(() => {
+              const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
+              const cameraQty = cameraMaterialLines
+                .filter(l => l.product && (l.product as any).type === 'Caméra')
+                .reduce((sum, l) => sum + l.quantity, 0);
+              const availableInstallProducts = cameraInstallationProducts.filter(p => {
+                if (p.ref === 'INS-4G') return hasMiniSolar;
+                if (p.ref === 'INS-1') return cameraQty === 1;
+                return true;
+              });
+              return cameraInstallationLines.map((line, index) => (
               <div key={line.id} className="product-line">
                 <select 
                   className="product-select"
-                  value={line.product?.name || ''}
+                  value={(line.product as any)?.ref || ''}
                   onChange={(e) => {
-                    const productName = e.target.value;
-                    const product = CATALOG_ALARM_PRODUCTS.find(p => p.name === productName);
+                    const ref = e.target.value;
+                    const product = cameraInstallationProducts.find(p => p.ref === ref);
                     const newLines = [...cameraInstallationLines];
                     newLines[index] = { ...line, product: product || null };
                     setCameraInstallationLines(newLines);
                   }}
                 >
                   <option value="">Sélectionner un type d&apos;installation</option>
-                  <option value="Installation 1/2 journée">Installation 1/2 journée - 690.00 CHF</option>
-                  <option value="Installation 1 journée">Installation 1 journée - 1290.00 CHF</option>
+                  {availableInstallProducts
+                    .map(p => (
+                      <option key={p.ref} value={p.ref}>{p.name}</option>
+                    ))}
                 </select>
                 <input 
                   type="number" 
@@ -1958,32 +2131,34 @@ export default function CreateDevisPage() {
                   ×
                 </button>
               </div>
-            ))}
+              ));
+            })()}
           </div>
           {cameraInstallationLines.length === 0 && (
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button 
-                onClick={() => {
-                  const halfDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 101);
-                  if (halfDayProduct) {
-                    setCameraInstallationLines([{ id: Date.now(), product: halfDayProduct, quantity: 1, offered: false }]);
-                  }
-                }}
-                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #28a745', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#28a745' }}
-              >
-                + Installation 1/2 journée (690 CHF)
-              </button>
-              <button 
-                onClick={() => {
-                  const fullDayProduct = CATALOG_ALARM_PRODUCTS.find(p => p.id === 102);
-                  if (fullDayProduct) {
-                    setCameraInstallationLines([{ id: Date.now(), product: fullDayProduct, quantity: 1, offered: false }]);
-                  }
-                }}
-                style={{ flex: 1, padding: '12px', background: 'white', border: '2px dashed #007bff', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#007bff' }}
-              >
-                + Installation 1 journée (1290 CHF)
-              </button>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {(() => {
+                const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
+                const cameraQty = cameraMaterialLines
+                  .filter(l => l.product && (l.product as any).type === 'Caméra')
+                  .reduce((sum, l) => sum + l.quantity, 0);
+                return cameraInstallationProducts
+                  .filter(p => {
+                    if (p.ref === 'INS-4G') return hasMiniSolar;
+                    if (p.ref === 'INS-1') return cameraQty === 1;
+                    return true;
+                  })
+                  .map((product, i) => (
+                <button 
+                  key={product.ref}
+                  onClick={() => {
+                    setCameraInstallationLines([{ id: Date.now(), product, quantity: 1, offered: false }]);
+                  }}
+                  style={{ flex: 1, minWidth: '140px', padding: '12px', background: 'white', border: `2px dashed ${['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4]}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: ['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4] }}
+                >
+                  + {product.name} ({product.price.toFixed(0)} CHF)
+                </button>
+                ));
+              })()}
             </div>
           )}
           
@@ -2152,7 +2327,7 @@ export default function CreateDevisPage() {
           {cameraVisionDistance && !cameraRentalMode && (
             <div className="summary-item">
               <span>Vision à distance</span>
-              <span>{calculateRemoteAccessPrice(cameraMaterialLines).toFixed(2)} CHF/mois</span>
+              <span>{calculateRemoteAccessPrice(cameraMaterialLines, configValues['CAM-VIS-DIS'] ?? 20).toFixed(2)} CHF/mois</span>
                   </div>
           )}
           {cameraMaintenance && !cameraRentalMode && cameraMaintenancePrice > 0 && (
@@ -2214,6 +2389,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'fog' ? 'block' : 'none' }}
       >
+        {fogCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Générateur de brouillard depuis Google Sheets : {fogCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="form-section">
           <h3>📋 Informations Client</h3>
           <div className="form-grid">
@@ -2279,13 +2466,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = fogCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...fogLines];
                         newLines[index] = { 
                           ...line, 
@@ -2298,7 +2485,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName);
+                      const product = fogCatalog.find(p => (p.ref || p.name) === productKey);
                       const newLines = [...fogLines];
                       newLines[index] = { ...line, product: product || null };
                       setFogLines(newLines);
@@ -2306,11 +2493,11 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_FOG_PRODUCTS
+                    {fogCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                        <option key={product.ref || product.name} value={product.ref || product.name}>
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -2457,13 +2644,13 @@ export default function CreateDevisPage() {
                 <div className="product-line">
                   <select 
                     className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
-                      const productName = e.target.value;
+                      const productKey = e.target.value;
                       
                       // Custom product creation sentinel
-                      if (productName === '__create_custom__') {
-                        const template = CATALOG_FOG_PRODUCTS.find(p => p.id === 99); // Autre
+                      if (productKey === '__create_custom__') {
+                        const template = fogCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...fogAdditionalLines];
                         newLines[index] = { 
                           ...line, 
@@ -2476,7 +2663,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_FOG_PRODUCTS.find(p => p.name === productName && p.id !== 200);
+                      const product = fogCatalog.find(p => (p.ref || p.name) === productKey && p.ref !== 'GEN-BRO');
                       const newLines = [...fogAdditionalLines];
                       newLines[index] = { ...line, product: product || null };
                       setFogAdditionalLines(newLines);
@@ -2484,11 +2671,11 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_FOG_PRODUCTS
-                      .filter(p => p.id !== 200 && !p.isCustom) // Exclude main fog generator and "Autre"
+                    {fogCatalog
+                      .filter(p => p.ref !== 'GEN-BRO' && !p.isCustom) // Exclude main fog generator and "Autre"
                       .map(product => (
-                        <option key={product.name} value={product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                        <option key={product.ref || product.name} value={product.ref || product.name}>
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -2720,6 +2907,18 @@ export default function CreateDevisPage() {
         className="tab-content"
         style={{ display: currentTab === 'visiophone' ? 'block' : 'none' }}
       >
+        {visiophoneCatalogError && (
+          <div style={{
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '15px',
+            margin: '20px 0',
+            borderRadius: '8px',
+            border: '1px solid #f5c6cb'
+          }}>
+            ❌ Impossible de charger les produits Visiophone depuis Google Sheets : {visiophoneCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+          </div>
+        )}
         <div className="form-section">
           <h3>📋 Informations Client</h3>
           <div className="form-grid">
@@ -2791,7 +2990,7 @@ export default function CreateDevisPage() {
                       
                       // Custom product creation sentinel
                       if (productName === '__create_custom__') {
-                        const template = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.id === 99); // Autre
+                        const template = visiophoneCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...visiophoLines];
                         newLines[index] = { 
                           ...line, 
@@ -2804,7 +3003,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = CATALOG_VISIOPHONE_PRODUCTS.find(p => p.name === productName);
+                      const product = visiophoneCatalog.find(p => p.name === productName);
                       const newLines = [...visiophoLines];
                       newLines[index] = { ...line, product: product || null };
                       setVisiophoLines(newLines);
@@ -2812,11 +3011,11 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {CATALOG_VISIOPHONE_PRODUCTS
+                    {visiophoneCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.name} value={product.name}>
-                          {product.name} - {product.price.toFixed(2)} CHF
+                          {product.name}
                         </option>
                       ))}
                   </select>
@@ -3044,7 +3243,7 @@ export default function CreateDevisPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Centrale Titane - 690.00 CHF
+                {titaneCentralProduct ? `${titaneCentralProduct.name} - ${titaneCentralProduct.price.toFixed(2)} CHF` : 'Centrale Titane'}
               </h3>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
@@ -3074,9 +3273,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    2 Détecteurs volumétriques<br />
-                    1 Détecteur d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-TIT-1').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
                 <button
@@ -3106,9 +3303,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    1 Détecteur volumétrique<br />
-                    3 Détecteurs d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-TIT-2').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
               </div>
@@ -3124,7 +3319,7 @@ export default function CreateDevisPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Centrale Jablotron - 990.00 CHF
+                {jablotronCentralProduct ? `${jablotronCentralProduct.name} - ${jablotronCentralProduct.price.toFixed(2)} CHF` : 'Centrale Jablotron'}
               </h3>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <button
@@ -3154,9 +3349,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    2 Détecteurs volumétriques<br />
-                    1 Détecteur d&apos;ouverture<br />
-                    1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-JAB-1').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
                 <button
@@ -3186,9 +3379,7 @@ export default function CreateDevisPage() {
                 >
                   <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
                   <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    1 Détecteur volumétrique<br />
-                    3 Détecteurs d&apos;ouverture<br />
-                  1 Clavier + 1 Sirène
+                    {kitSummaryLines('KIT-JAB-2').map((line, i) => <span key={i}>{line}<br /></span>)}
                   </div>
                 </button>
               </div>

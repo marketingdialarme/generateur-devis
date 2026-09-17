@@ -3,7 +3,11 @@ import {
   calculateFacilityPayment,
   calculateMonthlyFromCashPrice,
   roundToFiveCents,
+  CATALOG_ALARM_PRODUCTS,
+  CATALOG_CAMERA_MATERIAL,
 } from '@/lib/quote-generator';
+import { calculateSectionMonthlyPrice } from '@/lib/calculations';
+import type { ProductLineData, Product } from '@/components/ProductLine';
 import { alarmFixture } from './fixtures';
 
 describe('roundToFiveCents (round UP to 0.05)', () => {
@@ -54,5 +58,46 @@ describe('calculateAlarmTotals — central-priced (Titane) supplementary items m
   it('totalHT = divers+install (1160) + admin (240)', () => {
     expect(totals.adminFees.total).toBe(240);
     expect(totals.totalHT).toBe(1400);
+  });
+});
+
+describe('calculateSectionMonthlyPrice — now uses the Milestone-1 formula for every category', () => {
+  it('Alarme: a 12-month line uses (price * 1.05) / 12, not the old flat monthlyTitane', () => {
+    // Same price point as the old "Détecteur de choc" (290) — old stored
+    // monthlyTitane was a flat 7 regardless of duration. Formula at 12
+    // months: ceil(290*1.05/12) = 26.
+    const line: ProductLineData = {
+      id: 1,
+      product: { id: 11, ref: 'TIT-CHO', name: 'Détecteur de choc', price: 290 } as unknown as Product,
+      quantity: 1,
+      offered: false,
+    };
+    const monthly = calculateSectionMonthlyPrice([line], 12, 'titane', CATALOG_ALARM_PRODUCTS, 'alarm-installation');
+    expect(monthly).toBe(26);
+  });
+
+  it('Alarme: the same line at 48 months uses the 1.2 coefficient, not the same flat value', () => {
+    const line: ProductLineData = {
+      id: 1,
+      product: { id: 11, ref: 'TIT-CHO', name: 'Détecteur de choc', price: 290 } as unknown as Product,
+      quantity: 1,
+      offered: false,
+    };
+    const monthly = calculateSectionMonthlyPrice([line], 48, 'titane', CATALOG_ALARM_PRODUCTS, 'alarm-installation');
+    expect(monthly).toBe(8); // ceil(290*1.2/48) = 8, vs 26 at 12 months above — duration now actually matters
+  });
+
+  it('Caméras: the previously-unhandled 12-month case now applies the formula instead of a plain unmarked-up price/12', () => {
+    // Same price point as the old "Bullet Mini" (390). Old code had no
+    // `months === 12` branch, so it fell back to price / 12 = 32.5
+    // (rounded to 5 cents, not to the franc). Formula: ceil(390*1.05/12) = 35.
+    const line: ProductLineData = {
+      id: 1,
+      product: { id: 23, ref: 'CAM-B-MINI', name: 'Bullet mini', price: 390, type: 'Caméra' } as unknown as Product,
+      quantity: 1,
+      offered: false,
+    };
+    const monthly = calculateSectionMonthlyPrice([line], 12, null, CATALOG_CAMERA_MATERIAL, 'camera-material');
+    expect(monthly).toBe(35);
   });
 });
