@@ -1513,7 +1513,6 @@ export default function CreateDevisPage() {
               value={1}
               className="quantity-input"
               readOnly
-              style={{ background: '#e9ecef' }}
             />
             <input 
               type="number" 
@@ -2756,7 +2755,6 @@ export default function CreateDevisPage() {
               value={1}
               className="quantity-input"
               readOnly
-              style={{ background: '#e9ecef' }}
             />
             <input 
               type="number" 
@@ -3274,7 +3272,6 @@ export default function CreateDevisPage() {
               value={1}
               className="quantity-input"
               readOnly
-              style={{ background: '#e9ecef' }}
             />
             <input 
               type="number" 
