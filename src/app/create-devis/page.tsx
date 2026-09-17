@@ -189,6 +189,15 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
+  // Meme separation que Fog : visiophoLines = Kit de base (contenu par
+  // defaut), visiophoAdditionalLines = Materiel supplementaire (nouveau,
+  // seul endroit pour ajouter du materiel).
+  const [visiophoAdditionalLines, setVisiophoAdditionalLines] = useState<ProductLineData[]>([]);
+  // Contrairement a Alarme/Fog, le kit Visiophone n'est PAS "generalement
+  // offert" par defaut (voir l'effet d'injection plus bas, offered: false)
+  // -- la bascule reste utile au cas par cas, mais son defaut suit celui
+  // deja en place plutot que de copier Alarme/Fog sans verification.
+  const [visiophoKitOffert, setVisiophoKitOffert] = useState(false);
   // No hardcoded fallback (client decision): starts empty, filled once
   // /api/products/visiophone resolves. visiophoneCatalogError drives a
   // visible message in the UI if the Sheet can't be reached, instead of
@@ -530,6 +539,32 @@ export default function CreateDevisPage() {
     fogSimCard,
     fogPaymentMonths
   ]);
+
+  // Visiophone totals — meme principe que Fog, reproduit la logique de
+  // createVisioPDFSections exactement (kit + materiel supplementaire +
+  // installation, pas de frais de dossier pour cette categorie).
+  const visiophoTotals = useMemo(() => {
+    const materialTotal = [...visiophoLines, ...visiophoAdditionalLines].reduce((sum, line) => {
+      if (!line.product || line.offered) return sum;
+      return sum + (line.customPrice || line.product.price || 0) * line.quantity;
+    }, 0);
+    const installationTotal = visiophoInstallationPrice || 0;
+    const totalHT = roundToFiveCents(materialTotal + installationTotal);
+    const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
+
+    let monthly: { totalHT: number; totalTTC: number } | undefined;
+    if (visiophoPaymentMonths > 0) {
+      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, 0, 0, visiophoPaymentMonths));
+      monthly = { totalHT: monthlyHT, totalTTC: roundToFiveCents(monthlyHT * (1 + TVA_RATE)) };
+    }
+
+    return { materialTotal, installationTotal, totalHT, totalTTC, monthly };
+  }, [
+    visiophoLines,
+    visiophoAdditionalLines,
+    visiophoInstallationPrice,
+    visiophoPaymentMonths
+  ]);
       
   const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
   const { assemblePdf, isAssembling, progress: assemblyProgress, error: assemblyError } = usePdfAssembly();
@@ -799,7 +834,7 @@ export default function CreateDevisPage() {
         commercial: finalCommercial,
         isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
         materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
-        installationLines: isAlarm ? alarmInstallationLines : isCamera ? cameraInstallationLines : isFog ? fogAdditionalLines : [],
+        installationLines: isAlarm ? alarmInstallationLines : isCamera ? cameraInstallationLines : isFog ? fogAdditionalLines : isVisio ? visiophoAdditionalLines : [],
         installationQty: isCamera ? cameraInstallationHalfDays : undefined,
         remoteAccess: isCamera ? cameraVisionDistance : undefined,
         totals,
@@ -3077,6 +3112,36 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
+              <label htmlFor="clientPhone-visio">N° de natel</label>
+              <input
+                type="tel"
+                id="clientPhone-visio"
+                placeholder="079 123 45 67"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientEmail-visio">Email</label>
+              <input
+                type="email"
+                id="clientEmail-visio"
+                placeholder="client@exemple.ch"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientAddress-visio">Adresse</label>
+              <input
+                type="text"
+                id="clientAddress-visio"
+                placeholder="Rue, NPA, Ville"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
               <label htmlFor="propertyType-visio">Type de bien</label>
               <select 
                 id="propertyType-visio"
@@ -3103,24 +3168,27 @@ export default function CreateDevisPage() {
           />
         </div>
 
-        {/* Matériel (like alarm section) */}
+        {/* Kit de base — contenu par defaut (Interphone + Ecran), meme
+            traitement que Fog : 'Materiel supplementaire' (nouvelle section
+            juste apres) est le seul endroit pour ajouter du materiel. */}
         <div className="quote-section">
           <h3>
-            Matériel
-            <button 
-              className="add-product-btn" 
-              onClick={() => {
-                setVisiophoLines([...visiophoLines, {
-                  id: Date.now(),
-                  product: null,
-                  quantity: 1,
-                  offered: false
-                }]);
-              }}
-              title="Ajouter un produit"
-            >
-              +
-            </button>
+            🛡️ Kit de base
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+              Kit offert
+              <label className="toggle-switch" title="Le kit est-il offert au client ?">
+                <input
+                  type="checkbox"
+                  checked={visiophoKitOffert}
+                  onChange={() => {
+                    const value = !visiophoKitOffert;
+                    setVisiophoKitOffert(value);
+                    setVisiophoLines(lines => lines.map(l => ({ ...l, offered: value })));
+                  }}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </span>
           </h3>
           <div id="visiophone-material-products">
             {visiophoLines.map((line, index) => (
@@ -3247,6 +3315,140 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
+        {/* Matériel supplémentaire — nouveau, seul endroit pour ajouter du
+            materiel au-dela du kit par defaut (meme structure que Fog). */}
+        <div className="quote-section">
+          <h3>
+            🔧 Matériel supplémentaire
+            <button 
+              className="add-product-btn" 
+              onClick={() => {
+                setVisiophoAdditionalLines([...visiophoAdditionalLines, {
+                  id: Date.now(),
+                  product: null,
+                  quantity: 1,
+                  offered: false
+                }]);
+              }}
+              title="Ajouter un produit"
+            >
+              +
+            </button>
+          </h3>
+          <div id="visiophone-additional-products">
+            {visiophoAdditionalLines.map((line, index) => (
+              <div key={line.id}>
+                <div className="product-line">
+                  <select 
+                    className="product-select"
+                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
+                    onChange={(e) => {
+                      const productName = e.target.value;
+                      
+                      if (productName === '__create_custom__') {
+                        const template = visiophoneCatalog.find(p => p.id === 99);
+                        const newLines = [...visiophoAdditionalLines];
+                        newLines[index] = { 
+                          ...line, 
+                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
+                          offered: false, 
+                          customName: '', 
+                          customPrice: 0 
+                        };
+                        setVisiophoAdditionalLines(newLines);
+                        return;
+                      }
+                      
+                      const product = visiophoneCatalog.find(p => p.name === productName);
+                      const newLines = [...visiophoAdditionalLines];
+                      newLines[index] = { ...line, product: product || null };
+                      setVisiophoAdditionalLines(newLines);
+                    }}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
+                    {visiophoneCatalog
+                      .filter(product => !product.isCustom)
+                      .map(product => (
+                        <option key={product.name} value={product.name}>
+                          {product.name}
+                        </option>
+                      ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...visiophoAdditionalLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setVisiophoAdditionalLines(newLines);
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    min="1"
+                  />
+                  <div className="checkbox-option" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      className="offered-checkbox"
+                      checked={line.offered}
+                      onChange={(e) => {
+                        const newLines = [...visiophoAdditionalLines];
+                        newLines[index] = { ...line, offered: e.target.checked };
+                        setVisiophoAdditionalLines(newLines);
+                      }}
+                    />
+                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+                  </div>
+                  <div className="price-display">
+                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
+                  </div>
+                  <button 
+                    className="remove-btn"
+                    onClick={() => {
+                      setVisiophoAdditionalLines(visiophoAdditionalLines.filter((_, i) => i !== index));
+                    }}
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
+                </div>
+                {line.product?.isCustom && (
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #333333' }}>
+                    <input 
+                      type="text"
+                      placeholder="Nom du produit personnalisé"
+                      value={line.customName || ''}
+                      onChange={(e) => {
+                        const newLines = [...visiophoAdditionalLines];
+                        newLines[index] = { ...line, customName: e.target.value };
+                        setVisiophoAdditionalLines(newLines);
+                      }}
+                      className="discount-input"
+                      style={{ flex: 1 }}
+                    />
+                    <input 
+                      type="number"
+                      placeholder="Prix (CHF)"
+                      value={line.customPrice || ''}
+                      onChange={(e) => {
+                        const newLines = [...visiophoAdditionalLines];
+                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
+                        setVisiophoAdditionalLines(newLines);
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      min="0"
+                      step="0.01"
+                      className="discount-input"
+                      style={{ width: '150px' }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Installation */}
         <div className="quote-section">
           <h3>🔧 Installation et paramétrage</h3>
@@ -3262,16 +3464,9 @@ export default function CreateDevisPage() {
               type="number" 
               value={visiophoInstallationPrice}
               onChange={(e) => setVisiophoInstallationPrice(parseFloat(e.target.value) || 690)}
-              className="price-input"
+              className="discount-input"
               onFocus={(e) => e.target.select()}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '120px'
-              }}
+              style={{ width: '120px' }}
             />
             <div></div>
             <div className="price-display">
@@ -3280,29 +3475,42 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Engagement Duration */}
-        <div className="quote-section">
-          <h3>⏱️ Durée d'engagement</h3>
-          <select
-            value={visiophoPaymentMonths || 48}
-            onChange={(e) => setVisiophoPaymentMonths(parseInt(e.target.value))}
-            style={{ padding: '10px', fontSize: '14px', border: '2px solid #e9ecef', borderRadius: '8px', width: '200px', cursor: 'pointer' }}
-          >
-            <option value={12}>12 mois</option>
-            <option value={24}>24 mois</option>
-            <option value={36}>36 mois</option>
-            <option value={48}>48 mois</option>
-            <option value={60}>60 mois</option>
-          </select>
-        </div>
-
-        {/* Payment Mode */}
+        {/* Durée d'engagement / mode de paiement — meme etat deja partage
+            (visiophoPaymentMonths), select redondant retire. */}
         <PaymentSelector
           selectedMonths={visiophoPaymentMonths}
           onSelect={setVisiophoPaymentMonths}
-          label="Mode de paiement"
+          label="Durée d'engagement"
           excludeComptant={true}
         />
+
+        {/* Summary — construit sur le meme modele qu'Alarme/Cameras/Fog */}
+        <div className="quote-summary">
+          <h3>📊 Récapitulatif du devis</h3>
+          <div className="summary-item">
+            <span>Matériel</span>
+            <span>{roundToFiveCents(roundToFiveCents(visiophoTotals.materialTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+          </div>
+          <div className="summary-item">
+            <span>Installation</span>
+            <span>{roundToFiveCents(roundToFiveCents(visiophoTotals.installationTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+          </div>
+          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+            <span>TOTAL HT</span>
+            <span>{visiophoTotals.totalHT.toFixed(2)} CHF</span>
+          </div>
+          <div className="summary-item" style={{ fontWeight: 600, fontSize: '18px' }}>
+            <span>TOTAL TTC</span>
+            <span>{visiophoTotals.totalTTC.toFixed(2)} CHF</span>
+          </div>
+          {visiophoPaymentMonths > 0 && visiophoTotals.monthly && (
+            <div className="monthly-payment">
+              <strong style={{ fontSize: '16px' }}>
+                💳 Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoPaymentMonths} mois
+              </strong>
+            </div>
+          )}
+        </div>
 
         <div className="action-buttons">
           <button
@@ -3310,7 +3518,7 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
           </button>
         </div>
       </div>

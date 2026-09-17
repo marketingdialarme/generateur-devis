@@ -898,7 +898,10 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
 function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
   const fees = options.feesConfig || {};
   const months = options.paymentMonths ?? 0;
-  const rows: TableRow[] = [...linesToRows(options.materialLines)];
+  const rows: TableRow[] = [
+    ...linesToRows(options.materialLines),
+    ...linesToRows(options.installationLines), // matériel supplémentaire
+  ];
   if ((fees.installationPrice ?? 0) > 0) {
     rows.push({
       name: 'Installation et paramétrage',
