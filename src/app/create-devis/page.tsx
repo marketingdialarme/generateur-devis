@@ -28,6 +28,7 @@ import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { AppSidebar } from '@/components/AppSidebar';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -498,6 +499,33 @@ export default function CreateDevisPage() {
           error instanceof Error ? error.message : 'Échec du chargement des commerciaux'
         );
       });
+  }, []);
+
+  // Soft pre-fill only — /create-devis stays fully usable without ever
+  // logging in. If the browser happens to already have an active session
+  // (the conseiller used the magic link at least once, e.g. to check
+  // /mes-devis), and it resolves to a known commercial_name, use it as the
+  // starting value here so they don't have to pick their own name from the
+  // list every time. Never overrides a value they've already set by hand.
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('profiles')
+        .select('commercial_name')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          const name = (data as { commercial_name?: string } | null)?.commercial_name;
+          if (name) {
+            setCommercial((current) => current || name);
+          }
+        });
+    }).catch(() => {
+      // No session, or Supabase not configured on this environment — fine,
+      // the field just stays manually selectable as before.
+    });
   }, []);
 
   useEffect(() => {
