@@ -28,6 +28,10 @@ interface ServicesSectionProps {
   centralType: 'titane' | 'jablotron' | null;
   rentalMode: boolean;
   simCardSelected: boolean; // For Titane autosurveillance pricing
+
+  // Live prices from the Config sheet (TIT-AUTO-S-SIM, TIT-TEL-PAR, ...).
+  // Falls back to the hardcoded SALE table below if a ref isn't loaded yet.
+  configValues: Record<string, number>;
 }
 
 // Surveillance pricing constants from script.js lines 136-177
@@ -50,6 +54,24 @@ const SURVEILLANCE_PRICES_SALE = {
   }
 };
 
+// Fallback SALE prices, used only if the matching Config ref hasn't loaded
+// yet. Kept in sync loosely; the live Config values (see configValues prop)
+// take priority whenever available.
+const SURVEILLANCE_PRICES_SALE_FALLBACK = {
+  titane: {
+    autosurveillanceSansSim: 69,
+    autosurveillanceAvecSim: 74,
+    telesurveillance: 129,
+    telesurveillancePro: 169
+  },
+  jablotron: {
+    telesurveillance: 149,
+    telesurveillancePro: 179
+  }
+};
+
+// No rental-specific rows exist in Config yet — rental mode keeps using
+// this hardcoded table until the client adds them.
 const SURVEILLANCE_PRICES_RENTAL = {
   titane: {
     autosurveillance: 71,
@@ -85,13 +107,18 @@ export function ServicesSection(props: ServicesSectionProps) {
     onSurveillanceOfferedChange,
     centralType,
     rentalMode,
-    simCardSelected
+    simCardSelected,
+    configValues
   } = props;
 
   // Track the last auto-calculated price so we don't overwrite manual edits.
   const lastAutoSurveillancePriceRef = useRef<number | null>(null);
 
-  // Get available surveillance options based on central type
+  // Available options are driven directly by which Config refs exist for
+  // the selected central (client spec): Titane gets 4 options (2
+  // autosurveillance variants + 2 télésurveillance variants), Jablotron
+  // gets only the 2 télésurveillance variants — no autosurveillance ref
+  // exists for Jablotron in Config.
   const getSurveillanceOptions = () => {
     const baseOptions = [
       { value: '', label: 'Aucun' }
@@ -101,7 +128,8 @@ export function ServicesSection(props: ServicesSectionProps) {
     if (!centralType) {
       return [
         ...baseOptions,
-        { value: 'autosurveillance', label: 'Autosurveillance' },
+        { value: 'autosurveillance-sans-sim', label: 'Autosurveillance sans carte SIM' },
+        { value: 'autosurveillance-avec-sim', label: 'Autosurveillance avec carte SIM' },
         { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
         { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' }
       ];
@@ -116,9 +144,10 @@ export function ServicesSection(props: ServicesSectionProps) {
     } else if (centralType === 'titane') {
       return [
         ...baseOptions,
+        { value: 'autosurveillance-sans-sim', label: 'Autosurveillance sans carte SIM' },
+        { value: 'autosurveillance-avec-sim', label: 'Autosurveillance avec carte SIM' },
         { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
-        { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' },
-        { value: 'autosurveillance', label: 'Autosurveillance' }
+        { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' }
       ];
     }
 
@@ -138,36 +167,51 @@ export function ServicesSection(props: ServicesSectionProps) {
       return;
     }
 
-    // Proper key mapping for price lookup
-    const keyMap: Record<string, string> = {
-      'telesurveillance': 'telesurveillance',
-      'telesurveillance-pro': 'telesurveillancePro',
-      'autosurveillance': 'autosurveillance',
-      'autosurveillance-pro': 'autosurveillancePro'
-    };
-
-    const priceKey = keyMap[surveillanceType];
-    if (!priceKey) {
-      onSurveillancePriceChange(0);
-      return;
-    }
-
-    const prices = rentalMode ? SURVEILLANCE_PRICES_RENTAL : SURVEILLANCE_PRICES_SALE;
     let price = 0;
 
-    if (centralType === 'titane') {
-      price = (prices.titane as any)[priceKey] || 0;
-    } else if (centralType === 'jablotron') {
-      price = (prices.jablotron as any)[priceKey] || 0;
+    if (!rentalMode) {
+      // Sale mode: read straight from Config, one ref per option — no more
+      // "autosurveillance price depends on SIM selection" special case,
+      // since TIT-AUTO-S-SIM / TIT-AUTO-SIM are now two separate options
+      // instead of one option with a hidden SIM-dependent price.
+      const refByOption: Record<string, string> = centralType === 'titane'
+        ? {
+            'autosurveillance-sans-sim': 'TIT-AUTO-S-SIM',
+            'autosurveillance-avec-sim': 'TIT-AUTO-SIM',
+            'telesurveillance': 'TIT-TEL-PAR',
+            'telesurveillance-pro': 'TIT-TEL-PRO',
+          }
+        : {
+            'telesurveillance': 'JAB-TEL-PAR',
+            'telesurveillance-pro': 'JAB-TEL-PRO',
+          };
+      const ref = refByOption[surveillanceType];
+      const fallback = centralType === 'titane'
+        ? {
+            'autosurveillance-sans-sim': SURVEILLANCE_PRICES_SALE_FALLBACK.titane.autosurveillanceSansSim,
+            'autosurveillance-avec-sim': SURVEILLANCE_PRICES_SALE_FALLBACK.titane.autosurveillanceAvecSim,
+            'telesurveillance': SURVEILLANCE_PRICES_SALE_FALLBACK.titane.telesurveillance,
+            'telesurveillance-pro': SURVEILLANCE_PRICES_SALE_FALLBACK.titane.telesurveillancePro,
+          }[surveillanceType]
+        : {
+            'telesurveillance': SURVEILLANCE_PRICES_SALE_FALLBACK.jablotron.telesurveillance,
+            'telesurveillance-pro': SURVEILLANCE_PRICES_SALE_FALLBACK.jablotron.telesurveillancePro,
+          }[surveillanceType];
+      price = (ref && typeof configValues[ref] === 'number') ? configValues[ref] : (fallback ?? 0);
     } else {
-      price = (prices.default as any)[priceKey] || 0;
-    }
-
-    // Client feedback: Titane autosurveillance depends on SIM selection
-    // - Autosurveillance WITHOUT SIM: 59 CHF/mois
-    // - Autosurveillance WITH SIM: 64 CHF/mois
-    if (!rentalMode && centralType === 'titane' && surveillanceType === 'autosurveillance') {
-      price = simCardSelected ? 64 : 59;
+      // Rental mode: no Config refs exist yet for these, stays on the
+      // hardcoded table until the client adds rental-specific rows.
+      const keyMap: Record<string, string> = {
+        'telesurveillance': 'telesurveillance',
+        'telesurveillance-pro': 'telesurveillancePro',
+        'autosurveillance-sans-sim': 'autosurveillance',
+        'autosurveillance-avec-sim': 'autosurveillance',
+      };
+      const priceKey = keyMap[surveillanceType];
+      if (priceKey) {
+        const prices = centralType === 'titane' ? SURVEILLANCE_PRICES_RENTAL.titane : SURVEILLANCE_PRICES_RENTAL.jablotron;
+        price = (prices as any)[priceKey] || 0;
+      }
     }
 
     // Only auto-update if the user hasn't manually overridden the price.
@@ -177,7 +221,7 @@ export function ServicesSection(props: ServicesSectionProps) {
       lastAutoSurveillancePriceRef.current = price;
       onSurveillancePriceChange(price);
     }
-  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange]);
+  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, configValues]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;

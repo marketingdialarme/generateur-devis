@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { jsPDF } from 'jspdf';
 import { generateQuotePDF, type PDFGenerationOptions } from '@/lib/pdf-generator';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_FOG_PRODUCTS, CATALOG_VISIOPHONE_PRODUCTS } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS } from '@/lib/quote-generator';
 import type { ProductLineData } from '@/components/ProductLine';
 
 const outDir = join(process.cwd(), 'scripts', '_out');
@@ -43,25 +43,40 @@ const alarmTotals = calculateAlarmTotals(
 );
 
 // ---------- CAMERA ----------
-const pc = (id: number) => CATALOG_CAMERA_MATERIAL.find((x) => x.id === id)!;
+const cameraProducts: Record<number, { id: number; ref: string; name: string; price: number; type: string; is4G?: boolean }> = {
+  23: { id: 23, ref: 'CAM-B-MINI', name: 'Bullet mini', price: 390, type: 'Caméra' },
+  50: { id: 50, ref: 'NVR-14', name: 'NVR 1 à 4 caméras', price: 990, type: 'NVR' },
+  38: { id: 38, ref: 'MODEM', name: 'Modem 4G', price: 290, type: 'Modem', is4G: true },
+};
+const pc = (id: number) => cameraProducts[id];
 const cl = (id: number, quantity: number, offered: boolean): ProductLineData => ({
-  id: _id++, product: pc(id), quantity, offered,
+  id: _id++, product: pc(id) as any, quantity, offered,
 });
 const cameraMaterial: ProductLineData[] = [cl(23, 2, false), cl(50, 1, false), cl(38, 1, false)];
 const cameraTotals = calculateCameraTotals(
   cameraMaterial, undefined,
   { quantity: 2, isOffered: false },
-  undefined, false, true, 48, false, CATALOG_CAMERA_MATERIAL,
+  undefined, false, true, 48, false, [],
 );
 
 // ---------- FOG ----------
-const pf = (id: number) => CATALOG_FOG_PRODUCTS.find((x) => x.id === id)!;
+const fogProducts: Record<number, { id: number; name: string; price: number; ref: string }> = {
+  200: { id: 200, name: 'Générateur de brouillard', price: 2990, ref: 'GEN-BRO' },
+  201: { id: 201, name: 'Clavier de porte', price: 390, ref: 'GEN-CLA' },
+  202: { id: 202, name: 'Détecteur volumétrique', price: 240, ref: 'GEN-VOL' },
+  205: { id: 205, name: 'Support mural fixe', price: 290, ref: 'GEN-SUP-FIX' },
+};
+const pf = (id: number) => fogProducts[id];
 const fl = (id: number, quantity: number): ProductLineData => ({ id: _id++, product: pf(id) as any, quantity, offered: false });
 const fogMaterial: ProductLineData[] = [fl(200, 1), fl(201, 1), fl(202, 1)];
 const fogAdditional: ProductLineData[] = [fl(205, 1)];
 
 // ---------- VISIOPHONE ----------
-const pv = (id: number) => CATALOG_VISIOPHONE_PRODUCTS.find((x) => x.id === id)!;
+const visioProducts: Record<number, { id: number; name: string; price: number }> = {
+  300: { id: 300, name: 'Interphone', price: 990 },
+  301: { id: 301, name: 'Ecran complémentaire', price: 490 },
+};
+const pv = (id: number) => visioProducts[id];
 const vl = (id: number, quantity: number): ProductLineData => ({ id: _id++, product: pv(id) as any, quantity, offered: false });
 const visioMaterial: ProductLineData[] = [vl(300, 1), vl(301, 1)];
 

@@ -5,16 +5,12 @@
 import { calculateAlarmTotals, calculateCameraTotals, type DiscountConfig } from '@/lib/calculations';
 import {
   CATALOG_ALARM_PRODUCTS,
-  CATALOG_CAMERA_MATERIAL,
-  CATALOG_FOG_PRODUCTS,
-  CATALOG_VISIOPHONE_PRODUCTS,
 } from '@/lib/quote-generator';
 import type { ProductLineData, Product } from '@/components/ProductLine';
 import type { PDFGenerationOptions } from '@/lib/pdf-generator';
 
 let _id = 1;
 const nextId = () => _id++;
-const find = (cat: Array<{ id: number }>, id: number) => cat.find((x) => x.id === id) as unknown as Product;
 
 export function alarmFixture(opts: {
   simCardSelected?: boolean;
@@ -26,21 +22,21 @@ export function alarmFixture(opts: {
   surveillancePrice?: number;
 } = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
+  const p = (ref: string, name: string, price: number): Product => ({ id: nextId(), ref, name, price } as unknown as Product);
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 6), quantity: 1, offered: true }, // Centrale Titane 690
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 8), quantity: 2, offered: true }, // Vol 240
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 10), quantity: 1, offered: true }, // Ouverture 190
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 7), quantity: 1, offered: true }, // Clavier 390
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 110), quantity: 1, offered: true }, // Application
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 111), quantity: 1, offered: true }, // Alimentation de secours
+    { id: nextId(), product: p('TIT-CEN', 'Centrale Titane', 690), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-VOL-RADIO', 'Détecteur volumétrique (radio)', 240), quantity: 2, offered: true },
+    { id: nextId(), product: p('TIT-OUV', "Détecteur d'ouverture (radio)", 190), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-CLA', 'Clavier', 390), quantity: 1, offered: true },
+    { id: nextId(), product: p('TIT-APP', 'Application', 0), quantity: 1, offered: true },
   ];
   if (opts.extraMaterial) {
-    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 14), quantity: 1, offered: false }); // Mouvement ext photo 690
-    material.push({ id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 2, offered: false }); // fumée Titane 190
+    material.push({ id: nextId(), product: p('TIT-MOU-EXT', 'Détecteur de mouvement extérieur', 690), quantity: 1, offered: false });
+    material.push({ id: nextId(), product: p('TIT-FUM', 'Détecteur de fumée', 190), quantity: 2, offered: false });
   }
   const install: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 11), quantity: 1, offered: false }, // choc Titane 290
-    { id: nextId(), product: find(CATALOG_ALARM_PRODUCTS, 13), quantity: 3, offered: false }, // fumée Titane 190
+    { id: nextId(), product: p('TIT-CHO', 'Détecteur de choc', 290), quantity: 1, offered: false },
+    { id: nextId(), product: p('TIT-FUM', 'Détecteur de fumée', 190), quantity: 3, offered: false },
   ];
   const services = {
     testCyclique: { selected: true, price: 0, offered: true },
@@ -80,10 +76,12 @@ export function alarmFixture(opts: {
 }
 
 export function cameraFixture() {
+  const c = (ref: string, name: string, price: number, type: string, is4G = false): Product =>
+    ({ id: nextId(), ref, name, price, type, is4G } as unknown as Product);
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 23), quantity: 2, offered: false }, // Bullet Mini 390
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 50), quantity: 1, offered: false }, // NVR 990
-    { id: nextId(), product: find(CATALOG_CAMERA_MATERIAL, 38), quantity: 1, offered: false }, // Modem 290
+    { id: nextId(), product: c('CAM-B-MINI', 'Bullet mini', 390, 'Caméra'), quantity: 2, offered: false },
+    { id: nextId(), product: c('NVR-14', 'NVR 1 à 4 caméras', 990, 'NVR'), quantity: 1, offered: false },
+    { id: nextId(), product: c('MODEM', 'Modem 4G', 290, 'Modem', true), quantity: 1, offered: false },
   ];
   const totals = calculateCameraTotals(
     material,
@@ -94,7 +92,7 @@ export function cameraFixture() {
     true,
     48,
     false,
-    CATALOG_CAMERA_MATERIAL,
+    [],
   );
   const options: PDFGenerationOptions = {
     type: 'camera',
@@ -112,11 +110,11 @@ export function cameraFixture() {
 
 export function fogFixture() {
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 200), quantity: 1, offered: false }, // Générateur 2990
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 201), quantity: 1, offered: false }, // Clavier 390
+    { id: nextId(), product: { id: 200, name: 'Générateur de brouillard', price: 2990, ref: 'GEN-BRO' } as Product, quantity: 1, offered: false },
+    { id: nextId(), product: { id: 201, name: 'Clavier de porte', price: 390, ref: 'GEN-CLA' } as Product, quantity: 1, offered: false },
   ];
   const additional: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_FOG_PRODUCTS, 205), quantity: 1, offered: false }, // Support 290
+    { id: nextId(), product: { id: 205, name: 'Support mural fixe', price: 290, ref: 'GEN-SUP-FIX' } as Product, quantity: 1, offered: false },
   ];
   const options: PDFGenerationOptions = {
     type: 'fog',
@@ -133,8 +131,8 @@ export function fogFixture() {
 
 export function visioFixture() {
   const material: ProductLineData[] = [
-    { id: nextId(), product: find(CATALOG_VISIOPHONE_PRODUCTS, 300), quantity: 1, offered: false }, // Interphone 990
-    { id: nextId(), product: find(CATALOG_VISIOPHONE_PRODUCTS, 301), quantity: 1, offered: false }, // Écran 490
+    { id: nextId(), product: { id: 300, name: 'Interphone', price: 990 } as Product, quantity: 1, offered: false },
+    { id: nextId(), product: { id: 301, name: 'Ecran complémentaire', price: 490 } as Product, quantity: 1, offered: false },
   ];
   const options: PDFGenerationOptions = {
     type: 'visiophone',

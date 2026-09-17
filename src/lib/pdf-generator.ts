@@ -100,13 +100,9 @@ function getLineUnitPrice(line: ProductLineData, selectedCentral: 'titane' | 'ja
   // Treat customPrice as explicit override for any product
   if (line.customPrice !== undefined) return line.customPrice;
 
-  if (product.price !== undefined) return product.price;
-  if (selectedCentral === 'titane' && product.priceTitane !== undefined) return product.priceTitane;
-  if (selectedCentral === 'jablotron' && product.priceJablotron !== undefined) return product.priceJablotron;
-  // Fallback (legacy behavior): if central type is unknown, pick any available central-specific price
-  if (selectedCentral === null && product.priceTitane !== undefined) return product.priceTitane;
-  if (selectedCentral === null && product.priceJablotron !== undefined) return product.priceJablotron;
-  return 0;
+  // Every catalog product now carries a single `price` (Titane/Jablotron
+  // are separate sheet rows, not one entry with priceTitane/priceJablotron).
+  return product.price ?? 0;
 }
 
 // ============================================
