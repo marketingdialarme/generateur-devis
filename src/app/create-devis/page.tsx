@@ -1227,6 +1227,12 @@ export default function CreateDevisPage() {
                 Partir de la centrale seule, sans kit prédéfini
               </button>
             </div>
+          {/* Les lignes de détail du kit restent masquées une fois une carte
+              choisie — client feedback : le matériel supplémentaire au-delà
+              du kit se gère dans la section "Matériel divers" séparée, pas
+              ici. Ne s'affiche que pour la centrale seule (sans kit). */}
+          {selectedKitNumber === null && (
+          <>
           <div id="alarm-material-products">
             {alarmMaterialLines.map((line, index) => (
               <div key={line.id}>
@@ -1396,13 +1402,13 @@ export default function CreateDevisPage() {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: 'white',
-                border: '2px dashed #007bff',
+                background: 'transparent',
+                border: '2px dashed #333333',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: 500,
-                color: '#007bff',
+                color: '#9a9a9a',
                 marginTop: '10px',
                 marginBottom: '15px',
                 transition: 'all 0.2s',
@@ -1412,17 +1418,19 @@ export default function CreateDevisPage() {
                 gap: '8px'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = '#f0f8ff';
-                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.borderColor = '#fffd01';
+                e.currentTarget.style.color = '#fff';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = '#333333';
+                e.currentTarget.style.color = '#9a9a9a';
               }}
             >
               <span style={{ fontSize: '16px' }}>+</span>
               <span>Ajouter un produit supplémentaire</span>
             </button>
+          )}
+          </>
           )}
           
           <div className="discount-section">
