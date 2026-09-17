@@ -45,6 +45,12 @@ export default function CreateDevisPage() {
 
   // Client info state
   const [clientName, setClientName] = useState('');
+  // Nouveaux champs (n'existaient pas avant cette refonte) — pas encore
+  // branches au PDF ni a l'enregistrement du devis, juste capturables dans
+  // le formulaire pour l'instant.
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
   const [commercial, setCommercial] = useState('');
   const [customCommercial, setCustomCommercial] = useState('');
   const [showCustomCommercial, setShowCustomCommercial] = useState(false);
@@ -130,6 +136,11 @@ export default function CreateDevisPage() {
   // Which central is highlighted in the inline Kit de base cards before any
   // kit has actually been applied yet (alarmMaterialLines is still empty).
   const [preCentral, setPreCentral] = useState<'titane' | 'jablotron'>('titane');
+  // Which kit number (1 or 2) is currently applied, so the kit cards stay
+  // visible and highlighted after selection instead of disappearing —
+  // client feedback: don't replace the cards with the product-line list,
+  // keep both visible at once.
+  const [selectedKitNumber, setSelectedKitNumber] = useState<1 | 2 | null>(null);
   
   // Engagement duration state
   const [engagementMonths, setEngagementMonths] = useState(48);
@@ -197,6 +208,7 @@ export default function CreateDevisPage() {
   const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
     const centralRef = centralType === 'jablotron' ? 'JAB-CEN' : 'TIT-CEN';
     const centralProduct = alarmCatalog.find(p => (p as any).ref === centralRef);
+    setPreCentral(centralType);
 
     // Installation (TIT-INS/JAB-INS) is not a material line — it feeds the
     // separate "🔧 Installation" section's price instead (client request).
@@ -219,6 +231,7 @@ export default function CreateDevisPage() {
         });
       }
       setAlarmMaterialLines(newLines);
+      setSelectedKitNumber(null);
       setIsCustomKit(true); // Mark as custom kit
       return;
     }
@@ -242,6 +255,7 @@ export default function CreateDevisPage() {
     }).filter(line => line.product);
 
     setAlarmMaterialLines(newLines);
+    setSelectedKitNumber(kitType === 'kit1' ? 1 : 2);
     setIsCustomKit(false); // Reset custom kit flag for normal kits
   };
 
@@ -1027,12 +1041,41 @@ export default function CreateDevisPage() {
                     />
                   </div>
             <div className="form-group">
+              <label htmlFor="clientPhone-alarm">N° de natel</label>
+              <input
+                type="tel"
+                id="clientPhone-alarm"
+                placeholder="079 123 45 67"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientEmail-alarm">Email</label>
+              <input
+                type="email"
+                id="clientEmail-alarm"
+                placeholder="client@exemple.ch"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientAddress-alarm">Adresse</label>
+              <input
+                type="text"
+                id="clientAddress-alarm"
+                placeholder="Rue, NPA, Ville"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
               <label htmlFor="propertyType">Type de bien</label>
               <select 
                 id="propertyType"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value as any)}
-                style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
               >
                 <option value="locaux">Locaux</option>
                 <option value="habitation">Habitation</option>
@@ -1048,7 +1091,6 @@ export default function CreateDevisPage() {
                   id="commercial" 
                   value={showCustomCommercial ? 'autre' : commercial}
                   onChange={(e) => handleCommercialSelection(e.target.value)}
-                  style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
                 >
                   <option value="">Sélectionner un commercial</option>
                   {commercialsList.map(name => (
@@ -1112,13 +1154,16 @@ export default function CreateDevisPage() {
             </span>
           </h3>
           
-          {/* Kit de base — cartes en ligne (remplace l'ancienne fenêtre popup) */}
-          {alarmMaterialLines.length === 0 && (
-            <div style={{ marginBottom: 15 }}>
+          {/* Kit de base — cartes en ligne, toujours visibles (ne disparaissent
+              pas une fois un kit choisi, pour qu'on puisse voir/changer le
+              choix sans que la liste de matériel ne les remplace). */}
+          <div style={{ marginBottom: 15 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 {(['titane', 'jablotron'] as const).map((central) => {
                   const centralProduct = central === 'titane' ? titaneCentralProduct : jablotronCentralProduct;
-                  const active = preCentral === central;
+                  // Once a central is actually applied, reflect that; before
+                  // anything's chosen, reflect only what's being previewed.
+                  const active = (selectedCentral || preCentral) === central;
                   return (
                     <div
                       key={central}
@@ -1135,7 +1180,7 @@ export default function CreateDevisPage() {
                         color: active ? '#fff' : '#9a9a9a',
                       }}
                     >
-                      {centralProduct ? `${centralProduct.name} — ${centralProduct.price.toFixed(2)} CHF` : (central === 'titane' ? 'Titane' : 'Jablotron')}
+                      {centralProduct ? centralProduct.name : (central === 'titane' ? 'Titane' : 'Jablotron')}
                     </div>
                   );
                 })}
@@ -1143,6 +1188,9 @@ export default function CreateDevisPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['kit1', 'kit2'] as const).map((kitType, i) => {
                   const kitKey = `KIT-${preCentral === 'jablotron' ? 'JAB' : 'TIT'}-${i + 1}`;
+                  // Only shows as selected when the previewed central is the
+                  // one actually applied AND this is the kit number applied.
+                  const active = selectedCentral === preCentral && selectedKitNumber === i + 1;
                   return (
                     <div
                       key={kitType}
@@ -1151,8 +1199,8 @@ export default function CreateDevisPage() {
                         borderRadius: 10,
                         padding: 12,
                         cursor: 'pointer',
-                        border: '1px solid #333333',
-                        background: '#151515',
+                        border: `1px solid ${active ? '#fffd01' : '#333333'}`,
+                        background: active ? 'rgba(255,253,1,0.08)' : '#151515',
                       }}
                     >
                       <div style={{ fontWeight: 500, fontSize: 13, color: '#fff', marginBottom: 4 }}>Kit {i + 1}</div>
@@ -1179,7 +1227,6 @@ export default function CreateDevisPage() {
                 Partir de la centrale seule, sans kit prédéfini
               </button>
             </div>
-          )}
           <div id="alarm-material-products">
             {alarmMaterialLines.map((line, index) => (
               <div key={line.id}>
@@ -1451,7 +1498,7 @@ export default function CreateDevisPage() {
         {/* Installation - 300 CHF editable (client feedback) */}
         <div className="quote-section">
           <h3>🔧 Installation</h3>
-          <div className="product-line" style={{ background: '#f0f8ff' }}>
+          <div className="product-line" style={{ background: '#0a0a0a' }}>
             <div>Installation et paramétrage</div>
             <input 
               type="number" 
