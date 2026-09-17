@@ -52,6 +52,11 @@ export default function CreateDevisPage() {
   
   // Product lines state - now using ProductLineData type
   const [alarmMaterialLines, setAlarmMaterialLines] = useState<ProductLineData[]>([]);
+  // Master toggle for the kit's "offert" state — client feedback: kits are
+  // usually offered (the client only pays frais de dossier/matériel
+  // supplémentaire/installation/etc.), so it defaults on and flips every
+  // current kit line at once instead of toggling each line individually.
+  const [kitOffert, setKitOffert] = useState(true);
   const [alarmInstallationLines, setAlarmInstallationLines] = useState<ProductLineData[]>([]);
   const [cameraMaterialLines, setCameraMaterialLines] = useState<ProductLineData[]>([]);
   
@@ -231,7 +236,7 @@ export default function CreateDevisPage() {
         id: Date.now() + index,
         product: product || null,
         quantity: item.quantity,
-        offered: true
+        offered: kitOffert
       };
     }).filter(line => line.product);
 
@@ -1072,6 +1077,23 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>
             🛡️ Choix Kit de base
+            <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+                Kit offert
+                <label className="toggle-switch" title="Le kit est-il offert au client ?">
+                  <input
+                    type="checkbox"
+                    checked={kitOffert}
+                    onChange={() => {
+                      const value = !kitOffert;
+                      setKitOffert(value);
+                      // Also flip every kit line already on screen, not just future applyKit calls.
+                      setAlarmMaterialLines(lines => lines.map(l => ({ ...l, offered: value })));
+                    }}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </span>
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -1087,6 +1109,7 @@ export default function CreateDevisPage() {
             >
               +
             </button>
+            </span>
           </h3>
           
           {/* Button to open kit selection modal */}
