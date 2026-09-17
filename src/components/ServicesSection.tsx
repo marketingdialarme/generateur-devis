@@ -124,11 +124,19 @@ export function ServicesSection(props: ServicesSectionProps) {
       { value: '', label: 'Aucun' }
     ];
 
+    // Client feedback: don't offer "autosurveillance sans carte SIM" when a
+    // SIM card is already included in the quote — doesn't make sense to
+    // propose the no-SIM variant when one is being sold as part of the same
+    // devis.
+    const autosurveillanceSansSim = simCardSelected
+      ? []
+      : [{ value: 'autosurveillance-sans-sim', label: 'Autosurveillance sans carte SIM' }];
+
     // If no central type, show all options with manual pricing
     if (!centralType) {
       return [
         ...baseOptions,
-        { value: 'autosurveillance-sans-sim', label: 'Autosurveillance sans carte SIM' },
+        ...autosurveillanceSansSim,
         { value: 'autosurveillance-avec-sim', label: 'Autosurveillance avec carte SIM' },
         { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
         { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' }
@@ -144,7 +152,7 @@ export function ServicesSection(props: ServicesSectionProps) {
     } else if (centralType === 'titane') {
       return [
         ...baseOptions,
-        { value: 'autosurveillance-sans-sim', label: 'Autosurveillance sans carte SIM' },
+        ...autosurveillanceSansSim,
         { value: 'autosurveillance-avec-sim', label: 'Autosurveillance avec carte SIM' },
         { value: 'telesurveillance', label: 'Télésurveillance Particulier' },
         { value: 'telesurveillance-pro', label: 'Télésurveillance Professionnel' }
@@ -156,6 +164,14 @@ export function ServicesSection(props: ServicesSectionProps) {
 
   // Auto-update surveillance price when type changes
   useEffect(() => {
+    // If a SIM card gets included while "sans carte SIM" was selected, that
+    // option just disappeared from the list — clear it rather than leave
+    // the field stuck on a now-hidden value.
+    if (surveillanceType === 'autosurveillance-sans-sim' && simCardSelected) {
+      onSurveillanceTypeChange('');
+      return;
+    }
+
     if (!surveillanceType) {
       onSurveillancePriceChange(0);
       lastAutoSurveillancePriceRef.current = null;
@@ -221,7 +237,7 @@ export function ServicesSection(props: ServicesSectionProps) {
       lastAutoSurveillancePriceRef.current = price;
       onSurveillancePriceChange(price);
     }
-  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, configValues]);
+  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, onSurveillanceTypeChange, configValues]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
