@@ -189,10 +189,6 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
-  // Meme separation que Fog : visiophoLines = Kit de base (contenu par
-  // defaut), visiophoAdditionalLines = Materiel supplementaire (nouveau,
-  // seul endroit pour ajouter du materiel).
-  const [visiophoAdditionalLines, setVisiophoAdditionalLines] = useState<ProductLineData[]>([]);
   // Contrairement a Alarme/Fog, le kit Visiophone n'est PAS "generalement
   // offert" par defaut (voir l'effet d'injection plus bas, offered: false)
   // -- la bascule reste utile au cas par cas, mais son defaut suit celui
@@ -544,7 +540,7 @@ export default function CreateDevisPage() {
   // createVisioPDFSections exactement (kit + materiel supplementaire +
   // installation, pas de frais de dossier pour cette categorie).
   const visiophoTotals = useMemo(() => {
-    const materialTotal = [...visiophoLines, ...visiophoAdditionalLines].reduce((sum, line) => {
+    const materialTotal = visiophoLines.reduce((sum, line) => {
       if (!line.product || line.offered) return sum;
       return sum + (line.customPrice || line.product.price || 0) * line.quantity;
     }, 0);
@@ -561,7 +557,6 @@ export default function CreateDevisPage() {
     return { materialTotal, installationTotal, totalHT, totalTTC, monthly };
   }, [
     visiophoLines,
-    visiophoAdditionalLines,
     visiophoInstallationPrice,
     visiophoPaymentMonths
   ]);
@@ -834,7 +829,7 @@ export default function CreateDevisPage() {
         commercial: finalCommercial,
         isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
         materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
-        installationLines: isAlarm ? alarmInstallationLines : isCamera ? cameraInstallationLines : isFog ? fogAdditionalLines : isVisio ? visiophoAdditionalLines : [],
+        installationLines: isAlarm ? alarmInstallationLines : isCamera ? cameraInstallationLines : isFog ? fogAdditionalLines : [],
         installationQty: isCamera ? cameraInstallationHalfDays : undefined,
         remoteAccess: isCamera ? cameraVisionDistance : undefined,
         totals,
@@ -3168,26 +3163,42 @@ export default function CreateDevisPage() {
           />
         </div>
 
-        {/* Kit de base — contenu par defaut (Interphone + Ecran), meme
-            traitement que Fog : 'Materiel supplementaire' (nouvelle section
-            juste apres) est le seul endroit pour ajouter du materiel. */}
+        {/* Kit de base — contenu par defaut (Interphone + Ecran), + reste
+            possible ici (client feedback : pas besoin d'une section
+            Materiel supplementaire separee pour cette categorie). */}
         <div className="quote-section">
           <h3>
             🛡️ Kit de base
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
-              Kit offert
-              <label className="toggle-switch" title="Le kit est-il offert au client ?">
-                <input
-                  type="checkbox"
-                  checked={visiophoKitOffert}
-                  onChange={() => {
-                    const value = !visiophoKitOffert;
-                    setVisiophoKitOffert(value);
-                    setVisiophoLines(lines => lines.map(l => ({ ...l, offered: value })));
-                  }}
-                />
-                <span className="toggle-slider"></span>
-              </label>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+                Kit offert
+                <label className="toggle-switch" title="Le kit est-il offert au client ?">
+                  <input
+                    type="checkbox"
+                    checked={visiophoKitOffert}
+                    onChange={() => {
+                      const value = !visiophoKitOffert;
+                      setVisiophoKitOffert(value);
+                      setVisiophoLines(lines => lines.map(l => ({ ...l, offered: value })));
+                    }}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </span>
+              <button 
+                className="add-product-btn" 
+                onClick={() => {
+                  setVisiophoLines([...visiophoLines, {
+                    id: Date.now(),
+                    product: null,
+                    quantity: 1,
+                    offered: false
+                  }]);
+                }}
+                title="Ajouter un produit"
+              >
+                +
+              </button>
             </span>
           </h3>
           <div id="visiophone-material-products">
@@ -3315,139 +3326,6 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Matériel supplémentaire — nouveau, seul endroit pour ajouter du
-            materiel au-dela du kit par defaut (meme structure que Fog). */}
-        <div className="quote-section">
-          <h3>
-            🔧 Matériel supplémentaire
-            <button 
-              className="add-product-btn" 
-              onClick={() => {
-                setVisiophoAdditionalLines([...visiophoAdditionalLines, {
-                  id: Date.now(),
-                  product: null,
-                  quantity: 1,
-                  offered: false
-                }]);
-              }}
-              title="Ajouter un produit"
-            >
-              +
-            </button>
-          </h3>
-          <div id="visiophone-additional-products">
-            {visiophoAdditionalLines.map((line, index) => (
-              <div key={line.id}>
-                <div className="product-line">
-                  <select 
-                    className="product-select"
-                    value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
-                    onChange={(e) => {
-                      const productName = e.target.value;
-                      
-                      if (productName === '__create_custom__') {
-                        const template = visiophoneCatalog.find(p => p.id === 99);
-                        const newLines = [...visiophoAdditionalLines];
-                        newLines[index] = { 
-                          ...line, 
-                          product: template || ({ id: 99, name: 'Autre', isCustom: true } as any), 
-                          offered: false, 
-                          customName: '', 
-                          customPrice: 0 
-                        };
-                        setVisiophoAdditionalLines(newLines);
-                        return;
-                      }
-                      
-                      const product = visiophoneCatalog.find(p => p.name === productName);
-                      const newLines = [...visiophoAdditionalLines];
-                      newLines[index] = { ...line, product: product || null };
-                      setVisiophoAdditionalLines(newLines);
-                    }}
-                  >
-                    <option value="">Sélectionner un produit</option>
-                    <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {visiophoneCatalog
-                      .filter(product => !product.isCustom)
-                      .map(product => (
-                        <option key={product.name} value={product.name}>
-                          {product.name}
-                        </option>
-                      ))}
-                  </select>
-                  <input 
-                    type="number" 
-                    className="quantity-input"
-                    value={line.quantity}
-                    onChange={(e) => {
-                      const newLines = [...visiophoAdditionalLines];
-                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
-                      setVisiophoAdditionalLines(newLines);
-                    }}
-                    onFocus={(e) => e.target.select()}
-                    min="1"
-                  />
-                  <div className="checkbox-option" style={{ margin: 0 }}>
-                    <input 
-                      type="checkbox" 
-                      className="offered-checkbox"
-                      checked={line.offered}
-                      onChange={(e) => {
-                        const newLines = [...visiophoAdditionalLines];
-                        newLines[index] = { ...line, offered: e.target.checked };
-                        setVisiophoAdditionalLines(newLines);
-                      }}
-                    />
-                    <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
-                  </div>
-                  <div className="price-display">
-                    {line.offered ? 'OFFERT' : line.product ? `${((line.customPrice || line.product.price || 0) * line.quantity).toFixed(2)} CHF` : '0.00 CHF'}
-                  </div>
-                  <button 
-                    className="remove-btn"
-                    onClick={() => {
-                      setVisiophoAdditionalLines(visiophoAdditionalLines.filter((_, i) => i !== index));
-                    }}
-                    title="Supprimer"
-                  >
-                    ×
-                  </button>
-                </div>
-                {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #333333' }}>
-                    <input 
-                      type="text"
-                      placeholder="Nom du produit personnalisé"
-                      value={line.customName || ''}
-                      onChange={(e) => {
-                        const newLines = [...visiophoAdditionalLines];
-                        newLines[index] = { ...line, customName: e.target.value };
-                        setVisiophoAdditionalLines(newLines);
-                      }}
-                      className="discount-input"
-                      style={{ flex: 1 }}
-                    />
-                    <input 
-                      type="number"
-                      placeholder="Prix (CHF)"
-                      value={line.customPrice || ''}
-                      onChange={(e) => {
-                        const newLines = [...visiophoAdditionalLines];
-                        newLines[index] = { ...line, customPrice: parseFloat(e.target.value) || 0 };
-                        setVisiophoAdditionalLines(newLines);
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      min="0"
-                      step="0.01"
-                      className="discount-input"
-                      style={{ width: '150px' }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Installation */}
         <div className="quote-section">
