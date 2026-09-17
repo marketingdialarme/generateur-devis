@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDashboardStats, getQuotes } from '@/lib/services/database.service';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // Force dynamic rendering for this route
@@ -27,6 +28,21 @@ const DashboardQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    // Previously wide open — anyone with the URL could pull every
+    // conseiller's quote history. Now requires a logged-in session, and for
+    // the 'quotes' action the 'commercial' param is forced to the caller's
+    // own resolved name below (no admin role exists yet, so nobody can
+    // query anyone else's history through this route).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Non authentifié' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     
     // Check if it's a stats request or quotes list request
@@ -45,9 +61,23 @@ export async function GET(request: NextRequest) {
     }
     
     if (action === 'quotes') {
-      // Get filtered quotes list
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('commercial_name')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.commercial_name) {
+        return NextResponse.json(
+          { success: false, error: "Compte non relié à un nom de conseiller" },
+          { status: 403 }
+        );
+      }
+
+      // Get filtered quotes list — commercial is always the caller's own
+      // name, regardless of what (if anything) was passed in the query.
       const params = {
-        commercial: searchParams.get('commercial') || undefined,
+        commercial: profile.commercial_name,
         quoteType: searchParams.get('quoteType') as 'alarme' | 'video' | undefined,
         limit: parseInt(searchParams.get('limit') || '20'),
         offset: parseInt(searchParams.get('offset') || '0'),
