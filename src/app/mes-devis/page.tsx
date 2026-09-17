@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getQuotes } from '@/lib/services/database.service';
+import { getQuotes, linkConseillerProfile } from '@/lib/services/database.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,11 +15,21 @@ export default async function MesDevisPage() {
   // RLS ("Users can read their own profile") means this query only ever
   // returns the logged-in conseiller's own row, even without the .eq below —
   // it's kept explicit for clarity.
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('commercial_name')
     .eq('user_id', user.id)
     .single();
+
+  // Fallback: normally /auth/callback already tried this right after login.
+  // Retried here in case this session predates that, or the first attempt
+  // failed for some reason (e.g. the Sheet was briefly unreachable).
+  if (!profile?.commercial_name && user.email) {
+    const linkedName = await linkConseillerProfile(user.id, user.email);
+    if (linkedName) {
+      profile = { commercial_name: linkedName };
+    }
+  }
 
   if (!profile?.commercial_name) {
     return (
@@ -34,8 +44,8 @@ export default async function MesDevisPage() {
             fontSize: '14px',
             color: '#664d03'
           }}>
-            ⚠️ Votre compte ({user.email}) n&apos;est pas encore relié à un nom de conseiller.
-            Contactez le support pour faire le lien.
+            ⚠️ Aucun conseiller dans la feuille Conseillers n&apos;a l&apos;adresse {user.email}.
+            Vérifiez qu&apos;elle y est bien renseignée, ou contactez le support.
           </div>
           <SignOutForm />
         </div>

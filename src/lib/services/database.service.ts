@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { fetchCommercialsFromSheet } from './google-sheets.service';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -245,6 +246,67 @@ export async function getQuotes(options?: {
   } catch (error) {
     console.error('Error in getQuotes:', error);
     return [];
+  }
+}
+
+/**
+ * Links a newly-authenticated conseiller's account to their commercial_name
+ * in `profiles`, matching by email against the "Conseillers" Sheet.
+ * Called right after login (see /auth/callback), and again as a fallback
+ * from /mes-devis in case a session predates this being wired in.
+ *
+ * Purely a system action: no public INSERT policy exists on `profiles`, so
+ * this write only ever happens server-side via the service role key, never
+ * from the browser -- a client-side insert of an arbitrary commercial_name
+ * would let someone see another conseiller's history just by claiming their
+ * name. Never sends any email itself; pre-filling this table doesn't notify
+ * anyone -- a conseiller only ever gets a magic link when they themselves
+ * ask for one on /login.
+ *
+ * Returns the commercial_name now linked (existing or newly created), or
+ * null if no matching Conseillers row was found for this email.
+ */
+export async function linkConseillerProfile(userId: string, email: string): Promise<string | null> {
+  try {
+    const client = getSupabaseClient();
+
+    // Already linked (e.g. a returning conseiller) -- nothing to do.
+    const { data: existing } = await client
+      .from('profiles')
+      .select('commercial_name')
+      .eq('user_id', userId)
+      .single() as { data: { commercial_name: string } | null };
+
+    if (existing?.commercial_name) {
+      return existing.commercial_name;
+    }
+
+    const commercials = await fetchCommercialsFromSheet();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const match = Object.entries(commercials).find(
+      ([, info]) => info.email && info.email.trim().toLowerCase() === normalizedEmail
+    );
+
+    if (!match) {
+      return null;
+    }
+
+    const [commercialName] = match;
+
+    const { error } = await client
+      .from('profiles')
+      .insert({ user_id: userId, commercial_name: commercialName } as never);
+
+    if (error) {
+      console.error('Error linking conseiller profile:', error);
+      return null;
+    }
+
+    return commercialName;
+  } catch (error) {
+    console.error('Error in linkConseillerProfile:', error);
+    return null;
   }
 }
 

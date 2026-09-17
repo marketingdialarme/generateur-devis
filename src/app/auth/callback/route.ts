@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { linkConseillerProfile } from '@/lib/services/database.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,16 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Best-effort: if this account isn't linked to a conseiller yet, try
+      // to match it against the Conseillers Sheet by email. Doesn't block
+      // the redirect either way -- /mes-devis shows a clear message if no
+      // match was found, and can retry the link itself too.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        await linkConseillerProfile(user.id, user.email).catch((e) =>
+          console.error('linkConseillerProfile failed in /auth/callback:', e)
+        );
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
