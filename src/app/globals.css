@@ -350,6 +350,51 @@ height: 16px;
 accent-color: var(--dlm-yellow);
 }
 
+/* "OFFERT" toggles throughout the app were plain unstyled checkboxes
+   (browser default = light background), which is what read as a leftover
+   light-theme highlight. Restyled here as a real toggle switch via CSS only
+   -- no JSX changes needed, applies everywhere .offered-checkbox is used. */
+.offered-checkbox {
+appearance: none;
+-webkit-appearance: none;
+width: 36px;
+height: 20px;
+background: var(--dlm-border-light);
+border-radius: 20px;
+position: relative;
+cursor: pointer;
+outline: none;
+flex: none;
+margin: 0;
+transition: background 0.2s;
+}
+
+.offered-checkbox::before {
+content: '';
+position: absolute;
+top: 2px;
+left: 2px;
+width: 16px;
+height: 16px;
+background: #fff;
+border-radius: 50%;
+transition: left 0.2s;
+}
+
+.offered-checkbox:checked {
+background: var(--dlm-yellow);
+}
+
+.offered-checkbox:checked::before {
+left: 18px;
+background: #0a0a0a;
+}
+
+.offered-checkbox:disabled {
+opacity: 0.4;
+cursor: not-allowed;
+}
+
 .quote-summary {
 background: var(--dlm-card);
 border: 1px solid var(--dlm-border);

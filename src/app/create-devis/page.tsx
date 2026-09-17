@@ -1726,7 +1726,7 @@ export default function CreateDevisPage() {
                   setSimcardSelected(e.target.checked);
                   if (!e.target.checked) setSimcardOffered(false); // Reset offered if deselected
                 }}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#fffd01' }}
                 title="Sélectionner la carte SIM"
               />
               <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
@@ -1760,7 +1760,7 @@ export default function CreateDevisPage() {
                   setProcessingSelected(e.target.checked);
                   if (!e.target.checked) setProcessingOffered(false);
                 }}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#fffd01' }}
                 title="Inclure les frais de dossier"
               />
               <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
@@ -2935,7 +2935,7 @@ export default function CreateDevisPage() {
                   setFogProcessingSelected(e.target.checked);
                   if (!e.target.checked) setFogProcessingOffered(false);
                 }}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#fffd01' }}
                 title="Inclure les frais de dossier"
               />
               <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }}>Inclure</label>
@@ -2982,7 +2982,7 @@ export default function CreateDevisPage() {
                   setFogSimCardSelected(e.target.checked);
                   if (!e.target.checked) setFogSimCardOffered(false);
                 }}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#fffd01' }}
                 title="Sélectionner la carte SIM"
               />
               <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
