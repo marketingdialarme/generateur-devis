@@ -28,7 +28,7 @@ import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, Cctv, CloudFog, DoorOpen } from 'lucide-react';
+import { Bell, Cctv, CloudFog, DoorOpen, Download } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
@@ -972,7 +972,7 @@ export default function CreateDevisPage() {
         {/* Header */}
       <div className="header" style={{ paddingRight: 68 }}>
         <div className="logo">
-          <div className="logo-img" style={{ padding: 6 }}>
+          <div className="logo-img header-logo-desktop" style={{ padding: 6 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://dialarme.ch/wp-content/uploads/2026/09/Logotype_noir.png"
@@ -985,7 +985,9 @@ export default function CreateDevisPage() {
             <p>Générateur de devis professionnel</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+
+        {/* Desktop : date en toutes lettres + bulle d'initiales */}
+        <div className="header-conseiller-desktop" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span id="currentDate" style={{ fontSize: 12, color: '#8a8a8a' }}>{getCurrentDate()}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
@@ -1000,6 +1002,25 @@ export default function CreateDevisPage() {
               <div style={{ fontSize: 10, color: '#6a6a6a', lineHeight: 1.2 }}>Conseiller</div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile : pas de logo ni de bulle (client feedback : trop
+            d'elements) -- date au format JJ/MM/AA, conseiller sur deux
+            lignes (prenom / NOM), le tout aligne a droite. */}
+        <div className="header-conseiller-mobile" style={{ display: 'none', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <span style={{ fontSize: 11, color: '#8a8a8a' }}>
+            {new Date().toLocaleDateString('fr-CH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+          </span>
+          {commercial ? (
+            <div style={{ textAlign: 'right', lineHeight: 1.25 }}>
+              <div style={{ fontSize: 11, color: '#fff' }}>{commercial.split(' ')[0]}</div>
+              <div style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                {commercial.split(' ').slice(1).join(' ').toUpperCase()}
+              </div>
+            </div>
+          ) : (
+            <span style={{ fontSize: 11, color: '#6a6a6a' }}>Aucun conseiller</span>
+          )}
         </div>
         </div>
 
@@ -1198,38 +1219,21 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>
             🛡️ Choix Kit de base
-            <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
-                Kit offert
-                <label className="toggle-switch" title="Le kit est-il offert au client ?">
-                  <input
-                    type="checkbox"
-                    checked={kitOffert}
-                    onChange={() => {
-                      const value = !kitOffert;
-                      setKitOffert(value);
-                      // Also flip every kit line already on screen, not just future applyKit calls.
-                      setAlarmMaterialLines(lines => lines.map(l => ({ ...l, offered: value })));
-                    }}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </span>
-            <button 
-              className="add-product-btn" 
-              onClick={() => {
-                // Add a blank product line
-                setAlarmMaterialLines([...alarmMaterialLines, {
-                  id: Date.now(),
-                  product: null,
-                  quantity: 1,
-                  offered: false
-                }]);
-              }}
-              title="Ajouter un produit"
-            >
-              +
-            </button>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+              Kit offert
+              <label className="toggle-switch" title="Le kit est-il offert au client ?">
+                <input
+                  type="checkbox"
+                  checked={kitOffert}
+                  onChange={() => {
+                    const value = !kitOffert;
+                    setKitOffert(value);
+                    // Also flip every kit line already on screen, not just future applyKit calls.
+                    setAlarmMaterialLines(lines => lines.map(l => ({ ...l, offered: value })));
+                  }}
+                />
+                <span className="toggle-slider"></span>
+              </label>
             </span>
           </h3>
           
@@ -1592,12 +1596,6 @@ export default function CreateDevisPage() {
           <h3>🔧 Installation</h3>
           <div className="product-line" style={{ background: 'transparent' }}>
             <div>Installation et paramétrage</div>
-            <input 
-              type="number" 
-              value={1}
-              className="quantity-input"
-              readOnly
-            />
             <input 
               type="number" 
               value={alarmInstallationPrice}
@@ -1973,7 +1971,12 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
+            {isProcessing ? '⏳ Traitement...' : (
+              <>
+                <Download size={16} />
+                Télécharger
+              </>
+            )}
           </button>
                     </div>
       </div>
@@ -2543,7 +2546,12 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
+            {isProcessing ? '⏳ Traitement...' : (
+              <>
+                <Download size={16} />
+                Télécharger
+              </>
+            )}
           </button>
                   </div>
       </div>
@@ -2788,12 +2796,6 @@ export default function CreateDevisPage() {
           <h3>🔧 Installation</h3>
           <div className="product-line">
             <div>Installation et paramétrage</div>
-            <input 
-              type="number" 
-              value={1}
-              className="quantity-input"
-              readOnly
-            />
             <input 
               type="number" 
               value={fogInstallationPrice}
@@ -3080,7 +3082,12 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
+            {isProcessing ? '⏳ Traitement...' : (
+              <>
+                <Download size={16} />
+                Télécharger
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -3344,12 +3351,6 @@ export default function CreateDevisPage() {
             <div>Installation et paramétrage</div>
             <input 
               type="number" 
-              value={1}
-              className="quantity-input"
-              readOnly
-            />
-            <input 
-              type="number" 
               value={visiophoInstallationPrice}
               onChange={(e) => setVisiophoInstallationPrice(parseFloat(e.target.value) || 690)}
               className="discount-input"
@@ -3406,7 +3407,12 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
+            {isProcessing ? '⏳ Traitement...' : (
+              <>
+                <Download size={16} />
+                Télécharger
+              </>
+            )}
           </button>
         </div>
       </div>
