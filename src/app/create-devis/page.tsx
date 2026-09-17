@@ -146,11 +146,8 @@ export default function CreateDevisPage() {
   const [engagementMonths, setEngagementMonths] = useState(48);
   
   // New alarm options state
-  const [interventionPayante, setInterventionPayante] = useState(false);
-  const [interventionPayantePrice, setInterventionPayantePrice] = useState(149);
-  const [interventionPolice, setInterventionPolice] = useState(false);
-  const [interventionPolicePrice, setInterventionPolicePrice] = useState(0);
-  const [telesurveillanceOption, setTelesurveillanceOption] = useState(false);
+  // (interventionPayante/interventionPolice/telesurveillanceOption removed
+  // -- client feedback, no longer needed)
   
   // Camera 4G and maintenance state
   const [cameraVisionDistance, setCameraVisionDistance] = useState(false);
@@ -825,7 +822,7 @@ export default function CreateDevisPage() {
             email: validatedCommercialInfo.email
           },
           propertyType,
-          addPoliceDoc: isAlarm && interventionPolice
+          addPoliceDoc: false // Option retiree de l'UI (client feedback) -- toujours false desormais
         });
         finalBlob = assembled.blob;
         assemblyInfo = assembled.info;
@@ -1807,54 +1804,21 @@ export default function CreateDevisPage() {
           onInterventionsAnneeChange={setInterventionsAnnee}
           onInterventionsQtyChange={setInterventionsQty}
           onServiceClesChange={setServiceCles}
-          interventionPayante={interventionPayante}
-          onInterventionPayanteChange={setInterventionPayante}
-          interventionPayantePrice={interventionPayantePrice}
-          onInterventionPayantePriceChange={setInterventionPayantePrice}
-          interventionPolice={interventionPolice}
-          onInterventionPoliceChange={setInterventionPolice}
-          interventionPolicePrice={interventionPolicePrice}
-          onInterventionPolicePriceChange={setInterventionPolicePrice}
-          telesurveillanceOption={telesurveillanceOption}
-          onTelesurveillanceOptionChange={setTelesurveillanceOption}
         />
 
-        {/* Engagement Duration - MOVED BEFORE Payment Mode */}
-        {!alarmRentalMode && (
-          <div className="quote-section">
-            <h3>⏱️ Durée d'engagement</h3>
-            <select 
-              value={engagementMonths}
-              onChange={(e) => {
-                const months = parseInt(e.target.value);
-                setEngagementMonths(months);
-                // Auto-sync payment mode to same duration
-                setAlarmPaymentMonths(months);
-              }}
-              style={{
-                padding: '10px',
-                fontSize: '14px',
-                border: '2px solid #e9ecef',
-                borderRadius: '8px',
-                width: '200px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value={12}>12 mois</option>
-              <option value={24}>24 mois</option>
-              <option value={36}>36 mois</option>
-              <option value={48}>48 mois</option>
-              <option value={60}>60 mois</option>
-            </select>
-          </div>
-        )}
-
-        {/* Payment Mode - MOVED AFTER Engagement */}
+        {/* Durée d'engagement — pilote aussi le mode de paiement (client
+            feedback : un seul choix, plus de sélecteur séparé). Le prix
+            comptant reste toujours visible dans le récapitulatif, quelle
+            que soit la durée choisie ici. */}
         {!alarmRentalMode && (
           <PaymentSelector
-            selectedMonths={alarmPaymentMonths}
-            onSelect={setAlarmPaymentMonths}
-            label="Mode de paiement"
+            selectedMonths={engagementMonths}
+            onSelect={(months) => {
+              setEngagementMonths(months);
+              setAlarmPaymentMonths(months);
+            }}
+            label="Durée d'engagement"
+            excludeComptant
           />
         )}
 
@@ -1908,28 +1872,9 @@ export default function CreateDevisPage() {
             <span>{(alarmTotals?.totalTTC || 0).toFixed(2)} CHF</span>
           </div>
           {!alarmRentalMode && alarmPaymentMonths > 0 && alarmTotals?.monthly && (
-            <div className="monthly-payment" style={{ 
-              background: '#f4e600', 
-              padding: '15px', 
-              borderRadius: '8px', 
-              marginTop: '15px',
-              color: '#000'
-            }}>
-              <strong style={{ fontSize: '16px', color: '#000' }}>
-                💳 Mensualités: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
-              </strong>
-            </div>
-          )}
-          {!alarmRentalMode && alarmPaymentMonths === 0 && alarmTotals?.cash && (
-            <div className="monthly-payment" style={{ 
-              background: '#28a745', 
-              color: 'white',
-              padding: '15px', 
-              borderRadius: '8px', 
-              marginTop: '15px' 
-            }}>
+            <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💰 Montant comptant: {(alarmTotals.cash.totalTTC || 0).toFixed(2)} CHF
+                💳 Mensualités: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
               </strong>
             </div>
           )}

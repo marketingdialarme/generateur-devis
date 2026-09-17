@@ -28,39 +28,12 @@ export function PaymentSelector({ selectedMonths, onSelect, label = "Mode de pai
   return (
     <div className="quote-section">
       <h3>💳 {label}</h3>
-      <div className="payment-options" style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        flexWrap: 'wrap' 
-      }}>
+      <div className="payment-options">
         {options.map(({ months, label }) => (
           <div
             key={months}
             className={`payment-option ${selectedMonths === months ? 'active' : ''}`}
             onClick={() => onSelect(months)}
-            style={{
-              flex: '1 1 120px',
-              minWidth: '120px',
-              padding: '15px 20px',
-              background: selectedMonths === months ? '#f4e600' : 'white',
-              border: `2px solid ${selectedMonths === months ? '#f4e600' : '#e9ecef'}`,
-              borderRadius: '8px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              fontWeight: selectedMonths === months ? 600 : 400,
-              fontSize: '14px'
-            }}
-            onMouseOver={(e) => {
-              if (selectedMonths !== months) {
-                e.currentTarget.style.background = '#f8f9fa';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (selectedMonths !== months) {
-                e.currentTarget.style.background = 'white';
-              }
-            }}
           >
             {label}
           </div>

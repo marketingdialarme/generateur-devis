@@ -13,20 +13,10 @@ interface OptionsSectionProps {
   interventionsAnnee: boolean;
   interventionsQty: number;
   serviceCles: boolean;
-  interventionPayante: boolean;
-  interventionPayantePrice: number;
-  interventionPolice: boolean;
-  interventionPolicePrice: number;
-  telesurveillanceOption: boolean;
   onInterventionsGratuitesChange: (value: boolean) => void;
   onInterventionsAnneeChange: (value: boolean) => void;
   onInterventionsQtyChange: (value: number) => void;
   onServiceClesChange: (value: boolean) => void;
-  onInterventionPayanteChange: (value: boolean) => void;
-  onInterventionPayantePriceChange: (value: number) => void;
-  onInterventionPoliceChange: (value: boolean) => void;
-  onInterventionPolicePriceChange: (value: number) => void;
-  onTelesurveillanceOptionChange: (value: boolean) => void;
 }
 
 export function OptionsSection(props: OptionsSectionProps) {
@@ -35,20 +25,10 @@ export function OptionsSection(props: OptionsSectionProps) {
     interventionsAnnee,
     interventionsQty,
     serviceCles,
-    interventionPayante,
-    interventionPayantePrice,
-    interventionPolice,
-    interventionPolicePrice,
-    telesurveillanceOption,
     onInterventionsGratuitesChange,
     onInterventionsAnneeChange,
     onInterventionsQtyChange,
     onServiceClesChange,
-    onInterventionPayanteChange,
-    onInterventionPayantePriceChange,
-    onInterventionPoliceChange,
-    onInterventionPolicePriceChange,
-    onTelesurveillanceOptionChange,
   } = props;
 
   return (
@@ -211,184 +191,6 @@ export function OptionsSection(props: OptionsSectionProps) {
             Service des clés offert
           </label>
         </div>
-
-        {/* NEW: Intervention payante */}
-        <div className="option-item" style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 12px',
-          background: interventionPayante ? 'rgba(255,253,1,0.08)' : 'transparent',
-          borderRadius: '6px',
-          transition: 'all 0.2s'
-        }}>
-          <input
-            type="checkbox"
-            id="option-intervention-payante"
-            checked={interventionPayante}
-            onChange={(e) => onInterventionPayanteChange(e.target.checked)}
-            style={{ 
-              margin: 0,
-              marginRight: '12px',
-              cursor: 'pointer',
-              width: '16px',
-              height: '16px',
-              flexShrink: 0,
-              verticalAlign: 'middle'
-            }}
-          />
-          <label
-            htmlFor="option-intervention-payante"
-            style={{ 
-              cursor: 'pointer', 
-              fontSize: '14px', 
-              fontWeight: interventionPayante ? 600 : 400,
-              lineHeight: '1.4',
-              flex: 1,
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            Intervention payante
-          </label>
-          {interventionPayante && (
-            <>
-              <input
-                type="number"
-                value={interventionPayantePrice}
-                onChange={(e) => onInterventionPayantePriceChange(parseFloat(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
-                min="0"
-                className="quantity-input"
-                style={{
-                  width: '80px',
-                  padding: '6px 8px',
-                  border: '2px solid #007bff',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  flexShrink: 0,
-                  marginRight: '5px'
-                }}
-              />
-              <span style={{ fontSize: '13px', color: '#6c757d' }}>CHF HT/intervention</span>
-            </>
-          )}
-        </div>
-
-        {/* NEW: Intervention police */}
-        <div className="option-item" style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 12px',
-          background: interventionPolice ? 'rgba(255,253,1,0.08)' : 'transparent',
-          borderRadius: '6px',
-          transition: 'all 0.2s'
-        }}>
-          <input
-            type="checkbox"
-            id="option-intervention-police"
-            checked={interventionPolice}
-            onChange={(e) => {
-              onInterventionPoliceChange(e.target.checked);
-              // If unchecking police intervention, also uncheck telesurveillance option
-              if (!e.target.checked && telesurveillanceOption) {
-                onTelesurveillanceOptionChange(false);
-              }
-            }}
-            style={{ 
-              margin: 0,
-              marginRight: '12px',
-              cursor: 'pointer',
-              width: '16px',
-              height: '16px',
-              flexShrink: 0,
-              verticalAlign: 'middle'
-            }}
-          />
-          <label
-            htmlFor="option-intervention-police"
-            style={{ 
-              cursor: 'pointer', 
-              fontSize: '14px', 
-              fontWeight: interventionPolice ? 600 : 400,
-              lineHeight: '1.4',
-              flex: 1,
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            Intervention de la police sur levée de doute positive
-          </label>
-          {interventionPolice && (
-            <>
-              <input
-                type="number"
-                value={interventionPolicePrice}
-                onChange={(e) => onInterventionPolicePriceChange(parseFloat(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
-                min="0"
-                className="quantity-input"
-                style={{
-                  width: '80px',
-                  padding: '6px 8px',
-                  border: '2px solid #007bff',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  flexShrink: 0,
-                  marginRight: '5px'
-                }}
-              />
-              <span style={{ fontSize: '13px', color: '#6c757d' }}>CHF HT</span>
-            </>
-          )}
-        </div>
-
-        {/* NEW: Télésurveillance 99 CHF / 48 mois - Only shown when police intervention is selected */}
-        {interventionPolice && (
-          <div className="option-item" style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '10px 12px',
-            background: telesurveillanceOption ? 'rgba(255,253,1,0.08)' : 'transparent',
-            borderRadius: '6px',
-            transition: 'all 0.2s',
-            marginLeft: '32px' // Indent to show it's sub-option
-          }}>
-            <input
-              type="checkbox"
-              id="option-telesurveillance-99"
-              checked={telesurveillanceOption}
-              onChange={(e) => onTelesurveillanceOptionChange(e.target.checked)}
-              style={{ 
-                margin: 0,
-                marginRight: '12px',
-                cursor: 'pointer',
-                width: '16px',
-                height: '16px',
-                flexShrink: 0,
-                verticalAlign: 'middle'
-              }}
-            />
-            <label
-              htmlFor="option-telesurveillance-99"
-              style={{ 
-                cursor: 'pointer', 
-                fontSize: '14px', 
-                fontWeight: telesurveillanceOption ? 600 : 400,
-                lineHeight: '1.4',
-                flex: 1,
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              Télésurveillance (99 CHF / 48 mois)
-            </label>
-          </div>
-        )}
       </div>
     </div>
   );
