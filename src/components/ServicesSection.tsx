@@ -244,7 +244,7 @@ export function ServicesSection(props: ServicesSectionProps) {
 
   return (
     <div className="quote-section">
-      <h3>🔧 4. Services</h3>
+      <h3>🔧 Services</h3>
       
       {/* Test Cyclique */}
       <div className="product-line">

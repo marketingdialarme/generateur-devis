@@ -310,7 +310,7 @@ font-size: 12px;
 
 .payment-options {
 display: grid;
-grid-template-columns: repeat(4, 1fr);
+grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 gap: 8px;
 margin-top: 12px;
 }

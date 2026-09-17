@@ -1509,7 +1509,7 @@ export default function CreateDevisPage() {
         {/* Installation - 300 CHF editable (client feedback) */}
         <div className="quote-section">
           <h3>🔧 Installation</h3>
-          <div className="product-line" style={{ background: '#0a0a0a' }}>
+          <div className="product-line" style={{ background: 'transparent' }}>
             <div>Installation et paramétrage</div>
             <input 
               type="number" 
@@ -1892,7 +1892,7 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
           </button>
                     </div>
       </div>
