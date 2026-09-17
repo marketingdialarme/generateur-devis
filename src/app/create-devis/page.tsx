@@ -23,7 +23,7 @@ import { useQuoteSender } from '@/hooks/useQuoteSender';
 import { collectAllProducts } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
-import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, setTvaRate, setAdminFees, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
+import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, setTvaRate, setAdminFees, calculateFacilityPayment, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -157,6 +157,9 @@ export default function CreateDevisPage() {
   
   // Fog generator state
   const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
+  // Kit offert par defaut (client feedback: "generalement offert" pour Fog
+  // aussi, comme l'Alarme) -- bascule maitre au-dessus des lignes du kit.
+  const [fogKitOffert, setFogKitOffert] = useState(true);
   // No hardcoded fallback (same decision as Visiophone): starts empty,
   // filled once /api/products/fog resolves. fogCatalogError drives a
   // visible banner if the Sheet can't be reached.
@@ -489,6 +492,43 @@ export default function CreateDevisPage() {
     cameraRemoteAccess,
     cameraPaymentMonths,
     cameraRentalMode
+  ]);
+
+  // Fog totals — mirrors createFogPDFSections' own calculation exactly (same
+  // rows: kit + matériel supplémentaire + installation + frais de dossier +
+  // carte SIM), so the on-screen récapitulatif never diverges from the PDF.
+  // No calculateFogTotals in calculations.ts yet (Fog never had a recap at
+  // all until now) -- kept inline here rather than introducing a new shared
+  // function for a single call site.
+  const fogTotals = useMemo(() => {
+    const materialTotal = [...fogLines, ...fogAdditionalLines].reduce((sum, line) => {
+      if (!line.product || line.offered) return sum;
+      return sum + (line.product.price || 0) * line.quantity;
+    }, 0);
+    const installationTotal = fogInstallationPrice || 0;
+    const processingTotal = fogProcessingSelected ? (fogProcessingOffered ? 0 : fogProcessingFee) : 0;
+    const simCardTotal = fogSimCardSelected ? (fogSimCardOffered ? 0 : fogSimCard) : 0;
+    const totalHT = roundToFiveCents(materialTotal + installationTotal + processingTotal + simCardTotal);
+    const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
+
+    let monthly: { totalHT: number; totalTTC: number } | undefined;
+    if (fogPaymentMonths > 0) {
+      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, processingTotal, simCardTotal, fogPaymentMonths));
+      monthly = { totalHT: monthlyHT, totalTTC: roundToFiveCents(monthlyHT * (1 + TVA_RATE)) };
+    }
+
+    return { materialTotal, installationTotal, processingTotal, simCardTotal, totalHT, totalTTC, monthly };
+  }, [
+    fogLines,
+    fogAdditionalLines,
+    fogInstallationPrice,
+    fogProcessingSelected,
+    fogProcessingOffered,
+    fogProcessingFee,
+    fogSimCardSelected,
+    fogSimCardOffered,
+    fogSimCard,
+    fogPaymentMonths
   ]);
       
   const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
@@ -2556,24 +2596,27 @@ export default function CreateDevisPage() {
           />
         </div>
 
-        {/* Matériel (like alarm section) */}
+        {/* Kit de base — contenu par defaut (Generateur/Clavier/Detecteur),
+            'Materiel supplementaire' (fogAdditionalLines, deja separe plus
+            bas) est desormais le seul endroit pour ajouter du materiel. */}
         <div className="quote-section">
           <h3>
-            Matériel
-            <button 
-              className="add-product-btn" 
-              onClick={() => {
-                setFogLines([...fogLines, {
-                  id: Date.now(),
-                  product: null,
-                  quantity: 1,
-                  offered: false
-                }]);
-              }}
-              title="Ajouter un produit"
-            >
-              +
-            </button>
+            🛡️ Kit de base
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+              Kit offert
+              <label className="toggle-switch" title="Le kit est-il offert au client ?">
+                <input
+                  type="checkbox"
+                  checked={fogKitOffert}
+                  onChange={() => {
+                    const value = !fogKitOffert;
+                    setFogKitOffert(value);
+                    setFogLines(lines => lines.map(l => ({ ...l, offered: value })));
+                  }}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </span>
           </h3>
           <div id="fog-material-products">
             {fogLines.map((line, index) => (
@@ -2715,16 +2758,9 @@ export default function CreateDevisPage() {
               type="number" 
               value={fogInstallationPrice}
               onChange={(e) => setFogInstallationPrice(parseFloat(e.target.value) || 490)}
-              className="price-input"
+              className="discount-input"
               onFocus={(e) => e.target.select()}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '120px'
-              }}
+              style={{ width: '120px' }}
             />
             <div></div>
             <div className="price-display">
@@ -2736,7 +2772,7 @@ export default function CreateDevisPage() {
         {/* Additional Materials */}
         <div className="quote-section">
           <h3>
-            Matériel supplémentaire
+            🔧 Matériel supplémentaire
             <button 
               className="add-product-btn" 
               onClick={() => {
@@ -2965,6 +3001,38 @@ export default function CreateDevisPage() {
           label="Durée d'engagement"
           excludeComptant={true}
         />
+
+        {/* Summary — construit sur le meme modele qu'Alarme/Cameras */}
+        <div className="quote-summary">
+          <h3>📊 Récapitulatif du devis</h3>
+          <div className="summary-item">
+            <span>Matériel</span>
+            <span>{roundToFiveCents(roundToFiveCents(fogTotals.materialTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+          </div>
+          <div className="summary-item">
+            <span>Installation</span>
+            <span>{roundToFiveCents(roundToFiveCents(fogTotals.installationTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+          </div>
+          <div className="summary-item">
+            <span>Frais de dossier</span>
+            <span>{roundToFiveCents(roundToFiveCents(fogTotals.processingTotal + fogTotals.simCardTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+          </div>
+          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+            <span>TOTAL HT</span>
+            <span>{fogTotals.totalHT.toFixed(2)} CHF</span>
+          </div>
+          <div className="summary-item" style={{ fontWeight: 600, fontSize: '18px' }}>
+            <span>TOTAL TTC</span>
+            <span>{fogTotals.totalTTC.toFixed(2)} CHF</span>
+          </div>
+          {fogPaymentMonths > 0 && fogTotals.monthly && (
+            <div className="monthly-payment">
+              <strong style={{ fontSize: '16px' }}>
+                💳 Mensualités: {fogTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {fogPaymentMonths} mois
+              </strong>
+            </div>
+          )}
+        </div>
 
         <div className="action-buttons">
           <button
