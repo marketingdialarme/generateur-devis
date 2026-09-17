@@ -28,7 +28,7 @@ import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, Camera as CameraIcon, CloudFog, DoorOpen } from 'lucide-react';
+import { Bell, Cctv, CloudFog, DoorOpen } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
@@ -1057,7 +1057,7 @@ export default function CreateDevisPage() {
           className={`nav-tab ${currentTab === 'camera' ? 'active' : ''}`}
           onClick={() => setCurrentTab('camera')}
         >
-          <CameraIcon size={28} strokeWidth={1.75} />
+          <Cctv size={28} strokeWidth={1.75} />
           <span>Caméra</span>
         </button>
         <button 
