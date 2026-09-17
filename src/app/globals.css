@@ -344,10 +344,41 @@ gap: 10px;
 margin: 12px 0;
 }
 
-.checkbox-option input[type="checkbox"] {
-width: 16px;
-height: 16px;
-accent-color: var(--dlm-yellow);
+.checkbox-option input[type="checkbox"],
+.option-item input[type="checkbox"],
+.include-checkbox {
+appearance: none;
+-webkit-appearance: none;
+width: 18px;
+height: 18px;
+border-radius: 4px;
+border: 1.5px solid var(--dlm-border-light);
+background: transparent;
+cursor: pointer;
+position: relative;
+flex: none;
+margin: 0;
+}
+
+.checkbox-option input[type="checkbox"]:checked,
+.option-item input[type="checkbox"]:checked,
+.include-checkbox:checked {
+background: var(--dlm-yellow);
+border-color: var(--dlm-yellow);
+}
+
+.checkbox-option input[type="checkbox"]:checked::after,
+.option-item input[type="checkbox"]:checked::after,
+.include-checkbox:checked::after {
+content: '✓';
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -55%);
+font-size: 13px;
+font-weight: 700;
+color: #0a0a0a;
+line-height: 1;
 }
 
 /* "OFFERT" toggles throughout the app were plain unstyled checkboxes

@@ -64,7 +64,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 12px',
-          background: interventionsGratuites ? '#f0f8ff' : 'transparent',
+          background: interventionsGratuites ? 'rgba(255,253,1,0.08)' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s'
         }}>
@@ -110,7 +110,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 12px',
-          background: interventionsAnnee ? '#f0f8ff' : 'transparent',
+          background: interventionsAnnee ? 'rgba(255,253,1,0.08)' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s'
         }}>
@@ -176,7 +176,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 12px',
-          background: serviceCles ? '#f0f8ff' : 'transparent',
+          background: serviceCles ? 'rgba(255,253,1,0.08)' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s'
         }}>
@@ -217,7 +217,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 12px',
-          background: interventionPayante ? '#f0f8ff' : 'transparent',
+          background: interventionPayante ? 'rgba(255,253,1,0.08)' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s'
         }}>
@@ -281,7 +281,7 @@ export function OptionsSection(props: OptionsSectionProps) {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 12px',
-          background: interventionPolice ? '#f0f8ff' : 'transparent',
+          background: interventionPolice ? 'rgba(255,253,1,0.08)' : 'transparent',
           borderRadius: '6px',
           transition: 'all 0.2s'
         }}>
@@ -352,7 +352,7 @@ export function OptionsSection(props: OptionsSectionProps) {
             display: 'flex',
             alignItems: 'center',
             padding: '10px 12px',
-            background: telesurveillanceOption ? '#f0f8ff' : 'transparent',
+            background: telesurveillanceOption ? 'rgba(255,253,1,0.08)' : 'transparent',
             borderRadius: '6px',
             transition: 'all 0.2s',
             marginLeft: '32px' // Indent to show it's sub-option
