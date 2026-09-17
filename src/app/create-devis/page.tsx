@@ -1833,15 +1833,15 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>💰 Désinstallation</h3>
             <div style={{ 
-              background: '#fff3cd', 
+              background: '#1b1b1b', 
               padding: '15px', 
               borderRadius: '8px', 
-              border: '2px solid #ffc107',
+              border: '2px solid #fffd01',
               fontSize: '14px',
               fontWeight: 500
             }}>
               📝 Désinstallation : {UNINSTALL_PRICE.toFixed(2)} CHF si durée inférieure à 12 mois
-              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#666' }}>
+              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#9a9a9a' }}>
                 * Ce montant n'est pas inclus dans le total mais apparaîtra sur le devis
               </div>
             </div>
@@ -1942,12 +1942,41 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
+              <label htmlFor="clientPhone-camera">N° de natel</label>
+              <input
+                type="tel"
+                id="clientPhone-camera"
+                placeholder="079 123 45 67"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientEmail-camera">Email</label>
+              <input
+                type="email"
+                id="clientEmail-camera"
+                placeholder="client@exemple.ch"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientAddress-camera">Adresse</label>
+              <input
+                type="text"
+                id="clientAddress-camera"
+                placeholder="Rue, NPA, Ville"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
               <label htmlFor="propertyTypeCamera">Type de bien</label>
               <select 
                 id="propertyTypeCamera"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value as any)}
-                style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
               >
                 <option value="locaux">Locaux</option>
                 <option value="habitation">Habitation</option>
@@ -1963,7 +1992,6 @@ export default function CreateDevisPage() {
                   id="commercialCamera" 
                   value={showCustomCommercial ? 'autre' : commercial}
                   onChange={(e) => handleCommercialSelection(e.target.value)}
-                  style={{ padding: '12px 15px', border: '2px solid #e9ecef', borderRadius: '8px', fontSize: '14px' }}
                 >
                   <option value="">Sélectionner un commercial</option>
                   {commercialsList.map(name => (
@@ -2251,7 +2279,7 @@ export default function CreateDevisPage() {
                   onClick={() => {
                     setCameraInstallationLines([{ id: Date.now(), product, quantity: 1, offered: false }]);
                   }}
-                  style={{ flex: 1, minWidth: '140px', padding: '12px', background: 'white', border: `2px dashed ${['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4]}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: ['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4] }}
+                  style={{ flex: 1, minWidth: '140px', padding: '12px', background: '#151515', border: `2px dashed ${['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4]}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: ['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4] }}
                 >
                   + {product.name} ({product.price.toFixed(0)} CHF)
                 </button>
@@ -2283,20 +2311,21 @@ export default function CreateDevisPage() {
 
           {/* Paiement comptant - inside same frame (client feedback) */}
           {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
-            <div style={{ marginTop: '15px', padding: '12px', background: '#fffef0', border: '1px solid #f4e600', borderRadius: '8px' }}>
+            <div style={{ marginTop: '15px', padding: '12px', background: '#1b1b1b', border: '1px solid #fffd01', borderRadius: '8px' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input 
                   type="checkbox" 
                   checked={cameraInstallationPayCash}
                   onChange={(e) => setCameraInstallationPayCash(e.target.checked)}
-                  style={{ marginRight: '10px', width: '16px', height: '16px' }}
+                  className="include-checkbox"
+                  style={{ marginRight: '10px' }}
                 />
                 <span style={{ fontWeight: 500, fontSize: '14px' }}>
                   Paiement comptant de l&apos;installation
                 </span>
               </label>
               {cameraInstallationPayCash && (
-                <div style={{ marginTop: '8px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: '#9a9a9a', fontStyle: 'italic' }}>
                   Installation à régler comptant: {roundToFiveCents(roundToFiveCents(cameraInstallationTotalFromLines) * (1 + TVA_RATE)).toFixed(2)} CHF TTC
                 </div>
               )}
@@ -2331,7 +2360,7 @@ export default function CreateDevisPage() {
               <div>
                 Contrat de maintenance
                 {cameraMaintenance && cameraMaintenancePrice > 0 && (
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px', background: '#f0f8ff', padding: '8px', borderRadius: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '5px', background: '#1b1b1b', padding: '8px', borderRadius: '4px' }}>
                     <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
                     <div style={{ fontSize: '11px', marginTop: '3px' }}>
                       (10 CHF/item si &lt; 5, 5 CHF/item si ≥ 5 caméras + NVR)
@@ -2356,37 +2385,14 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Engagement Duration */}
-        {!cameraRentalMode && (
-          <div className="quote-section">
-            <h3>⏱️ Durée d'engagement</h3>
-            <select
-              value={cameraPaymentMonths || 48}
-              onChange={(e) => setCameraPaymentMonths(parseInt(e.target.value))}
-              style={{
-                padding: '10px',
-                fontSize: '14px',
-                border: '2px solid #e9ecef',
-                borderRadius: '8px',
-                width: '200px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value={12}>12 mois</option>
-              <option value={24}>24 mois</option>
-              <option value={36}>36 mois</option>
-              <option value={48}>48 mois</option>
-              <option value={60}>60 mois</option>
-            </select>
-          </div>
-        )}
-
-        {/* Payment Mode */}
+        {/* Durée d'engagement / mode de paiement — un seul choix (comme pour
+            l'Alarme). Ici les deux utilisaient deja le meme etat
+            (cameraPaymentMonths), il suffisait de retirer le select redondant. */}
         {!cameraRentalMode && (
           <PaymentSelector
             selectedMonths={cameraPaymentMonths}
             onSelect={setCameraPaymentMonths}
-            label="Mode de paiement"
+            label="Durée d'engagement"
             excludeComptant={true}
           />
         )}
@@ -2396,15 +2402,15 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>💰 Désinstallation</h3>
             <div style={{ 
-              background: '#fff3cd', 
+              background: '#1b1b1b', 
               padding: '15px', 
               borderRadius: '8px', 
-              border: '2px solid #ffc107',
+              border: '2px solid #fffd01',
               fontSize: '14px',
               fontWeight: 500
             }}>
               📝 Désinstallation : {UNINSTALL_PRICE.toFixed(2)} CHF si durée inférieure à 12 mois
-              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#666' }}>
+              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#9a9a9a' }}>
                 * Ce montant n'est pas inclus dans le total mais apparaîtra sur le devis
               </div>
             </div>
@@ -2434,7 +2440,7 @@ export default function CreateDevisPage() {
               <span>{cameraMaintenancePrice.toFixed(2)} CHF/mois</span>
                   </div>
           )}
-          <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{(cameraTotals?.totalHT || 0).toFixed(2)} CHF</span>
                   </div>
@@ -2443,28 +2449,9 @@ export default function CreateDevisPage() {
             <span>{(cameraTotals?.totalTTC || 0).toFixed(2)} CHF</span>
                 </div>
           {!cameraRentalMode && cameraPaymentMonths > 0 && cameraTotals?.monthly && (
-            <div className="monthly-payment" style={{ 
-              background: '#f4e600', 
-              padding: '15px', 
-              borderRadius: '8px', 
-              marginTop: '15px',
-              color: '#000'
-            }}>
-              <strong style={{ fontSize: '16px', color: '#000' }}>
-                💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
-              </strong>
-                  </div>
-                )}
-          {!cameraRentalMode && cameraPaymentMonths === 0 && (
-            <div className="monthly-payment" style={{ 
-              background: '#28a745', 
-              color: 'white',
-              padding: '15px', 
-              borderRadius: '8px', 
-              marginTop: '15px' 
-            }}>
+            <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💰 Montant comptant: {(cameraTotals?.totalTTC || 0).toFixed(2)} CHF
+                💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
               </strong>
                   </div>
                 )}
@@ -2476,7 +2463,7 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
           </button>
                   </div>
       </div>
