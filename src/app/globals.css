@@ -257,6 +257,22 @@ border-bottom: 1px solid var(--dlm-border);
 font-size: 13px;
 }
 
+/* Alignement uniforme du bascule "Offert" et du prix sur TOUTES les
+   lignes fixes (Installation, Carte SIM, Frais de dossier, Test
+   cyclique, Service de surveillance, Vision a distance, Maintenance...)
+   -- calees sur la position naturelle de Service de surveillance
+   (colonne 4 puis 5), la plus a droite de toutes puisque sa ligne a
+   le plus d'elements avant. Les lignes de materiel (avec un bouton
+   de suppression x) restent sur leur position naturelle -- forcer la
+   meme regle la ferait entrer en collision avec ce bouton. */
+.product-line:not(:has(.remove-btn)) .checkbox-option:has(.offered-checkbox) {
+grid-column: 4;
+}
+
+.product-line:not(:has(.remove-btn)) .price-display {
+grid-column: 5;
+}
+
 .product-line:last-child {
 border-bottom: none;
 }
@@ -719,6 +735,7 @@ body {
 
 .nav-tabs {
     gap: 5px;
+    margin-top: 18px;
 }
 
 .nav-tab {

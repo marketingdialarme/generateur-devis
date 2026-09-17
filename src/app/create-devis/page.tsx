@@ -1813,7 +1813,7 @@ export default function CreateDevisPage() {
               />
               <span>Carte SIM + Activation</span>
             </div>
-            <div className="checkbox-option" style={{ margin: 0, gridColumn: 3 }}>
+            <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
                 type="checkbox" 
                 checked={simcardOffered}
@@ -1823,7 +1823,7 @@ export default function CreateDevisPage() {
               />
               <label style={{ margin: 0, fontSize: '12px', color: !simcardSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display" style={{ gridColumn: 4 }}>
+            <div className="price-display">
               {!simcardSelected ? '-' : simcardOffered ? 'OFFERT' : '50.00 CHF HT'}
             </div>
           </div>
@@ -1841,7 +1841,7 @@ export default function CreateDevisPage() {
               />
               <span>Frais de dossier</span>
             </div>
-            <div className="checkbox-option" style={{ margin: 0, gridColumn: 3 }}>
+            <div className="checkbox-option" style={{ margin: 0 }}>
               <input
                 type="checkbox"
                 checked={processingOffered}
@@ -1851,7 +1851,7 @@ export default function CreateDevisPage() {
               />
               <label style={{ margin: 0, fontSize: '12px', color: !processingSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display" style={{ gridColumn: 4 }}>
+            <div className="price-display">
               {!processingSelected ? '-' : processingOffered ? 'OFFERT' : '190.00 CHF HT'}
             </div>
           </div>
@@ -2435,7 +2435,7 @@ export default function CreateDevisPage() {
                 <span>Vision à distance</span>
               </div>
               <div></div>
-              <div className="price-display" style={{ gridColumn: 4 }}>
+              <div className="price-display">
                 {cameraVisionDistance && cameraVisionPrice > 0 ? `${cameraVisionPrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
@@ -2462,7 +2462,7 @@ export default function CreateDevisPage() {
                 </div>
               </div>
               <div></div>
-              <div className="price-display" style={{ gridColumn: 4 }}>
+              <div className="price-display">
                 {cameraMaintenance && cameraMaintenancePrice > 0 ? `${cameraMaintenancePrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
