@@ -1717,7 +1717,6 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>📄 Frais de dossier</h3>
           <div className="product-line">
-            <div>Carte SIM + Activation</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input 
                 type="checkbox" 
@@ -1729,12 +1728,7 @@ export default function CreateDevisPage() {
                 className="include-checkbox"
                 title="Sélectionner la carte SIM"
               />
-              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
-                setSimcardSelected(!simcardSelected);
-                if (simcardSelected) setSimcardOffered(false);
-              }}>
-                Inclure
-              </label>
+              <span>Carte SIM + Activation</span>
             </div>
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input 
@@ -1751,7 +1745,6 @@ export default function CreateDevisPage() {
             </div>
           </div>
           <div className="product-line">
-            <div>Frais de dossier</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input
                 type="checkbox"
@@ -1763,13 +1756,7 @@ export default function CreateDevisPage() {
                 className="include-checkbox"
                 title="Inclure les frais de dossier"
               />
-              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
-                const next = !processingSelected;
-                setProcessingSelected(next);
-                if (!next) setProcessingOffered(false);
-              }}>
-                Inclure
-              </label>
+              <span>Frais de dossier</span>
             </div>
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input
@@ -2926,7 +2913,6 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>📄 Frais de dossier</h3>
           <div className="product-line">
-            <div>Frais de dossier</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input
                 type="checkbox"
@@ -2938,24 +2924,16 @@ export default function CreateDevisPage() {
                 className="include-checkbox"
                 title="Inclure les frais de dossier"
               />
-              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }}>Inclure</label>
+              <span>Frais de dossier</span>
             </div>
             <input
               type="number"
               value={fogProcessingFee}
               onChange={(e) => setFogProcessingFee(parseFloat(e.target.value) || 190)}
               disabled={!fogProcessingSelected}
-              className="price-input"
+              className="discount-input"
               onFocus={(e) => e.target.select()}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '100px',
-                opacity: fogProcessingSelected ? 1 : 0.5
-              }}
+              style={{ width: '100px', opacity: fogProcessingSelected ? 1 : 0.5 }}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>
               <input
@@ -2973,7 +2951,6 @@ export default function CreateDevisPage() {
           </div>
 
           <div className="product-line">
-            <div>Carte SIM</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input 
                 type="checkbox" 
@@ -2985,28 +2962,15 @@ export default function CreateDevisPage() {
                 className="include-checkbox"
                 title="Sélectionner la carte SIM"
               />
-              <label style={{ fontSize: '12px', margin: 0, cursor: 'pointer' }} onClick={() => {
-                setFogSimCardSelected(!fogSimCardSelected);
-                if (fogSimCardSelected) setFogSimCardOffered(false);
-              }}>
-                Inclure
-              </label>
+              <span>Carte SIM</span>
             </div>
             <input 
               type="number" 
               value={fogSimCard}
               onChange={(e) => setFogSimCard(parseFloat(e.target.value) || 50)}
-              className="price-input"
+              className="discount-input"
               onFocus={(e) => e.target.select()}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                width: '100px',
-                opacity: fogSimCardSelected ? 1 : 0.5
-              }}
+              style={{ width: '100px', opacity: fogSimCardSelected ? 1 : 0.5 }}
               disabled={!fogSimCardSelected}
             />
             <div className="checkbox-option" style={{ margin: 0 }}>

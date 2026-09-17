@@ -248,14 +248,14 @@ export function ServicesSection(props: ServicesSectionProps) {
       
       {/* Test Cyclique */}
       <div className="product-line">
-        <div>Test Cyclique</div>
-        <div className="checkbox-option" style={{ margin: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <input
             type="checkbox"
             checked={testCycliqueSelected}
             onChange={(e) => onTestCycliqueSelectedChange(e.target.checked)}
+            className="include-checkbox"
           />
-          <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Inclure</label>
+          <span>Test Cyclique</span>
         </div>
         <input
           type="number"
