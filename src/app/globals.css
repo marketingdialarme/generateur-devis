@@ -721,7 +721,7 @@ body {
 
 .product-select {
     padding: 6px 7px;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .quantity-input {
@@ -800,7 +800,7 @@ body {
 }
 
 .service-select {
-    font-size: 11px;
+    font-size: 12px;
     padding: 6px 8px;
     width: 150px;
 }

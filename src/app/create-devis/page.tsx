@@ -960,9 +960,8 @@ export default function CreateDevisPage() {
     : '';
 
   return (
-    <div style={{ display: 'flex', background: '#0a0a0a' }}>
+    <div style={{ background: '#0a0a0a' }}>
       <AppSidebar />
-      <div style={{ flex: 1, minWidth: 0 }}>
     <div className="container">
       {/* Loading Spinner Overlay */}
       <LoadingSpinner 
@@ -971,7 +970,7 @@ export default function CreateDevisPage() {
       />
 
         {/* Header */}
-      <div className="header">
+      <div className="header" style={{ paddingRight: 68 }}>
         <div className="logo">
           <div className="logo-img" style={{ padding: 6 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -3413,7 +3412,6 @@ export default function CreateDevisPage() {
       </div>
 
     </div>
-      </div>
     </div>
   );
 }
