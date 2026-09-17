@@ -1,0 +1,144 @@
+import { redirect } from 'next/navigation';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getQuotes } from '@/lib/services/database.service';
+
+export const dynamic = 'force-dynamic';
+
+export default async function MesDevisPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // RLS ("Users can read their own profile") means this query only ever
+  // returns the logged-in conseiller's own row, even without the .eq below —
+  // it's kept explicit for clarity.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('commercial_name')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile?.commercial_name) {
+    return (
+      <div style={pageWrapStyle}>
+        <div style={cardStyle}>
+          <h1 style={titleStyle}>Mes devis</h1>
+          <div style={{
+            background: '#fff3cd',
+            border: '1px solid #ffe69c',
+            borderRadius: '8px',
+            padding: '16px',
+            fontSize: '14px',
+            color: '#664d03'
+          }}>
+            ⚠️ Votre compte ({user.email}) n&apos;est pas encore relié à un nom de conseiller.
+            Contactez le support pour faire le lien.
+          </div>
+          <SignOutForm />
+        </div>
+      </div>
+    );
+  }
+
+  const quotes = await getQuotes({ commercial: profile.commercial_name, limit: 100 });
+
+  return (
+    <div style={pageWrapStyle}>
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+          <div>
+            <h1 style={titleStyle}>Mes devis</h1>
+            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{profile.commercial_name}</p>
+          </div>
+          <SignOutForm />
+        </div>
+
+        {quotes.length === 0 ? (
+          <p style={{ fontSize: '14px', color: '#666', marginTop: '24px' }}>
+            Aucun devis enregistré pour l&apos;instant.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#888' }}>
+                <th style={thStyle}>Date</th>
+                <th style={thStyle}>Client</th>
+                <th style={thStyle}>Type</th>
+                <th style={thStyle}>Produits</th>
+                <th style={thStyle}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {quotes.map((q) => (
+                <tr key={q.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={tdStyle}>
+                    {q.created_at ? new Date(q.created_at).toLocaleDateString('fr-CH') : '—'}
+                  </td>
+                  <td style={tdStyle}>{q.client_name}</td>
+                  <td style={tdStyle}>
+                    {q.quote_type === 'alarme'
+                      ? `Alarme${q.central_type ? ` (${q.central_type})` : ''}`
+                      : 'Caméras'}
+                  </td>
+                  <td style={tdStyle}>{q.products_count}</td>
+                  <td style={tdStyle}>
+                    {q.drive_url && (
+                      <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a73e8' }}>
+                        Voir le PDF
+                      </a>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SignOutForm() {
+  return (
+    <form action="/auth/signout" method="post">
+      <button type="submit" style={{
+        background: 'transparent',
+        border: '1px solid #ccc',
+        borderRadius: '6px',
+        padding: '6px 12px',
+        fontSize: '12px',
+        color: '#555',
+        cursor: 'pointer'
+      }}>
+        Se déconnecter
+      </button>
+    </form>
+  );
+}
+
+const pageWrapStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  background: '#f5f5f5',
+  padding: '40px 20px'
+};
+
+const cardStyle: React.CSSProperties = {
+  background: 'white',
+  borderRadius: '12px',
+  padding: '32px',
+  maxWidth: '900px',
+  margin: '0 auto',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '22px',
+  marginBottom: '4px',
+  color: '#1a1a1a'
+};
+
+const thStyle: React.CSSProperties = { padding: '8px 6px', fontWeight: 500 };
+const tdStyle: React.CSSProperties = { padding: '10px 6px' };
