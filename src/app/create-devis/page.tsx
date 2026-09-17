@@ -2500,6 +2500,36 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
+              <label htmlFor="clientPhone-fog">N° de natel</label>
+              <input
+                type="tel"
+                id="clientPhone-fog"
+                placeholder="079 123 45 67"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientEmail-fog">Email</label>
+              <input
+                type="email"
+                id="clientEmail-fog"
+                placeholder="client@exemple.ch"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientAddress-fog">Adresse</label>
+              <input
+                type="text"
+                id="clientAddress-fog"
+                placeholder="Rue, NPA, Ville"
+                value={clientAddress}
+                onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
               <label htmlFor="propertyType-fog">Type de bien</label>
               <select 
                 id="propertyType-fog"
@@ -2927,27 +2957,12 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Engagement Duration */}
-        <div className="quote-section">
-          <h3>⏱️ Durée d'engagement</h3>
-          <select
-            value={fogPaymentMonths || 48}
-            onChange={(e) => setFogPaymentMonths(parseInt(e.target.value))}
-            style={{ padding: '10px', fontSize: '14px', border: '2px solid #e9ecef', borderRadius: '8px', width: '200px', cursor: 'pointer' }}
-          >
-            <option value={12}>12 mois</option>
-            <option value={24}>24 mois</option>
-            <option value={36}>36 mois</option>
-            <option value={48}>48 mois</option>
-            <option value={60}>60 mois</option>
-          </select>
-        </div>
-
-        {/* Payment Mode */}
+        {/* Durée d'engagement / mode de paiement — meme etat deja partage,
+            select brut redondant retire (comme Cameras). */}
         <PaymentSelector
           selectedMonths={fogPaymentMonths}
           onSelect={setFogPaymentMonths}
-          label="Mode de paiement"
+          label="Durée d'engagement"
           excludeComptant={true}
         />
 
@@ -2957,7 +2972,7 @@ export default function CreateDevisPage() {
             onClick={handleGenerateAndSend}
             disabled={isProcessing}
           >
-            {isProcessing ? '⏳ Traitement...' : '📄 Générer et Envoyer le Devis'}
+            {isProcessing ? '⏳ Traitement...' : '📄 Télécharger'}
           </button>
         </div>
       </div>

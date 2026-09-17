@@ -49,13 +49,6 @@ export function CommercialSelector(props: CommercialSelectorProps) {
           id={id}
           value={showCustom ? 'autre' : value}
           onChange={(e) => handleSelectChange(e.target.value)}
-          style={{
-            padding: '12px 15px',
-            border: '2px solid #e9ecef',
-            borderRadius: '8px',
-            fontSize: '14px',
-            background: 'white'
-          }}
         >
           <option value="">Sélectionner un commercial</option>
           {commercialsList.map(name => (
@@ -73,13 +66,6 @@ export function CommercialSelector(props: CommercialSelectorProps) {
             placeholder="Entrez le nom du commercial"
             value={customValue}
             onChange={(e) => onCustomValueChange(e.target.value)}
-            style={{
-              padding: '12px 15px',
-              border: '2px solid #007bff',
-              borderRadius: '8px',
-              fontSize: '14px',
-              background: '#f0f8ff'
-            }}
           />
         )}
       </div>
