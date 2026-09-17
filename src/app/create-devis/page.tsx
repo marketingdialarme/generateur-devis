@@ -27,6 +27,7 @@ import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, 
 import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
+import { AppSidebar } from '@/components/AppSidebar';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -843,6 +844,9 @@ export default function CreateDevisPage() {
     : '';
 
   return (
+    <div style={{ display: 'flex', background: '#0a0a0a' }}>
+      <AppSidebar />
+      <div style={{ flex: 1, minWidth: 0 }}>
     <div className="container">
       {/* Loading Spinner Overlay */}
       <LoadingSpinner 
@@ -859,8 +863,21 @@ export default function CreateDevisPage() {
             <p>Générateur de devis professionnel</p>
           </div>
         </div>
-        <div>
-          <span id="currentDate">{getCurrentDate()}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span id="currentDate" style={{ fontSize: 12, color: '#8a8a8a' }}>{getCurrentDate()}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%', background: '#2a2a2a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, color: '#fffd01', flex: 'none'
+            }}>
+              {commercial ? commercial.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() : '?'}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.2 }}>{commercial || 'Aucun conseiller sélectionné'}</div>
+              <div style={{ fontSize: 10, color: '#6a6a6a', lineHeight: 1.2 }}>Conseiller</div>
+            </div>
+          </div>
         </div>
         </div>
 
@@ -3501,6 +3518,8 @@ export default function CreateDevisPage() {
         </div>
       </div>
       )}
+    </div>
+      </div>
     </div>
   );
 }

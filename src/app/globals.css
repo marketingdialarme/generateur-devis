@@ -84,41 +84,41 @@ font-size: 12px;
 }
 
 .nav-tabs {
-display: flex;
-background: var(--dlm-card);
-border-bottom: 1px solid var(--dlm-border);
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 8px;
+background: transparent;
+border-bottom: none;
+padding: 0 30px 20px;
 }
 
 .nav-tab {
-padding: 16px 26px;
-background: none;
-border: none;
+padding: 14px 6px;
+background: var(--dlm-card);
+border: 1px solid var(--dlm-border-light);
+border-radius: 10px;
 cursor: pointer;
-font-size: 14px;
+font-size: 13px;
 font-weight: 500;
 color: var(--dlm-text-muted);
 transition: all 0.2s ease;
 position: relative;
+text-align: center;
 }
 
 .nav-tab:hover {
-background: var(--dlm-card-alt);
+border-color: var(--dlm-text-muted);
 color: var(--dlm-text);
 }
 
 .nav-tab.active {
-color: var(--dlm-yellow);
-background: var(--dlm-bg);
+color: var(--dlm-text);
+background: var(--dlm-yellow-dim);
+border-color: var(--dlm-yellow);
 }
 
 .nav-tab.active::after {
-content: '';
-position: absolute;
-bottom: 0;
-left: 0;
-right: 0;
-height: 2px;
-background: var(--dlm-yellow);
+content: none;
 }
 
 .tab-content {
@@ -551,7 +551,7 @@ to {
 }
 
 .nav-tabs {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .form-grid {
