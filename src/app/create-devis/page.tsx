@@ -2382,7 +2382,7 @@ export default function CreateDevisPage() {
 
           {/* Paiement comptant - inside same frame (client feedback) */}
           {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
-            <div style={{ marginTop: '15px', padding: '12px', background: '#1b1b1b', border: '1px solid #fffd01', borderRadius: '8px' }}>
+            <div style={{ marginTop: '15px', padding: '12px', background: '#1b1b1b', borderRadius: '8px' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input 
                   type="checkbox" 
@@ -2410,46 +2410,44 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>📡 Vision à distance</h3>
             <div className="product-line">
-              <div>Vision à distance</div>
-              <div></div>
-              <div></div>
-              <div className="checkbox-option" style={{ margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
                   type="checkbox"
                   checked={cameraVisionDistance}
                   onChange={(e) => setCameraVisionDistance(e.target.checked)}
+                  className="include-checkbox"
                 />
-                <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Activer</label>
+                <span>Vision à distance</span>
               </div>
-              <div className="price-display">
+              <div></div>
+              <div className="price-display" style={{ gridColumn: 4 }}>
                 {cameraVisionDistance && cameraVisionPrice > 0 ? `${cameraVisionPrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
 
             {/* Maintenance option */}
             <div className="product-line" style={{ marginTop: '15px' }}>
-              <div>
-                Contrat de maintenance
-                {cameraMaintenance && cameraMaintenancePrice > 0 && (
-                  <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '5px', background: '#1b1b1b', padding: '8px', borderRadius: '4px' }}>
-                    <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
-                    <div style={{ fontSize: '11px', marginTop: '3px' }}>
-                      (10 CHF/item si &lt; 5, 5 CHF/item si ≥ 5 caméras + NVR)
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div></div>
-              <div></div>
-              <div className="checkbox-option" style={{ margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input 
                   type="checkbox" 
                   checked={cameraMaintenance}
                   onChange={(e) => setCameraMaintenance(e.target.checked)}
+                  className="include-checkbox"
                 />
-                <label style={{ margin: 0, fontSize: '12px', marginLeft: '4px' }}>Activer</label>
+                <div>
+                  Contrat de maintenance
+                  {cameraMaintenance && cameraMaintenancePrice > 0 && (
+                    <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '5px', background: '#1b1b1b', padding: '8px', borderRadius: '4px' }}>
+                      <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
+                      <div style={{ fontSize: '11px', marginTop: '3px' }}>
+                        (10 CHF/item si &lt; 5, 5 CHF/item si ≥ 5 caméras + NVR)
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="price-display">
+              <div></div>
+              <div className="price-display" style={{ gridColumn: 4 }}>
                 {cameraMaintenance && cameraMaintenancePrice > 0 ? `${cameraMaintenancePrice.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
               </div>
             </div>
