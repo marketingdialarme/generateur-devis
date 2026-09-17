@@ -632,24 +632,176 @@ to {
     text-align: center;
 }
 
-.nav-tabs {
-    grid-template-columns: repeat(2, 1fr);
-}
-
 .form-grid {
     grid-template-columns: 1fr;
-}
-
-.payment-options {
-    grid-template-columns: repeat(2, 1fr);
 }
 
 .action-buttons {
     flex-direction: column;
 }
+}
+
+/* Phone-specific — client feedback: "une ligne sur ordi doit ressembler a
+   une ligne sur mobile". Everything shrinks (font, padding, icon/input
+   sizes); nothing collapses to a stacked/1-column layout the way the
+   768px breakpoint above does for tablets. Grid column ratios are kept
+   identical to desktop (.product-line, .nav-tabs, .payment-options) so
+   the explicit gridColumn overrides used for a few rows (Carte SIM,
+   Frais de dossier, Vision a distance...) keep working unchanged. */
+@media (max-width: 600px) {
+body {
+    padding: 8px;
+}
+
+.container {
+    border-radius: 14px;
+}
+
+.header {
+    padding: 14px 16px;
+}
+
+.company-info h1 {
+    font-size: 16px;
+}
+
+.company-info p {
+    font-size: 10px;
+}
+
+.tab-content {
+    padding: 14px 16px;
+}
+
+.nav-tabs {
+    gap: 5px;
+}
+
+.nav-tab {
+    padding: 12px 4px;
+    min-height: 78px;
+    font-size: 10px;
+    gap: 6px;
+    border-radius: 10px;
+}
+
+.nav-tab svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.quote-section, .form-section, .quote-summary {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+
+.quote-section h3, .form-section h3, .quote-summary h3 {
+    font-size: 13px;
+}
+
+.form-grid {
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 11px;
+}
+
+.form-group input, .form-group select {
+    padding: 8px 10px;
+    font-size: 12px;
+}
 
 .product-line {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 6px;
+    padding: 8px 0;
+    font-size: 11px;
+}
+
+.product-select {
+    padding: 6px 7px;
+    font-size: 11px;
+}
+
+.quantity-input {
+    padding: 6px;
+    font-size: 11px;
+    width: 44px;
+}
+
+.discount-input {
+    padding: 5px 6px;
+    font-size: 11px;
+    width: 56px;
+}
+
+.price-display {
+    font-size: 11px;
+    padding: 6px 4px;
+}
+
+.remove-btn {
+    padding: 3px 7px;
+    font-size: 11px;
+}
+
+.add-product-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+}
+
+.checkbox-option label, .option-item label {
+    font-size: 11px;
+}
+
+.include-checkbox, .offered-checkbox, .checkbox-option input[type="checkbox"], .option-item input[type="checkbox"] {
+    width: 15px !important;
+    height: 15px !important;
+}
+
+.discount-section {
+    gap: 5px;
+}
+
+.discount-section select, .discount-section input {
+    padding: 4px 5px;
+    font-size: 10px;
+}
+
+.payment-options {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.payment-option {
+    padding: 6px 2px;
+    font-size: 10px;
+    border-radius: 6px;
+}
+
+.summary-item {
+    font-size: 12px;
+}
+
+.summary-item:last-child {
+    font-size: 13px;
+}
+
+.monthly-payment {
+    padding: 10px 12px;
+    font-size: 12px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 13px;
+}
+
+.service-select {
+    font-size: 11px;
+    padding: 6px 8px;
+    width: 150px;
 }
 }
