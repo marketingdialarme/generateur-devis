@@ -28,6 +28,7 @@ import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { AppSidebar } from '@/components/AppSidebar';
+import { Bell, Camera as CameraIcon, CloudFog, DoorOpen } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
@@ -972,7 +973,14 @@ export default function CreateDevisPage() {
         {/* Header */}
       <div className="header">
         <div className="logo">
-          <div className="logo-img">D</div>
+          <div className="logo-img" style={{ padding: 6 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://dialarme.ch/wp-content/uploads/2026/09/Logotype_noir.png"
+              alt="Dialarme"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
           <div className="company-info">
             <h1>Dialarme</h1>
             <p>Générateur de devis professionnel</p>
@@ -1042,25 +1050,29 @@ export default function CreateDevisPage() {
           className={`nav-tab ${currentTab === 'alarm' ? 'active' : ''}`}
           onClick={() => setCurrentTab('alarm')}
         >
-          🚨 Alarme
+          <Bell size={28} strokeWidth={1.75} />
+          <span>Alarme</span>
         </button>
         <button 
           className={`nav-tab ${currentTab === 'camera' ? 'active' : ''}`}
           onClick={() => setCurrentTab('camera')}
         >
-          📹 Caméra de surveillance
+          <CameraIcon size={28} strokeWidth={1.75} />
+          <span>Caméra</span>
         </button>
         <button 
           className={`nav-tab ${currentTab === 'fog' ? 'active' : ''}`}
           onClick={() => setCurrentTab('fog')}
         >
-          💨 Générateur de brouillard
+          <CloudFog size={28} strokeWidth={1.75} />
+          <span>Générateur de brouillard</span>
         </button>
         <button 
           className={`nav-tab ${currentTab === 'visiophone' ? 'active' : ''}`}
           onClick={() => setCurrentTab('visiophone')}
         >
-          📞 Visiophone
+          <DoorOpen size={28} strokeWidth={1.75} />
+          <span>Visiophone</span>
         </button>
       </div>
 

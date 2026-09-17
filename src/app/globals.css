@@ -93,17 +93,23 @@ padding: 0 30px 20px;
 }
 
 .nav-tab {
-padding: 14px 6px;
+padding: 22px 10px;
 background: var(--dlm-card);
 border: 1px solid var(--dlm-border-light);
-border-radius: 10px;
+border-radius: 14px;
 cursor: pointer;
 font-size: 13px;
-font-weight: 500;
+font-weight: 600;
 color: var(--dlm-text-muted);
 transition: all 0.2s ease;
 position: relative;
 text-align: center;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 10px;
+min-height: 110px;
 }
 
 .nav-tab:hover {
@@ -112,8 +118,8 @@ color: var(--dlm-text);
 }
 
 .nav-tab.active {
-color: var(--dlm-text);
-background: var(--dlm-yellow-dim);
+color: #0a0a0a;
+background: var(--dlm-yellow);
 border-color: var(--dlm-yellow);
 }
 

@@ -15,7 +15,7 @@ import { usePathname } from 'next/navigation';
  * l'instant.
  */
 export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
 
   const items = [
@@ -42,7 +42,14 @@ export function AppSidebar() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, padding: '0 6px' }}>
         {!collapsed && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 20, height: 20, borderRadius: 6, background: '#fffd01', flex: 'none' }} />
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: '#fffd01', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 3 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://dialarme.ch/wp-content/uploads/2026/09/Logotype_noir.png"
+                alt="Dialarme"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </div>
             <span style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>Dialarme</span>
           </div>
         )}
