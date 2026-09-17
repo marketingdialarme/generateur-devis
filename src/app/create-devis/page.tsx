@@ -313,6 +313,7 @@ export default function CreateDevisPage() {
       return {
         material: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
         installation: { subtotal: 0, discount: 0, total: 0, totalBeforeDiscount: 0, discountDisplay: '' },
+        installationFeeOnly: 0,
         adminFees: { simCard: 0, processing: 0, total: 0 },
         services: { testCyclique: 0, surveillance: 0 },
         totalHT: 0,
@@ -1160,7 +1161,12 @@ export default function CreateDevisPage() {
                   const centralProduct = central === 'titane' ? titaneCentralProduct : jablotronCentralProduct;
                   // Once a central is actually applied, reflect that; before
                   // anything's chosen, reflect only what's being previewed.
-                  const active = (selectedCentral || preCentral) === central;
+                  // Bug fix: previously "(selectedCentral || preCentral)" made
+                  // a fresh click get drowned out by the still-applied
+                  // central until a new kit was actually chosen (the yellow
+                  // border didn't follow the click). preCentral alone is
+                  // always accurate -- applyKit() also calls setPreCentral.
+                  const active = preCentral === central;
                   return (
                     <div
                       key={central}
@@ -1727,7 +1733,7 @@ export default function CreateDevisPage() {
               />
               <span>Carte SIM + Activation</span>
             </div>
-            <div className="checkbox-option" style={{ margin: 0 }}>
+            <div className="checkbox-option" style={{ margin: 0, gridColumn: 3 }}>
               <input 
                 type="checkbox" 
                 checked={simcardOffered}
@@ -1737,7 +1743,7 @@ export default function CreateDevisPage() {
               />
               <label style={{ margin: 0, fontSize: '12px', color: !simcardSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display">
+            <div className="price-display" style={{ gridColumn: 4 }}>
               {!simcardSelected ? '-' : simcardOffered ? 'OFFERT' : '50.00 CHF HT'}
             </div>
           </div>
@@ -1755,7 +1761,7 @@ export default function CreateDevisPage() {
               />
               <span>Frais de dossier</span>
             </div>
-            <div className="checkbox-option" style={{ margin: 0 }}>
+            <div className="checkbox-option" style={{ margin: 0, gridColumn: 3 }}>
               <input
                 type="checkbox"
                 checked={processingOffered}
@@ -1765,7 +1771,7 @@ export default function CreateDevisPage() {
               />
               <label style={{ margin: 0, fontSize: '12px', color: !processingSelected ? '#999' : 'inherit' }}>OFFERT</label>
             </div>
-            <div className="price-display">
+            <div className="price-display" style={{ gridColumn: 4 }}>
               {!processingSelected ? '-' : processingOffered ? 'OFFERT' : '190.00 CHF HT'}
             </div>
           </div>
@@ -1847,11 +1853,11 @@ export default function CreateDevisPage() {
           <h3>📊 Récapitulatif du devis</h3>
           <div className="summary-item">
             <span>Matériel</span>
-            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.material?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents((alarmTotals?.material?.total || 0) + ((alarmTotals?.installation?.total || 0) - (alarmTotals?.installationFeeOnly || 0))) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Installation</span>
-            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.installation?.total || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
+            <span>{roundToFiveCents(roundToFiveCents(alarmTotals?.installationFeeOnly || 0) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
           <div className="summary-item">
             <span>Frais de dossier</span>

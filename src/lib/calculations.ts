@@ -78,6 +78,12 @@ export interface SectionTotals {
 export interface AlarmTotals {
   material: SectionTotals;
   installation: SectionTotals;
+  // Purely additive vs. installation.total (which still includes Matériel
+  // divers products, unchanged, for whatever else already reads it) --
+  // installationFeeOnly is just the flat "Installation et paramétrage" fee,
+  // so the on-screen récapitulatif can show Matériel divers under
+  // "Matériel" instead of "Installation" (client feedback).
+  installationFeeOnly: number;
   adminFees: {
     simCard: number;
     processing: number;
@@ -275,6 +281,7 @@ export function calculateAlarmTotals(
   const result: AlarmTotals = {
     material,
     installation: installationTotal,
+    installationFeeOnly: mainInstallTotal,
     adminFees: {
       simCard,
       processing,
