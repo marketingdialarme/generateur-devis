@@ -127,7 +127,9 @@ export default function CreateDevisPage() {
   const [currentTab, setCurrentTab] = useState<'alarm' | 'camera' | 'fog' | 'visiophone'>('alarm');
   
   // Kit modal state
-  const [showKitModal, setShowKitModal] = useState(false);
+  // Which central is highlighted in the inline Kit de base cards before any
+  // kit has actually been applied yet (alarmMaterialLines is still empty).
+  const [preCentral, setPreCentral] = useState<'titane' | 'jablotron'>('titane');
   
   // Engagement duration state
   const [engagementMonths, setEngagementMonths] = useState(48);
@@ -217,7 +219,6 @@ export default function CreateDevisPage() {
         });
       }
       setAlarmMaterialLines(newLines);
-      setShowKitModal(false);
       setIsCustomKit(true); // Mark as custom kit
       return;
     }
@@ -241,7 +242,6 @@ export default function CreateDevisPage() {
     }).filter(line => line.product);
 
     setAlarmMaterialLines(newLines);
-    setShowKitModal(false);
     setIsCustomKit(false); // Reset custom kit flag for normal kits
   };
 
@@ -1112,35 +1112,73 @@ export default function CreateDevisPage() {
             </span>
           </h3>
           
-          {/* Button to open kit selection modal */}
+          {/* Kit de base — cartes en ligne (remplace l'ancienne fenêtre popup) */}
           {alarmMaterialLines.length === 0 && (
-            <button 
-              onClick={() => setShowKitModal(true)}
-              style={{
-                width: '100%',
-                padding: '15px',
-                background: 'linear-gradient(135deg, #f4e600 0%, #f4d000 100%)',
-                border: '2px solid #f4e600',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#333',
-                marginBottom: '15px',
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-              }}
-            >
-              🛡️ Sélectionner un kit de base
-            </button>
+            <div style={{ marginBottom: 15 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                {(['titane', 'jablotron'] as const).map((central) => {
+                  const centralProduct = central === 'titane' ? titaneCentralProduct : jablotronCentralProduct;
+                  const active = preCentral === central;
+                  return (
+                    <div
+                      key={central}
+                      onClick={() => setPreCentral(central)}
+                      style={{
+                        textAlign: 'center',
+                        padding: '12px',
+                        borderRadius: 10,
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                        fontSize: 14,
+                        border: `1px solid ${active ? '#fffd01' : '#333333'}`,
+                        background: active ? 'rgba(255,253,1,0.08)' : '#151515',
+                        color: active ? '#fff' : '#9a9a9a',
+                      }}
+                    >
+                      {centralProduct ? `${centralProduct.name} — ${centralProduct.price.toFixed(2)} CHF` : (central === 'titane' ? 'Titane' : 'Jablotron')}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {(['kit1', 'kit2'] as const).map((kitType, i) => {
+                  const kitKey = `KIT-${preCentral === 'jablotron' ? 'JAB' : 'TIT'}-${i + 1}`;
+                  return (
+                    <div
+                      key={kitType}
+                      onClick={() => applyKit(preCentral, kitType)}
+                      style={{
+                        borderRadius: 10,
+                        padding: 12,
+                        cursor: 'pointer',
+                        border: '1px solid #333333',
+                        background: '#151515',
+                      }}
+                    >
+                      <div style={{ fontWeight: 500, fontSize: 13, color: '#fff', marginBottom: 4 }}>Kit {i + 1}</div>
+                      {kitSummaryLines(kitKey).map((line, j) => (
+                        <div key={j} style={{ fontSize: 12, color: '#9a9a9a', lineHeight: 1.6 }}>{line}</div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => applyKit(preCentral, 'none')}
+                style={{
+                  marginTop: 8,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#6a6a6a',
+                  fontSize: 12,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                Partir de la centrale seule, sans kit prédéfini
+              </button>
+            </div>
           )}
           <div id="alarm-material-products">
             {alarmMaterialLines.map((line, index) => (
@@ -3240,335 +3278,6 @@ export default function CreateDevisPage() {
         </div>
       </div>
 
-      {/* Kit Selection Modal */}
-      {showKitModal && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowKitModal(false);
-            }
-          }}
-        >
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '30px',
-            maxWidth: '600px',
-            width: '90%',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '25px',
-              borderBottom: '2px solid #f0f0f0',
-              paddingBottom: '15px'
-            }}>
-              <h2 style={{ margin: 0, color: '#333', fontSize: '20px' }}>
-                Sélectionner un kit de base
-              </h2>
-              <button
-                onClick={() => setShowKitModal(false)}
-                style={{
-                  background: '#e0e0e0',
-                  color: '#666',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  lineHeight: '1',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#d0d0d0'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#e0e0e0'}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Titane Kits - MUST BE FIRST */}
-            <div style={{ marginBottom: '25px' }}>
-              <h3 style={{
-                color: '#666',
-                marginBottom: '12px',
-                fontSize: '14px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                {titaneCentralProduct ? `${titaneCentralProduct.name} - ${titaneCentralProduct.price.toFixed(2)} CHF` : 'Centrale Titane'}
-              </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                <button
-                  onClick={() => applyKit('titane', 'kit1')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #f4e600',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#fffef0';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    {kitSummaryLines('KIT-TIT-1').map((line, i) => <span key={i}>{line}<br /></span>)}
-                  </div>
-                </button>
-                <button
-                  onClick={() => applyKit('titane', 'kit2')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #f4e600',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#fffef0';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(244,230,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    {kitSummaryLines('KIT-TIT-2').map((line, i) => <span key={i}>{line}<br /></span>)}
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Jablotron Kits */}
-            <div style={{ marginBottom: '25px' }}>
-              <h3 style={{
-                color: '#666',
-                marginBottom: '12px',
-                fontSize: '14px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                {jablotronCentralProduct ? `${jablotronCentralProduct.name} - ${jablotronCentralProduct.price.toFixed(2)} CHF` : 'Centrale Jablotron'}
-              </h3>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                <button
-                  onClick={() => applyKit('jablotron', 'kit1')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #6c757d',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f8f9fa';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(108,117,125,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 1</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    {kitSummaryLines('KIT-JAB-1').map((line, i) => <span key={i}>{line}<br /></span>)}
-                  </div>
-                </button>
-                <button
-                  onClick={() => applyKit('jablotron', 'kit2')}
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    padding: '15px',
-                    background: 'white',
-                    border: '2px solid #6c757d',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.2s',
-                    textAlign: 'left'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f8f9fa';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(108,117,125,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit 2</div>
-                  <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                    {kitSummaryLines('KIT-JAB-2').map((line, i) => <span key={i}>{line}<br /></span>)}
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* XTO Kit - NEW */}
-            <div style={{ marginBottom: '25px' }}>
-              <h3 style={{
-                color: '#666',
-                marginBottom: '12px',
-                fontSize: '14px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Kit XTO (Location mensuelle)
-              </h3>
-              <button
-                onClick={() => {
-                  // Inject the five kit lines promised by the visualization below
-                  // (client sheet, Alarme tab) — names, quantities and monthly
-                  // prices come from the single XTO_KIT_LINES source.
-                  const xtoProducts = XTO_KIT_LINES.map((kitLine, index) => ({
-                    id: Date.now() + index,
-                    product: {
-                      id: kitLine.xtoId,
-                      name: kitLine.name,
-                      price: kitLine.monthlyPrice,
-                      isXTO: true // Flag to identify XTO products
-                    } as any,
-                    quantity: kitLine.quantity,
-                    offered: false
-                  }));
-                  setAlarmMaterialLines(xtoProducts);
-                  setShowKitModal(false);
-                  // Set rental mode since XTO is monthly rental
-                  setAlarmRentalMode(true);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  background: 'white',
-                  border: '2px solid #28a745',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f0fff4';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(40,167,69,0.2)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ fontWeight: 600, marginBottom: '8px', color: '#333' }}>Kit Complet XTO</div>
-                <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
-                  1 Centrale XTO<br />
-                  1 Sirène extérieure avec gyrophare (50 CHF/mois)<br />
-                  4 Caméras à détection infrarouge (100 CHF/mois)<br />
-                  1 Lecteur de badge + 8 badges (30 CHF/mois)<br />
-                  + Centre d&apos;intervention GS inclus
-                </div>
-              </button>
-            </div>
-
-            {/* Custom Kit Button - Placed AFTER all 3 centrales */}
-            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px solid #e9ecef' }}>
-              <button
-                onClick={() => applyKit('titane', 'none')}
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  background: 'white',
-                  border: '2px dashed #f4e600',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#333',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#fffef0';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>➕</span>
-                <span>Créer un kit personnalisé</span>
-              </button>
-            </div>
-
-            <div style={{
-              marginTop: '20px',
-              padding: '12px',
-              background: '#f8f9fa',
-              borderLeft: '3px solid #f4e600',
-              borderRadius: '4px'
-            }}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-                💡 Le kit sera automatiquement marqué comme OFFERT
-              </p>
-          </div>
-        </div>
-      </div>
-      )}
     </div>
       </div>
     </div>
