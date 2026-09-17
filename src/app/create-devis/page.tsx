@@ -1004,15 +1004,13 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Mobile : pas de logo ni de bulle (client feedback : trop
-            d'elements) -- date au format JJ/MM/AA, conseiller sur deux
-            lignes (prenom / NOM), le tout aligne a droite. */}
-        <div className="header-conseiller-mobile" style={{ display: 'none', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-          <span style={{ fontSize: 11, color: '#8a8a8a' }}>
-            {new Date().toLocaleDateString('fr-CH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-          </span>
+        {/* Mobile : toute la marque (logo + texte Dialarme) est masquee via
+            CSS -- redondante avec le bouton flottant. Ce bloc devient toute
+            la largeur de l'en-tete : conseiller cale a gauche, date calee a
+            droite, comme un tableau a une ligne / deux colonnes. */}
+        <div className="header-conseiller-mobile" style={{ display: 'none', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
           {commercial ? (
-            <div style={{ textAlign: 'right', lineHeight: 1.25 }}>
+            <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
               <div style={{ fontSize: 11, color: '#fff' }}>{commercial.split(' ')[0]}</div>
               <div style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
                 {commercial.split(' ').slice(1).join(' ').toUpperCase()}
@@ -1021,6 +1019,9 @@ export default function CreateDevisPage() {
           ) : (
             <span style={{ fontSize: 11, color: '#6a6a6a' }}>Aucun conseiller</span>
           )}
+          <span style={{ fontSize: 11, color: '#8a8a8a' }}>
+            {new Date().toLocaleDateString('fr-CH', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+          </span>
         </div>
         </div>
 

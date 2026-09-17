@@ -34,6 +34,27 @@ min-height: 100vh;
 padding: 20px;
 }
 
+/* Flèches natives des champs numériques retirées partout -- leur largeur
+   variable selon navigateur/valeur était une source de désalignement
+   entre lignes (ex: Test cyclique vs Service de surveillance). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+
+input[type="number"] {
+-moz-appearance: textfield;
+}
+
+/* Couleurs explicites pour les options des listes deroulantes -- respectees
+   sur ordinateur et certains navigateurs Android, pas sur le picker natif
+   iOS qui ignore ce style par conception du systeme. */
+select option {
+background: #151515;
+color: #f2f2f2;
+}
+
 .container {
 max-width: 1400px;
 margin: 0 auto;
@@ -482,6 +503,7 @@ font-weight: 500;
 .action-buttons {
 display: flex;
 justify-content: center;
+align-items: center;
 gap: 12px;
 flex-wrap: wrap;
 }
@@ -641,6 +663,7 @@ to {
 
 .action-buttons {
     flex-direction: column;
+    align-items: center;
 }
 }
 
@@ -664,7 +687,13 @@ body {
     padding: 14px 16px;
 }
 
-.header-logo-desktop {
+.header {
+    flex-direction: row !important;
+    text-align: left !important;
+    justify-content: flex-start;
+}
+
+.logo {
     display: none;
 }
 

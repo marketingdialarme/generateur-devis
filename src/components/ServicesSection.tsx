@@ -282,24 +282,15 @@ export function ServicesSection(props: ServicesSectionProps) {
       {/* Surveillance */}
       <div className="product-line">
         <div>Service de surveillance</div>
-        <div>
-          <select
-            value={surveillanceType}
-            onChange={(e) => onSurveillanceTypeChange(e.target.value)}
-            className="service-select"
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e9ecef',
-              borderRadius: '6px',
-              fontSize: '14px',
-              minWidth: '200px'
-            }}
-          >
-            {getSurveillanceOptions().map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={surveillanceType}
+          onChange={(e) => onSurveillanceTypeChange(e.target.value)}
+          className="service-select"
+        >
+          {getSurveillanceOptions().map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
         <input
           type="number"
           value={surveillancePrice}
