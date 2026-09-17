@@ -2343,13 +2343,14 @@ export default function CreateDevisPage() {
                     if (p.ref === 'INS-1') return cameraQty === 1;
                     return true;
                   })
-                  .map((product, i) => (
+                  .map((product) => (
                 <button 
                   key={product.ref}
+                  className="payment-option"
                   onClick={() => {
                     setCameraInstallationLines([{ id: Date.now(), product, quantity: 1, offered: false }]);
                   }}
-                  style={{ flex: 1, minWidth: '140px', padding: '12px', background: '#151515', border: `2px dashed ${['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4]}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: ['#28a745', '#007bff', '#f4b400', '#6c757d'][i % 4] }}
+                  style={{ flex: 1, minWidth: '140px' }}
                 >
                   + {product.name} ({product.price.toFixed(0)} CHF)
                 </button>
