@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { CustomSelect } from './CustomSelect';
 
 interface ServicesSectionProps {
   // Test Cyclique
@@ -326,7 +327,7 @@ export function ServicesSection(props: ServicesSectionProps) {
       {!rentalMode && (
       <div className="product-line">
         <div>Service de surveillance</div>
-        <select
+        <CustomSelect
           value={surveillanceType}
           onChange={(e) => onSurveillanceTypeChange(e.target.value)}
           className="service-select"
@@ -334,7 +335,7 @@ export function ServicesSection(props: ServicesSectionProps) {
           {getSurveillanceOptions().map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
-        </select>
+        </CustomSelect>
         <input
           type="number"
           value={surveillancePrice}

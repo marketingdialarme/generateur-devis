@@ -5,6 +5,8 @@
  * Converted from script.js lines 3961-3978
  */
 
+import { CustomSelect } from './CustomSelect';
+
 interface CommercialSelectorProps {
   value: string;
   customValue: string;
@@ -45,7 +47,7 @@ export function CommercialSelector(props: CommercialSelectorProps) {
     <div className="form-group">
       <label htmlFor={id}>{label}</label>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <select
+        <CustomSelect
           id={id}
           value={showCustom ? 'autre' : value}
           onChange={(e) => handleSelectChange(e.target.value)}
@@ -57,7 +59,7 @@ export function CommercialSelector(props: CommercialSelectorProps) {
           <option value="autre" style={{ fontStyle: 'italic' }}>
             ➕ Autre (saisir le nom)
           </option>
-        </select>
+        </CustomSelect>
         
         {showCustom && (
           <input

@@ -1257,7 +1257,7 @@ export default function CreateDevisPage() {
             </div>
             <div className="form-group">
               <label htmlFor="propertyType">Type de bien</label>
-              <select 
+              <CustomSelect 
                 id="propertyType"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -1265,13 +1265,13 @@ export default function CreateDevisPage() {
                 {Object.entries(propertyTypeLabels).map(([ref, label]) => (
                   <option key={ref} value={ref}>{label}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
             {!hasActiveSession && (
             <div className="form-group">
               <label htmlFor="commercial">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <select 
+                <CustomSelect 
                   id="commercial" 
                   value={showCustomCommercial ? 'autre' : commercial}
                   onChange={(e) => handleCommercialSelection(e.target.value)}
@@ -1283,7 +1283,7 @@ export default function CreateDevisPage() {
                   <option value="autre" style={{ fontStyle: 'italic' }}>
                     ➕ Autre (saisir le nom)
                   </option>
-                </select>
+                </CustomSelect>
                 {showCustomCommercial && (
                   <input 
                     type="text" 
@@ -1637,13 +1637,13 @@ export default function CreateDevisPage() {
           
           <div className="discount-section">
             <label>Réduction:</label>
-            <select 
+            <CustomSelect 
               value={alarmMaterialDiscount.type}
               onChange={(e) => setAlarmMaterialDiscount({ ...alarmMaterialDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
               <option value="fixed">CHF</option>
-            </select>
+            </CustomSelect>
             <input 
               type="number" 
               value={alarmMaterialDiscount.value}
@@ -1893,13 +1893,13 @@ export default function CreateDevisPage() {
           {/* Discount section */}
           <div className="discount-section">
             <label>Réduction:</label>
-            <select 
+            <CustomSelect 
               value={alarmInstallationDiscount.type}
               onChange={(e) => setAlarmInstallationDiscount({ ...alarmInstallationDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
               <option value="fixed">CHF</option>
-            </select>
+            </CustomSelect>
             <input 
               type="number" 
               value={alarmInstallationDiscount.value}
@@ -2102,7 +2102,7 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>📡 Service de surveillance</h3>
             <div className="product-line">
-              <select
+              <CustomSelect
                 className="service-select"
                 value={alarmLocationSurveillance}
                 onChange={(e) => setAlarmLocationSurveillance(e.target.value)}
@@ -2112,7 +2112,7 @@ export default function CreateDevisPage() {
                 <option value="LOC-AUTO-PRO">Autosurveillance professionnel</option>
                 <option value="LOC-TEL-PAR">Télésurveillance particulier</option>
                 <option value="LOC-TEL-PRO">Télésurveillance professionnel</option>
-              </select>
+              </CustomSelect>
               <div></div>
               <div></div>
               <div className="price-display">
@@ -2389,7 +2389,7 @@ export default function CreateDevisPage() {
             </div>
             <div className="form-group">
               <label htmlFor="propertyTypeCamera">Type de bien</label>
-              <select 
+              <CustomSelect 
                 id="propertyTypeCamera"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -2397,13 +2397,13 @@ export default function CreateDevisPage() {
                 {Object.entries(propertyTypeLabels).map(([ref, label]) => (
                   <option key={ref} value={ref}>{label}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
             {!hasActiveSession && (
             <div className="form-group">
               <label htmlFor="commercialCamera">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <select 
+                <CustomSelect 
                   id="commercialCamera" 
                   value={showCustomCommercial ? 'autre' : commercial}
                   onChange={(e) => handleCommercialSelection(e.target.value)}
@@ -2415,7 +2415,7 @@ export default function CreateDevisPage() {
                   <option value="autre" style={{ fontStyle: 'italic' }}>
                     ➕ Autre (saisir le nom)
                   </option>
-                </select>
+                </CustomSelect>
                 {showCustomCommercial && (
                   <input 
                     type="text" 
@@ -2563,13 +2563,13 @@ export default function CreateDevisPage() {
           </div>
           <div className="discount-section">
             <label>Réduction:</label>
-            <select 
+            <CustomSelect 
               value={cameraMaterialDiscount.type}
               onChange={(e) => setCameraMaterialDiscount({ ...cameraMaterialDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
               <option value="fixed">CHF</option>
-            </select>
+            </CustomSelect>
             <input 
               type="number" 
               value={cameraMaterialDiscount.value}
@@ -2620,7 +2620,7 @@ export default function CreateDevisPage() {
               });
               return cameraInstallationLines.map((line, index) => (
               <div key={line.id} className="product-line">
-                <select 
+                <CustomSelect 
                   className="product-select"
                   value={(line.product as any)?.ref || ''}
                   onChange={(e) => {
@@ -2636,7 +2636,7 @@ export default function CreateDevisPage() {
                     .map(p => (
                       <option key={p.ref} value={p.ref}>{p.name}</option>
                     ))}
-                </select>
+                </CustomSelect>
                 <input 
                   type="number" 
                   className="quantity-input"
@@ -2708,13 +2708,13 @@ export default function CreateDevisPage() {
           {/* Discount section */}
           <div className="discount-section" style={{ marginTop: '15px' }}>
             <label>Réduction:</label>
-            <select 
+            <CustomSelect 
               value={cameraInstallationDiscount.type}
               onChange={(e) => setCameraInstallationDiscount({ ...cameraInstallationDiscount, type: e.target.value as 'percent' | 'fixed' })}
             >
               <option value="percent">%</option>
               <option value="fixed">CHF</option>
-            </select>
+            </CustomSelect>
             <input 
               type="number" 
               value={cameraInstallationDiscount.value}
@@ -2951,7 +2951,7 @@ export default function CreateDevisPage() {
             </div>
             <div className="form-group">
               <label htmlFor="propertyType-fog">Type de bien</label>
-              <select 
+              <CustomSelect 
                 id="propertyType-fog"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -2959,7 +2959,7 @@ export default function CreateDevisPage() {
                 {Object.entries(propertyTypeLabels).map(([ref, label]) => (
                   <option key={ref} value={ref}>{label}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
 
@@ -3478,7 +3478,7 @@ export default function CreateDevisPage() {
             </div>
             <div className="form-group">
               <label htmlFor="propertyType-visio">Type de bien</label>
-              <select 
+              <CustomSelect 
                 id="propertyType-visio"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -3486,7 +3486,7 @@ export default function CreateDevisPage() {
                 {Object.entries(propertyTypeLabels).map(([ref, label]) => (
                   <option key={ref} value={ref}>{label}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
 
