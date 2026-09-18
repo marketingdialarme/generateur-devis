@@ -246,13 +246,6 @@ function createPDFHeader(doc: jsPDF, info: QuoteInfo): void {
     ? (info.type === 'camera' ? 'Offre Location Vidéosurveillance' : 'Offre Location Alarme')
     : 'Offre Partenariat';
   doc.text(title, 300, 90);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  const subtitle = doc.splitTextToSize(
-    "Installation et kit de base prise en charge, sous réserve de souscrire à l'un de nos contrats de service.",
-    255
-  );
-  doc.text(subtitle, 300, 102);
 
   // Quote meta
   doc.setFontSize(9);
@@ -410,7 +403,7 @@ function createAlarmPDFSections(
   yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos, reductions);
 
   // ---- Télésurveillance + Test Cyclique block ----
-  if (options.services?.surveillance?.type) {
+  if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
     yPos = ensureSpace(doc, yPos, 75);
     yPos = drawSurveillanceBlock(doc, options.services, months, yPos);
   }
@@ -632,16 +625,22 @@ function drawSurveillanceBlock(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  // Title follows the selected surveillance mode (quote prefix already does: DIA-AUTO / DIA-TELES)
-  const isAutosurveillance = services.surveillance?.type?.startsWith('autosurveillance') ?? false;
-  doc.text(
-    isAutosurveillance ? 'AUTOSURVEILLANCE + TEST CYCLIQUE' : 'TÉLÉSURVEILLANCE + TEST CYCLIQUE',
-    LEFT + 12,
-    yPos + 16
-  );
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 30);
+  // Title adapts to what's actually present, rather than assuming both
+  // surveillance and test cyclique are always selected together (client
+  // feedback: surveillance is sometimes skipped, test cyclique shouldn't
+  // vanish with it, and the title shouldn't claim "+ TEST CYCLIQUE" when
+  // it wasn't taken).
+  const hasTestCyclique = services.testCyclique?.selected ?? false;
+  const surveillanceLabel = services.surveillance?.type
+    ? (services.surveillance.type.startsWith('autosurveillance') ? 'AUTOSURVEILLANCE' : 'TÉLÉSURVEILLANCE')
+    : '';
+  const title = [surveillanceLabel, hasTestCyclique ? 'TEST CYCLIQUE' : ''].filter(Boolean).join(' + ');
+  doc.text(title, LEFT + 12, yPos + 16);
+  if (surveillanceLabel) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 30);
+  }
 
   drawLabelValue(doc, 'Total HT', `${surveillanceHT.toFixed(2)} CHF`, yPos + 10);
   drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
