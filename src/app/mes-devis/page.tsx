@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getQuotes, linkConseillerProfile } from '@/lib/services/database.service';
+import { AppSidebar } from '@/components/AppSidebar';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,21 +34,17 @@ export default async function MesDevisPage() {
 
   if (!profile?.commercial_name) {
     return (
-      <div style={pageWrapStyle}>
-        <div style={cardStyle}>
-          <h1 style={titleStyle}>Mes devis</h1>
-          <div style={{
-            background: '#fff3cd',
-            border: '1px solid #ffe69c',
-            borderRadius: '8px',
-            padding: '16px',
-            fontSize: '14px',
-            color: '#664d03'
-          }}>
-            ⚠️ Aucun conseiller dans la feuille Conseillers n&apos;a l&apos;adresse {user.email}.
-            Vérifiez qu&apos;elle y est bien renseignée, ou contactez le support.
+      <div style={{ background: '#0a0a0a', minHeight: '100vh' }}>
+        <AppSidebar />
+        <div style={pageWrapStyle}>
+          <div className="quote-section" style={{ maxWidth: 900, margin: '0 auto' }}>
+            <h1 style={titleStyle}>Mes devis</h1>
+            <div style={warningBoxStyle}>
+              ⚠️ Aucun conseiller dans la feuille Conseillers n&apos;a l&apos;adresse {user.email}.
+              Vérifiez qu&apos;elle y est bien renseignée, ou contactez le support.
+            </div>
+            <SignOutForm />
           </div>
-          <SignOutForm />
         </div>
       </div>
     );
@@ -56,56 +53,59 @@ export default async function MesDevisPage() {
   const quotes = await getQuotes({ commercial: profile.commercial_name, limit: 100 });
 
   return (
-    <div style={pageWrapStyle}>
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <div>
-            <h1 style={titleStyle}>Mes devis</h1>
-            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{profile.commercial_name}</p>
+    <div style={{ background: '#0a0a0a', minHeight: '100vh' }}>
+      <AppSidebar />
+      <div style={pageWrapStyle}>
+        <div className="quote-section" style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+            <div>
+              <h1 style={titleStyle}>Mes devis</h1>
+              <p style={{ fontSize: '13px', color: '#9a9a9a', margin: 0 }}>{profile.commercial_name}</p>
+            </div>
+            <SignOutForm />
           </div>
-          <SignOutForm />
-        </div>
 
-        {quotes.length === 0 ? (
-          <p style={{ fontSize: '14px', color: '#666', marginTop: '24px' }}>
-            Aucun devis enregistré pour l&apos;instant.
-          </p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#888' }}>
-                <th style={thStyle}>Date</th>
-                <th style={thStyle}>Client</th>
-                <th style={thStyle}>Type</th>
-                <th style={thStyle}>Produits</th>
-                <th style={thStyle}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.map((q) => (
-                <tr key={q.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={tdStyle}>
-                    {q.created_at ? new Date(q.created_at).toLocaleDateString('fr-CH') : '—'}
-                  </td>
-                  <td style={tdStyle}>{q.client_name}</td>
-                  <td style={tdStyle}>
-                    {q.quote_type === 'alarme'
-                      ? `Alarme${q.central_type ? ` (${q.central_type})` : ''}`
-                      : 'Caméras'}
-                  </td>
-                  <td style={tdStyle}>{q.products_count}</td>
-                  <td style={tdStyle}>
-                    {q.drive_url && (
-                      <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a73e8' }}>
-                        Voir le PDF
-                      </a>
-                    )}
-                  </td>
+          {quotes.length === 0 ? (
+            <p style={{ fontSize: '14px', color: '#9a9a9a', marginTop: '24px' }}>
+              Aucun devis enregistré pour l&apos;instant.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid #262626', color: '#6a6a6a' }}>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Client</th>
+                  <th style={thStyle}>Type</th>
+                  <th style={thStyle}>Produits</th>
+                  <th style={thStyle}></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {quotes.map((q) => (
+                  <tr key={q.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
+                    <td style={tdStyle}>
+                      {q.created_at ? new Date(q.created_at).toLocaleDateString('fr-CH') : '—'}
+                    </td>
+                    <td style={tdStyle}>{q.client_name}</td>
+                    <td style={tdStyle}>
+                      {q.quote_type === 'alarme'
+                        ? `Alarme${q.central_type ? ` (${q.central_type})` : ''}`
+                        : 'Caméras'}
+                    </td>
+                    <td style={tdStyle}>{q.products_count}</td>
+                    <td style={tdStyle}>
+                      {q.drive_url && (
+                        <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#fffd01' }}>
+                          Voir le PDF
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -116,11 +116,11 @@ function SignOutForm() {
     <form action="/auth/signout" method="post">
       <button type="submit" style={{
         background: 'transparent',
-        border: '1px solid #ccc',
+        border: '1px solid #333333',
         borderRadius: '6px',
         padding: '6px 12px',
         fontSize: '12px',
-        color: '#555',
+        color: '#9a9a9a',
         cursor: 'pointer'
       }}>
         Se déconnecter
@@ -131,24 +131,23 @@ function SignOutForm() {
 
 const pageWrapStyle: React.CSSProperties = {
   minHeight: '100vh',
-  background: '#f5f5f5',
   padding: '40px 20px'
 };
 
-const cardStyle: React.CSSProperties = {
-  background: 'white',
-  borderRadius: '12px',
-  padding: '32px',
-  maxWidth: '900px',
-  margin: '0 auto',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
+const warningBoxStyle: React.CSSProperties = {
+  background: 'rgba(255, 193, 7, 0.1)',
+  border: '1px solid rgba(255, 193, 7, 0.4)',
+  borderRadius: '8px',
+  padding: '16px',
+  fontSize: '14px',
+  color: '#ffc107'
 };
 
 const titleStyle: React.CSSProperties = {
   fontSize: '22px',
   marginBottom: '4px',
-  color: '#1a1a1a'
+  color: '#fff'
 };
 
 const thStyle: React.CSSProperties = { padding: '8px 6px', fontWeight: 500 };
-const tdStyle: React.CSSProperties = { padding: '10px 6px' };
+const tdStyle: React.CSSProperties = { padding: '10px 6px', color: '#e0e0e0' };
