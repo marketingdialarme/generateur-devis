@@ -279,7 +279,10 @@ export function ServicesSection(props: ServicesSectionProps) {
         </div>
       </div>
 
-      {/* Surveillance */}
+      {/* Surveillance -- masque en mode location (Chantier: deja inclus
+          dans XTO-ABO ; Location: sa propre section dediee (LOC-AUTO,
+          LOC-TEL) existe deja ailleurs, redondant sinon). */}
+      {!rentalMode && (
       <div className="product-line">
         <div>Service de surveillance</div>
         <select
@@ -313,8 +316,9 @@ export function ServicesSection(props: ServicesSectionProps) {
           {surveillanceTotal > 0 ? `${surveillanceTotal.toFixed(2)} CHF/mois` : '0.00 CHF/mois'}
         </div>
       </div>
+      )}
 
-      {!centralType && surveillanceType && (
+      {!rentalMode && !centralType && surveillanceType && (
         <div style={{
           marginTop: '10px',
           padding: '10px',

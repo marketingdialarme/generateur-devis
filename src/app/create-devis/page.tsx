@@ -1926,7 +1926,7 @@ export default function CreateDevisPage() {
                     >
                       <option value="">Sélectionner un produit</option>
                       {xtoCatalog
-                        .filter(p => !(alarmKits['KIT-XTO'] || []).some(k => k.ref === p.ref) && p.ref !== 'XTO-ABO')
+                        .filter(p => ['XTO-SIR', 'XTO-MOU', 'XTO-LEC'].includes(p.ref || ''))
                         .map(p => (
                           <option key={p.ref} value={p.ref}>{p.name}</option>
                         ))}
