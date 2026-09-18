@@ -165,6 +165,7 @@ export default function CreateDevisPage() {
   // filled once /api/products/fog resolves. fogCatalogError drives a
   // visible banner if the Sheet can't be reached.
   const [fogCatalog, setFogCatalog] = useState<FogProduct[]>([]);
+  const [fogDefaultKit, setFogDefaultKit] = useState<{ ref: string; quantity: number }[]>([]);
   const [fogCatalogError, setFogCatalogError] = useState<string | null>(null);
   // Titane/Jablotron only — XTO stays on its own hardcoded catalog for now.
   const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
@@ -175,6 +176,10 @@ export default function CreateDevisPage() {
   // alarmRentalMode is true. Defaults to 'chantier' but nothing is applied
   // until the conseiller actually picks one.
   const [alarmRentalType, setAlarmRentalType] = useState<'chantier' | 'location' | null>(null);
+  // Service de surveillance choice for the Location (Jablotron) rental kit
+  // -- separate from the vente flow's surveillanceType, since the refs and
+  // prices (LOC-AUTO-*/LOC-TEL-*, from Config) are different.
+  const [alarmLocationSurveillance, setAlarmLocationSurveillance] = useState('');
 
   // Location "Location standard" always starts from a Jablotron centrale --
   // seed it as soon as this kit type is chosen and the catalog is loaded,
@@ -227,6 +232,7 @@ export default function CreateDevisPage() {
   // silently showing stale data. See fetchVisiophoneProductsFromSheet for
   // why Visiophone was the first category moved off the hardcoded catalog.
   const [visiophoneCatalog, setVisiophoneCatalog] = useState<VisiophoProduct[]>([]);
+  const [visiophoDefaultKit, setVisiophoDefaultKit] = useState<{ name: string; quantity: number }[]>([]);
   const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
@@ -433,56 +439,50 @@ export default function CreateDevisPage() {
     setCameraMaintenancePrice(totalPrice);
   }, [cameraMaterialLines, cameraMaintenance, configValues]);
   
-  // Initialize Fog kit de base on mount. Matches by REF (GEN-BRO/GEN-CLA/
-  // GEN-VOL) rather than a hardcoded id, since ids for sheet-sourced rows
-  // are assigned by row order — the REF is the stable key.
+  // Initialize Fog kit de base on mount -- now driven by the Sheet's
+  // "Inclut kit de base"/"Quantite kit de base" columns (fogDefaultKit),
+  // not a hardcoded list, so the client can adjust the default kit from
+  // the Sheet directly (client feedback).
   useEffect(() => {
-    if (fogLines.length === 0 && fogCatalog.length > 0) {
-      const fogKit = [
-        { ref: 'GEN-BRO', quantity: 1, offered: true }, // Générateur
-        { ref: 'GEN-CLA', quantity: 1, offered: true }, // Clavier
-        { ref: 'GEN-VOL', quantity: 1, offered: true }, // Détecteur
-      ];
-      
-      const newLines: ProductLineData[] = fogKit.map((item, index) => {
+    if (fogLines.length === 0 && fogCatalog.length > 0 && fogDefaultKit.length > 0) {
+      const newLines: ProductLineData[] = fogDefaultKit.map((item, index) => {
         const product = fogCatalog.find(p => p.ref === item.ref);
         return {
           id: Date.now() + index,
           product: product || null,
           quantity: item.quantity,
-          offered: item.offered
+          offered: fogKitOffert
         };
-      });
+      }).filter(line => line.product);
       
       setFogLines(newLines);
     }
-  }, [fogCatalog]);
+  }, [fogCatalog, fogDefaultKit]);
   
   // Initialize Visiophone products on mount. Matches by name rather than a
   // hardcoded id since ids for sheet-sourced products are assigned by row
   // order, not fixed — see fetchVisiophoneProductsFromSheet. Depends on
   // visiophoneCatalog so this still finds the right products once the live
   // fetch replaces the static fallback the state started from.
+  // Initialize Visiophone kit de base on mount -- now driven by the Sheet's
+  // "Inclut kit de base"/"Quantite kit de base" columns (visiophoDefaultKit,
+  // keyed by exact Nom since there's no REF column here), not a hardcoded
+  // fuzzy name match (client feedback: easier to adjust from the Sheet).
   useEffect(() => {
-    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0) {
-      const visiophoKit = [
-        { match: 'Interphone', quantity: 1, offered: false },
-        { match: 'Ecran', quantity: 1, offered: false }, // matches "Écran"/"Ecran complémentaire" either way
-      ];
-      
-      const newLines: ProductLineData[] = visiophoKit.map((item, index) => {
-        const product = visiophoneCatalog.find(p => p.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(item.match));
+    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0 && visiophoDefaultKit.length > 0) {
+      const newLines: ProductLineData[] = visiophoDefaultKit.map((item, index) => {
+        const product = visiophoneCatalog.find(p => p.name === item.name);
         return {
           id: Date.now() + index,
           product: product || null,
           quantity: item.quantity,
-          offered: item.offered
+          offered: visiophoKitOffert
         };
-      });
+      }).filter(line => line.product);
       
       setVisiophoLines(newLines);
     }
-  }, [visiophoneCatalog]);
+  }, [visiophoneCatalog, visiophoDefaultKit]);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -662,6 +662,7 @@ export default function CreateDevisPage() {
         if (typeof result.data.installationPrice === 'number') {
           setVisiophoInstallationPrice(result.data.installationPrice);
         }
+        setVisiophoDefaultKit(result.data.defaultKit || []);
       })
       .catch((error) => {
         console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
@@ -684,6 +685,7 @@ export default function CreateDevisPage() {
           ...result.data.products,
           { id: 99, name: 'Autre', price: 0, isCustom: true },
         ]);
+        setFogDefaultKit(result.data.defaultKit || []);
         setFogCatalogError(null);
       })
       .catch((error) => {
@@ -1878,7 +1880,7 @@ export default function CreateDevisPage() {
               <div></div>
               <div></div>
               <div className="price-display">
-                {(xtoCatalog.find(p => p.ref === 'XTO-ABO')?.price ?? 790).toFixed(2)} CHF/mois
+                {(configValues['XTO-ABO'] ?? 790).toFixed(2)} CHF/mois
               </div>
             </div>
           </div>
@@ -1970,6 +1972,30 @@ export default function CreateDevisPage() {
             )}
             <div style={{ fontSize: 11, color: '#6a6a6a', marginTop: 8 }}>
               Centrale Jablotron incluse + jusqu&apos;à 10 produits supplémentaires.
+            </div>
+          </div>
+        )}
+
+        {alarmRentalMode && alarmRentalType === 'location' && (
+          <div className="quote-section">
+            <h3>📡 Service de surveillance</h3>
+            <div className="product-line">
+              <select
+                className="service-select"
+                value={alarmLocationSurveillance}
+                onChange={(e) => setAlarmLocationSurveillance(e.target.value)}
+              >
+                <option value="">Aucun</option>
+                <option value="LOC-AUTO-PAR">Autosurveillance particulier</option>
+                <option value="LOC-AUTO-PRO">Autosurveillance professionnel</option>
+                <option value="LOC-TEL-PAR">Télésurveillance particulier</option>
+                <option value="LOC-TEL-PRO">Télésurveillance professionnel</option>
+              </select>
+              <div></div>
+              <div></div>
+              <div className="price-display">
+                {alarmLocationSurveillance ? `${(configValues[alarmLocationSurveillance] ?? 0).toFixed(2)} CHF/mois` : '-'}
+              </div>
             </div>
           </div>
         )}

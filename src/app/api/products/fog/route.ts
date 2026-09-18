@@ -18,11 +18,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const products = await fetchFogProductsFromSheet();
+    const { products, defaultKit } = await fetchFogProductsFromSheet();
 
     return NextResponse.json({
       success: true,
-      data: { products },
+      data: { products, defaultKit },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

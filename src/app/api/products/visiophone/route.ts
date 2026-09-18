@@ -21,11 +21,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { products, installationPrice } = await fetchVisiophoneProductsFromSheet();
+    const { products, installationPrice, defaultKit } = await fetchVisiophoneProductsFromSheet();
 
     return NextResponse.json({
       success: true,
-      data: { products, installationPrice },
+      data: { products, installationPrice, defaultKit },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -33,8 +33,8 @@ const CONFIG_RANGE = 'Config!A1:G';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
-let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
-let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
+let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }; fetchedAt: number } | null = null;
+let fogCache: { data: { products: FogProduct[]; defaultKit: { ref: string; quantity: number }[] }; fetchedAt: number } | null = null;
 let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
 let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
@@ -190,7 +190,7 @@ export async function fetchCommercialsFromSheet(): Promise<Record<string, Commer
  * caller (the API route, then the UI) is responsible for showing a clear
  * error rather than masking a broken connection with stale duplicate data.
  */
-export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: VisiophoProduct[]; installationPrice: number | null }> {
+export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }> {
   if (visiophoneCache && Date.now() - visiophoneCache.fetchedAt < CACHE_TTL_MS) {
     return visiophoneCache.data;
   }
@@ -211,6 +211,9 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: Vi
 
   const products: VisiophoProduct[] = [];
   let installationPrice: number | null = null;
+  // "Inclut kit de base" / "Quantite kit de base" -- read from the Sheet
+  // now (client feedback), keyed by Nom since Visiophone has no REF column.
+  const defaultKit: { name: string; quantity: number }[] = [];
   let nextId = 300;
 
   for (const row of rows) {
@@ -228,13 +231,19 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: Vi
     const fiche = row['Fiche'] ? extractDriveFileId(row['Fiche']) : undefined;
     products.push({ id: nextId, name: nom.trim(), price, fiche });
     nextId += 1;
+
+    const inclu = String(row['Inclut kit de base'] ?? '').trim().toUpperCase();
+    if (['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(inclu)) {
+      const qty = parseInt(row['Quantite kit de base'] || '1', 10) || 1;
+      defaultKit.push({ name: nom.trim(), quantity: qty });
+    }
   }
 
   if (products.length === 0) {
     throw new Error('Produits_Visiophone returned no usable rows');
   }
 
-  const data = { products, installationPrice };
+  const data = { products, installationPrice, defaultKit };
   visiophoneCache = { data, fetchedAt: Date.now() };
   return data;
 }
@@ -251,7 +260,7 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: Vi
  *
  * No fallback on failure, same reasoning as fetchVisiophoneProductsFromSheet.
  */
-export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
+export async function fetchFogProductsFromSheet(): Promise<{ products: FogProduct[]; defaultKit: { ref: string; quantity: number }[] }> {
   if (fogCache && Date.now() - fogCache.fetchedAt < CACHE_TTL_MS) {
     return fogCache.data;
   }
@@ -271,6 +280,9 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
   const rows = rowsByHeader(rawRows, ['Nom', 'PRIX']);
 
   const products: FogProduct[] = [];
+  // "Inclut kit de base" / "Quantite kit de base" -- read straight from the
+  // Sheet now (client feedback: easier to adjust than a hardcoded default).
+  const defaultKit: { ref: string; quantity: number }[] = [];
   let nextId = 200;
 
   for (const row of rows) {
@@ -280,18 +292,25 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
     const price = parseFloat(row['PRIX']);
     if (isNaN(price)) continue;
 
-    const ref = row['REF'];
+    const ref = row['REF'] ? row['REF'].trim() : undefined;
     const fiche = row['Fiche'] ? extractDriveFileId(row['Fiche']) : undefined;
-    products.push({ id: nextId, name: nom.trim(), price, ref: ref ? ref.trim() : undefined, fiche });
+    products.push({ id: nextId, name: nom.trim(), price, ref, fiche });
     nextId += 1;
+
+    const inclu = String(row['Inclut kit de base'] ?? '').trim().toUpperCase();
+    if (ref && ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(inclu)) {
+      const qty = parseInt(row['Quantite kit de base'] || '1', 10) || 1;
+      defaultKit.push({ ref, quantity: qty });
+    }
   }
 
   if (products.length === 0) {
     throw new Error('Produits_Générateur_de_brouillard returned no usable rows');
   }
 
-  fogCache = { data: products, fetchedAt: Date.now() };
-  return products;
+  const data = { products, defaultKit };
+  fogCache = { data, fetchedAt: Date.now() };
+  return data;
 }
 
 /**
@@ -358,13 +377,14 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   // header wording entirely. Still validated against the header text below,
   // so a future column reorder fails loudly instead of repeating this bug.
   const colIdx = (letter: string) => letter.charCodeAt(0) - 'A'.charCodeAt(0);
-  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2', 'KIT-XTO'];
+  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2', 'KIT-XTO', 'KIT-LOC'];
   const kitColumns: Record<string, { incluIdx: number; qteIdx: number }> = {
     'KIT-TIT-1': { incluIdx: colIdx('D'), qteIdx: colIdx('E') },
     'KIT-TIT-2': { incluIdx: colIdx('F'), qteIdx: colIdx('G') },
     'KIT-JAB-1': { incluIdx: colIdx('H'), qteIdx: colIdx('I') },
     'KIT-JAB-2': { incluIdx: colIdx('J'), qteIdx: colIdx('K') },
     'KIT-XTO': { incluIdx: colIdx('L'), qteIdx: colIdx('M') },
+    'KIT-LOC': { incluIdx: colIdx('N'), qteIdx: colIdx('O') },
   };
 
   const misplacedKitCols = KIT_CODES.filter((code) => {
@@ -374,7 +394,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     return !incluHeader.includes(code) || !qteHeader.includes(code);
   });
   if (misplacedKitCols.length > 0) {
-    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K, L/M)`);
+    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K, L/M, N/O)`);
   }
 
   const products: AlarmProduct[] = [];
@@ -384,7 +404,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   // which drives the Titane/Jablotron kit-selection cards.
   const xtoProducts: AlarmProduct[] = [];
   const kits: Record<string, { ref: string; quantity: number }[]> = {
-    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [], 'KIT-XTO': [],
+    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [], 'KIT-XTO': [], 'KIT-LOC': [],
   };
   const installationPrices: { titane: number | null; jablotron: number | null } = { titane: null, jablotron: null };
   let nextId = 600;
