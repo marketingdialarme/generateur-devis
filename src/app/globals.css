@@ -34,6 +34,90 @@ min-height: 100vh;
 padding: 20px;
 }
 
+/* CustomSelect -- native <select> on desktop (client likes it as-is),
+   custom button+list on tablet/mobile (native picker there was hard to
+   read/badly positioned). Breakpoint matches the app's tablet cutoff. */
+.custom-select-wrapper {
+position: relative;
+width: 100%;
+}
+
+.custom-select-trigger {
+display: none;
+}
+
+.custom-select-list {
+display: none;
+}
+
+@media (max-width: 1024px) {
+.custom-select-native {
+    display: none !important;
+}
+
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    background: var(--dlm-bg);
+    color: var(--dlm-text);
+    border: 1px solid var(--dlm-border-light);
+    border-radius: 6px;
+}
+
+.custom-select-trigger-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-select-trigger-arrow {
+    flex: none;
+    margin-left: 8px;
+    color: #6a6a6a;
+    font-size: 11px;
+}
+
+.custom-select-list {
+    display: block;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: #151515;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.custom-select-option {
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--dlm-text);
+    cursor: pointer;
+    border-bottom: 1px solid #262626;
+}
+
+.custom-select-option:last-child {
+    border-bottom: none;
+}
+
+.custom-select-option:active,
+.custom-select-option:hover {
+    background: rgba(255,253,1,0.08);
+}
+
+.custom-select-option.selected {
+    color: #fffd01;
+    font-weight: 500;
+}
+}
 /* Flèches natives des champs numériques retirées partout -- leur largeur
    variable selon navigateur/valeur était une source de désalignement
    entre lignes (ex: Test cyclique vs Service de surveillance). */

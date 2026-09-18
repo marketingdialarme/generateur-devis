@@ -28,6 +28,7 @@ import { ProductLineData } from '@/components/ProductLine';
 import { CommercialSelector } from '@/components/CommercialSelector';
 import { ServicesSection } from '@/components/ServicesSection';
 import { AppSidebar } from '@/components/AppSidebar';
+import { CustomSelect } from '@/components/CustomSelect';
 import { Bell, Cctv, CloudFog, DoorOpen, Download } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
@@ -1438,7 +1439,7 @@ export default function CreateDevisPage() {
             {alarmMaterialLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
@@ -1517,7 +1518,7 @@ export default function CreateDevisPage() {
                         {(line.product.price || 0) > 0 ? ` - ${(line.product.price || 0).toFixed(2)} CHF/mois` : ''}
                       </option>
                     )}
-                  </select>
+                  </CustomSelect>
                   <input 
                     type="number" 
                     className="quantity-input"
@@ -1758,7 +1759,7 @@ export default function CreateDevisPage() {
             {alarmInstallationLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
@@ -1801,7 +1802,7 @@ export default function CreateDevisPage() {
                           {product.name}
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
                   <input 
                     type="number" 
                     className="quantity-input"
@@ -1968,7 +1969,7 @@ export default function CreateDevisPage() {
                 const isIntervention = line.product?.ref === 'XTO-INT';
                 return (
                   <div key={line.id} className="product-line">
-                    <select
+                    <CustomSelect
                       className="product-select"
                       value={line.product?.ref || ''}
                       onChange={(e) => {
@@ -1984,7 +1985,7 @@ export default function CreateDevisPage() {
                         .map(p => (
                           <option key={p.ref} value={p.ref}>{p.name}</option>
                         ))}
-                    </select>
+                    </CustomSelect>
                     <input
                       type="number"
                       className="quantity-input"
@@ -2039,7 +2040,7 @@ export default function CreateDevisPage() {
             <div id="location-material-products">
               {alarmMaterialLines.map((line, index) => (
                 <div key={line.id} className="product-line">
-                  <select
+                  <CustomSelect
                     className="product-select"
                     value={line.product?.name || ''}
                     onChange={(e) => {
@@ -2054,7 +2055,7 @@ export default function CreateDevisPage() {
                     {alarmCatalog.filter(p => p.ref?.startsWith('JAB-') && p.ref !== 'JAB-INS').map(p => (
                       <option key={p.ref} value={p.name}>{p.name}</option>
                     ))}
-                  </select>
+                  </CustomSelect>
                   <input
                     type="number"
                     className="quantity-input"
@@ -2453,7 +2454,7 @@ export default function CreateDevisPage() {
             {cameraMaterialLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
@@ -2489,7 +2490,7 @@ export default function CreateDevisPage() {
                           {product.name}
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
                   <input 
                     type="number"
                     className="quantity-input"
@@ -2984,7 +2985,7 @@ export default function CreateDevisPage() {
             {fogLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
@@ -3020,7 +3021,7 @@ export default function CreateDevisPage() {
                           {product.name}
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
                 <input 
                   type="number" 
                   className="quantity-input"
@@ -3152,7 +3153,7 @@ export default function CreateDevisPage() {
             {fogAdditionalLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : ((line.product as any)?.ref || line.product?.name || '')}
                     onChange={(e) => {
@@ -3188,7 +3189,7 @@ export default function CreateDevisPage() {
                           {product.name}
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
                   <input 
                     type="number" 
                     className="quantity-input"
@@ -3529,7 +3530,7 @@ export default function CreateDevisPage() {
             {visiophoLines.map((line, index) => (
               <div key={line.id}>
                 <div className="product-line">
-                  <select 
+                  <CustomSelect 
                     className="product-select"
                     value={line.product?.isCustom ? '__create_custom__' : (line.product?.name || '')}
                     onChange={(e) => {
@@ -3565,7 +3566,7 @@ export default function CreateDevisPage() {
                           {product.name}
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
                   <input 
                     type="number" 
                     className="quantity-input"
