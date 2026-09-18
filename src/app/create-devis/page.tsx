@@ -975,8 +975,14 @@ export default function CreateDevisPage() {
           console.error('⚠️ Download failed (non-critical):', downloadError);
         }
         
-        // Success - PDF downloaded automatically, no modal needed
+        // Success - PDF downloaded automatically. Reload shortly after so
+        // every field resets cleanly for the next quote (client feedback:
+        // the form was staying filled in after export) -- simpler and more
+        // reliable than manually resetting dozens of state variables across
+        // 4 categories one by one. The short delay lets the download
+        // request register with the browser before navigation.
         console.log('✅ Quote sent successfully:', result);
+        setTimeout(() => window.location.reload(), 800);
       } else {
         alert(`❌ Erreur lors de l'envoi: ${result.error}`);
       }

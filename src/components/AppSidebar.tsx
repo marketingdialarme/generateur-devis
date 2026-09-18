@@ -12,16 +12,15 @@ import { usePathname } from 'next/navigation';
  * ferme le tiroir, qui glisse par-dessus la page avec un fond assombri
  * derriere -- ne consomme aucune largeur quand il est ferme.
  *
- * "Tableau de bord" pointe vers /mes-devis (client feedback : c'est la
- * que doivent apparaitre les devis) -- pas encore un vrai tableau de
- * bord avec statuts etc., juste l'historique existant pour l'instant.
+ * "Mes devis" pointe vers /mes-devis (client feedback : c'est la
+ * que doivent apparaitre les devis).
  */
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
   const items = [
-    { key: 'dashboard', label: 'Tableau de bord', href: '/mes-devis' },
+    { key: 'dashboard', label: 'Mes devis', href: '/mes-devis' },
     { key: 'create', label: 'Créer un devis', href: '/create-devis' },
   ];
 
