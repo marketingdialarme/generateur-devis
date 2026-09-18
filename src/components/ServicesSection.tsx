@@ -336,14 +336,6 @@ export function ServicesSection(props: ServicesSectionProps) {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </CustomSelect>
-        <input
-          type="number"
-          value={surveillancePrice}
-          onChange={(e) => onSurveillancePriceChange(parseFloat(e.target.value) || 0)}
-          className="discount-input"
-          placeholder="Prix/mois"
-          style={{ width: '100px' }}
-        />
         <div className="checkbox-option" style={{ margin: 0 }}>
           <input
             type="checkbox"
