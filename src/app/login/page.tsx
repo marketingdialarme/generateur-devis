@@ -15,6 +15,10 @@ export default function LoginPage() {
 function LoginForm() {
   const searchParams = useSearchParams();
   const callbackError = searchParams.get('error');
+  // Where to send the conseiller once they've clicked their magic link --
+  // set by middleware.ts when it redirects an unauthenticated visit to
+  // /create-devis here. Falls back to /mes-devis (visiting /login directly).
+  const next = searchParams.get('next') || '/mes-devis';
 
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -29,9 +33,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // Where Supabase redirects after the link is clicked — exchanges
-        // the code for a session, then sends the conseiller to their history.
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/mes-devis`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
 
@@ -50,39 +52,45 @@ function LoginForm() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#f5f5f5',
+      background: '#0a0a0a',
       padding: '20px'
     }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '40px',
+      <div className="quote-section" style={{
         maxWidth: '400px',
         width: '100%',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
       }}>
-        <h1 style={{ fontSize: '22px', marginBottom: '8px', color: '#1a1a1a' }}>
-          Espace conseiller
-        </h1>
-        <p style={{ fontSize: '14px', color: '#666', marginBottom: '28px' }}>
-          Connectez-vous pour retrouver l&apos;historique de vos devis.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '20px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fffd01', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://dialarme.ch/wp-content/uploads/2026/09/Logotype_noir.png"
+              alt="Dialarme"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+          <h1 style={{ fontSize: '20px', color: '#fff', margin: 0 }}>
+            Espace conseiller
+          </h1>
+        </div>
+        <p style={{ fontSize: '14px', color: '#9a9a9a', marginBottom: '28px' }}>
+          Connectez-vous pour accéder au générateur de devis et à l&apos;historique de vos devis.
         </p>
 
         {status === 'sent' ? (
           <div style={{
-            background: '#f3fbe7',
-            border: '1px solid #d4e8b8',
+            background: 'rgba(255,253,1,0.08)',
+            border: '1px solid rgba(255,253,1,0.3)',
             borderRadius: '8px',
             padding: '16px',
             fontSize: '14px',
-            color: '#3a5311'
+            color: '#fffd01'
           }}>
             ✅ Un lien de connexion vient de vous être envoyé à <strong>{email}</strong>.
             Ouvrez-le depuis cette adresse pour vous connecter — il expire après un court délai.
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#444', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#9a9a9a', marginBottom: '6px' }}>
               Adresse email
             </label>
             <input
@@ -91,11 +99,10 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="prenom.nom@dialarme.ch"
+              className="product-select"
               style={{
                 width: '100%',
                 padding: '10px 12px',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
                 fontSize: '14px',
                 marginBottom: '16px',
                 boxSizing: 'border-box'
@@ -104,8 +111,8 @@ function LoginForm() {
 
             {status === 'error' && (
               <div style={{
-                background: '#f8d7da',
-                color: '#721c24',
+                background: 'rgba(220,53,69,0.12)',
+                color: '#ff6b7a',
                 padding: '10px 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
@@ -121,8 +128,8 @@ function LoginForm() {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: '#F3E600',
-                color: '#1a1a1a',
+                background: '#fffd01',
+                color: '#0a0a0a',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
