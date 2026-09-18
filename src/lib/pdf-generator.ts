@@ -783,17 +783,31 @@ function createCameraPDFSections(
     });
   });
 
-  const installBefore = cameraTotals.installation.totalBeforeDiscount;
-  const installLabel =
-    options.installationQty === 1 ? 'Installation 1/2 journée' :
-    options.installationQty === 2 ? 'Installation 1 journée' :
-    'Installation, paramétrages, tests, mise en service & formation';
-  if (installBefore > 0 || options.isRental) {
+  // Installation -- built from the actual selected product line(s) (INS-1,
+  // INS-DEMI-J, INS-J, INS-4G...), same pattern as the material loop above
+  // and as Alarm already does elsewhere in this file. Previously guessed a
+  // label from installationQty alone, which could show "Installation 1/2
+  // journée" even when "Installation - 1 caméra" (INS-1) was what was
+  // actually chosen (client-reported bug).
+  (options.installationLines || []).forEach((line) => {
+    if (!line.product) return;
+    const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
     rows.push({
-      name: installLabel,
+      name,
+      qty: line.quantity,
+      unitPrice: getLineUnitPrice(line, null),
+      offered: options.isRental || line.offered,
+      kind: 'utility',
+    });
+  });
+  if (options.isRental && !(options.installationLines || []).some(l => l.product)) {
+    // Rental mode with nothing manually selected: still show a placeholder
+    // installation line (included in the package) as before.
+    rows.push({
+      name: 'Installation, paramétrages, tests, mise en service & formation',
       qty: 1,
-      unitPrice: options.isRental ? 0 : installBefore,
-      offered: options.isRental || installBefore === 0,
+      unitPrice: 0,
+      offered: true,
       kind: 'utility',
     });
   }
