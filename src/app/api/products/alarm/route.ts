@@ -6,9 +6,9 @@
  * GET /api/products/alarm
  * Returns the Titane/Jablotron product catalog live from the
  * "Produits_Alarme" tab, plus the kit-inclusion map used to build the
- * "Kit 1"/"Kit 2" quick-apply buttons. XTO is NOT included here — it stays
- * on its own hardcoded rental-pricing model for now (see
- * fetchAlarmProductsFromSheet's doc comment for why).
+ * "Kit 1"/"Kit 2" quick-apply buttons. Also returns xtoProducts (the
+ * location "Chantier" catalog, same sheet, XTO- refs) and its own
+ * KIT-XTO entry in the kits map.
  *
  * No fallback: on failure the client shows a clear error rather than stale
  * duplicate data.
@@ -22,11 +22,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { products, kits, installationPrices } = await fetchAlarmProductsFromSheet();
+    const { products, xtoProducts, kits, installationPrices } = await fetchAlarmProductsFromSheet();
 
     return NextResponse.json({
       success: true,
-      data: { products, kits, installationPrices },
+      data: { products, xtoProducts, kits, installationPrices },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -35,7 +35,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null }; fetchedAt: number } | null = null;
 let fogCache: { data: FogProduct[]; fetchedAt: number } | null = null;
-let alarmCache: { data: { products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
+let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
 let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
 
@@ -315,7 +315,7 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
  * Visiophone's PRIX column being in a different position than expected:
  * safer to be robust to small wording differences than to assume exact text.
  */
-export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }> {
+export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }> {
   if (alarmCache && Date.now() - alarmCache.fetchedAt < CACHE_TTL_MS) {
     return alarmCache.data;
   }
@@ -358,12 +358,13 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   // header wording entirely. Still validated against the header text below,
   // so a future column reorder fails loudly instead of repeating this bug.
   const colIdx = (letter: string) => letter.charCodeAt(0) - 'A'.charCodeAt(0);
-  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2'];
+  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2', 'KIT-XTO'];
   const kitColumns: Record<string, { incluIdx: number; qteIdx: number }> = {
     'KIT-TIT-1': { incluIdx: colIdx('D'), qteIdx: colIdx('E') },
     'KIT-TIT-2': { incluIdx: colIdx('F'), qteIdx: colIdx('G') },
     'KIT-JAB-1': { incluIdx: colIdx('H'), qteIdx: colIdx('I') },
     'KIT-JAB-2': { incluIdx: colIdx('J'), qteIdx: colIdx('K') },
+    'KIT-XTO': { incluIdx: colIdx('L'), qteIdx: colIdx('M') },
   };
 
   const misplacedKitCols = KIT_CODES.filter((code) => {
@@ -373,24 +374,43 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     return !incluHeader.includes(code) || !qteHeader.includes(code);
   });
   if (misplacedKitCols.length > 0) {
-    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K)`);
+    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K, L/M)`);
   }
 
   const products: AlarmProduct[] = [];
+  // XTO rows (location "Chantier") live in the same sheet but are priced and
+  // used completely differently from Titane/Jablotron (monthly, no central
+  // choice) -- kept in a separate array rather than mixed into `products`,
+  // which drives the Titane/Jablotron kit-selection cards.
+  const xtoProducts: AlarmProduct[] = [];
   const kits: Record<string, { ref: string; quantity: number }[]> = {
-    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [],
+    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [], 'KIT-XTO': [],
   };
   const installationPrices: { titane: number | null; jablotron: number | null } = { titane: null, jablotron: null };
   let nextId = 600;
+  let nextXtoId = 900;
 
   rawRows.slice(1).forEach((row) => {
     const ref = (row[idxOf['REF']] || '').trim();
-    if (!ref || !(ref.startsWith('TIT-') || ref.startsWith('JAB-'))) return; // XTO or blank rows: skip
+    if (!ref) return; // blank rows: skip
 
     const nom = (row[idxOf['Nom']] || '').trim();
     if (!nom) return;
 
     const price = parseFloat(row[idxOf['PRIX']] || '');
+    const ficheRaw = idxOf['Fiche'] !== undefined ? (row[idxOf['Fiche']] || '').trim() : '';
+    const fiche = ficheRaw ? extractDriveFileId(ficheRaw) : undefined;
+
+    if (ref.startsWith('XTO-')) {
+      if (!isNaN(price)) {
+        xtoProducts.push({ id: nextXtoId, name: nom, price, ref, fiche });
+        nextXtoId += 1;
+      }
+      // XTO rows also feed KIT-XTO the same way TIT-/JAB- rows feed their
+      // own kits, via the L/M Inclu/QTE pair, in the shared loop below.
+    } else if (!(ref.startsWith('TIT-') || ref.startsWith('JAB-'))) {
+      return; // unrelated row: skip
+    }
 
     // Installation (TIT-INS/JAB-INS) is not a selectable material line — its
     // price feeds the separate "🔧 Installation" section instead (client
@@ -403,9 +423,8 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
       return;
     }
 
-    if (!isNaN(price)) {
-      const ficheRaw = idxOf['Fiche'] !== undefined ? (row[idxOf['Fiche']] || '').trim() : '';
-      products.push({ id: nextId, name: nom, price, ref, fiche: ficheRaw ? extractDriveFileId(ficheRaw) : undefined });
+    if (!isNaN(price) && !ref.startsWith('XTO-')) {
+      products.push({ id: nextId, name: nom, price, ref, fiche });
       nextId += 1;
     }
 
@@ -424,7 +443,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     throw new Error('Produits_Alarme: aucune ligne Titane/Jablotron exploitable');
   }
 
-  const data = { products, kits, installationPrices };
+  const data = { products, xtoProducts, kits, installationPrices };
   alarmCache = { data, fetchedAt: Date.now() };
   return data;
 }
