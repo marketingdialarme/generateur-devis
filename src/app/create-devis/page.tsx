@@ -83,8 +83,6 @@ export default function CreateDevisPage() {
   const [alarmInstallationPrice, setAlarmInstallationPrice] = useState(300); // 300 CHF editable (client feedback)
   const [alarmInstallationOffered, setAlarmInstallationOffered] = useState(false);
   const [isCustomKit, setIsCustomKit] = useState(false); // Track if "à partir de rien" was selected
-  const [customSurveillanceType, setCustomSurveillanceType] = useState<'autosurveillance' | 'telesurveillance'>('autosurveillance');
-  const [customSurveillancePrice, setCustomSurveillancePrice] = useState(0);
   
   // Camera installation: demi-journée / journée lines (like alarm was - client feedback)
   const [cameraInstallationLines, setCameraInstallationLines] = useState<ProductLineData[]>([]);
@@ -1419,7 +1417,7 @@ export default function CreateDevisPage() {
                   marginTop: 8,
                   background: 'transparent',
                   border: 'none',
-                  color: '#6a6a6a',
+                  color: '#c0c0c0',
                   fontSize: 12,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -1655,55 +1653,6 @@ export default function CreateDevisPage() {
             />
           </div>
         </div>
-
-        {/* Custom Kit Surveillance Choice */}
-        {isCustomKit && (
-          <div className="quote-section" style={{ background: '#fffef0', border: '2px solid #f4e600' }}>
-            <h3 style={{ marginBottom: '15px' }}>🔍 Type de surveillance (Kit personnalisé)</h3>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="customSurveillance"
-                  checked={customSurveillanceType === 'autosurveillance'}
-                  onChange={() => setCustomSurveillanceType('autosurveillance')}
-                  style={{ marginRight: '8px' }}
-                />
-                <span style={{ fontWeight: 500 }}>Autosurveillance</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="customSurveillance"
-                  checked={customSurveillanceType === 'telesurveillance'}
-                  onChange={() => setCustomSurveillanceType('telesurveillance')}
-                  style={{ marginRight: '8px' }}
-                />
-                <span style={{ fontWeight: 500 }}>Télésurveillance</span>
-              </label>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ fontWeight: 500 }}>Prix mensuel:</label>
-              <input 
-                type="number"
-                value={customSurveillancePrice}
-                onChange={(e) => setCustomSurveillancePrice(parseFloat(e.target.value) || 0)}
-                onFocus={(e) => e.target.select()}
-                style={{
-                  padding: '8px 12px',
-                  border: '2px solid #f4e600',
-                  borderRadius: '4px',
-                  width: '120px',
-                  fontSize: '14px'
-                }}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
-              <span style={{ fontWeight: 500 }}>CHF/mois</span>
-            </div>
-          </div>
-        )}
 
         {/* Installation - 300 CHF editable (client feedback) */}
         <div className="quote-section">
