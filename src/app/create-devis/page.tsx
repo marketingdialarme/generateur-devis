@@ -60,7 +60,7 @@ export default function CreateDevisPage() {
   const [hasActiveSession, setHasActiveSession] = useState(false);
   const [customCommercial, setCustomCommercial] = useState('');
   const [showCustomCommercial, setShowCustomCommercial] = useState(false);
-  const [propertyType, setPropertyType] = useState<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'>('locaux');
+  const [propertyType, setPropertyType] = useState<string>('TYP-LOC');
   
   // Product lines state - now using ProductLineData type
   const [alarmMaterialLines, setAlarmMaterialLines] = useState<ProductLineData[]>([]);
@@ -215,6 +215,16 @@ export default function CreateDevisPage() {
   // Flat REF -> value map from the Config sheet (TVA, SIM, FD, surveillance
   // service prices, camera vision-à-distance/maintenance prices).
   const [configValues, setConfigValues] = useState<Record<string, number>>({});
+  // Type de bien options, from Config's TYP-* rows (REF -> label). Falls
+  // back to the previous hardcoded 5 while loading or if the fetch fails
+  // -- keeps the field usable either way, same pattern as commercialsList.
+  const [propertyTypeLabels, setPropertyTypeLabels] = useState<Record<string, string>>({
+    'TYP-LOC': 'Locaux',
+    'TYP-HAB': 'Habitation',
+    'TYP-VIL': 'Villa',
+    'TYP-COM': 'Commerce',
+    'TYP-ENT': 'Entreprise',
+  });
   const [configError, setConfigError] = useState<string | null>(null);
   const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
@@ -776,6 +786,10 @@ export default function CreateDevisPage() {
         setConfigValues(config);
         setConfigError(null);
 
+        if (result.data.propertyTypes && Object.keys(result.data.propertyTypes).length > 0) {
+          setPropertyTypeLabels(result.data.propertyTypes);
+        }
+
         // TVA and admin fees (Carte SIM + Activation, Frais de dossier) are
         // now single global rows in Config (client consolidated what used
         // to be separate per-category duplicates — they were all identical
@@ -1245,13 +1259,11 @@ export default function CreateDevisPage() {
               <select 
                 id="propertyType"
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value as any)}
+                onChange={(e) => setPropertyType(e.target.value)}
               >
-                <option value="locaux">Locaux</option>
-                <option value="habitation">Habitation</option>
-                <option value="villa">Villa</option>
-                <option value="commerce">Commerce</option>
-                <option value="entreprise">Entreprise</option>
+                {Object.entries(propertyTypeLabels).map(([ref, label]) => (
+                  <option key={ref} value={ref}>{label}</option>
+                ))}
               </select>
             </div>
             {!hasActiveSession && (
@@ -2379,13 +2391,11 @@ export default function CreateDevisPage() {
               <select 
                 id="propertyTypeCamera"
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value as any)}
+                onChange={(e) => setPropertyType(e.target.value)}
               >
-                <option value="locaux">Locaux</option>
-                <option value="habitation">Habitation</option>
-                <option value="villa">Villa</option>
-                <option value="commerce">Commerce</option>
-                <option value="entreprise">Entreprise</option>
+                {Object.entries(propertyTypeLabels).map(([ref, label]) => (
+                  <option key={ref} value={ref}>{label}</option>
+                ))}
               </select>
             </div>
             {!hasActiveSession && (
@@ -2943,13 +2953,11 @@ export default function CreateDevisPage() {
               <select 
                 id="propertyType-fog"
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value as any)}
+                onChange={(e) => setPropertyType(e.target.value)}
               >
-                <option value="locaux">Locaux</option>
-                <option value="habitation">Habitation</option>
-                <option value="villa">Villa</option>
-                <option value="commerce">Commerce</option>
-                <option value="entreprise">Entreprise</option>
+                {Object.entries(propertyTypeLabels).map(([ref, label]) => (
+                  <option key={ref} value={ref}>{label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -3472,13 +3480,11 @@ export default function CreateDevisPage() {
               <select 
                 id="propertyType-visio"
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value as any)}
+                onChange={(e) => setPropertyType(e.target.value)}
               >
-                <option value="locaux">Locaux</option>
-                <option value="habitation">Habitation</option>
-                <option value="villa">Villa</option>
-                <option value="commerce">Commerce</option>
-                <option value="entreprise">Entreprise</option>
+                {Object.entries(propertyTypeLabels).map(([ref, label]) => (
+                  <option key={ref} value={ref}>{label}</option>
+                ))}
               </select>
             </div>
           </div>

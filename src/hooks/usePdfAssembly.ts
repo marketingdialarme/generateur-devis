@@ -17,7 +17,7 @@ interface AssemblePdfParams {
   centralType: 'titane' | 'jablotron' | null;
   products: ProductFetchRef[];
   commercial: CommercialInfo;
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise';
+  propertyType: string;
   addPoliceDoc?: boolean;
 }
 

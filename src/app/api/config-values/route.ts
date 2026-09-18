@@ -12,17 +12,25 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchConfigFromSheet } from '@/lib/services/google-sheets.service';
+import { fetchConfigFromSheet, fetchPropertyTypeLabelsFromSheet } from '@/lib/services/google-sheets.service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const config = await fetchConfigFromSheet();
+    const [config, propertyTypes] = await Promise.all([
+      fetchConfigFromSheet(),
+      fetchPropertyTypeLabelsFromSheet().catch((err) => {
+        // Property-type labels are a smaller, separate concern -- don't
+        // fail the whole (heavily-used) config-values endpoint over them.
+        console.error('⚠️ Property type labels unavailable, falling back:', err);
+        return null;
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
-      data: { config },
+      data: { config, propertyTypes },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

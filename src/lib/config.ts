@@ -51,7 +51,7 @@ export interface AppConfig {
         /** Optional base template for Visiophone quotes. Empty string → standalone PDF. */
         visiophone?: string;
         accessories: string;
-        propertyTypeDocs?: Partial<Record<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise', string>>;
+        propertyTypeDocs?: Partial<Record<string, string>>;
         /** Document appended to alarm quotes when "Intervention de la police" is selected. */
         policeDoc?: string;
         /** Direct Drive file IDs for camera fiches techniques, keyed on catalog product name. */
@@ -196,13 +196,17 @@ export const config: AppConfig = {
         /**
          * Optional documents to append based on selected "Type de bien"
          * (If a fileId is empty, no document will be added.)
+         * Keyed by the Config sheet's TYP- refs (client spec) rather than
+         * the old hardcoded French names -- also adds "Appartement"
+         * (TYP-APP), which the app never had a dropdown option for before.
          */
         propertyTypeDocs: {
-          locaux: process.env.GOOGLE_DRIVE_FILE_PROPERTY_LOCAUX || '',
-          habitation: process.env.GOOGLE_DRIVE_FILE_PROPERTY_HABITATION || '',
-          villa: process.env.GOOGLE_DRIVE_FILE_PROPERTY_VILLA || '',
-          commerce: process.env.GOOGLE_DRIVE_FILE_PROPERTY_COMMERCE || '',
-          entreprise: process.env.GOOGLE_DRIVE_FILE_PROPERTY_ENTREPRISE || '',
+          'TYP-LOC': process.env.GOOGLE_DRIVE_FILE_PROPERTY_LOCAUX || '',
+          'TYP-HAB': process.env.GOOGLE_DRIVE_FILE_PROPERTY_HABITATION || '',
+          'TYP-VIL': process.env.GOOGLE_DRIVE_FILE_PROPERTY_VILLA || '',
+          'TYP-COM': process.env.GOOGLE_DRIVE_FILE_PROPERTY_COMMERCE || '',
+          'TYP-ENT': process.env.GOOGLE_DRIVE_FILE_PROPERTY_ENTREPRISE || '',
+          'TYP-APP': process.env.GOOGLE_DRIVE_FILE_PROPERTY_APPARTEMENT || '',
         },
 
         /**

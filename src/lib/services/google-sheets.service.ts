@@ -38,6 +38,7 @@ let fogCache: { data: { products: FogProduct[]; defaultKit: { ref: string; quant
 let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
 let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
+let propertyTypeCache: { data: Record<string, string>; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -617,4 +618,49 @@ export async function fetchConfigFromSheet(): Promise<Record<string, number>> {
 
   configCache = { data: config, fetchedAt: Date.now() };
   return config;
+}
+
+/**
+ * Fetch the property-type options ("Type de bien") from the same Config
+ * tab -- TYP-APP/TYP-COM/TYP-ENT/TYP-HAB/TYP-LOC/TYP-VIL rows, REF -> the
+ * Variable column as the display label (e.g. TYP-APP -> "Appartement").
+ * Separate from fetchConfigFromSheet: these rows have no numeric Valeur
+ * (label-only by design), so they're invisible to that function's
+ * isNaN(value) filter, and mixing a label map into a Record<string,number>
+ * would change a return type several other callers already depend on.
+ */
+export async function fetchPropertyTypeLabelsFromSheet(): Promise<Record<string, string>> {
+  if (propertyTypeCache && Date.now() - propertyTypeCache.fetchedAt < CACHE_TTL_MS) {
+    return propertyTypeCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: CONFIG_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['REF', 'Variable']);
+
+  const labels: Record<string, string> = {};
+  for (const row of rows) {
+    const ref = (row['REF'] || '').trim();
+    if (!ref.startsWith('TYP-')) continue;
+    const label = (row['Variable'] || '').trim();
+    if (!label) continue;
+    labels[ref] = label;
+  }
+
+  if (Object.keys(labels).length === 0) {
+    throw new Error('Config: aucune ligne TYP- exploitable');
+  }
+
+  propertyTypeCache = { data: labels, fetchedAt: Date.now() };
+  return labels;
 }

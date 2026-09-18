@@ -56,7 +56,7 @@ export async function assemblePdf(
   centralType: 'titane' | 'jablotron' | null,
   products: ProductFetchRef[],
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise' = 'locaux',
+  propertyType: string = 'TYP-LOC',
   addPoliceDoc: boolean = false
 ): Promise<AssemblyResult> {
   console.log('🔧 Starting PDF assembly with pdf-lib...');
@@ -120,7 +120,7 @@ export async function assemblePdf(
 
 async function addPropertyTypeDocumentIfConfigured(
   pdfDoc: PDFDocument,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
+  propertyType: string
 ): Promise<void> {
   try {
     const fileId = config.google.drive.baseDocuments.propertyTypeDocs?.[propertyType] || '';
@@ -177,7 +177,7 @@ async function assembleSimplePdf(
   pdfBlob: Blob,
   baseFileId: string,
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  propertyType: string,
   dossierName: string,
   opts: { maskVideoWord?: boolean } = {},
 ): Promise<AssemblyResult> {
@@ -235,7 +235,7 @@ async function assembleAlarmPdf(
   pdfBlob: Blob,
   centralType: 'titane' | 'jablotron',
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  propertyType: string,
   addPoliceDoc: boolean = false
 ): Promise<AssemblyResult> {
   console.log('🚨 Assembling alarm PDF with central type:', centralType);
@@ -346,7 +346,7 @@ async function assembleVideoPdf(
   pdfBlob: Blob,
   products: ProductFetchRef[],
   commercial: CommercialInfo,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
+  propertyType: string
 ): Promise<AssemblyResult> {
   console.log('📹 Assembling video PDF with', products.length, 'products');
   
@@ -587,7 +587,7 @@ async function addCommercialOverlay(
  */
 async function addPropertyTypeOverlay(
   pdfDoc: PDFDocument,
-  propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise',
+  propertyType: string,
   pageIndex: number
 ): Promise<void> {
   console.log('📝 Adding property type overlay to page', pageIndex + 1, ':', propertyType);
@@ -606,15 +606,16 @@ async function addPropertyTypeOverlay(
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
     // Map property types to French text
-    const propertyTextMap = {
-      locaux: 'de vos locaux',
-      habitation: 'de votre habitation',
-      villa: 'de votre villa',
-      commerce: 'de votre commerce',
-      entreprise: 'de votre entreprise'
+    const propertyTextMap: Record<string, string> = {
+      'TYP-LOC': 'de vos locaux',
+      'TYP-HAB': 'de votre habitation',
+      'TYP-VIL': 'de votre villa',
+      'TYP-COM': 'de votre commerce',
+      'TYP-ENT': 'de votre entreprise',
+      'TYP-APP': 'de votre appartement'
     };
     
-    const propertyText = propertyTextMap[propertyType];
+    const propertyText = propertyTextMap[propertyType] || '';
     
     // Position is env-configurable so it can be retuned without code changes
     // when the Drive base template is updated. See config.ts > pdf.propertyTypeOverlay
