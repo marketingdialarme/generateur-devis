@@ -182,7 +182,7 @@ export const FULL_DAY_MONTHLY_36 = 42;
 export const FULL_DAY_MONTHLY_48 = 33;
 export const FULL_DAY_MONTHLY_60 = 27;
 
-export const UNINSTALL_PRICE = 290.00;
+export const UNINSTALL_PRICE = 390.00;
 
 // Fallback values until the Config fetch resolves — see setAdminFees, which
 // mutates this object's fields in place from the Config sheet's single

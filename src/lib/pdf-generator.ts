@@ -242,7 +242,9 @@ function createPDFHeader(doc: jsPDF, info: QuoteInfo): void {
   // Title (right)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  const title = info.isRental ? 'Offre Location' : 'Offre Partenariat';
+  const title = info.isRental
+    ? (info.type === 'camera' ? 'Offre Location Vidéosurveillance' : 'Offre Location Alarme')
+    : 'Offre Partenariat';
   doc.text(title, 300, 90);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
