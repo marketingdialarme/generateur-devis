@@ -481,7 +481,7 @@ export async function fetchCameraProductsFromSheet(): Promise<{ products: Camera
   const prixIdx = findIdx('Prix de vente');
   const typeIdx = findIdx('Type', true);
   const g4Idx = findIdx('4G');
-  const ficheIdx = findIdx('Fiche', true);
+  const ficheIdx = findIdx('ID Drive fiche technique', true);
 
   const missingCols = [
     ['Nom', nomIdx], ['REF', refIdx], ['Prix de vente', prixIdx], ['Type', typeIdx], ['4G', g4Idx],
