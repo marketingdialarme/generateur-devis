@@ -169,7 +169,7 @@ export async function generateQuotePDF(
   const date = options.dateOverride ?? now.toLocaleDateString('fr-CH');
 
   // Create PDF header
-  createPDFHeader(doc, {
+  await createPDFHeader(doc, {
     clientName: options.clientName,
     commercial: options.commercial,
     quoteNumber,
@@ -209,16 +209,62 @@ export async function generateQuotePDF(
 // PDF HEADER
 // ============================================
 
-function createPDFHeader(doc: jsPDF, info: QuoteInfo): void {
+/**
+ * Fetches an image URL and returns it as a base64 data URI plus its
+ * natural pixel dimensions, for jsPDF's addImage (which needs explicit
+ * width/height, not just a URL). Runs in the browser at PDF-generation
+ * time, not at build time -- picks up logo changes without a redeploy,
+ * and sidesteps this dev environment's own restricted network access
+ * (dialarme.ch isn't reachable from here to bake the logo in as a
+ * constant). Returns null on any failure (network, CORS, decode) so
+ * the caller can fall back to the text wordmark rather than breaking
+ * PDF generation entirely.
+ */
+async function fetchImageAsBase64(url: string): Promise<{ dataUri: string; width: number; height: number } | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUri;
+    });
+    return { dataUri, width, height };
+  } catch (error) {
+    console.warn('⚠️ Logo image fetch failed, falling back to text wordmark:', error);
+    return null;
+  }
+}
+
+const DIALARME_LOGO_URL = 'https://dialarme.ch/wp-content/uploads/2026/09/Logotype_Dialarme_slogan-scaled.png';
+
+async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.setTextColor(0, 0, 0);
 
-  // Brand (logo asset lives in the Drive base template; render wordmark here)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('DIALARME', 40, 40);
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7);
-  doc.text('Votre sécurité, ça nous regarde', 40, 51);
+  // Brand -- real logo image (includes the slogan already), fetched at
+  // generation time; falls back to the text wordmark if the fetch fails
+  // for any reason so a logo hiccup never blocks the quote.
+  const logo = await fetchImageAsBase64(DIALARME_LOGO_URL);
+  if (logo) {
+    const maxHeight = 34;
+    const width = (logo.width / logo.height) * maxHeight;
+    doc.addImage(logo.dataUri, 'PNG', 40, 22, width, maxHeight);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('DIALARME', 40, 40);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.text('Votre sécurité, ça nous regarde', 40, 51);
+  }
 
   // Conseiller block (top-right)
   const info_c = getCommercialInfo(info.commercial);
