@@ -17,6 +17,10 @@ export interface AlarmProduct {
   price: number;
   ref?: string;
   isCustom?: boolean;
+  /** Drive file ID or shareable link for this product's fiche technique,
+   * from the Sheet's "Fiche" column. Preferred over the old name-based
+   * Drive folder search when present. */
+  fiche?: string;
 }
 
 export interface CameraProduct {
@@ -27,6 +31,7 @@ export interface CameraProduct {
   type?: string; // 'Caméra' | 'NVR' | 'Modem' | 'Accessoire' — drives vision à distance + maintenance counting
   is4G?: boolean;
   isCustom?: boolean;
+  fiche?: string;
 }
 
 /**
@@ -80,6 +85,7 @@ export interface FogProduct {
   price: number;
   ref?: string;
   isCustom?: boolean;
+  fiche?: string;
 }
 
 /**
@@ -96,6 +102,7 @@ export interface VisiophoProduct {
   name: string;
   price: number;
   isCustom?: boolean;
+  fiche?: string;
 }
 
 /**

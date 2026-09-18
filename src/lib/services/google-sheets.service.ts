@@ -72,6 +72,22 @@ function rowsByHeader(rows: string[][], required: string[]): Record<string, stri
     });
 }
 
+/**
+ * Accepts either a bare Drive file ID or a full shareable Drive link (any of
+ * the common URL shapes) and returns just the file ID -- so the "Fiche"
+ * column in the Sheet can hold whatever the client naturally copies from
+ * Drive's "Share" dialog, not a raw ID they'd have to extract by hand.
+ * Returns the input unchanged (trimmed) if it doesn't look like a URL --
+ * i.e. it's presumably already a bare ID.
+ */
+function extractDriveFileId(value: string): string {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return '';
+  const match = trimmed.match(/\/d\/([a-zA-Z0-9_-]{10,})/) // .../file/d/<id>/view
+    || trimmed.match(/[?&]id=([a-zA-Z0-9_-]{10,})/); // ...open?id=<id>
+  return match ? match[1] : trimmed;
+}
+
 async function getSheetsClient() {
   if (
     process.env.GOOGLE_CLIENT_ID &&
@@ -209,7 +225,8 @@ export async function fetchVisiophoneProductsFromSheet(): Promise<{ products: Vi
       continue;
     }
 
-    products.push({ id: nextId, name: nom.trim(), price });
+    const fiche = row['Fiche'] ? extractDriveFileId(row['Fiche']) : undefined;
+    products.push({ id: nextId, name: nom.trim(), price, fiche });
     nextId += 1;
   }
 
@@ -264,7 +281,8 @@ export async function fetchFogProductsFromSheet(): Promise<FogProduct[]> {
     if (isNaN(price)) continue;
 
     const ref = row['REF'];
-    products.push({ id: nextId, name: nom.trim(), price, ref: ref ? ref.trim() : undefined });
+    const fiche = row['Fiche'] ? extractDriveFileId(row['Fiche']) : undefined;
+    products.push({ id: nextId, name: nom.trim(), price, ref: ref ? ref.trim() : undefined, fiche });
     nextId += 1;
   }
 
@@ -386,7 +404,8 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     }
 
     if (!isNaN(price)) {
-      products.push({ id: nextId, name: nom, price, ref });
+      const ficheRaw = idxOf['Fiche'] !== undefined ? (row[idxOf['Fiche']] || '').trim() : '';
+      products.push({ id: nextId, name: nom, price, ref, fiche: ficheRaw ? extractDriveFileId(ficheRaw) : undefined });
       nextId += 1;
     }
 
@@ -462,6 +481,7 @@ export async function fetchCameraProductsFromSheet(): Promise<{ products: Camera
   const prixIdx = findIdx('Prix de vente');
   const typeIdx = findIdx('Type', true);
   const g4Idx = findIdx('4G');
+  const ficheIdx = findIdx('Fiche', true);
 
   const missingCols = [
     ['Nom', nomIdx], ['REF', refIdx], ['Prix de vente', prixIdx], ['Type', typeIdx], ['4G', g4Idx],
@@ -487,6 +507,10 @@ export async function fetchCameraProductsFromSheet(): Promise<{ products: Camera
     const is4G = ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(is4GRaw);
 
     const product: CameraProduct = { id: nextId, name: nom, price, ref, type, is4G };
+    if (ficheIdx !== -1) {
+      const ficheRaw = (row[ficheIdx] || '').trim();
+      if (ficheRaw) product.fiche = extractDriveFileId(ficheRaw);
+    }
     nextId += 1;
 
     if (ref.startsWith('INS-')) {
