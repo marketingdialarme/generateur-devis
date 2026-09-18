@@ -244,7 +244,12 @@ export function calculateAlarmTotals(
   paymentMonths: number,
   isRentalMode: boolean,
   selectedCentral: string | null,
-  alarmCatalog: AlarmProduct[]
+  alarmCatalog: AlarmProduct[],
+  // Location mode only: the single monthly figure that counts towards the
+  // "mensualité" total -- XTO-ABO for Chantier, the chosen LOC-AUTO-*/
+  // LOC-TEL-* surveillance price for Location (client spec: everything
+  // else in rental mode is shown for info only, not summed in here).
+  rentalMonthlyAmount?: number
 ): AlarmTotals {
   // Material totals
   const material = calculateSectionTotal(materialLines, materialDiscount, selectedCentral);
@@ -339,6 +344,22 @@ export function calculateAlarmTotals(
     result.cash = {
       totalHT: cashHT,
       totalTTC: cashTTC
+    };
+  } else if (isRentalMode && rentalMonthlyAmount !== undefined) {
+    // Location: only the single rental amount (XTO-ABO or the chosen
+    // surveillance price) counts towards the monthly total -- kit
+    // contents, frais de dossier, carte SIM, test cyclique etc. are all
+    // shown for info elsewhere on the quote, not summed in here.
+    const totalMonthlyHT = roundToFiveCents(rentalMonthlyAmount);
+    const totalMonthlyTTC = roundToFiveCents(totalMonthlyHT * (1 + TVA_RATE));
+
+    result.monthly = {
+      materialHT: 0,
+      installationHT: 0,
+      surveillanceHT: rentalMonthlyAmount,
+      totalHT: totalMonthlyHT,
+      totalTTC: totalMonthlyTTC,
+      months: paymentMonths
     };
   }
 

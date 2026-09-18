@@ -317,6 +317,17 @@ export default function CreateDevisPage() {
   // Calculate alarm totals with default values
   const alarmTotals = useMemo(() => {
     try {
+      // Location: the single figure that counts towards the mensualité --
+      // XTO-ABO for Chantier, the chosen LOC-* surveillance price for
+      // Location. Everything else in rental mode is shown for info only.
+      const rentalMonthlyAmount = !alarmRentalMode
+        ? undefined
+        : alarmRentalType === 'chantier'
+        ? (configValues['XTO-ABO'] ?? 790)
+        : alarmRentalType === 'location' && alarmLocationSurveillance
+        ? (configValues[alarmLocationSurveillance] ?? 0)
+        : 0;
+
       return calculateAlarmTotals(
         alarmMaterialLines,
         alarmInstallationLines.filter(l => l.product && l.product.id !== 101 && l.product.id !== 102), // Matériel divers only (no half-day lines)
@@ -348,7 +359,8 @@ export default function CreateDevisPage() {
         alarmPaymentMonths,
         alarmRentalMode,
         selectedCentral,
-        alarmCatalog
+        alarmCatalog,
+        rentalMonthlyAmount
       );
     } catch (error) {
       console.error('Error calculating alarm totals:', error);
@@ -381,7 +393,10 @@ export default function CreateDevisPage() {
     surveillanceOffered,
     alarmPaymentMonths,
     alarmRentalMode,
-    selectedCentral
+    selectedCentral,
+    alarmRentalType,
+    alarmLocationSurveillance,
+    configValues
   ]);
   
   // Auto-calculate vision à distance price using correct logic
@@ -2230,10 +2245,10 @@ export default function CreateDevisPage() {
             <span>TOTAL TTC (hors surveillance)</span>
             <span>{(alarmTotals?.totalTTC || 0).toFixed(2)} CHF</span>
           </div>
-          {!alarmRentalMode && alarmPaymentMonths > 0 && alarmTotals?.monthly && (
+          {((!alarmRentalMode && alarmPaymentMonths > 0) || alarmRentalMode) && alarmTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {alarmPaymentMonths} mois
+                💳 Mensualité: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois{!alarmRentalMode ? ` pendant ${alarmPaymentMonths} mois` : ''}
               </strong>
             </div>
           )}
