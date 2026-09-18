@@ -1157,33 +1157,6 @@ export default function CreateDevisPage() {
           <span>Location</span>
         </div>
 
-        {alarmRentalMode && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 15 }}>
-            {(['chantier', 'location'] as const).map((t) => {
-              const active = alarmRentalType === t;
-              return (
-                <div
-                  key={t}
-                  onClick={() => setAlarmRentalType(t)}
-                  style={{
-                    textAlign: 'center',
-                    padding: '14px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                    fontSize: 14,
-                    border: `1px solid ${active ? '#fffd01' : '#333333'}`,
-                    background: active ? 'rgba(255,253,1,0.08)' : '#151515',
-                    color: active ? '#fff' : '#9a9a9a',
-                  }}
-                >
-                  {t === 'chantier' ? 'Chantier' : 'Location'}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         <div className="form-section">
           <h3>📋 Informations Client</h3>
           <div className="form-grid">
@@ -1272,6 +1245,33 @@ export default function CreateDevisPage() {
                   </div>
                 </div>
                 
+        {alarmRentalMode && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 15 }}>
+            {(['chantier', 'location'] as const).map((t) => {
+              const active = alarmRentalType === t;
+              return (
+                <div
+                  key={t}
+                  onClick={() => setAlarmRentalType(t)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '14px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    border: `1px solid ${active ? '#fffd01' : '#333333'}`,
+                    background: active ? 'rgba(255,253,1,0.08)' : '#151515',
+                    color: active ? '#fff' : '#9a9a9a',
+                  }}
+                >
+                  {t === 'chantier' ? 'Chantier' : 'Location'}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Product Sections */}
         {!alarmRentalMode && (
         <>
