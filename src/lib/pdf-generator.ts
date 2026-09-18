@@ -244,7 +244,7 @@ async function fetchImageAsBase64(url: string): Promise<{ dataUri: string; width
   }
 }
 
-const DIALARME_LOGO_URL = 'https://dialarme.ch/wp-content/uploads/2026/09/Logotype_Dialarme_slogan-scaled.png';
+const DIALARME_LOGO_URL = '/api/logo';
 
 async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.setTextColor(0, 0, 0);

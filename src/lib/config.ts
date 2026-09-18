@@ -54,6 +54,7 @@ export interface AppConfig {
         propertyTypeDocs?: Partial<Record<string, string>>;
         /** Document appended to alarm quotes when "Intervention de la police" is selected. */
         policeDoc?: string;
+        logoFileId?: string;
         /** Direct Drive file IDs for camera fiches techniques, keyed on catalog product name. */
         cameraSheetIds?: Record<string, string>;
       };
@@ -214,6 +215,15 @@ export const config: AppConfig = {
          * Set GOOGLE_DRIVE_FILE_POLICE to the Drive file ID once provided.
          */
         policeDoc: process.env.GOOGLE_DRIVE_FILE_POLICE || '',
+
+        /**
+         * Dialarme logo (with slogan) shown in the PDF header, served via
+         * /api/logo so the browser fetches it same-origin -- sidesteps
+         * relying on an external host's CORS policy (WordPress media
+         * typically doesn't send the needed headers for a cross-origin
+         * fetch; this way it doesn't matter).
+         */
+        logoFileId: process.env.GOOGLE_DRIVE_FILE_LOGO || '',
 
         /**
          * Direct Drive file IDs for camera fiches techniques (provided by client 2026-05-29).

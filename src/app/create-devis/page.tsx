@@ -34,7 +34,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { OptionsSection } from '@/components/OptionsSection';
 import { PaymentSelector } from '@/components/PaymentSelector';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { detectCentralType, calculateRemoteAccessPrice } from '@/lib/product-line-adapter';
+import { detectCentralType, calculateRemoteAccessPrice, isCameraType } from '@/lib/product-line-adapter';
 
 export default function CreateDevisPage() {
   const [mounted, setMounted] = useState(false);
@@ -447,7 +447,7 @@ export default function CreateDevisPage() {
     
     // Count cameras
     const cameraCount = cameraMaterialLines.filter(
-      (line) => line.product && (line.product as any).type === 'Caméra'
+      (line) => line.product && isCameraType((line.product as any).type)
     ).reduce((sum, line) => sum + line.quantity, 0);
     
     // Count NVRs
@@ -2560,7 +2560,7 @@ export default function CreateDevisPage() {
             {(() => {
               const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
               const cameraQty = cameraMaterialLines
-                .filter(l => l.product && (l.product as any).type === 'Caméra')
+                .filter(l => l.product && isCameraType((l.product as any).type))
                 .reduce((sum, l) => sum + l.quantity, 0);
               const availableInstallProducts = cameraInstallationProducts.filter(p => {
                 if (p.ref === 'INS-4G') return hasMiniSolar;
@@ -2630,7 +2630,7 @@ export default function CreateDevisPage() {
               {(() => {
                 const hasMiniSolar = cameraMaterialLines.some(l => l.product && (l.product as any).ref === 'CAM-MINI-SOLAR');
                 const cameraQty = cameraMaterialLines
-                  .filter(l => l.product && (l.product as any).type === 'Caméra')
+                  .filter(l => l.product && isCameraType((l.product as any).type))
                   .reduce((sum, l) => sum + l.quantity, 0);
                 return cameraInstallationProducts
                   .filter(p => {

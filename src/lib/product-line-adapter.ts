@@ -8,6 +8,19 @@
 import { ProductLineData } from '@/components/ProductLine';
 
 /**
+ * Case/accent-insensitive check for the Camera catalog's "Type" column
+ * being "Caméra" -- a plain === comparison silently miscounts cameras
+ * (e.g. install-option and vision-à-distance pricing) if the Sheet cell
+ * has different casing or a missing accent, which is easy to type by
+ * hand and easy to miss (client-reported bug: single-camera install
+ * option not appearing).
+ */
+export function isCameraType(type: string | null | undefined): boolean {
+  if (!type) return false;
+  return type.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'camera';
+}
+
+/**
  * Detect the selected central type from product lines. Driven by the
  * sheet's REF prefix (TIT-/JAB-) rather than a hardcoded id or a name
  * substring — every Alarm product's ref now encodes its central directly,
@@ -54,7 +67,7 @@ export function calculateRemoteAccessPrice(cameraLines: ProductLineData[], price
     if ((line.quantity || 0) <= 0) return;
 
     // Only count actual camera devices, not NVR/accessories/modem
-    if ((line.product as any).type !== 'Caméra') return;
+    if (!isCameraType((line.product as any).type)) return;
 
     if ((line.product as any).is4G) {
       fourGCameraCount += line.quantity;
