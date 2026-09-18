@@ -76,7 +76,6 @@ export default async function MesDevisPage() {
                   <th style={thStyle}>Date</th>
                   <th style={thStyle}>Client</th>
                   <th style={thStyle}>Type</th>
-                  <th style={thStyle}>Produits</th>
                   <th style={thStyle}></th>
                 </tr>
               </thead>
@@ -92,7 +91,6 @@ export default async function MesDevisPage() {
                         ? `Alarme${q.central_type ? ` (${q.central_type})` : ''}`
                         : 'Caméras'}
                     </td>
-                    <td style={tdStyle}>{q.products_count}</td>
                     <td style={tdStyle}>
                       {q.drive_url && (
                         <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#fffd01' }}>
