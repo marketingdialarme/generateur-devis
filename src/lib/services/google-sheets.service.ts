@@ -422,10 +422,14 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     const fiche = ficheRaw ? extractDriveFileId(ficheRaw) : undefined;
 
     if (ref.startsWith('XTO-')) {
-      if (!isNaN(price)) {
-        xtoProducts.push({ id: nextXtoId, name: nom, price, ref, fiche });
-        nextXtoId += 1;
-      }
+      // Unlike Titane/Jablotron rows, a blank price here is valid -- items
+      // that only exist as part of the kit (XTO-CON, XTO-MIS, XTO-SIG...)
+      // have no standalone sale price in the Sheet. Skipping them on NaN
+      // silently dropped them from the kit display even though their
+      // Inclu/QTE was correctly set (client-reported bug) -- default to 0
+      // instead so every XTO row is captured.
+      xtoProducts.push({ id: nextXtoId, name: nom, price: isNaN(price) ? 0 : price, ref, fiche });
+      nextXtoId += 1;
       // XTO rows also feed KIT-XTO the same way TIT-/JAB- rows feed their
       // own kits, via the L/M Inclu/QTE pair, in the shared loop below.
     } else if (!(ref.startsWith('TIT-') || ref.startsWith('JAB-'))) {

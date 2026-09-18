@@ -982,6 +982,13 @@ export default function CreateDevisPage() {
         // 4 categories one by one. The short delay lets the download
         // request register with the browser before navigation.
         console.log('✅ Quote sent successfully:', result);
+        if (result.logged === false) {
+          // PDF/Drive/email all succeeded but the database write failed --
+          // previously silent (client feedback: a quote never appeared in
+          // "Mes devis" with no visible error). Never hide this again, even
+          // though the PDF itself is fine.
+          alert('⚠️ Le devis a bien été téléchargé, mais son enregistrement pour "Mes devis" a échoué. Il n\'apparaîtra pas dans l\'historique.');
+        }
         setTimeout(() => window.location.reload(), 800);
       } else {
         alert(`❌ Erreur lors de l'envoi: ${result.error}`);
