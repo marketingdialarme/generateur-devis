@@ -53,6 +53,11 @@ export default function CreateDevisPage() {
   const [clientEmail, setClientEmail] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [commercial, setCommercial] = useState('');
+  // Set once the browser session resolves to a known conseiller (see the
+  // pre-fill effect below) -- when true, the Commercial field is hidden
+  // entirely (already shown in the header, redundant/risk of picking a
+  // different name by mistake -- client feedback).
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const [customCommercial, setCustomCommercial] = useState('');
   const [showCustomCommercial, setShowCustomCommercial] = useState(false);
   const [propertyType, setPropertyType] = useState<'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'>('locaux');
@@ -647,6 +652,7 @@ export default function CreateDevisPage() {
           const name = (data as { commercial_name?: string } | null)?.commercial_name;
           if (name) {
             setCommercial((current) => current || name);
+            setHasActiveSession(true);
           }
         });
     }).catch(() => {
@@ -1240,6 +1246,7 @@ export default function CreateDevisPage() {
                 <option value="entreprise">Entreprise</option>
               </select>
             </div>
+            {!hasActiveSession && (
             <div className="form-group">
               <label htmlFor="commercial">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1252,7 +1259,7 @@ export default function CreateDevisPage() {
                   {commercialsList.map(name => (
                     <option key={name} value={name}>{name}</option>
                   ))}
-                  <option value="autre" style={{ fontStyle: 'italic', color: '#007bff' }}>
+                  <option value="autre" style={{ fontStyle: 'italic' }}>
                     ➕ Autre (saisir le nom)
                   </option>
                 </select>
@@ -1263,11 +1270,12 @@ export default function CreateDevisPage() {
                     placeholder="Entrez le nom du commercial"
                     value={customCommercial}
                     onChange={(e) => setCustomCommercial(e.target.value)}
-                    style={{ padding: '12px 15px', border: '2px solid #007bff', borderRadius: '8px', fontSize: '14px', background: '#f0f8ff' }}
+                    className="product-select"
                   />
                 )}
               </div>
             </div>
+            )}
                   </div>
                 </div>
                 
@@ -2368,6 +2376,7 @@ export default function CreateDevisPage() {
                 <option value="entreprise">Entreprise</option>
               </select>
             </div>
+            {!hasActiveSession && (
             <div className="form-group">
               <label htmlFor="commercialCamera">Commercial</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -2380,7 +2389,7 @@ export default function CreateDevisPage() {
                   {commercialsList.map(name => (
                     <option key={name} value={name}>{name}</option>
                   ))}
-                  <option value="autre" style={{ fontStyle: 'italic', color: '#007bff' }}>
+                  <option value="autre" style={{ fontStyle: 'italic' }}>
                     ➕ Autre (saisir le nom)
                   </option>
                 </select>
@@ -2390,11 +2399,12 @@ export default function CreateDevisPage() {
                     placeholder="Entrez le nom du commercial"
                     value={customCommercial}
                     onChange={(e) => setCustomCommercial(e.target.value)}
-                    style={{ padding: '12px 15px', border: '2px solid #007bff', borderRadius: '8px', fontSize: '14px', background: '#f0f8ff' }}
+                    className="product-select"
                   />
                 )}
               </div>
             </div>
+            )}
           </div>
         </div>
 
@@ -2932,6 +2942,7 @@ export default function CreateDevisPage() {
             </div>
           </div>
 
+          {!hasActiveSession && (
           <CommercialSelector
             value={commercial}
             customValue={customCommercial}
@@ -2941,6 +2952,7 @@ export default function CreateDevisPage() {
             onShowCustomChange={setShowCustomCommercial}
             commercialsList={commercialsList}
           />
+          )}
         </div>
 
         {/* Kit de base — contenu par defaut (Generateur/Clavier/Detecteur),
@@ -3451,6 +3463,7 @@ export default function CreateDevisPage() {
             </div>
           </div>
 
+          {!hasActiveSession && (
           <CommercialSelector
             value={commercial}
             customValue={customCommercial}
@@ -3460,6 +3473,7 @@ export default function CreateDevisPage() {
             onShowCustomChange={setShowCustomCommercial}
             commercialsList={commercialsList}
           />
+          )}
         </div>
 
         {/* Kit de base — contenu par defaut (Interphone + Ecran), + reste
