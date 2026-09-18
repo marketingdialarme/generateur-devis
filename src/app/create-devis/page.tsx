@@ -2053,10 +2053,11 @@ export default function CreateDevisPage() {
                     }}
                     min="1"
                   />
-                  <div className="price-display">{(line.product?.price ?? 0).toFixed(2)} CHF</div>
+                  <div className="price-display" style={{ gridColumn: 4 }}>{(line.product?.price ?? 0).toFixed(2)} CHF</div>
                   {line.product?.ref !== centralRef && (
                     <button
                       className="remove-btn"
+                      style={{ gridColumn: 5 }}
                       onClick={() => setAlarmMaterialLines(alarmMaterialLines.filter((_, i) => i !== index))}
                       title="Supprimer"
                     >
