@@ -158,9 +158,6 @@ export default function CreateDevisPage() {
   
   // Fog generator state
   const [fogLines, setFogLines] = useState<ProductLineData[]>([]);
-  // Kit offert par defaut (client feedback: "generalement offert" pour Fog
-  // aussi, comme l'Alarme) -- bascule maitre au-dessus des lignes du kit.
-  const [fogKitOffert, setFogKitOffert] = useState(true);
   // No hardcoded fallback (same decision as Visiophone): starts empty,
   // filled once /api/products/fog resolves. fogCatalogError drives a
   // visible banner if the Sheet can't be reached.
@@ -467,7 +464,7 @@ export default function CreateDevisPage() {
           id: Date.now() + index,
           product: product || null,
           quantity: item.quantity,
-          offered: fogKitOffert
+          offered: true
         };
       }).filter(line => line.product);
       
@@ -2937,24 +2934,7 @@ export default function CreateDevisPage() {
             'Materiel supplementaire' (fogAdditionalLines, deja separe plus
             bas) est desormais le seul endroit pour ajouter du materiel. */}
         <div className="quote-section">
-          <h3>
-            🛡️ Kit de base
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
-              Kit offert
-              <label className="toggle-switch" title="Le kit est-il offert au client ?">
-                <input
-                  type="checkbox"
-                  checked={fogKitOffert}
-                  onChange={() => {
-                    const value = !fogKitOffert;
-                    setFogKitOffert(value);
-                    setFogLines(lines => lines.map(l => ({ ...l, offered: value })));
-                  }}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </span>
-          </h3>
+          <h3>🛡️ Kit de base</h3>
           <div id="fog-material-products">
             {fogLines.map((line, index) => (
               <div key={line.id}>
