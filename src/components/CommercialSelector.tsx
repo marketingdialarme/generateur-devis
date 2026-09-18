@@ -54,7 +54,7 @@ export function CommercialSelector(props: CommercialSelectorProps) {
           {commercialsList.map(name => (
             <option key={name} value={name}>{name}</option>
           ))}
-          <option value="autre" style={{ fontStyle: 'italic', color: '#007bff' }}>
+          <option value="autre" style={{ fontStyle: 'italic' }}>
             ➕ Autre (saisir le nom)
           </option>
         </select>

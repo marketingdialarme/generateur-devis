@@ -36,15 +36,16 @@ export function LoadingSpinner({ message, show }: LoadingSpinnerProps) {
     >
       <div 
         style={{
-          background: 'white',
+          background: '#151515',
           borderRadius: '16px',
           padding: '32px 48px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '20px',
           maxWidth: '90%',
+          border: '1px solid #262626',
         }}
       >
         {/* Spinner */}
@@ -53,7 +54,7 @@ export function LoadingSpinner({ message, show }: LoadingSpinnerProps) {
           style={{
             width: '48px',
             height: '48px',
-            border: '4px solid #f3f3f3',
+            border: '4px solid #333333',
             borderTop: '4px solid #f4e600',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
@@ -66,7 +67,7 @@ export function LoadingSpinner({ message, show }: LoadingSpinnerProps) {
             style={{
               fontSize: '16px',
               fontWeight: 500,
-              color: '#333',
+              color: '#fff',
               textAlign: 'center',
               lineHeight: 1.5,
             }}

@@ -138,15 +138,7 @@ export function OptionsSection(props: OptionsSectionProps) {
               min="1"
               max="10"
               className="quantity-input"
-              style={{
-                width: '70px',
-                padding: '6px 8px',
-                border: '2px solid #007bff',
-                borderRadius: '6px',
-                textAlign: 'center',
-                fontSize: '14px',
-                flexShrink: 0
-              }}
+              style={{ flexShrink: 0 }}
             />
           )}
         </div>

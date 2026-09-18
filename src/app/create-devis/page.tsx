@@ -1545,7 +1545,7 @@ export default function CreateDevisPage() {
                   </button>
                 </div>
                 {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                     <input 
                       type="text"
                       placeholder="Nom du produit personnalisé"
@@ -1555,7 +1555,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setAlarmMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
                     />
                     <input 
                       type="number"
@@ -1569,7 +1569,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
                     />
                   </div>
                 )}
@@ -1829,7 +1829,7 @@ export default function CreateDevisPage() {
                   </button>
                 </div>
                 {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                     <input 
                       type="text"
                       placeholder="Nom du produit personnalisé"
@@ -1842,9 +1842,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                     <input 
@@ -1862,9 +1864,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                   </div>
@@ -2515,7 +2519,7 @@ export default function CreateDevisPage() {
                   </button>
                 </div>
                 {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                     <input 
                       type="text"
                       placeholder="Nom du produit personnalisé"
@@ -2525,7 +2529,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setCameraMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
                     />
                     <input 
                       type="number"
@@ -2539,7 +2543,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '2px solid #007bff', borderRadius: '6px', fontSize: '13px', background: '#f0f8ff' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
                     />
                   </div>
                 )}
@@ -3048,7 +3052,7 @@ export default function CreateDevisPage() {
                 </button>
               </div>
               {line.product?.isCustom && (
-                <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                   <input 
                     type="text"
                     placeholder="Nom du produit personnalisé"
@@ -3061,9 +3065,11 @@ export default function CreateDevisPage() {
                     style={{
                       flex: 1,
                       padding: '8px 12px',
-                      border: '2px solid #007bff',
+                      border: '1px solid #333333',
                       borderRadius: '6px',
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      background: '#0a0a0a',
+                      color: '#fff'
                     }}
                   />
                   <input 
@@ -3081,9 +3087,11 @@ export default function CreateDevisPage() {
                     style={{
                       width: '150px',
                       padding: '8px 12px',
-                      border: '2px solid #007bff',
+                      border: '1px solid #333333',
                       borderRadius: '6px',
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      background: '#0a0a0a',
+                      color: '#fff'
                     }}
                   />
                 </div>
@@ -3212,7 +3220,7 @@ export default function CreateDevisPage() {
                   </button>
                 </div>
                 {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                     <input 
                       type="text"
                       placeholder="Nom du produit personnalisé"
@@ -3225,9 +3233,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                     <input 
@@ -3245,9 +3255,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                   </div>
@@ -3587,7 +3599,7 @@ export default function CreateDevisPage() {
                   </button>
                 </div>
                 {line.product?.isCustom && (
-                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #007bff' }}>
+                  <div className="custom-product-fields" style={{ display: 'flex', gap: '10px', marginTop: '8px', paddingLeft: '10px', borderLeft: '3px solid #fffd01' }}>
                     <input 
                       type="text"
                       placeholder="Nom du produit personnalisé"
@@ -3600,9 +3612,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                     <input 
@@ -3620,9 +3634,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '2px solid #007bff',
+                        border: '1px solid #333333',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        background: '#0a0a0a',
+                        color: '#fff'
                       }}
                     />
                   </div>
