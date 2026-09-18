@@ -32,6 +32,15 @@ interface ServicesSectionProps {
   // Live prices from the Config sheet (TIT-AUTO-S-SIM, TIT-TEL-PAR, ...).
   // Falls back to the hardcoded SALE table below if a ref isn't loaded yet.
   configValues: Record<string, number>;
+
+  // Intervention des agents de sécurité (XTO-INT, Chantier only) -- shown
+  // as its own line here rather than in "Matériel supplémentaire" (client
+  // request). Quantity = number of interventions.
+  showChantierIntervention?: boolean;
+  interventionQuantity?: number;
+  interventionOffered?: boolean;
+  onInterventionQuantityChange?: (value: number) => void;
+  onInterventionOfferedChange?: (value: boolean) => void;
 }
 
 // Surveillance pricing constants from script.js lines 136-177
@@ -108,7 +117,12 @@ export function ServicesSection(props: ServicesSectionProps) {
     centralType,
     rentalMode,
     simCardSelected,
-    configValues
+    configValues,
+    showChantierIntervention,
+    interventionQuantity = 1,
+    interventionOffered = false,
+    onInterventionQuantityChange,
+    onInterventionOfferedChange
   } = props;
 
   // Track the last auto-calculated price so we don't overwrite manual edits.
@@ -278,6 +292,33 @@ export function ServicesSection(props: ServicesSectionProps) {
           {testCycliqueSelected ? (testCycliqueOffered ? 'OFFERT' : `${testCycliqueTotal.toFixed(2)} CHF`) : '0.00 CHF'}
         </div>
       </div>
+
+      {showChantierIntervention && (
+        <div className="product-line">
+          <div>Intervention des agents de sécurité</div>
+          <input
+            type="number"
+            value={interventionQuantity}
+            onChange={(e) => onInterventionQuantityChange?.(parseInt(e.target.value) || 1)}
+            className="quantity-input"
+            min="1"
+          />
+          <div className="checkbox-option" style={{ margin: 0 }}>
+            <input
+              type="checkbox"
+              checked={interventionOffered}
+              onChange={(e) => onInterventionOfferedChange?.(e.target.checked)}
+              className="offered-checkbox"
+            />
+            <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
+          </div>
+          <div className="price-display">
+            {interventionOffered
+              ? 'OFFERT'
+              : `${((configValues['XTO-INT'] ?? 175) * interventionQuantity).toFixed(2)} CHF`}
+          </div>
+        </div>
+      )}
 
       {/* Surveillance -- masque en mode location (Chantier: deja inclus
           dans XTO-ABO ; Location: sa propre section dediee (LOC-AUTO,

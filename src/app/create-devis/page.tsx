@@ -180,6 +180,8 @@ export default function CreateDevisPage() {
   // list (dropdown/add/remove/offert), not a fixed static list, so it
   // matches how "matériel supplémentaire" works everywhere else.
   const [alarmChantierMaterialLines, setAlarmChantierMaterialLines] = useState<ProductLineData[]>([]);
+  const [alarmInterventionQty, setAlarmInterventionQty] = useState(1);
+  const [alarmInterventionOffered, setAlarmInterventionOffered] = useState(false);
   // Service de surveillance choice for the Location (Jablotron) rental kit
   // -- separate from the vente flow's surveillanceType, since the refs and
   // prices (LOC-AUTO-*/LOC-TEL-*, from Config) are different.
@@ -2149,6 +2151,11 @@ export default function CreateDevisPage() {
           rentalMode={alarmRentalMode}
           simCardSelected={simcardSelected}
           configValues={configValues}
+          showChantierIntervention={alarmRentalMode && alarmRentalType === 'chantier'}
+          interventionQuantity={alarmInterventionQty}
+          interventionOffered={alarmInterventionOffered}
+          onInterventionQuantityChange={setAlarmInterventionQty}
+          onInterventionOfferedChange={setAlarmInterventionOffered}
         />
 
         {/* Options Section */}
