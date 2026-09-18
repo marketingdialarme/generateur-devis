@@ -187,25 +187,34 @@ export default function CreateDevisPage() {
   // -- separate from the vente flow's surveillanceType, since the refs and
   // prices (LOC-AUTO-*/LOC-TEL-*, from Config) are different.
   const [alarmLocationSurveillance, setAlarmLocationSurveillance] = useState('');
+  // Which centrale the Location kit is built around -- client feedback:
+  // Location should offer a Titane/Jablotron choice just like Partenariat,
+  // not be locked to Jablotron only. Defaults to jablotron to match the
+  // single-option behaviour this replaces (no extra click needed for the
+  // common case).
+  const [alarmLocationCentral, setAlarmLocationCentral] = useState<'titane' | 'jablotron'>('jablotron');
 
-  // Location "Location standard" always starts from a Jablotron centrale --
-  // seed it as soon as this kit type is chosen and the catalog is loaded,
-  // if it isn't already the first line (switching between chantier/location
-  // repeatedly shouldn't duplicate it, nor should switching rental type off
-  // and back on within the same session).
+  // Location "Location standard" always starts from a centrale (Titane or
+  // Jablotron, per alarmLocationCentral) -- seeds it as soon as this kit
+  // type is chosen and the catalog is loaded, if it isn't already the
+  // first line. Also swaps it out if the conseiller changes their centrale
+  // choice after the fact, so the kit never ends up with the wrong one (or
+  // both at once).
   useEffect(() => {
-    if (
-      alarmRentalMode &&
-      alarmRentalType === 'location' &&
-      alarmCatalog.length > 0 &&
-      !alarmMaterialLines.some(l => l.product?.ref === 'JAB-CEN')
-    ) {
-      const centrale = alarmCatalog.find(p => p.ref === 'JAB-CEN');
-      if (centrale) {
-        setAlarmMaterialLines(lines => [{ id: Date.now(), product: centrale, quantity: 1, offered: false }, ...lines]);
-      }
-    }
-  }, [alarmRentalMode, alarmRentalType, alarmCatalog]);
+    if (!(alarmRentalMode && alarmRentalType === 'location' && alarmCatalog.length > 0)) return;
+    const wantedRef = alarmLocationCentral === 'titane' ? 'TIT-CEN' : 'JAB-CEN';
+    const otherRef = alarmLocationCentral === 'titane' ? 'JAB-CEN' : 'TIT-CEN';
+    const hasWanted = alarmMaterialLines.some(l => l.product?.ref === wantedRef);
+    const hasOther = alarmMaterialLines.some(l => l.product?.ref === otherRef);
+    if (hasWanted && !hasOther) return; // already correct, nothing to do
+    const centrale = alarmCatalog.find(p => p.ref === wantedRef);
+    if (!centrale) return;
+    setAlarmMaterialLines(lines => {
+      const withoutOther = lines.filter(l => l.product?.ref !== otherRef);
+      if (withoutOther.some(l => l.product?.ref === wantedRef)) return withoutOther;
+      return [{ id: Date.now(), product: centrale, quantity: 1, offered: false }, ...withoutOther];
+    });
+  }, [alarmRentalMode, alarmRentalType, alarmCatalog, alarmLocationCentral]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
   const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
@@ -233,7 +242,7 @@ export default function CreateDevisPage() {
   const [fogProcessingSelected, setFogProcessingSelected] = useState(true);
   const [fogProcessingOffered, setFogProcessingOffered] = useState(false);
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
-  const [fogSimCardSelected, setFogSimCardSelected] = useState(false); // Whether SIM card is selected
+  const [fogSimCardSelected, setFogSimCardSelected] = useState(true); // Whether SIM card is selected
   const [fogPaymentMonths, setFogPaymentMonths] = useState(48);
   
   // Visiophone state
@@ -1985,24 +1994,52 @@ export default function CreateDevisPage() {
             (meme catalogue que la vente, reutilise tel quel). */}
         {alarmRentalMode && alarmRentalType === 'location' && (
           <div className="quote-section">
-            <h3>🛡️ Kit Location (Jablotron)</h3>
+            <h3>🛡️ Kit Location</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {(['titane', 'jablotron'] as const).map((c) => {
+                const active = alarmLocationCentral === c;
+                return (
+                  <div
+                    key={c}
+                    onClick={() => setAlarmLocationCentral(c)}
+                    style={{
+                      textAlign: 'center',
+                      padding: '10px',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      fontSize: 13,
+                      border: `1px solid ${active ? '#fffd01' : '#333333'}`,
+                      background: active ? 'rgba(255,253,1,0.08)' : '#151515',
+                      color: active ? '#fff' : '#9a9a9a',
+                    }}
+                  >
+                    {c === 'titane' ? 'Titane' : 'Jablotron'}
+                  </div>
+                );
+              })}
+            </div>
             <div id="location-material-products">
-              {alarmMaterialLines.map((line, index) => (
+              {alarmMaterialLines.map((line, index) => {
+                const centralPrefix = alarmLocationCentral === 'titane' ? 'TIT-' : 'JAB-';
+                const centralRef = alarmLocationCentral === 'titane' ? 'TIT-CEN' : 'JAB-CEN';
+                const installRef = alarmLocationCentral === 'titane' ? 'TIT-INS' : 'JAB-INS';
+                return (
                 <div key={line.id} className="product-line">
                   <CustomSelect
                     className="product-select"
-                    value={line.product?.name || ''}
+                    value={line.product?.ref || ''}
                     onChange={(e) => {
-                      const product = alarmCatalog.find(p => p.name === e.target.value && p.ref?.startsWith('JAB-'));
+                      const product = alarmCatalog.find(p => p.ref === e.target.value);
                       const newLines = [...alarmMaterialLines];
                       newLines[index] = { ...line, product: product || null };
                       setAlarmMaterialLines(newLines);
                     }}
-                    disabled={line.product?.ref === 'JAB-CEN'}
+                    disabled={line.product?.ref === centralRef}
                   >
                     <option value="">Sélectionner un produit</option>
-                    {alarmCatalog.filter(p => p.ref?.startsWith('JAB-') && p.ref !== 'JAB-INS').map(p => (
-                      <option key={p.ref} value={p.name}>{p.name}</option>
+                    {alarmCatalog.filter(p => p.ref?.startsWith(centralPrefix) && p.ref !== installRef).map(p => (
+                      <option key={p.ref} value={p.ref}>{p.name}</option>
                     ))}
                   </CustomSelect>
                   <input
@@ -2017,7 +2054,7 @@ export default function CreateDevisPage() {
                     min="1"
                   />
                   <div className="price-display">{(line.product?.price ?? 0).toFixed(2)} CHF</div>
-                  {line.product?.ref !== 'JAB-CEN' && (
+                  {line.product?.ref !== centralRef && (
                     <button
                       className="remove-btn"
                       onClick={() => setAlarmMaterialLines(alarmMaterialLines.filter((_, i) => i !== index))}
@@ -2027,7 +2064,8 @@ export default function CreateDevisPage() {
                     </button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
             {alarmMaterialLines.length < 11 && (
               <button
@@ -2036,13 +2074,13 @@ export default function CreateDevisPage() {
                 onClick={() => {
                   setAlarmMaterialLines([...alarmMaterialLines, { id: Date.now(), product: null, quantity: 1, offered: false }]);
                 }}
-                title="Ajouter un produit Jablotron (10 max en plus de la centrale)"
+                title="Ajouter un produit (10 max en plus de la centrale)"
               >
                 +
               </button>
             )}
             <div style={{ fontSize: 11, color: '#6a6a6a', marginTop: 8 }}>
-              Centrale Jablotron incluse + jusqu&apos;à 10 produits supplémentaires.
+              Centrale {alarmLocationCentral === 'titane' ? 'Titane' : 'Jablotron'} incluse + jusqu&apos;à 10 produits supplémentaires.
             </div>
           </div>
         )}
