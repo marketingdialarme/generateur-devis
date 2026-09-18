@@ -168,6 +168,13 @@ export default function CreateDevisPage() {
   const [fogCatalogError, setFogCatalogError] = useState<string | null>(null);
   // Titane/Jablotron only — XTO stays on its own hardcoded catalog for now.
   const [alarmCatalog, setAlarmCatalog] = useState<AlarmProduct[]>([]);
+  // Location "Chantier" catalog (XTO- refs, same sheet) -- separate from
+  // alarmCatalog since it's a different pricing model (monthly, no central).
+  const [xtoCatalog, setXtoCatalog] = useState<AlarmProduct[]>([]);
+  // Which of the two rental kits is active, only meaningful while
+  // alarmRentalMode is true. Defaults to 'chantier' but nothing is applied
+  // until the conseiller actually picks one.
+  const [alarmRentalType, setAlarmRentalType] = useState<'chantier' | 'location' | null>(null);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
   const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
@@ -682,6 +689,7 @@ export default function CreateDevisPage() {
           { id: 99, name: 'Autre', price: 0, isCustom: true },
         ]);
         setAlarmKits(result.data.kits || {});
+        setXtoCatalog(result.data.xtoProducts || []);
         setAlarmInstallationPrices(result.data.installationPrices || { titane: null, jablotron: null });
         setAlarmCatalogError(null);
       })
