@@ -909,7 +909,15 @@ export default function CreateDevisPage() {
         } : undefined
       });
 
-      const filename = `devis-${finalClientName.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+      // Filename format (client spec): DEVIS-NomClient-XXX-JJMMAAHHMMSS
+      // where XXX = first 3 letters of the conseiller's surname (the last
+      // word in "Prénom NOM", e.g. "Anabelle TARGE" -> "TAR").
+      const conseillerSurname = finalCommercial.trim().split(/\s+/).pop() || '';
+      const conseillerCode = conseillerSurname.slice(0, 3).toUpperCase();
+      const now = new Date();
+      const pad2 = (n: number) => String(n).padStart(2, '0');
+      const dateStamp = `${pad2(now.getDate())}${pad2(now.getMonth() + 1)}${String(now.getFullYear()).slice(-2)}${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+      const filename = `DEVIS-${finalClientName.replace(/\s+/g, '-')}-${conseillerCode}-${dateStamp}.pdf`;
       let finalBlob = generatedPdf.blob;
       let products: ProductFetchRef[] = [];
       let assemblyInfo: { baseDossier: string; productsFound: number; totalPages: number } | undefined;
