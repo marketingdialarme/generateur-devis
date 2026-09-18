@@ -176,6 +176,10 @@ export default function CreateDevisPage() {
   // alarmRentalMode is true. Defaults to 'chantier' but nothing is applied
   // until the conseiller actually picks one.
   const [alarmRentalType, setAlarmRentalType] = useState<'chantier' | 'location' | null>(null);
+  // Matériel supplémentaire for the Chantier kit -- a real editable line
+  // list (dropdown/add/remove/offert), not a fixed static list, so it
+  // matches how "matériel supplémentaire" works everywhere else.
+  const [alarmChantierMaterialLines, setAlarmChantierMaterialLines] = useState<ProductLineData[]>([]);
   // Service de surveillance choice for the Location (Jablotron) rental kit
   // -- separate from the vente flow's surveillanceType, since the refs and
   // prices (LOC-AUTO-*/LOC-TEL-*, from Config) are different.
@@ -1888,20 +1892,83 @@ export default function CreateDevisPage() {
 
         {alarmRentalMode && alarmRentalType === 'chantier' && (
           <div className="quote-section">
-            <h3>🔧 Matériel supplémentaire Chantier</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {['XTO-SIR', 'XTO-MOU', 'XTO-LEC', 'XTO-INT'].map((ref) => {
-                const product = xtoCatalog.find(p => p.ref === ref);
-                if (!product) return null;
-                const isIntervention = ref === 'XTO-INT';
+            <h3>
+              🔧 Matériel supplémentaire Chantier
+              <span
+                className="add-product-btn"
+                onClick={() => {
+                  setAlarmChantierMaterialLines([...alarmChantierMaterialLines, {
+                    id: Date.now(),
+                    product: null,
+                    quantity: 1,
+                    offered: false
+                  }]);
+                }}
+                title="Ajouter un produit"
+              >
+                +
+              </span>
+            </h3>
+            <div>
+              {alarmChantierMaterialLines.map((line, index) => {
+                const isIntervention = line.product?.ref === 'XTO-INT';
                 return (
-                  <div key={ref} className="product-line">
-                    <div>{product.name}</div>
-                    <div></div>
-                    <div></div>
-                    <div className="price-display">
-                      {product.price.toFixed(2)} CHF{isIntervention ? '/intervention' : '/mois'}
+                  <div key={line.id} className="product-line">
+                    <select
+                      className="product-select"
+                      value={line.product?.ref || ''}
+                      onChange={(e) => {
+                        const product = xtoCatalog.find(p => p.ref === e.target.value);
+                        const newLines = [...alarmChantierMaterialLines];
+                        newLines[index] = { ...line, product: product || null };
+                        setAlarmChantierMaterialLines(newLines);
+                      }}
+                    >
+                      <option value="">Sélectionner un produit</option>
+                      {xtoCatalog
+                        .filter(p => !(alarmKits['KIT-XTO'] || []).some(k => k.ref === p.ref) && p.ref !== 'XTO-ABO')
+                        .map(p => (
+                          <option key={p.ref} value={p.ref}>{p.name}</option>
+                        ))}
+                    </select>
+                    <input
+                      type="number"
+                      className="quantity-input"
+                      value={line.quantity}
+                      onChange={(e) => {
+                        const newLines = [...alarmChantierMaterialLines];
+                        newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                        setAlarmChantierMaterialLines(newLines);
+                      }}
+                      min="1"
+                    />
+                    <div className="checkbox-option" style={{ margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        className="offered-checkbox"
+                        checked={line.offered}
+                        onChange={(e) => {
+                          const newLines = [...alarmChantierMaterialLines];
+                          newLines[index] = { ...line, offered: e.target.checked };
+                          setAlarmChantierMaterialLines(newLines);
+                        }}
+                      />
+                      <label style={{ margin: 0, fontSize: '12px' }}>OFFERT</label>
                     </div>
+                    <div className="price-display">
+                      {line.offered
+                        ? 'OFFERT'
+                        : line.product
+                        ? `${((line.product.price ?? 0) * line.quantity).toFixed(2)} CHF${isIntervention ? '/intervention' : '/mois'}`
+                        : '0.00 CHF'}
+                    </div>
+                    <button
+                      className="remove-btn"
+                      onClick={() => setAlarmChantierMaterialLines(alarmChantierMaterialLines.filter((_, i) => i !== index))}
+                      title="Supprimer"
+                    >
+                      ×
+                    </button>
                   </div>
                 );
               })}
