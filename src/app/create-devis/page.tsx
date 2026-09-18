@@ -227,11 +227,6 @@ export default function CreateDevisPage() {
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
-  // Contrairement a Alarme/Fog, le kit Visiophone n'est PAS "generalement
-  // offert" par defaut (voir l'effet d'injection plus bas, offered: false)
-  // -- la bascule reste utile au cas par cas, mais son defaut suit celui
-  // deja en place plutot que de copier Alarme/Fog sans verification.
-  const [visiophoKitOffert, setVisiophoKitOffert] = useState(false);
   // No hardcoded fallback (client decision): starts empty, filled once
   // /api/products/visiophone resolves. visiophoneCatalogError drives a
   // visible message in the UI if the Sheet can't be reached, instead of
@@ -482,7 +477,7 @@ export default function CreateDevisPage() {
           id: Date.now() + index,
           product: product || null,
           quantity: item.quantity,
-          offered: visiophoKitOffert
+          offered: false
         };
       }).filter(line => line.product);
       
@@ -3466,21 +3461,6 @@ export default function CreateDevisPage() {
           <h3>
             🛡️ Kit de base
             <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
-                Kit offert
-                <label className="toggle-switch" title="Le kit est-il offert au client ?">
-                  <input
-                    type="checkbox"
-                    checked={visiophoKitOffert}
-                    onChange={() => {
-                      const value = !visiophoKitOffert;
-                      setVisiophoKitOffert(value);
-                      setVisiophoLines(lines => lines.map(l => ({ ...l, offered: value })));
-                    }}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </span>
               <button 
                 className="add-product-btn" 
                 onClick={() => {
