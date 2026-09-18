@@ -175,6 +175,25 @@ export default function CreateDevisPage() {
   // alarmRentalMode is true. Defaults to 'chantier' but nothing is applied
   // until the conseiller actually picks one.
   const [alarmRentalType, setAlarmRentalType] = useState<'chantier' | 'location' | null>(null);
+
+  // Location "Location standard" always starts from a Jablotron centrale --
+  // seed it as soon as this kit type is chosen and the catalog is loaded,
+  // if it isn't already the first line (switching between chantier/location
+  // repeatedly shouldn't duplicate it, nor should switching rental type off
+  // and back on within the same session).
+  useEffect(() => {
+    if (
+      alarmRentalMode &&
+      alarmRentalType === 'location' &&
+      alarmCatalog.length > 0 &&
+      !alarmMaterialLines.some(l => l.product?.ref === 'JAB-CEN')
+    ) {
+      const centrale = alarmCatalog.find(p => p.ref === 'JAB-CEN');
+      if (centrale) {
+        setAlarmMaterialLines(lines => [{ id: Date.now(), product: centrale, quantity: 1, offered: false }, ...lines]);
+      }
+    }
+  }, [alarmRentalMode, alarmRentalType, alarmCatalog]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
   const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
@@ -1124,7 +1143,7 @@ export default function CreateDevisPage() {
           </div>
         )}
         <div className="rental-toggle-container">
-          <span>Mode vente</span>
+          <span>Partenariat</span>
           <label className="toggle-switch">
             <input 
               type="checkbox" 
@@ -1135,6 +1154,33 @@ export default function CreateDevisPage() {
           </label>
           <span>Location</span>
         </div>
+
+        {alarmRentalMode && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 15 }}>
+            {(['chantier', 'location'] as const).map((t) => {
+              const active = alarmRentalType === t;
+              return (
+                <div
+                  key={t}
+                  onClick={() => setAlarmRentalType(t)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '14px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    border: `1px solid ${active ? '#fffd01' : '#333333'}`,
+                    background: active ? 'rgba(255,253,1,0.08)' : '#151515',
+                    color: active ? '#fff' : '#9a9a9a',
+                  }}
+                >
+                  {t === 'chantier' ? 'Chantier' : 'Location'}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="form-section">
           <h3>📋 Informations Client</h3>
@@ -1225,6 +1271,8 @@ export default function CreateDevisPage() {
                 </div>
                 
         {/* Product Sections */}
+        {!alarmRentalMode && (
+        <>
         <div className="quote-section">
           <h3>
             🛡️ Choix Kit de base
@@ -1803,6 +1851,128 @@ export default function CreateDevisPage() {
           </div>
           
         </div>
+        </>
+        )}
+
+        {/* Location — Chantier : contenu du kit fixe KIT-XTO (colonnes L/M),
+            tout marque offert puisque couvert par l'abonnement XTO-ABO
+            affiche separement ; + XTO-SIR/MOU/LEC (mensuels) et XTO-INT
+            (prix a l'intervention, pas mensuel). */}
+        {alarmRentalMode && alarmRentalType === 'chantier' && (
+          <div className="quote-section">
+            <h3>🛡️ Kit Chantier (XTO)</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {(alarmKits['KIT-XTO'] || []).map((item) => {
+                const product = xtoCatalog.find(p => p.ref === item.ref);
+                if (!product) return null;
+                return (
+                  <div key={item.ref} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9a9a9a', padding: '4px 0' }}>
+                    <span>{item.quantity} {product.name}</span>
+                    <span style={{ color: '#6a6a6a' }}>Inclus</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="product-line" style={{ marginTop: 10, borderTop: '1px solid #262626', paddingTop: 10 }}>
+              <div>Abonnement XTO (XTO-ABO)</div>
+              <div></div>
+              <div></div>
+              <div className="price-display">
+                {(xtoCatalog.find(p => p.ref === 'XTO-ABO')?.price ?? 790).toFixed(2)} CHF/mois
+              </div>
+            </div>
+          </div>
+        )}
+
+        {alarmRentalMode && alarmRentalType === 'chantier' && (
+          <div className="quote-section">
+            <h3>🔧 Matériel supplémentaire Chantier</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['XTO-SIR', 'XTO-MOU', 'XTO-LEC', 'XTO-INT'].map((ref) => {
+                const product = xtoCatalog.find(p => p.ref === ref);
+                if (!product) return null;
+                const isIntervention = ref === 'XTO-INT';
+                return (
+                  <div key={ref} className="product-line">
+                    <div>{product.name}</div>
+                    <div></div>
+                    <div></div>
+                    <div className="price-display">
+                      {product.price.toFixed(2)} CHF{isIntervention ? '/intervention' : '/mois'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Location — Location standard : centrale Jablotron de base
+            (JAB-CEN), + jusqu'a 10 produits Jablotron supplementaires
+            (meme catalogue que la vente, reutilise tel quel). */}
+        {alarmRentalMode && alarmRentalType === 'location' && (
+          <div className="quote-section">
+            <h3>🛡️ Kit Location (Jablotron)</h3>
+            <div id="location-material-products">
+              {alarmMaterialLines.map((line, index) => (
+                <div key={line.id} className="product-line">
+                  <select
+                    className="product-select"
+                    value={line.product?.name || ''}
+                    onChange={(e) => {
+                      const product = alarmCatalog.find(p => p.name === e.target.value && p.ref?.startsWith('JAB-'));
+                      const newLines = [...alarmMaterialLines];
+                      newLines[index] = { ...line, product: product || null };
+                      setAlarmMaterialLines(newLines);
+                    }}
+                    disabled={line.product?.ref === 'JAB-CEN'}
+                  >
+                    <option value="">Sélectionner un produit</option>
+                    {alarmCatalog.filter(p => p.ref?.startsWith('JAB-') && p.ref !== 'JAB-INS').map(p => (
+                      <option key={p.ref} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    className="quantity-input"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const newLines = [...alarmMaterialLines];
+                      newLines[index] = { ...line, quantity: parseInt(e.target.value) || 1 };
+                      setAlarmMaterialLines(newLines);
+                    }}
+                    min="1"
+                  />
+                  <div className="price-display">{(line.product?.price ?? 0).toFixed(2)} CHF</div>
+                  {line.product?.ref !== 'JAB-CEN' && (
+                    <button
+                      className="remove-btn"
+                      onClick={() => setAlarmMaterialLines(alarmMaterialLines.filter((_, i) => i !== index))}
+                      title="Supprimer"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {alarmMaterialLines.length < 11 && (
+              <button
+                className="add-product-btn"
+                style={{ marginTop: 10 }}
+                onClick={() => {
+                  setAlarmMaterialLines([...alarmMaterialLines, { id: Date.now(), product: null, quantity: 1, offered: false }]);
+                }}
+                title="Ajouter un produit Jablotron (10 max en plus de la centrale)"
+              >
+                +
+              </button>
+            )}
+            <div style={{ fontSize: 11, color: '#6a6a6a', marginTop: 8 }}>
+              Centrale Jablotron incluse + jusqu&apos;à 10 produits supplémentaires.
+            </div>
+          </div>
+        )}
 
         {/* Admin Fees */}
         <div className="quote-section">
