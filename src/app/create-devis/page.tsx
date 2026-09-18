@@ -2267,7 +2267,9 @@ export default function CreateDevisPage() {
               <span>{surveillanceOffered ? 'OFFERT' : `${surveillancePrice.toFixed(2)} CHF/mois`}</span>
             </div>
           )}
-          <div className="summary-item" style={{ borderTop: '2px solid #e9ecef', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          {!alarmRentalMode && (
+          <>
+          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT (hors surveillance)</span>
             <span>{(alarmTotals?.totalHT || 0).toFixed(2)} CHF</span>
           </div>
@@ -2275,6 +2277,8 @@ export default function CreateDevisPage() {
             <span>TOTAL TTC (hors surveillance)</span>
             <span>{(alarmTotals?.totalTTC || 0).toFixed(2)} CHF</span>
           </div>
+          </>
+          )}
           {((!alarmRentalMode && alarmPaymentMonths > 0) || alarmRentalMode) && alarmTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
