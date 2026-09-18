@@ -9,12 +9,13 @@
 
 import { useState, useCallback } from 'react';
 import { assemblePdf, CommercialInfo, AssemblyResult } from '@/lib/pdf-assembly';
+import { ProductFetchRef } from '@/lib/product-collector';
 
 interface AssemblePdfParams {
   pdfBlob: Blob;
   quoteType: 'alarme' | 'video' | 'fog' | 'visiophone';
   centralType: 'titane' | 'jablotron' | null;
-  products: string[];
+  products: ProductFetchRef[];
   commercial: CommercialInfo;
   propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise';
   addPoliceDoc?: boolean;

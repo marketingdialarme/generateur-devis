@@ -20,7 +20,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
 import { usePdfAssembly } from '@/hooks/usePdfAssembly';
 import { useQuoteSender } from '@/hooks/useQuoteSender';
-import { collectAllProducts } from '@/lib/product-collector';
+import { collectAllProducts, ProductFetchRef } from '@/lib/product-collector';
 import { getCommercialInfo, setCommercials } from '@/lib/config';
 import { calculateAlarmTotals, calculateCameraTotals } from '@/lib/calculations';
 import { CATALOG_ALARM_PRODUCTS, CATALOG_CAMERA_MATERIAL, CATALOG_XTO_PRODUCTS, XTO_KIT_LINES, UNINSTALL_PRICE, TVA_RATE, roundToFiveCents, setTvaRate, setAdminFees, calculateFacilityPayment, type AlarmProduct, type VisiophoProduct, type FogProduct, type CameraProduct } from '@/lib/quote-generator';
@@ -863,7 +863,7 @@ export default function CreateDevisPage() {
 
       const filename = `devis-${finalClientName.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
       let finalBlob = generatedPdf.blob;
-      let products: string[] = [];
+      let products: ProductFetchRef[] = [];
       let assemblyInfo: { baseDossier: string; productsFound: number; totalPages: number } | undefined;
 
       // Steps 2-3: Assemble with the Drive base template. Fog + visiophone
@@ -910,7 +910,7 @@ export default function CreateDevisPage() {
         type: isCamera ? 'video' : 'alarme',
         centralType: selectedCentral || undefined,
         isXtoAlarm: isXto || undefined,
-        products,
+        products: products.map(p => p.name),
         assemblyInfo
       });
       

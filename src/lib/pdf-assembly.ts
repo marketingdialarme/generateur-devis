@@ -13,6 +13,7 @@
 
 import { PDFDocument, StandardFonts, rgb, PDFName } from 'pdf-lib';
 import { config } from './config';
+import { ProductFetchRef } from './product-collector';
 
 // Commercial info interface
 export interface CommercialInfo {
@@ -53,7 +54,7 @@ export async function assemblePdf(
   pdfBlob: Blob,
   quoteType: 'alarme' | 'video' | 'fog' | 'visiophone',
   centralType: 'titane' | 'jablotron' | null,
-  products: string[],
+  products: ProductFetchRef[],
   commercial: CommercialInfo,
   propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise' = 'locaux',
   addPoliceDoc: boolean = false
@@ -343,7 +344,7 @@ async function assembleAlarmPdf(
  */
 async function assembleVideoPdf(
   pdfBlob: Blob,
-  products: string[],
+  products: ProductFetchRef[],
   commercial: CommercialInfo,
   propertyType: 'locaux' | 'habitation' | 'villa' | 'commerce' | 'entreprise'
 ): Promise<AssemblyResult> {
@@ -698,7 +699,7 @@ async function fetchDocumentFromDrive(fileId: string): Promise<ArrayBuffer> {
  * Fetch all documents needed for video quote assembly
  * Optimized: Fetches all documents in parallel for maximum speed
  */
-async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments> {
+async function fetchVideoDocuments(products: ProductFetchRef[]): Promise<FetchedDocuments> {
   console.log('📥 Fetching video documents in parallel...');
   
   try {
@@ -713,15 +714,18 @@ async function fetchVideoDocuments(products: string[]): Promise<FetchedDocuments
       // Note: Accessories sheet (Switch POE, Coffret NVR, etc.) is now fetched as a regular product sheet
       // through the product mapping system, not as a separate accessories fetch
       Promise.all(
-        products.map(async (productName) => {
+        products.map(async ({ name: productName, ficheId }) => {
           try {
-            console.log(`📦 Fetching product sheet: ${productName}`);
-            const response = await fetch(`/api/drive-fetch-product?productName=${encodeURIComponent(productName)}`);
+            const query = ficheId
+              ? `ficheId=${encodeURIComponent(ficheId)}`
+              : `productName=${encodeURIComponent(productName)}`;
+            console.log(`📦 Fetching product sheet: ${productName}${ficheId ? ' (fiche: ' + ficheId + ')' : ''}`);
+            const response = await fetch(`/api/drive-fetch-product?${query}`);
             
             if (response.ok) {
               // Check if response includes metadata (fileId)
               const contentType = response.headers.get('content-type');
-              const fileId = response.headers.get('x-file-id') || productName; // Fallback to productName if no header
+              const fileId = response.headers.get('x-file-id') || ficheId || productName; // Fallback if no header
               
               const data = await response.arrayBuffer();
               console.log(`✅ Fetched: ${productName} (fileId: ${fileId})`);

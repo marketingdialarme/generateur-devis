@@ -9,8 +9,16 @@ import { ProductLineData } from '@/components/ProductLine';
 import { getSheetNameForProduct, PRODUCTS_WITHOUT_INDIVIDUAL_SHEETS } from './product-sheet-mapping';
 import { config } from './config';
 
+/** One product line to fetch a fiche for. ficheId, when present, comes from
+ * the Sheet's "Fiche" column and is preferred over any name-based lookup. */
+export interface ProductFetchRef {
+  name: string;
+  ficheId?: string;
+}
+
 /**
- * Collect product names for backend assembly
+ * Collect product names (and fiche IDs, where the Sheet provides one) for
+ * backend assembly
  * 
  * Filters out:
  * - Products with no quantity
@@ -21,10 +29,10 @@ import { config } from './config';
  * Note: Includes both offered and non-offered products so their fiches appear in PDF
  * 
  * @param productLines - Array of product line data
- * @returns Array of clean product names
+ * @returns Array of {name, ficheId?} refs
  */
-export function collectProductsForAssembly(productLines: ProductLineData[]): string[] {
-  const products: string[] = [];
+export function collectProductsForAssembly(productLines: ProductLineData[]): ProductFetchRef[] {
+  const products: ProductFetchRef[] = [];
   
   console.log('🔍 Collecting products for assembly:', productLines.length, 'lines');
   
@@ -53,8 +61,9 @@ export function collectProductsForAssembly(productLines: ProductLineData[]): str
         cleanName = cleanName.split(' - ').slice(0, -1).join(' - ');
       }
       
-      products.push(cleanName);
-      console.log(`    ✅ Added: ${cleanName}${cleanName !== product.name ? ' (cleaned from: ' + product.name + ')' : ''}${offered ? ' [OFFERT]' : ''}`);
+      const ficheId = product.fiche;
+      products.push({ name: cleanName, ficheId });
+      console.log(`    ✅ Added: ${cleanName}${cleanName !== product.name ? ' (cleaned from: ' + product.name + ')' : ''}${offered ? ' [OFFERT]' : ''}${ficheId ? ' [fiche: ' + ficheId + ']' : ''}`);
     } else {
       console.log(`    ⏭️ Skipped (no quantity or invalid name)`);
     }
@@ -68,10 +77,10 @@ export function collectProductsForAssembly(productLines: ProductLineData[]): str
  * Collect all products from all sections
  * 
  * @param sections - Object containing arrays of product lines for each section
- * @returns Array of all clean product names
+ * @returns Array of fetch refs, deduplicated
  */
-export function collectAllProducts(sections: Record<string, ProductLineData[]>): string[] {
-  const allProducts: string[] = [];
+export function collectAllProducts(sections: Record<string, ProductLineData[]>): ProductFetchRef[] {
+  const allProducts: ProductFetchRef[] = [];
   
   Object.entries(sections).forEach(([sectionName, lines]) => {
     console.log(`📦 Collecting from section: ${sectionName}`);
@@ -80,27 +89,34 @@ export function collectAllProducts(sections: Record<string, ProductLineData[]>):
   });
   
   console.log(`✅ Total products collected (before dedup): ${allProducts.length}`);
-  console.log('📝 Products:', allProducts);
 
-  // Prefer raw product names when a direct Drive ID exists in cameraSheetIds
-  // so the assembly fetches the per-product fiche directly via /api/drive-fetch-product.
-  // This bypasses the legacy "shared sheet" name mapping (e.g. "Bullet Mini et Dôme Mini"),
-  // which is incorrect now that the client ships one fiche per product.
-  //
-  // For products NOT in cameraSheetIds (NVR, accessories, modem, etc.) we keep the legacy
-  // mapped sheet name so the folder-name search still works.
+  // Prefer the Sheet's "Fiche" column (a Drive file ID) when the product has
+  // one -- most reliable, and the right key for deduping: two differently-
+  // named products (e.g. two camera accessories) can share the exact same
+  // fiche, and must only be fetched/inserted once. Falls back to the
+  // legacy direct-ID map (cameraSheetIds) and then the shared-sheet name
+  // mapping for anything that doesn't have a Sheet-provided fiche ID yet.
   const directIds = config.google.drive.baseDocuments.cameraSheetIds || {};
   const seen = new Set<string>();
-  const result: string[] = [];
+  const result: ProductFetchRef[] = [];
 
-  for (const productName of allProducts) {
+  for (const { name: productName, ficheId } of allProducts) {
     if (PRODUCTS_WITHOUT_INDIVIDUAL_SHEETS.has(productName)) continue;
+
+    if (ficheId) {
+      const key = `fiche:${ficheId}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ name: productName, ficheId });
+      }
+      continue;
+    }
 
     // Has a direct ID? send raw product name (route resolves via cameraSheetIds map)
     if (directIds[productName]) {
       if (!seen.has(productName)) {
         seen.add(productName);
-        result.push(productName);
+        result.push({ name: productName });
       }
       continue;
     }
@@ -109,12 +125,12 @@ export function collectAllProducts(sections: Record<string, ProductLineData[]>):
     const sheetName = getSheetNameForProduct(productName);
     if (sheetName && !seen.has(sheetName)) {
       seen.add(sheetName);
-      result.push(sheetName);
+      result.push({ name: sheetName });
     }
   }
 
-  console.log(`✅ Names to fetch (after direct-ID resolution & dedup): ${result.length}`);
-  console.log('📑 Names:', result);
+  console.log(`✅ Refs to fetch (after dedup): ${result.length}`);
+  console.log('📑 Refs:', result);
 
   return result;
 }

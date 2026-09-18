@@ -18,6 +18,8 @@ export interface Product {
   isCustom?: boolean;
   requiresJablotron?: boolean;
   isXTO?: boolean;
+  /** Drive file ID or shareable link, from the Sheet's "Fiche" column. */
+  fiche?: string;
 }
 
 export interface ProductLineData {

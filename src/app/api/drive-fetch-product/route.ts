@@ -17,11 +17,47 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
+    const ficheId = searchParams.get('ficheId');
     const productName = searchParams.get('productName');
-    
+
+    if (!ficheId && !productName) {
+      return NextResponse.json(
+        { error: 'ficheId or productName parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    // Sheet-provided fiche ID (or a full Drive link, already reduced to an
+    // ID upstream) — most reliable, tried first, no name matching involved.
+    if (ficheId) {
+      try {
+        console.log('🎯 [API] Direct fiche lookup:', ficheId);
+        const buffer = await googleDriveService.downloadFile(ficheId);
+        console.log('✅ [API] Product sheet fetched via fiche ID:', buffer.length, 'bytes');
+        return new NextResponse(Buffer.from(buffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Length': buffer.length.toString(),
+            'X-File-Id': ficheId,
+            'Cache-Control': 'public, max-age=86400, immutable',
+          },
+        });
+      } catch (ficheErr) {
+        console.warn('⚠️ [API] Fiche ID fetch failed:', ficheErr);
+        if (!productName) {
+          return NextResponse.json(
+            { error: 'Product sheet not found (invalid fiche ID, no productName to fall back on)' },
+            { status: 404 }
+          );
+        }
+        // fall through to the name-based paths below
+      }
+    }
+
     if (!productName) {
       return NextResponse.json(
-        { error: 'productName parameter is required' },
+        { error: 'productName parameter is required when ficheId is absent or invalid' },
         { status: 400 }
       );
     }
