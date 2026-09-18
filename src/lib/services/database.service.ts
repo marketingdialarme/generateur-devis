@@ -270,17 +270,6 @@ export async function linkConseillerProfile(userId: string, email: string): Prom
   try {
     const client = getSupabaseClient();
 
-    // Already linked (e.g. a returning conseiller) -- nothing to do.
-    const { data: existing } = await client
-      .from('profiles')
-      .select('commercial_name')
-      .eq('user_id', userId)
-      .single() as { data: { commercial_name: string } | null };
-
-    if (existing?.commercial_name) {
-      return existing.commercial_name;
-    }
-
     const commercials = await fetchCommercialsFromSheet();
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -289,18 +278,35 @@ export async function linkConseillerProfile(userId: string, email: string): Prom
     );
 
     if (!match) {
-      return null;
+      // No Sheet match (e.g. Sheet briefly unreachable, or this email
+      // really isn't a conseiller) -- fall back to whatever is already
+      // linked rather than clearing a previously-working profile.
+      const { data: existing } = await client
+        .from('profiles')
+        .select('commercial_name')
+        .eq('user_id', userId)
+        .single() as { data: { commercial_name: string } | null };
+      return existing?.commercial_name || null;
     }
 
     const [commercialName] = match;
 
+    // Upsert every call, not just the first: keeps commercial_name in sync
+    // with the Sheet's current "Prénom Nom" format going forward, so a
+    // profile linked under an older naming convention self-heals on the
+    // next login instead of staying stuck mismatched with new quotes
+    // (client-reported bug -- a quote logged as "Anabelle TARGE" never
+    // matched a profile still holding "TARGE Anabelle" from an earlier link).
     const { error } = await client
       .from('profiles')
-      .insert({ user_id: userId, commercial_name: commercialName } as never);
+      .upsert({ user_id: userId, commercial_name: commercialName } as never, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Error linking conseiller profile:', error);
-      return null;
+      // Write failed -- still return the freshly computed name so this
+      // login's quotes save under the correct one, even if the profile
+      // row itself couldn't be updated this time.
+      return commercialName;
     }
 
     return commercialName;
