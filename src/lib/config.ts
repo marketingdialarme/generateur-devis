@@ -360,47 +360,5 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
   };
 }
 
-/**
- * Get template file ID based on quote type and central type
- */
-export function getTemplateFileId(
-  quoteType: 'alarme' | 'video',
-  centralType?: 'titane' | 'jablotron'
-): string | null {
-  if (quoteType === 'alarme') {
-    if (centralType === 'jablotron') {
-      return config.google.drive.baseDocuments.alarmJablotron;
-    }
-    return config.google.drive.baseDocuments.alarmTitane;
-  }
-  
-  if (quoteType === 'video') {
-    return config.google.drive.baseDocuments.video;
-  }
-  
-  return null;
-}
-
-/**
- * Get template name based on quote type and central type
- */
-export function getTemplateName(
-  quoteType: 'alarme' | 'video',
-  centralType?: 'titane' | 'jablotron'
-): string {
-  if (quoteType === 'alarme') {
-    if (centralType === 'jablotron') {
-      return 'Devis_ALARME_JABLOTRON.pdf';
-    }
-    return 'Devis_ALARME_TITANE.pdf';
-  }
-  
-  if (quoteType === 'video') {
-    return 'Devis_VIDÉO.pdf';
-  }
-  
-  return 'Unknown';
-}
-
 // Export legacy CONFIG for backward compatibility
 export const CONFIG = config;

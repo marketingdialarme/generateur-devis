@@ -6,7 +6,7 @@
  * ============================================================================
  * 
  * Complete integration of all migrated functionality:
- * - useQuoteGenerator: Main state management
+ * - Main state management
  * - useQuoteCalculations: Real-time calculations
  * - usePdfGenerator: PDF generation
  * - usePdfAssembly: PDF assembly with base documents
