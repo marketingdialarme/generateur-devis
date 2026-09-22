@@ -193,33 +193,38 @@ export default function CreateDevisPage() {
   // prices (LOC-AUTO-*/LOC-TEL-*, from Config) are different.
   const [alarmLocationSurveillance, setAlarmLocationSurveillance] = useState('');
   // Which centrale the Location kit is built around -- client feedback:
-  // Location should offer a Titane/Jablotron choice just like Partenariat,
-  // not be locked to Jablotron only. Defaults to jablotron to match the
-  // single-option behaviour this replaces (no extra click needed for the
-  // common case).
-  const [alarmLocationCentral, setAlarmLocationCentral] = useState<'titane' | 'jablotron'>('jablotron');
+  // Location should offer the same centrale choice as Partenariat (any
+  // discovered centrale, not just Titane/Jablotron). Defaults to
+  // jablotron to match the original single-option behaviour (no extra
+  // click needed for the common case); falls back to whichever centrale
+  // loads first if jablotron isn't among them.
+  const [alarmLocationCentral, setAlarmLocationCentral] = useState<string>('jablotron');
 
-  // Location "Location standard" always starts from a centrale (Titane or
-  // Jablotron, per alarmLocationCentral) -- seeds it as soon as this kit
-  // type is chosen and the catalog is loaded, if it isn't already the
-  // first line. Also swaps it out if the conseiller changes their centrale
-  // choice after the fact, so the kit never ends up with the wrong one (or
-  // both at once).
+  // Location "Location standard" always starts from a centrale (per
+  // alarmLocationCentral) -- seeds it as soon as this kit type is chosen
+  // and the catalog is loaded, if it isn't already the first line. Also
+  // swaps it out if the conseiller changes their centrale choice after
+  // the fact, so the kit never ends up with the wrong one (or several at
+  // once, now that there can be more than two centrales).
   useEffect(() => {
-    if (!(alarmRentalMode && alarmRentalType === 'location' && alarmCatalog.length > 0)) return;
-    const wantedRef = alarmLocationCentral === 'titane' ? 'TIT-CEN' : 'JAB-CEN';
-    const otherRef = alarmLocationCentral === 'titane' ? 'JAB-CEN' : 'TIT-CEN';
+    if (!(alarmRentalMode && alarmRentalType === 'location' && alarmCatalog.length > 0 && alarmCentrals.length > 0)) return;
+    const wanted = alarmCentrals.find(c => c.name.toLowerCase() === alarmLocationCentral);
+    if (!wanted) return;
+    const wantedRef = `${wanted.prefix}-CEN`;
+    const otherRefs = alarmCentrals
+      .filter(c => c.name.toLowerCase() !== alarmLocationCentral)
+      .map(c => `${c.prefix}-CEN`);
     const hasWanted = alarmMaterialLines.some(l => l.product?.ref === wantedRef);
-    const hasOther = alarmMaterialLines.some(l => l.product?.ref === otherRef);
+    const hasOther = alarmMaterialLines.some(l => l.product?.ref && otherRefs.includes(l.product.ref));
     if (hasWanted && !hasOther) return; // already correct, nothing to do
     const centrale = alarmCatalog.find(p => p.ref === wantedRef);
     if (!centrale) return;
     setAlarmMaterialLines(lines => {
-      const withoutOther = lines.filter(l => l.product?.ref !== otherRef);
-      if (withoutOther.some(l => l.product?.ref === wantedRef)) return withoutOther;
-      return [{ id: Date.now(), product: centrale, quantity: 1, offered: false }, ...withoutOther];
+      const withoutOthers = lines.filter(l => !(l.product?.ref && otherRefs.includes(l.product.ref)));
+      if (withoutOthers.some(l => l.product?.ref === wantedRef)) return withoutOthers;
+      return [{ id: Date.now(), product: centrale, quantity: 1, offered: false }, ...withoutOthers];
     });
-  }, [alarmRentalMode, alarmRentalType, alarmCatalog, alarmLocationCentral]);
+  }, [alarmRentalMode, alarmRentalType, alarmCatalog, alarmLocationCentral, alarmCentrals]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
   const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<Record<string, number | null>>({});
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
@@ -2036,13 +2041,14 @@ export default function CreateDevisPage() {
         {alarmRentalMode && alarmRentalType === 'location' && (
           <div className="quote-section">
             <h3>🛡️ Kit Location</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-              {(['titane', 'jablotron'] as const).map((c) => {
-                const active = alarmLocationCentral === c;
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(alarmCentrals.length, 1)}, 1fr)`, gap: 8, marginBottom: 14 }}>
+              {alarmCentrals.map((c) => {
+                const central = c.name.toLowerCase();
+                const active = alarmLocationCentral === central;
                 return (
                   <div
-                    key={c}
-                    onClick={() => setAlarmLocationCentral(c)}
+                    key={central}
+                    onClick={() => setAlarmLocationCentral(central)}
                     style={{
                       textAlign: 'center',
                       padding: '10px',
@@ -2055,16 +2061,17 @@ export default function CreateDevisPage() {
                       color: active ? '#fff' : '#9a9a9a',
                     }}
                   >
-                    {c === 'titane' ? 'Titane' : 'Jablotron'}
+                    {c.name}
                   </div>
                 );
               })}
             </div>
             <div id="location-material-products">
               {alarmMaterialLines.map((line, index) => {
-                const centralPrefix = alarmLocationCentral === 'titane' ? 'TIT-' : 'JAB-';
-                const centralRef = alarmLocationCentral === 'titane' ? 'TIT-CEN' : 'JAB-CEN';
-                const installRef = alarmLocationCentral === 'titane' ? 'TIT-INS' : 'JAB-INS';
+                const locationCentral = alarmCentrals.find(c => c.name.toLowerCase() === alarmLocationCentral);
+                const centralPrefix = locationCentral ? `${locationCentral.prefix}-` : '';
+                const centralRef = locationCentral ? `${locationCentral.prefix}-CEN` : '';
+                const installRef = locationCentral ? `${locationCentral.prefix}-INS` : '';
                 return (
                 <div key={line.id} className="product-line">
                   <CustomSelect
@@ -2122,7 +2129,7 @@ export default function CreateDevisPage() {
               </button>
             )}
             <div style={{ fontSize: 11, color: '#6a6a6a', marginTop: 8 }}>
-              Centrale {alarmLocationCentral === 'titane' ? 'Titane' : 'Jablotron'} incluse + jusqu&apos;à 10 produits supplémentaires.
+              Centrale {alarmCentrals.find(c => c.name.toLowerCase() === alarmLocationCentral)?.name || alarmLocationCentral} incluse + jusqu&apos;à 10 produits supplémentaires.
             </div>
           </div>
         )}
