@@ -114,8 +114,12 @@ function getLineUnitPrice(line: ProductLineData): number {
  */
 export function getAlarmQuoteNumberPrefix(surveillanceType?: string | null): 'TELES' | 'AUTO' | null {
   if (!surveillanceType) return null;
-  if (surveillanceType.startsWith('telesurveillance')) return 'TELES';
-  if (surveillanceType.startsWith('autosurveillance')) return 'AUTO';
+  // Works for both the old slugs ("autosurveillance-...", "telesurveillance")
+  // and the new Sheet-driven refs ("TIT-AUTO-S-SIM", "JAB-TEL-PAR", ...) --
+  // both forms carry AUTO/TEL as a substring either way.
+  const upper = surveillanceType.toUpperCase();
+  if (upper.includes('TEL')) return 'TELES';
+  if (upper.includes('AUTO')) return 'AUTO';
   return null;
 }
 
@@ -677,7 +681,7 @@ function drawSurveillanceBlock(
   // it wasn't taken).
   const hasTestCyclique = services.testCyclique?.selected ?? false;
   const surveillanceLabel = services.surveillance?.type
-    ? (services.surveillance.type.startsWith('autosurveillance') ? 'AUTOSURVEILLANCE' : 'TÉLÉSURVEILLANCE')
+    ? (services.surveillance.type.toUpperCase().includes('AUTO') ? 'AUTOSURVEILLANCE' : 'TÉLÉSURVEILLANCE')
     : '';
   const title = [surveillanceLabel, hasTestCyclique ? 'TEST CYCLIQUE' : ''].filter(Boolean).join(' + ');
   doc.text(title, LEFT + 12, yPos + 16);

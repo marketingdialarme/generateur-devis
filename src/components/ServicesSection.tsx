@@ -34,6 +34,15 @@ interface ServicesSectionProps {
   // Falls back to the hardcoded SALE table below if a ref isn't loaded yet.
   configValues: Record<string, number>;
 
+  // Surveillance options for ANY centrale, from Config's "Service de
+  // surveillance" rows (Type/Kit_Base/REF/Variable/Valeur/"Inclu carte
+  // SIM" columns) -- drives getSurveillanceOptions and the auto-price
+  // effect below when non-empty, so a new centrale's options appear
+  // without a code change. Empty array (not loaded yet, or the client
+  // hasn't added these columns) falls back to the old hardcoded
+  // Titane/Jablotron-only logic further down.
+  surveillanceOptions?: { ref: string; kitBase: string; label: string; price: number; includesSimCard: boolean }[];
+
   // Intervention des agents de sécurité (XTO-INT, Chantier only) -- shown
   // as its own line here rather than in "Matériel supplémentaire" (client
   // request). Quantity = number of interventions.
@@ -119,6 +128,7 @@ export function ServicesSection(props: ServicesSectionProps) {
     rentalMode,
     simCardSelected,
     configValues,
+    surveillanceOptions = [],
     showChantierIntervention,
     interventionQuantity = 1,
     interventionOffered = false,
@@ -129,16 +139,32 @@ export function ServicesSection(props: ServicesSectionProps) {
   // Track the last auto-calculated price so we don't overwrite manual edits.
   const lastAutoSurveillancePriceRef = useRef<number | null>(null);
 
-  // Available options are driven directly by which Config refs exist for
-  // the selected central (client spec): Titane gets 4 options (2
-  // autosurveillance variants + 2 télésurveillance variants), Jablotron
-  // gets only the 2 télésurveillance variants — no autosurveillance ref
-  // exists for Jablotron in Config.
+  // Available options are driven directly by Config's "Service de
+  // surveillance" rows when the client has added them (Type/Kit_Base/
+  // "Inclu carte SIM" columns) -- a new centrale's options then appear
+  // automatically, no code change needed. Falls back to the old hardcoded
+  // Titane/Jablotron-only logic when that data isn't there yet.
   const getSurveillanceOptions = () => {
     const baseOptions = [
       { value: '', label: 'Aucun' }
     ];
 
+    if (surveillanceOptions.length > 0) {
+      const matching = surveillanceOptions.filter((opt) => {
+        if (opt.kitBase.toLowerCase() !== (centralType || '').toLowerCase()) return false;
+        // Client feedback: don't offer the option that doesn't include a
+        // SIM card (typically "sans carte SIM") once a SIM card is already
+        // included elsewhere in the quote.
+        if (!opt.includesSimCard && simCardSelected) return false;
+        return true;
+      });
+      return [
+        ...baseOptions,
+        ...matching.map((opt) => ({ value: opt.ref, label: opt.label })),
+      ];
+    }
+
+    // ---- Repli : ancienne logique figee Titane/Jablotron ----
     // Client feedback: don't offer "autosurveillance sans carte SIM" when a
     // SIM card is already included in the quote — doesn't make sense to
     // propose the no-SIM variant when one is being sold as part of the same
@@ -179,6 +205,34 @@ export function ServicesSection(props: ServicesSectionProps) {
 
   // Auto-update surveillance price when type changes
   useEffect(() => {
+    if (surveillanceOptions.length > 0) {
+      // ---- Chemin generique (pilote par Config) ----
+      const current = surveillanceOptions.find((o) => o.ref === surveillanceType);
+      // If a SIM card gets included while the no-SIM option was selected,
+      // that option just disappeared from the list — clear it rather than
+      // leave the field stuck on a now-hidden value.
+      if (current && !current.includesSimCard && simCardSelected) {
+        onSurveillanceTypeChange('');
+        return;
+      }
+      if (!surveillanceType) {
+        onSurveillancePriceChange(0);
+        lastAutoSurveillancePriceRef.current = null;
+        return;
+      }
+      if (!current) return; // unknown ref (e.g. rental-only): keep current manual price
+
+      const price = typeof configValues[current.ref] === 'number' ? configValues[current.ref] : current.price;
+      const lastAuto = lastAutoSurveillancePriceRef.current;
+      const shouldAutoUpdate = surveillancePrice === 0 || lastAuto === null || surveillancePrice === lastAuto;
+      if (shouldAutoUpdate) {
+        lastAutoSurveillancePriceRef.current = price;
+        onSurveillancePriceChange(price);
+      }
+      return;
+    }
+
+    // ---- Repli : ancienne logique figee Titane/Jablotron ----
     // If a SIM card gets included while "sans carte SIM" was selected, that
     // option just disappeared from the list — clear it rather than leave
     // the field stuck on a now-hidden value.
@@ -252,7 +306,7 @@ export function ServicesSection(props: ServicesSectionProps) {
       lastAutoSurveillancePriceRef.current = price;
       onSurveillancePriceChange(price);
     }
-  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, onSurveillanceTypeChange, configValues]);
+  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, onSurveillanceTypeChange, configValues, surveillanceOptions]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;

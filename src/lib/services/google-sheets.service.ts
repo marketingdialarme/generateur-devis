@@ -30,7 +30,7 @@ const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const ALARM_RANGE = 'Produits_Alarme!A1:Z';
 const KIT_BASE_ALARME_RANGE = 'Kit_Base_Alarme!A1:F';
 const CAMERA_RANGE = 'Produits_Cameras!A1:Z';
-const CONFIG_RANGE = 'Config!A1:G';
+const CONFIG_RANGE = 'Config!A1:K';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
@@ -41,6 +41,7 @@ let cameraCache: { data: { products: CameraProduct[]; installationProducts: Came
 let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
 let propertyTypeCache: { data: Record<string, string>; fetchedAt: number } | null = null;
 let alarmCentralsCache: { data: AlarmCentral[]; fetchedAt: number } | null = null;
+let surveillanceOptionsCache: { data: SurveillanceOption[]; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -771,4 +772,70 @@ export async function fetchPropertyTypeLabelsFromSheet(): Promise<Record<string,
 
   propertyTypeCache = { data: labels, fetchedAt: Date.now() };
   return labels;
+}
+
+/**
+ * One selectable "service de surveillance" option, read from Config rows
+ * where Type = "Service de surveillance" -- not hardcoded per centrale
+ * (client instruction, confirmed via example spreadsheet): a new
+ * centrale's surveillance options appear automatically once its rows
+ * exist here, no code change needed.
+ */
+export interface SurveillanceOption {
+  ref: string;
+  /** Config's Kit_Base column -- the centrale this option belongs to
+   * (e.g. "Titane"), matched case-insensitively against a centrale's name. */
+  kitBase: string;
+  /** Display label, from Variable. */
+  label: string;
+  price: number;
+  /** True when Config's "Inclu carte SIM" column is set (1/true/x/oui) --
+   * drives hiding the one option that doesn't (typically "sans carte
+   * SIM") once a SIM card is already selected elsewhere on the quote. */
+  includesSimCard: boolean;
+}
+
+export async function fetchSurveillanceOptionsFromSheet(): Promise<SurveillanceOption[]> {
+  if (surveillanceOptionsCache && Date.now() - surveillanceOptionsCache.fetchedAt < CACHE_TTL_MS) {
+    return surveillanceOptionsCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: CONFIG_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['REF', 'Type', 'Variable', 'Valeur', 'Kit_Base']);
+
+  const options: SurveillanceOption[] = [];
+  for (const row of rows) {
+    const type = (row['Type'] || '').trim().toLowerCase();
+    if (type !== 'service de surveillance') continue;
+
+    const ref = (row['REF'] || '').trim();
+    const label = (row['Variable'] || '').trim();
+    const price = parseFloat(row['Valeur'] || '');
+    if (!ref || !label || isNaN(price)) continue;
+
+    const includesRaw = (row['Inclu carte SIM'] || '').trim().toUpperCase();
+    const includesSimCard = ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(includesRaw);
+
+    options.push({
+      ref,
+      kitBase: (row['Kit_Base'] || '').trim(),
+      label,
+      price,
+      includesSimCard,
+    });
+  }
+
+  surveillanceOptionsCache = { data: options, fetchedAt: Date.now() };
+  return options;
 }
