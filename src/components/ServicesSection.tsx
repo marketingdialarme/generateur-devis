@@ -158,12 +158,7 @@ export function ServicesSection(props: ServicesSectionProps) {
 
     if (surveillanceOptions.length > 0) {
       const matching = surveillanceOptions.filter((opt) => {
-        if (opt.kitBase.toLowerCase() !== (centralType || '').toLowerCase()) return false;
-        // Client feedback: don't offer the option that doesn't include a
-        // SIM card (typically "sans carte SIM") once a SIM card is already
-        // included elsewhere in the quote.
-        if (!opt.includesSimCard && simCardSelected) return false;
-        return true;
+        return opt.kitBase.toLowerCase() === (centralType || '').toLowerCase();
       });
       return [
         ...baseOptions,
@@ -215,13 +210,6 @@ export function ServicesSection(props: ServicesSectionProps) {
     if (surveillanceOptions.length > 0) {
       // ---- Chemin generique (pilote par Config) ----
       const current = surveillanceOptions.find((o) => o.ref === surveillanceType);
-      // If a SIM card gets included while the no-SIM option was selected,
-      // that option just disappeared from the list — clear it rather than
-      // leave the field stuck on a now-hidden value.
-      if (current && !current.includesSimCard && simCardSelected) {
-        onSurveillanceTypeChange('');
-        return;
-      }
       if (!surveillanceType) {
         onSurveillancePriceChange(0);
         lastAutoSurveillancePriceRef.current = null;
