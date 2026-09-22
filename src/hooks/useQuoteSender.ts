@@ -100,7 +100,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     filename: string
   ): Promise<string> => {
     console.log('📤 Uploading to Vercel Blob (client-side direct)...');
-    setProgress('Uploading PDF to cloud storage...');
+    setProgress('Mise en page de votre devis en cours...');
     
     try {
       // Client-side direct upload - PDF never goes through serverless function
@@ -137,7 +137,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       totalPages: number;
     }
   ): Promise<SendQuoteResult> => {
-    setProgress('Processing and sending email...');
+    setProgress('Conversion de votre devis en PDF...');
     
     const response = await fetch('/api/send-quote-lightweight', {
       method: 'POST',
@@ -185,7 +185,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔄 Attempt ${attempt}/${maxRetries}`);
-        setProgress(`Sending quote (attempt ${attempt}/${maxRetries})...`);
+        setProgress(`Envoi du devis (tentative ${attempt}/${maxRetries})...`);
         
         // Create abort controller for timeout
         const controller = new AbortController();
@@ -239,7 +239,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         // Exponential backoff
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
         console.log(`⏳ Retrying in ${delay}ms...`);
-        setProgress(`Retrying in ${delay / 1000}s...`);
+        setProgress(`Nouvel essai dans ${delay / 1000}s...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -265,7 +265,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     
     setIsSending(true);
     setError(null);
-    setProgress('Preparing PDF...');
+    setProgress('Mise en page de votre devis en cours...');
     
     try {
       // Detect device
@@ -299,7 +299,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
           assemblyInfo
         );
         
-        setProgress('Quote sent successfully!');
+        setProgress('Devis envoyé avec succès !');
         console.log('✅ Complete (blob upload):', result);
         
         return result;
@@ -307,7 +307,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         console.log('📤 Using standard upload method (file < 3MB)');
         
         // Convert PDF to base64
-        setProgress('Converting PDF...');
+        setProgress('Conversion de votre devis en PDF...');
         const base64 = await blobToBase64(pdfBlob);
         console.log(`📄 Base64 size: ${base64.length} bytes`);
         
@@ -346,10 +346,10 @@ export function useQuoteSender(): UseQuoteSenderReturn {
         console.log(`⏱️ Timeout: ${timeoutMs / 1000}s (${type})`);
         
         // Send via API
-        setProgress('Uploading to Drive and sending email...');
+        setProgress('Envoi du devis par email en cours...');
         const result = await sendViaAPI(payload, 2, timeoutMs);
         
-        setProgress('Quote sent successfully!');
+        setProgress('Devis envoyé avec succès !');
         console.log('✅ Complete:', result);
         
         return result;

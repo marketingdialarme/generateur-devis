@@ -41,8 +41,8 @@ describe('Alarm PDF content (new design)', () => {
   it('shows the facilité-de-paiement block', () => {
     expect(pdf).toContain('Possibilit'); // "Possibilité de facilité de paiement..."
   });
-  it('NEVER prints the word OFFERT', () => {
-    expect(pdf).not.toContain('OFFERT');
+  it('prints OFFERT in the total column for offered rows, while still showing the unit price', () => {
+    expect(pdf).toContain('OFFERT');
   });
 });
 
@@ -70,17 +70,16 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
     pdf = await renderText(fx.options);
   });
 
-  it('prints the material réduction line with the percent display and amount', () => {
+  it('prints a single merged "Remise" summary line for the combined material + installation discount', () => {
     expect(totals.material.discount).toBeGreaterThan(0);
-    expect(pdf).toContain('duction mat'); // "Réduction matériel (10%)"
-    expect(pdf).toContain('10%'); // parens are backslash-escaped in the content stream
-    expect(pdf).toContain(`- ${totals.material.discount.toFixed(2)} CHF`);
+    expect(totals.installation.discount).toBe(100);
+    expect(pdf).toContain('Remise');
+    const combined = totals.material.discount + totals.installation.discount;
+    expect(pdf).toContain(`- ${combined.toFixed(2)} CHF`);
   });
 
-  it('prints the installation réduction line', () => {
-    expect(totals.installation.discount).toBe(100);
-    expect(pdf).toContain('duction installation');
-    expect(pdf).toContain('- 100.00 CHF');
+  it('no longer prints a per-line discount note (superseded by orange row coloring)', () => {
+    expect(pdf).not.toContain('duction appliqu');
   });
 
   it('Total après rabais equals the on-screen net (réductions deducted)', () => {
@@ -105,6 +104,37 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
       48,
     );
     expect(pdf).toContain(`${facility.toFixed(2)} CHF`);
+  });
+});
+
+describe('Alarm PDF — an offered supplementary-material item counts toward Remise, not Rabais partenariat', () => {
+  it('excludes the offered item from Rabais partenariat and adds it to the Remise display, net total unchanged', async () => {
+    const fx = alarmFixture({
+      offeredSupplementary: true,
+      installationDiscount: { type: 'fixed', value: 20 },
+    });
+    const pdf = await renderText(fx.options);
+    const totals = fx.totals;
+
+    // Net total (what's actually billed) must be unaffected by which
+    // summary line the offered item's value is displayed under -- it was
+    // already excluded from the billed subtotal by being offered.
+    const net =
+      totals.material.total +
+      totals.installation.total +
+      totals.adminFees.processing +
+      totals.adminFees.simCard;
+    expect(pdf).toContain(`${net.toFixed(2)} CHF`);
+
+    // Rabais partenariat shows only the kit de base's offered value (690+480+190+390+0=1750),
+    // not the offered Badge x 4 (100 CHF) from matériel supplémentaire.
+    expect(pdf).toContain('- 1750.00 CHF');
+    expect(pdf).not.toContain('- 1850.00 CHF');
+
+    // Remise shows the installation discount (20) PLUS the offered
+    // supplementary item's value (100) = 120, for display purposes only.
+    expect(pdf).toContain('Remise');
+    expect(pdf).toContain('- 120.00 CHF');
   });
 });
 

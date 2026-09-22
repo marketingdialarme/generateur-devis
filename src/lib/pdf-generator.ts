@@ -357,12 +357,25 @@ interface TableRow {
    *                   distinct fee/service line vs the catalog material.
    */
   kind?: 'material' | 'utility';
+  /** True when this row belongs to a section that has a Réduction
+   * applied (material or installation) -- colors the TOTAL column
+   * orange instead of black, so the client sees at a glance which
+   * lines are discounted without a per-product note (the discount is
+   * section-level, not tied to one specific product; client feedback). */
+  discounted?: boolean;
+  /** Whether an offered row counts toward "Rabais partenariat" (default,
+   * undefined/true) or "Remise" instead (false) -- an offered
+   * supplementary-material item isn't part of the kit de base
+   * partnership offer, so its value belongs in the discount bucket
+   * instead (client feedback). */
+  rabaisEligible?: boolean;
 }
 
 // Colors
 const C_YELLOW: [number, number, number] = [244, 230, 0];
 const C_YELLOW_LIGHT: [number, number, number] = [255, 248, 196]; // utility row bg
 const C_GREEN: [number, number, number] = [0, 140, 70];
+const C_ORANGE: [number, number, number] = [204, 102, 0];
 const C_GREY_ROW: [number, number, number] = [245, 245, 245];
 
 const LEFT = 40;
@@ -391,20 +404,30 @@ function createAlarmPDFSections(
 
   // ---- Build unified material table rows ----
   const rows: TableRow[] = [];
+  const materialDiscounted = alarmTotals.material.discount > 0;
+  const installationDiscounted = alarmTotals.installation.discount > 0;
 
-  // KIT DE BASE items
+  // KIT DE BASE items -- prefix only shown while the kit stays offered
+  // (client feedback); once it isn't, these are just regular material
+  // lines like any other.
   options.materialLines.forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
     rows.push({
-      name: `KIT DE BASE - ${name}`,
+      name: line.offered ? `KIT DE BASE - ${name}` : name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
+      discounted: materialDiscounted,
     });
   });
 
-  // Supplementary materials (matériel divers)
+  // Supplementary materials (matériel divers) -- shares the same
+  // installationDiscount as the labor line below (one "Réduction" field
+  // covers this whole section on screen). rabaisEligible: false -- an
+  // offered supplementary item isn't part of the "Rabais partenariat"
+  // (that's specifically the kit de base partnership offer); its value
+  // counts toward "Remise" instead (client feedback).
   (options.installationLines || []).forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
@@ -413,10 +436,16 @@ function createAlarmPDFSections(
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
+      discounted: installationDiscounted,
+      rabaisEligible: false,
     });
   });
 
-  // Main installation line ("Installation et paramétrage")
+  // Main installation line ("Installation et paramétrage") -- never marked
+  // discounted: installationDiscount (see above) only ever applies to the
+  // supplementary material subtotal, not this labor line, which has no
+  // discount mechanism of its own (client-reported bug: was showing
+  // orange even when only the material portion had a discount).
   const supplementaryTotal = (options.installationLines || []).reduce((sum, line) => {
     if (!line.product || line.offered) return sum;
     return sum + getLineUnitPrice(line) * line.quantity;
@@ -469,10 +498,16 @@ function createAlarmPDFSections(
   // ---- Summary box (Total HT / Rabais / Réductions / Après rabais / TVA / TTC) ----
   const totalBeforeRabais = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const totalAfterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  const rabais = totalBeforeRabais - totalAfterRabais;
+  // "Rabais partenariat" only counts offered rows that are rabais-eligible
+  // (kit de base, and other offered utility lines) -- an offered
+  // supplementary-material row (rabaisEligible: false) isn't part of the
+  // partnership kit offer, so its value is added to "Remise" instead,
+  // just below (client feedback).
+  const rabais = rows.reduce((s, r) => s + (r.offered && r.rabaisEligible !== false ? r.unitPrice * r.qty : 0), 0);
+  const offeredSupplementaryValue = rows.reduce((s, r) => s + (r.offered && r.rabaisEligible === false ? r.unitPrice * r.qty : 0), 0);
   // Percent/fixed réductions live only in the totals object — the rows display
   // pre-discount prices, so they cannot be derived from the table.
-  const reductions = sectionReductions(alarmTotals.material, alarmTotals.installation);
+  const reductions = sectionReductions(alarmTotals.material, alarmTotals.installation, offeredSupplementaryValue);
   const netAfterReductions = Math.max(0, totalAfterRabais - reductionsTotal(reductions));
   yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
   yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos, reductions);
@@ -581,15 +616,22 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     // Zero-priced rows (maintenance, Alimentation) render a dash, matching the client reference
     const showDash = row.unitPrice === 0;
     doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
-    // Total column: green only when the row is offered (i.e. included in the
-    // rabais partenariat). Non-offered rows print in black so the client can
-    // distinguish what is actually being paid.
+    // Total column: "OFFERT" (in green) when the row is offered -- the
+    // unit price still shows for reference in P.U HT, but nothing is
+    // actually billed for it, so the total should say so explicitly
+    // rather than showing a number the client would then have to
+    // subtract out themselves (client feedback). Discounted rows (part
+    // of a section with a Réduction applied) print in orange instead of
+    // black, so the client sees at a glance which lines the "Remise"
+    // total below covers -- the discount is section-level, not tied to
+    // one product, so a per-line note wasn't practical (client feedback).
     if (row.offered) {
-      doc.setTextColor(...C_GREEN);
+      doc.setTextColor(...(row.rabaisEligible === false ? C_ORANGE : C_GREEN));
+      doc.text('OFFERT', RIGHT, yPos + 9, { align: 'right' });
     } else {
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(...(row.discounted ? C_ORANGE : [0, 0, 0] as [number, number, number]));
+      doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     }
-    doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     doc.setTextColor(0, 0, 0);
     yPos += rowH;
   });
@@ -615,24 +657,31 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
  */
 interface SummaryReduction {
   label: string;
+  /** Actually subtracted from the net total via reductionsTotal(). */
   amount: number;
+  /** Shown in the summary line instead of `amount`, when set -- lets a
+   * value already excluded elsewhere (e.g. an offered row, already
+   * excluded from totalAfterRabais) still show up in this line's
+   * displayed number without being subtracted a second time. */
+  displayAmount?: number;
 }
 
 function sectionReductions(
   material: SectionTotals | undefined,
-  installation: SectionTotals | undefined
+  installation: SectionTotals | undefined,
+  offeredSupplementaryValue: number = 0
 ): SummaryReduction[] {
-  const out: SummaryReduction[] = [];
-  // The parenthetical only adds information for percent discounts; a fixed
-  // discount's display ("100.00 CHF") would duplicate the amount column.
-  const suffix = (s: SectionTotals) => (s.discountDisplay.includes('%') ? ` (${s.discountDisplay})` : '');
-  if (material && material.discount > 0) {
-    out.push({ label: `Réduction matériel${suffix(material)}`, amount: material.discount });
-  }
-  if (installation && installation.discount > 0) {
-    out.push({ label: `Réduction installation${suffix(installation)}`, amount: installation.discount });
-  }
-  return out;
+  // Merged into a single "Remise" line (client feedback: "uniquement
+  // Remise", not separate "Réduction matériel"/"Réduction installation"
+  // labels). offeredSupplementaryValue (an offered supplementary-material
+  // row's value, moved here from "Rabais partenariat" per client
+  // feedback) is display-only: it's already excluded from the net total
+  // via totalAfterRabais (the row is offered), so adding it to `amount`
+  // here would subtract it twice.
+  const netAmount = (material?.discount || 0) + (installation?.discount || 0);
+  const displayAmount = netAmount + offeredSupplementaryValue;
+  if (displayAmount <= 0) return [];
+  return [{ label: 'Remise', amount: netAmount, displayAmount }];
 }
 
 function reductionsTotal(reductions: SummaryReduction[]): number {
@@ -659,7 +708,8 @@ function drawSummary(
       yPos += 14;
     }
     for (const reduction of reductions) {
-      drawLabelValue(doc, reduction.label, `- ${reduction.amount.toFixed(2)} CHF`, yPos + 8, true, C_GREEN, COL_PU - 45);
+      const shown = reduction.displayAmount ?? reduction.amount;
+      drawLabelValue(doc, reduction.label, `- ${shown.toFixed(2)} CHF`, yPos + 8, true, C_ORANGE);
       yPos += 14;
     }
     drawLabelValue(doc, 'Total après rabais', `${netTotal.toFixed(2)} CHF`, yPos + 8);

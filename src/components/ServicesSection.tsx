@@ -29,6 +29,12 @@ interface ServicesSectionProps {
   centralType: string | null;
   rentalMode: boolean;
   simCardSelected: boolean; // For Titane autosurveillance pricing
+  // Called whenever the selected surveillance option's "Inclu carte SIM"
+  // status is known, so the separate Carte SIM + Activation checkbox
+  // (Frais de dossier) can be kept in sync automatically -- checked when
+  // the chosen option includes a card, unchecked when it doesn't (client
+  // feedback). Optional so this component still works without it.
+  onSimCardSelectedChange?: (value: boolean) => void;
 
   // Live prices from the Config sheet (TIT-AUTO-S-SIM, TIT-TEL-PAR, ...).
   // Falls back to the hardcoded SALE table below if a ref isn't loaded yet.
@@ -127,6 +133,7 @@ export function ServicesSection(props: ServicesSectionProps) {
     centralType,
     rentalMode,
     simCardSelected,
+    onSimCardSelectedChange,
     configValues,
     surveillanceOptions = [],
     showChantierIntervention,
@@ -151,12 +158,7 @@ export function ServicesSection(props: ServicesSectionProps) {
 
     if (surveillanceOptions.length > 0) {
       const matching = surveillanceOptions.filter((opt) => {
-        if (opt.kitBase.toLowerCase() !== (centralType || '').toLowerCase()) return false;
-        // Client feedback: don't offer the option that doesn't include a
-        // SIM card (typically "sans carte SIM") once a SIM card is already
-        // included elsewhere in the quote.
-        if (!opt.includesSimCard && simCardSelected) return false;
-        return true;
+        return opt.kitBase.toLowerCase() === (centralType || '').toLowerCase();
       });
       return [
         ...baseOptions,
@@ -208,19 +210,20 @@ export function ServicesSection(props: ServicesSectionProps) {
     if (surveillanceOptions.length > 0) {
       // ---- Chemin generique (pilote par Config) ----
       const current = surveillanceOptions.find((o) => o.ref === surveillanceType);
-      // If a SIM card gets included while the no-SIM option was selected,
-      // that option just disappeared from the list — clear it rather than
-      // leave the field stuck on a now-hidden value.
-      if (current && !current.includesSimCard && simCardSelected) {
-        onSurveillanceTypeChange('');
-        return;
-      }
       if (!surveillanceType) {
         onSurveillancePriceChange(0);
         lastAutoSurveillancePriceRef.current = null;
         return;
       }
       if (!current) return; // unknown ref (e.g. rental-only): keep current manual price
+
+      // Keep the separate "Carte SIM + Activation" checkbox (Frais de
+      // dossier) in sync with the chosen option -- checked if it includes
+      // a card, unchecked if it doesn't (client feedback). Only acts when
+      // it would actually change something, to avoid extra re-renders.
+      if (onSimCardSelectedChange && current.includesSimCard !== simCardSelected) {
+        onSimCardSelectedChange(current.includesSimCard);
+      }
 
       const price = typeof configValues[current.ref] === 'number' ? configValues[current.ref] : current.price;
       const lastAuto = lastAutoSurveillancePriceRef.current;
@@ -306,7 +309,7 @@ export function ServicesSection(props: ServicesSectionProps) {
       lastAutoSurveillancePriceRef.current = price;
       onSurveillancePriceChange(price);
     }
-  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, onSurveillanceTypeChange, configValues, surveillanceOptions]);
+  }, [surveillanceType, centralType, rentalMode, simCardSelected, surveillancePrice, onSurveillancePriceChange, onSurveillanceTypeChange, configValues, surveillanceOptions, onSimCardSelectedChange]);
 
   const testCycliqueTotal = testCycliqueSelected ? (testCycliqueOffered ? 0 : testCycliquePrice) : 0;
   const surveillanceTotal = surveillanceType ? (surveillanceOffered ? 0 : surveillancePrice) : 0;
