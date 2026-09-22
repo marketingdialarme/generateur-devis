@@ -1362,9 +1362,9 @@ export default function CreateDevisPage() {
                     cursor: 'pointer',
                     fontWeight: 500,
                     fontSize: 14,
-                    border: `1px solid ${active ? '#fffd01' : '#333333'}`,
-                    background: active ? 'rgba(255,253,1,0.08)' : '#151515',
-                    color: active ? '#fff' : '#9a9a9a',
+                    border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                    background: active ? '#fffd01' : '#fcfcfa',
+                    color: '#000000',
                   }}
                 >
                   {t === 'chantier' ? 'Chantier' : 'Location'}
@@ -1380,7 +1380,7 @@ export default function CreateDevisPage() {
         <div className="quote-section">
           <h3>
             🛡️ Choix Kit de base
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#9a9a9a' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 400, color: '#595959' }}>
               Kit offert
               <label className="toggle-switch" title="Le kit est-il offert au client ?">
                 <input
@@ -1428,9 +1428,9 @@ export default function CreateDevisPage() {
                         cursor: 'pointer',
                         fontWeight: 500,
                         fontSize: 14,
-                        border: `1px solid ${active ? '#fffd01' : '#333333'}`,
-                        background: active ? 'rgba(255,253,1,0.08)' : '#151515',
-                        color: active ? '#fff' : '#9a9a9a',
+                        border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                        background: active ? '#fffd01' : '#fcfcfa',
+                        color: '#000000',
                       }}
                     >
                       {centralProduct ? centralProduct.name : c.name}
@@ -1453,13 +1453,14 @@ export default function CreateDevisPage() {
                         borderRadius: 10,
                         padding: 12,
                         cursor: 'pointer',
-                        border: `1px solid ${active ? '#fffd01' : '#333333'}`,
-                        background: active ? 'rgba(255,253,1,0.08)' : '#151515',
+                        border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                        background: active ? '#fffd01' : '#fcfcfa',
+                        color: '#000000',
                       }}
                     >
-                      <div style={{ fontWeight: 500, fontSize: 13, color: '#fff', marginBottom: 4 }}>Kit {i + 1}</div>
+                      <div style={{ fontWeight: 500, fontSize: 13, color: '#000', marginBottom: 4 }}>Kit {i + 1}</div>
                       {kitSummaryLines(kitKey).map((line, j) => (
-                        <div key={j} style={{ fontSize: 12, color: '#9a9a9a', lineHeight: 1.6 }}>{line}</div>
+                        <div key={j} style={{ fontSize: 12, color: '#595959', lineHeight: 1.6 }}>{line}</div>
                       ))}
                     </div>
                   );
@@ -1471,7 +1472,7 @@ export default function CreateDevisPage() {
                   marginTop: 8,
                   background: 'transparent',
                   border: 'none',
-                  color: '#c0c0c0',
+                  color: '#595959',
                   fontSize: 12,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -1621,7 +1622,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setAlarmMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                     <input 
                       type="number"
@@ -1635,7 +1636,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                   </div>
                 )}
@@ -1658,12 +1659,12 @@ export default function CreateDevisPage() {
                 width: '100%',
                 padding: '12px',
                 background: 'transparent',
-                border: '2px dashed #333333',
+                border: '2px dashed #a6a6a6',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: 500,
-                color: '#9a9a9a',
+                color: '#595959',
                 marginTop: '10px',
                 marginBottom: '15px',
                 transition: 'all 0.2s',
@@ -1674,11 +1675,11 @@ export default function CreateDevisPage() {
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.borderColor = '#fffd01';
-                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.color = '#000';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#333333';
-                e.currentTarget.style.color = '#9a9a9a';
+                e.currentTarget.style.borderColor = '#a6a6a6';
+                e.currentTarget.style.color = '#595959';
               }}
             >
               <span style={{ fontSize: '16px' }}>+</span>
@@ -1859,11 +1860,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                     <input 
@@ -1881,11 +1882,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                   </div>
@@ -1931,14 +1932,14 @@ export default function CreateDevisPage() {
                 const product = xtoCatalog.find(p => p.ref === item.ref);
                 if (!product) return null;
                 return (
-                  <div key={item.ref} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9a9a9a', padding: '4px 0' }}>
+                  <div key={item.ref} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#595959', padding: '4px 0' }}>
                     <span>{item.quantity} {product.name}</span>
-                    <span style={{ color: '#6a6a6a' }}>Inclus</span>
+                    <span style={{ color: '#7a7a7a' }}>Inclus</span>
                   </div>
                 );
               })}
             </div>
-            <div className="product-line" style={{ marginTop: 10, borderTop: '1px solid #262626', paddingTop: 10 }}>
+            <div className="product-line" style={{ marginTop: 10, borderTop: '1px solid #d9d9d9', paddingTop: 10 }}>
               <div>Abonnement XTO (XTO-ABO)</div>
               <div></div>
               <div></div>
@@ -2056,9 +2057,9 @@ export default function CreateDevisPage() {
                       cursor: 'pointer',
                       fontWeight: 500,
                       fontSize: 13,
-                      border: `1px solid ${active ? '#fffd01' : '#333333'}`,
-                      background: active ? 'rgba(255,253,1,0.08)' : '#151515',
-                      color: active ? '#fff' : '#9a9a9a',
+                      border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                      background: active ? '#fffd01' : '#fcfcfa',
+                      color: '#000000',
                     }}
                   >
                     {c.name}
@@ -2128,7 +2129,7 @@ export default function CreateDevisPage() {
                 +
               </button>
             )}
-            <div style={{ fontSize: 11, color: '#6a6a6a', marginTop: 8 }}>
+            <div style={{ fontSize: 11, color: '#7a7a7a', marginTop: 8 }}>
               Centrale {alarmCentrals.find(c => c.name.toLowerCase() === alarmLocationCentral)?.name || alarmLocationCentral} incluse + jusqu&apos;à 10 produits supplémentaires.
             </div>
           </div>
@@ -2281,7 +2282,7 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>💰 Désinstallation</h3>
             <div style={{ 
-              background: '#1b1b1b', 
+              background: '#fffbea', 
               padding: '15px', 
               borderRadius: '8px', 
               border: '2px solid #fffd01',
@@ -2289,7 +2290,7 @@ export default function CreateDevisPage() {
               fontWeight: 500
             }}>
               📝 Désinstallation : {UNINSTALL_PRICE.toFixed(2)} CHF si durée inférieure à 12 mois
-              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#9a9a9a' }}>
+              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#595959' }}>
                 * Ce montant n'est pas inclus dans le total mais apparaîtra sur le devis
               </div>
             </div>
@@ -2319,7 +2320,7 @@ export default function CreateDevisPage() {
           )}
           {!alarmRentalMode && (
           <>
-          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          <div className="summary-item" style={{ borderTop: '2px solid #a6a6a6', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT (hors surveillance)</span>
             <span>{(alarmTotals?.totalHT || 0).toFixed(2)} CHF</span>
           </div>
@@ -2373,7 +2374,7 @@ export default function CreateDevisPage() {
           </div>
         )}
         <div className="rental-toggle-container">
-          <span>Mode vente</span>
+          <span>Partenariat</span>
           <label className="toggle-switch">
             <input 
               type="checkbox" 
@@ -2581,7 +2582,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setCameraMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                     <input 
                       type="number"
@@ -2595,7 +2596,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '1px solid #333333', borderRadius: '6px', fontSize: '13px', background: '#0a0a0a', color: '#fff' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                   </div>
                 )}
@@ -2769,7 +2770,7 @@ export default function CreateDevisPage() {
 
           {/* Paiement comptant - inside same frame (client feedback) */}
           {!cameraRentalMode && cameraPaymentMonths > 0 && !cameraInstallationOffered && (
-            <div style={{ marginTop: '15px', padding: '12px', background: '#1b1b1b', borderRadius: '8px' }}>
+            <div style={{ marginTop: '15px', padding: '12px', background: '#f2f2f2', borderRadius: '8px' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input 
                   type="checkbox" 
@@ -2783,7 +2784,7 @@ export default function CreateDevisPage() {
                 </span>
               </label>
               {cameraInstallationPayCash && (
-                <div style={{ marginTop: '8px', fontSize: '13px', color: '#9a9a9a', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: '#595959', fontStyle: 'italic' }}>
                   Installation à régler comptant: {roundToFiveCents(roundToFiveCents(cameraInstallationTotalFromLines) * (1 + TVA_RATE)).toFixed(2)} CHF TTC
                 </div>
               )}
@@ -2824,7 +2825,7 @@ export default function CreateDevisPage() {
                 <div>
                   Contrat de maintenance
                   {cameraMaintenance && cameraMaintenancePrice > 0 && (
-                    <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '5px', background: '#1b1b1b', padding: '8px', borderRadius: '4px' }}>
+                    <div style={{ fontSize: '12px', color: '#595959', marginTop: '5px', background: '#f2f2f2', padding: '8px', borderRadius: '4px' }}>
                       <strong>Prix calculé: {cameraMaintenancePrice} CHF/mois</strong>
                       <div style={{ fontSize: '11px', marginTop: '3px' }}>
                         (10 CHF/item si &lt; 5, 5 CHF/item si ≥ 5 caméras + NVR)
@@ -2858,7 +2859,7 @@ export default function CreateDevisPage() {
           <div className="quote-section">
             <h3>💰 Désinstallation</h3>
             <div style={{ 
-              background: '#1b1b1b', 
+              background: '#fffbea', 
               padding: '15px', 
               borderRadius: '8px', 
               border: '2px solid #fffd01',
@@ -2866,7 +2867,7 @@ export default function CreateDevisPage() {
               fontWeight: 500
             }}>
               📝 Désinstallation : {UNINSTALL_PRICE.toFixed(2)} CHF si durée inférieure à 12 mois
-              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#9a9a9a' }}>
+              <div style={{ fontSize: '12px', marginTop: '8px', fontStyle: 'italic', color: '#595959' }}>
                 * Ce montant n'est pas inclus dans le total mais apparaîtra sur le devis
               </div>
             </div>
@@ -2896,7 +2897,7 @@ export default function CreateDevisPage() {
               <span>{cameraMaintenancePrice.toFixed(2)} CHF/mois</span>
                   </div>
           )}
-          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          <div className="summary-item" style={{ borderTop: '2px solid #a6a6a6', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{(cameraTotals?.totalHT || 0).toFixed(2)} CHF</span>
                   </div>
@@ -3115,11 +3116,11 @@ export default function CreateDevisPage() {
                     style={{
                       flex: 1,
                       padding: '8px 12px',
-                      border: '1px solid #333333',
+                      border: '1px solid #a6a6a6',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#0a0a0a',
-                      color: '#fff'
+                      background: '#fcfcfa',
+                      color: '#000'
                     }}
                   />
                   <input 
@@ -3137,11 +3138,11 @@ export default function CreateDevisPage() {
                     style={{
                       width: '150px',
                       padding: '8px 12px',
-                      border: '1px solid #333333',
+                      border: '1px solid #a6a6a6',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#0a0a0a',
-                      color: '#fff'
+                      background: '#fcfcfa',
+                      color: '#000'
                     }}
                   />
                 </div>
@@ -3283,11 +3284,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                     <input 
@@ -3305,11 +3306,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                   </div>
@@ -3423,7 +3424,7 @@ export default function CreateDevisPage() {
             <span>Frais de dossier</span>
             <span>{roundToFiveCents(roundToFiveCents(fogTotals.processingTotal + fogTotals.simCardTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
-          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          <div className="summary-item" style={{ borderTop: '2px solid #a6a6a6', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{fogTotals.totalHT.toFixed(2)} CHF</span>
           </div>
@@ -3660,11 +3661,11 @@ export default function CreateDevisPage() {
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                     <input 
@@ -3682,11 +3683,11 @@ export default function CreateDevisPage() {
                       style={{
                         width: '150px',
                         padding: '8px 12px',
-                        border: '1px solid #333333',
+                        border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#0a0a0a',
-                        color: '#fff'
+                        background: '#fcfcfa',
+                        color: '#000'
                       }}
                     />
                   </div>
@@ -3737,7 +3738,7 @@ export default function CreateDevisPage() {
             <span>Installation</span>
             <span>{roundToFiveCents(roundToFiveCents(visiophoTotals.installationTotal) * (1 + TVA_RATE)).toFixed(2)} CHF TTC</span>
           </div>
-          <div className="summary-item" style={{ borderTop: '2px solid #333333', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
+          <div className="summary-item" style={{ borderTop: '2px solid #a6a6a6', marginTop: '10px', paddingTop: '10px', fontWeight: 600 }}>
             <span>TOTAL HT</span>
             <span>{visiophoTotals.totalHT.toFixed(2)} CHF</span>
           </div>
