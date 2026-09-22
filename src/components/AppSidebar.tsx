@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Menu } from 'lucide-react';
 
 /**
  * Navigation en tiroir (overlay), fermee par defaut, sur tablette et
@@ -48,12 +49,7 @@ export function AppSidebar() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://dialarme.ch/wp-content/uploads/2026/09/Logotype_noir.png"
-          alt="Menu Dialarme"
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-        />
+        <Menu color="#0a0a0a" size={22} strokeWidth={2.5} />
       </button>
 
       {/* Fond assombri, ferme le tiroir au clic */}

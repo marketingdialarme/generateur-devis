@@ -157,7 +157,6 @@ margin: 0 auto;
 background: var(--dlm-bg);
 border-radius: 20px;
 overflow: hidden;
-border: 1px solid var(--dlm-border);
 }
 
 .header {
