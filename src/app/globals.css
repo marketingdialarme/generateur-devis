@@ -7,17 +7,26 @@
 
 :root {
   --dlm-bg: #0a0a0a;
-  --dlm-card: #151515;
-  --dlm-card-alt: #1b1b1b;
-  --dlm-border: #262626;
-  --dlm-border-light: #333333;
+  --dlm-card: #ffffff;
+  --dlm-card-alt: #f2f2f2;
+  --dlm-border: #a6a6a6;
+  --dlm-border-light: #a6a6a6;
   --dlm-yellow: #fffd01;
   --dlm-yellow-dim: rgba(255, 253, 1, 0.08);
-  --dlm-text: #f2f2f2;
-  --dlm-text-muted: #9a9a9a;
-  --dlm-text-faint: #6a6a6a;
-  --dlm-danger: #e5484d;
-  --dlm-success: #34c759;
+  /* --dlm-text and its muted/faint variants are the DEFAULT text colors
+     for content sitting on the light cards (--dlm-card) -- now black,
+     since virtually all app content lives inside a card. Content that
+     sits directly on the dark page background (header bar, sidebar) uses
+     --dlm-text-inverse instead; body itself defaults to that, and cards
+     explicitly override back to --dlm-text so everything inside them
+     inherits black without each individual rule needing to say so. */
+  --dlm-text: #000000;
+  --dlm-text-muted: #595959;
+  --dlm-text-faint: #7a7a7a;
+  --dlm-text-inverse: #ffffff;
+  --dlm-text-inverse-muted: #b3b3b3;
+  --dlm-danger: #c22a2f;
+  --dlm-success: #1e8a3c;
 }
 
 * {
@@ -29,7 +38,7 @@ box-sizing: border-box;
 body {
 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 background: var(--dlm-bg);
-color: var(--dlm-text);
+color: var(--dlm-text-inverse);
 min-height: 100vh;
 padding: 20px;
 }
@@ -65,7 +74,7 @@ display: none;
     font-size: 13px;
     text-align: left;
     cursor: pointer;
-    background: var(--dlm-bg);
+    background: var(--dlm-card);
     color: var(--dlm-text);
     border: 1px solid var(--dlm-border-light);
     border-radius: 6px;
@@ -80,7 +89,7 @@ display: none;
 .custom-select-trigger-arrow {
     flex: none;
     margin-left: 8px;
-    color: #6a6a6a;
+    color: var(--dlm-text-muted);
     font-size: 11px;
 }
 
@@ -91,12 +100,12 @@ display: none;
     left: 0;
     right: 0;
     z-index: 200;
-    background: #151515;
-    border: 1px solid #333333;
+    background: var(--dlm-card);
+    border: 1px solid var(--dlm-border);
     border-radius: 8px;
     max-height: 260px;
     overflow-y: auto;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .custom-select-option {
@@ -104,7 +113,7 @@ display: none;
     font-size: 14px;
     color: var(--dlm-text);
     cursor: pointer;
-    border-bottom: 1px solid #262626;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .custom-select-option:last-child {
@@ -113,11 +122,11 @@ display: none;
 
 .custom-select-option:active,
 .custom-select-option:hover {
-    background: rgba(255,253,1,0.08);
+    background: rgba(255,253,1,0.15);
 }
 
 .custom-select-option.selected {
-    color: #fffd01;
+    color: #8a7c00;
     font-weight: 500;
 }
 }
@@ -138,8 +147,8 @@ input[type="number"] {
    sur ordinateur et certains navigateurs Android, pas sur le picker natif
    iOS qui ignore ce style par conception du systeme. */
 select option {
-background: #151515;
-color: #f2f2f2;
+background: #ffffff;
+color: #000000;
 }
 
 .container {
@@ -247,6 +256,7 @@ display: block;
 
 .form-section {
 background: var(--dlm-card);
+color: var(--dlm-text);
 border: 1px solid var(--dlm-border);
 padding: 20px;
 border-radius: 12px;
@@ -286,7 +296,7 @@ padding: 10px 12px;
 border: 1px solid var(--dlm-border-light);
 border-radius: 8px;
 font-size: 13px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 transition: border-color 0.2s ease;
 }
@@ -299,6 +309,7 @@ box-shadow: 0 0 0 3px var(--dlm-yellow-dim);
 
 .quote-section {
 background: var(--dlm-card);
+color: var(--dlm-text);
 border: 1px solid var(--dlm-border);
 border-radius: 12px;
 padding: 20px;
@@ -368,7 +379,7 @@ border-bottom: none;
 padding: 8px 10px;
 border: 1px solid var(--dlm-border-light);
 border-radius: 6px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 width: 100%;
 font-size: 13px;
@@ -380,7 +391,7 @@ border: 1px solid var(--dlm-border-light);
 border-radius: 6px;
 text-align: center;
 width: 70px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 font-size: 13px;
 }
@@ -391,7 +402,7 @@ border: 1px solid var(--dlm-border-light);
 border-radius: 6px;
 text-align: center;
 width: 70px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 font-size: 12px;
 }
@@ -434,7 +445,7 @@ border-top: 1px solid var(--dlm-border);
 padding: 5px 7px;
 border: 1px solid var(--dlm-border-light);
 border-radius: 6px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 font-size: 12px;
 }
@@ -484,7 +495,7 @@ width: 18px;
 height: 18px;
 border-radius: 4px;
 border: 1.5px solid var(--dlm-border-light);
-background: transparent;
+background: #ffffff;
 cursor: pointer;
 position: relative;
 flex: none;
@@ -713,7 +724,7 @@ margin-bottom: 15px;
 padding: 8px 10px;
 border: 1px solid var(--dlm-border-light);
 border-radius: 6px;
-background: var(--dlm-bg);
+background: var(--dlm-card);
 color: var(--dlm-text);
 width: 200px;
 font-size: 13px;

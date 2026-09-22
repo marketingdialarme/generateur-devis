@@ -68,11 +68,11 @@ function LoginForm() {
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
-          <h1 style={{ fontSize: '20px', color: '#fff', margin: 0 }}>
+          <h1 style={{ fontSize: '20px', color: '#000', margin: 0 }}>
             Espace conseiller
           </h1>
         </div>
-        <p style={{ fontSize: '14px', color: '#9a9a9a', marginBottom: '28px' }}>
+        <p style={{ fontSize: '14px', color: '#595959', marginBottom: '28px' }}>
           Connectez-vous pour accéder au générateur de devis et à l&apos;historique de vos devis.
         </p>
 
@@ -90,7 +90,7 @@ function LoginForm() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#9a9a9a', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#595959', marginBottom: '6px' }}>
               Adresse email
             </label>
             <input

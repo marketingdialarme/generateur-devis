@@ -60,19 +60,19 @@ export default async function MesDevisPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
             <div>
               <h1 style={titleStyle}>Mes devis</h1>
-              <p style={{ fontSize: '13px', color: '#9a9a9a', margin: 0 }}>{profile.commercial_name}</p>
+              <p style={{ fontSize: '13px', color: '#595959', margin: 0 }}>{profile.commercial_name}</p>
             </div>
             <SignOutForm />
           </div>
 
           {quotes.length === 0 ? (
-            <p style={{ fontSize: '14px', color: '#9a9a9a', marginTop: '24px' }}>
+            <p style={{ fontSize: '14px', color: '#595959', marginTop: '24px' }}>
               Aucun devis enregistré pour l&apos;instant.
             </p>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px', fontSize: '13px' }}>
               <thead>
-                <tr style={{ textAlign: 'left', borderBottom: '1px solid #262626', color: '#6a6a6a' }}>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid #a6a6a6', color: '#595959' }}>
                   <th style={thStyle}>Date</th>
                   <th style={thStyle}>Client</th>
                   <th style={thStyle}>Type</th>
@@ -81,7 +81,7 @@ export default async function MesDevisPage() {
               </thead>
               <tbody>
                 {quotes.map((q) => (
-                  <tr key={q.id} style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <tr key={q.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
                     <td style={tdStyle}>
                       {q.created_at ? new Date(q.created_at).toLocaleDateString('fr-CH') : '—'}
                     </td>
@@ -114,11 +114,11 @@ function SignOutForm() {
     <form action="/auth/signout" method="post">
       <button type="submit" style={{
         background: 'transparent',
-        border: '1px solid #333333',
+        border: '1px solid #a6a6a6',
         borderRadius: '6px',
         padding: '6px 12px',
         fontSize: '12px',
-        color: '#9a9a9a',
+        color: '#595959',
         cursor: 'pointer'
       }}>
         Se déconnecter
@@ -144,8 +144,8 @@ const warningBoxStyle: React.CSSProperties = {
 const titleStyle: React.CSSProperties = {
   fontSize: '22px',
   marginBottom: '4px',
-  color: '#fff'
+  color: '#000'
 };
 
 const thStyle: React.CSSProperties = { padding: '8px 6px', fontWeight: 500 };
-const tdStyle: React.CSSProperties = { padding: '10px 6px', color: '#e0e0e0' };
+const tdStyle: React.CSSProperties = { padding: '10px 6px', color: '#000' };
