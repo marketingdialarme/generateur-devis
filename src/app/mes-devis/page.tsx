@@ -93,7 +93,7 @@ export default async function MesDevisPage() {
                     </td>
                     <td style={tdStyle}>
                       {q.drive_url && (
-                        <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#fffd01' }}>
+                        <a href={q.drive_url} target="_blank" rel="noopener noreferrer" style={{ color: '#000', fontWeight: 600 }}>
                           Voir le PDF
                         </a>
                       )}
