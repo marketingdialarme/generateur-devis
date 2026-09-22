@@ -173,6 +173,11 @@ export default function CreateDevisPage() {
   // Location "Chantier" catalog (XTO- refs, same sheet) -- separate from
   // alarmCatalog since it's a different pricing model (monthly, no central).
   const [xtoCatalog, setXtoCatalog] = useState<AlarmProduct[]>([]);
+  // List of "generic" centrales (Titane, Jablotron, future ones) from
+  // Kit_Base_Alarme via /api/products/alarm -- not yet used to drive the
+  // UI (centrale-choice cards are still the hardcoded Titane/Jablotron
+  // pair), first step towards that.
+  const [alarmCentrals, setAlarmCentrals] = useState<{ prefix: string; name: string; kits: { ref: string; name: string; price: number | null; fiche?: string }[] }[]>([]);
   // Which of the two rental kits is active, only meaningful while
   // alarmRentalMode is true. Defaults to 'chantier' but nothing is applied
   // until the conseiller actually picks one.
@@ -748,6 +753,7 @@ export default function CreateDevisPage() {
         ]);
         setAlarmKits(result.data.kits || {});
         setXtoCatalog(result.data.xtoProducts || []);
+        setAlarmCentrals(result.data.centrals || []);
         setAlarmInstallationPrices(result.data.installationPrices || { titane: null, jablotron: null });
         setAlarmCatalogError(null);
       })
