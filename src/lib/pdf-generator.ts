@@ -20,6 +20,9 @@ import { getCommercialInfo } from './config';
 
 export interface QuoteInfo {
   clientName: string;
+  clientAddress?: string;
+  clientPhone?: string;
+  clientEmail?: string;
   commercial: string;
   quoteNumber: string;
   date: string;
@@ -30,6 +33,9 @@ export interface QuoteInfo {
 export interface PDFGenerationOptions {
   type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   clientName: string;
+  clientAddress?: string;
+  clientPhone?: string;
+  clientEmail?: string;
   commercial: string;
   isRental: boolean;
   materialLines: ProductLineData[];
@@ -175,6 +181,9 @@ export async function generateQuotePDF(
   // Create PDF header
   await createPDFHeader(doc, {
     clientName: options.clientName,
+    clientAddress: options.clientAddress,
+    clientPhone: options.clientPhone,
+    clientEmail: options.clientEmail,
     commercial: options.commercial,
     quoteNumber,
     date,
@@ -288,6 +297,23 @@ async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.text("A l'attention de :", 40, 90);
   doc.setFont('helvetica', 'bold');
   doc.text(info.clientName, 40, 103);
+  // Address/phone/email -- each shown only if filled in on the form, in
+  // that order, tightly spaced under the (bold) client name.
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  let clientDetailY = 114;
+  if (info.clientAddress) {
+    doc.text(info.clientAddress, 40, clientDetailY);
+    clientDetailY += 11;
+  }
+  if (info.clientPhone) {
+    doc.text(info.clientPhone, 40, clientDetailY);
+    clientDetailY += 11;
+  }
+  if (info.clientEmail) {
+    doc.text(info.clientEmail, 40, clientDetailY);
+    clientDetailY += 11;
+  }
 
   // Title (right)
   doc.setFont('helvetica', 'bold');

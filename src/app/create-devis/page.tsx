@@ -929,6 +929,9 @@ export default function CreateDevisPage() {
       const generatedPdf = await generatePDF({
         type: currentTab,
         clientName: finalClientName,
+        clientAddress: clientAddress || undefined,
+        clientPhone: clientPhone || undefined,
+        clientEmail: clientEmail || undefined,
         commercial: finalCommercial,
         isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
         materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
