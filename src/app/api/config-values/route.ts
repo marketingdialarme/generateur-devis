@@ -12,13 +12,13 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchConfigFromSheet, fetchPropertyTypeLabelsFromSheet } from '@/lib/services/google-sheets.service';
+import { fetchConfigFromSheet, fetchPropertyTypeLabelsFromSheet, fetchSurveillanceOptionsFromSheet } from '@/lib/services/google-sheets.service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const [config, propertyTypes] = await Promise.all([
+    const [config, propertyTypes, surveillanceOptions] = await Promise.all([
       fetchConfigFromSheet(),
       fetchPropertyTypeLabelsFromSheet().catch((err) => {
         // Property-type labels are a smaller, separate concern -- don't
@@ -26,11 +26,15 @@ export async function GET() {
         console.error('⚠️ Property type labels unavailable, falling back:', err);
         return null;
       }),
+      fetchSurveillanceOptionsFromSheet().catch((err) => {
+        console.error('⚠️ Surveillance options unavailable, falling back:', err);
+        return null;
+      }),
     ]);
 
     return NextResponse.json({
       success: true,
-      data: { config, propertyTypes },
+      data: { config, propertyTypes, surveillanceOptions },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

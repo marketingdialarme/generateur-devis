@@ -239,6 +239,11 @@ export default function CreateDevisPage() {
     'TYP-ENT': 'Entreprise',
   });
   const [configError, setConfigError] = useState<string | null>(null);
+  // Surveillance options per centrale, from Config's "Service de
+  // surveillance" rows -- empty array means "not loaded yet / not
+  // available", in which case ServicesSection falls back to the old
+  // hardcoded Titane/Jablotron options (never breaks the field).
+  const [surveillanceOptions, setSurveillanceOptions] = useState<{ ref: string; kitBase: string; label: string; price: number; includesSimCard: boolean }[]>([]);
   const [alarmCatalogError, setAlarmCatalogError] = useState<string | null>(null);
   const [fogAdditionalLines, setFogAdditionalLines] = useState<ProductLineData[]>([]);
   const [fogInstallationPrice, setFogInstallationPrice] = useState(490);
@@ -814,6 +819,10 @@ export default function CreateDevisPage() {
 
         if (result.data.propertyTypes && Object.keys(result.data.propertyTypes).length > 0) {
           setPropertyTypeLabels(result.data.propertyTypes);
+        }
+
+        if (Array.isArray(result.data.surveillanceOptions) && result.data.surveillanceOptions.length > 0) {
+          setSurveillanceOptions(result.data.surveillanceOptions);
         }
 
         // TVA and admin fees (Carte SIM + Activation, Frais de dossier) are
@@ -2216,6 +2225,7 @@ export default function CreateDevisPage() {
           rentalMode={alarmRentalMode}
           simCardSelected={simcardSelected}
           configValues={configValues}
+          surveillanceOptions={surveillanceOptions}
           showChantierIntervention={alarmRentalMode && alarmRentalType === 'chantier'}
           interventionQuantity={alarmInterventionQty}
           interventionOffered={alarmInterventionOffered}
