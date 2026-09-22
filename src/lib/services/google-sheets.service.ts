@@ -28,6 +28,7 @@ const CONSEILLER_RANGE = 'Conseillers!A2:D';
 const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
 const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const ALARM_RANGE = 'Produits_Alarme!A1:Z';
+const KIT_BASE_ALARME_RANGE = 'Kit_Base_Alarme!A1:F';
 const CAMERA_RANGE = 'Produits_Cameras!A1:Z';
 const CONFIG_RANGE = 'Config!A1:G';
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -35,10 +36,11 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }; fetchedAt: number } | null = null;
 let fogCache: { data: { products: FogProduct[]; defaultKit: { ref: string; quantity: number }[] }; fetchedAt: number } | null = null;
-let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }; fetchedAt: number } | null = null;
+let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: Record<string, number | null> }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
 let configCache: { data: Record<string, number>; fetchedAt: number } | null = null;
 let propertyTypeCache: { data: Record<string, string>; fetchedAt: number } | null = null;
+let alarmCentralsCache: { data: AlarmCentral[]; fetchedAt: number } | null = null;
 
 /**
  * Turns [header, ...dataRows] into row objects keyed by header text
@@ -315,27 +317,112 @@ export async function fetchFogProductsFromSheet(): Promise<{ products: FogProduc
 }
 
 /**
- * Fetch the "Produits_Alarme" tab, scoped to Titane/Jablotron rows only
- * (ref starting with TIT- or JAB-) — XTO rows in the same tab are ignored
- * here; XTO keeps its own separate hardcoded rental-pricing model for now
- * (see CATALOG_XTO_PRODUCTS / XTO_KIT_LINES in quote-generator.ts),
- * migrated separately since it's structurally unrelated (monthly-only, no
- * cash price).
+ * Fetch the "Produits_Alarme" tab, scoped to rows belonging to a known
+ * centrale (Titane, Jablotron, or any future one discovered via
+ * fetchAlarmCentralsFromSheet -- ref prefix matched against
+ * "{PREFIX}-") plus XTO (still its own separate, hardcoded-prefix case,
+ * per client instruction -- not part of the generic centrale list).
  *
- * Returns both the flat product list (id, name, price, ref — one row per
- * product, single price, since Titane and Jablotron are now separate rows
- * rather than one entry with priceTitane/priceJablotron) and a `kits` map
- * used to build the "Kit 1"/"Kit 2" quick-apply buttons: which refs are
- * included in KIT-TIT-1/KIT-TIT-2/KIT-JAB-1/KIT-JAB-2, and at what
- * quantity, replacing the old hardcoded kit1Products/kit2Products arrays.
- *
- * The sheet's kit-inclusion columns are matched by *pattern*
- * (containing "KIT-TIT-1" etc., disambiguated by whether the header also
- * contains "QTE"), not by an exact header string — the same lesson as
- * Visiophone's PRIX column being in a different position than expected:
- * safer to be robust to small wording differences than to assume exact text.
+ * Returns both the flat product list (id, name, price, ref) and a `kits`
+ * map used to build the "Kit 1"/"Kit 2" quick-apply buttons: which refs
+ * are included in each kit and at what quantity. Kit membership columns
+ * (one "inclu KIT-XXX" / "QTE KIT-XXX" pair per kit) are found by
+ * scanning the header row for that exact wording -- NOT by fixed column
+ * letters -- so a new centrale's kit columns can go anywhere in the
+ * sheet. This reintroduces header-text scanning after an earlier version
+ * of this function was moved away from it (a past bug conflated the
+ * "inclu" and "QTE" columns for at least one kit) -- the two are now
+ * matched by strict, distinct keywords ("inclu " vs "qte "/"quantite ")
+ * at the START of the header text, and only ever read from the header
+ * itself, never inferred from a row's data values, which is what the
+ * earlier bug actually did wrong.
  */
-export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: { titane: number | null; jablotron: number | null } }> {
+/**
+ * One "centrale" (Titane, Jablotron, or a future one added the same way),
+ * discovered from Kit_Base_Alarme's Groupe column rather than hardcoded --
+ * this is what lets a new centrale be added via the Sheet alone. XTO and
+ * Location are deliberately excluded here (client instruction: they're a
+ * different, monthly-only rental model, not "a centrale like Titane" --
+ * they keep their own separate, hand-written logic elsewhere).
+ */
+export interface AlarmCentral {
+  /** REF prefix used to match this centrale's rows elsewhere (Produits_Alarme,
+   * Config) -- derived from its kit refs, e.g. "TIT" from "KIT-TIT-1". */
+  prefix: string;
+  /** Display name, from Kit_Base_Alarme's "Nom" column for its first kit
+   * with the article stripped (e.g. "Titane 1" -> "Titane"). Falls back to
+   * the Groupe value itself if that doesn't parse. */
+  name: string;
+  /** This centrale's kits, in the Sheet's row order (normally 2). */
+  kits: { ref: string; name: string; price: number | null; fiche?: string }[];
+}
+
+export async function fetchAlarmCentralsFromSheet(): Promise<AlarmCentral[]> {
+  if (alarmCentralsCache && Date.now() - alarmCentralsCache.fetchedAt < CACHE_TTL_MS) {
+    return alarmCentralsCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: KIT_BASE_ALARME_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['REF', 'Nom', 'Groupe']);
+
+  // KIT-{PREFIX}-{N} -- the numbered-kit shape every generic centrale's
+  // rows follow (KIT-TIT-1, KIT-JAB-2...). KIT-XTO / KIT-LOC don't match
+  // (no trailing -N), which is a second, independent signal alongside the
+  // Groupe check below that they're not part of this generic list.
+  const KIT_REF_PATTERN = /^KIT-([A-Z0-9]+)-\d+$/i;
+  const EXCLUDED_GROUPS = new Set(['xto', 'location']);
+
+  const byPrefix = new Map<string, AlarmCentral>();
+
+  for (const row of rows) {
+    const ref = (row['REF'] || '').trim();
+    const groupe = (row['Groupe'] || '').trim();
+    if (!ref || EXCLUDED_GROUPS.has(groupe.toLowerCase())) continue;
+
+    const match = ref.match(KIT_REF_PATTERN);
+    if (!match) continue; // not a numbered generic kit (e.g. KIT-XTO, KIT-LOC, or a typo) -- skip
+    const prefix = match[1].toUpperCase();
+
+    const nom = (row['Nom'] || '').trim();
+    const price = parseFloat(row['Prix'] || '');
+    const ficheRaw = row['ID Drive fiche technique'] ? row['ID Drive fiche technique'].trim() : '';
+    const fiche = ficheRaw ? extractDriveFileId(ficheRaw) : undefined;
+
+    if (!byPrefix.has(prefix)) {
+      // Display name: the Groupe column as-is (e.g. "Titane") is the
+      // intended display name -- more reliable than trying to strip a
+      // trailing "1"/"2" off the per-kit Nom.
+      byPrefix.set(prefix, { prefix, name: groupe || prefix, kits: [] });
+    }
+    byPrefix.get(prefix)!.kits.push({
+      ref,
+      name: nom || ref,
+      price: isNaN(price) ? null : price,
+      fiche,
+    });
+  }
+
+  const centrals = Array.from(byPrefix.values());
+
+  if (centrals.length === 0) {
+    throw new Error('Kit_Base_Alarme: aucune centrale generique trouvee (colonnes REF/Nom/Groupe, hors XTO/Location)');
+  }
+
+  alarmCentralsCache = { data: centrals, fetchedAt: Date.now() };
+  return centrals;
+}
+
+export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: Record<string, number | null> }> {
   if (alarmCache && Date.now() - alarmCache.fetchedAt < CACHE_TTL_MS) {
     return alarmCache.data;
   }
@@ -343,6 +430,11 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   if (!SPREADSHEET_ID) {
     throw new Error('GOOGLE_SHEETS_ID is not configured');
   }
+
+  // The list of "generic" centrales (Titane, Jablotron, and any future one)
+  // comes from Kit_Base_Alarme, not hardcoded -- this is what lets a new
+  // centrale be added via the Sheet alone.
+  const centrals = await fetchAlarmCentralsFromSheet();
 
   const sheets = await getSheetsClient();
 
@@ -368,46 +460,60 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     }
   }
 
-  // Columns confirmed directly by the client (Inclu/QTE pairs at fixed
-  // positions: D/E, F/G, H/I, J/K) — the previous approach tried to detect
-  // "QTE" vs "Inclu" by scanning header text, but that silently picked the
-  // wrong column for at least one kit (items with quantity 1 looked
-  // "included" by coincidence — their qty value "1" matched the inclusion
-  // check — while anything with quantity > 1, like "2 Détecteur
-  // volumétrique", was wrongly excluded). Fixed positions avoid guessing at
-  // header wording entirely. Still validated against the header text below,
-  // so a future column reorder fails loudly instead of repeating this bug.
-  const colIdx = (letter: string) => letter.charCodeAt(0) - 'A'.charCodeAt(0);
-  const KIT_CODES = ['KIT-TIT-1', 'KIT-TIT-2', 'KIT-JAB-1', 'KIT-JAB-2', 'KIT-XTO', 'KIT-LOC'];
-  const kitColumns: Record<string, { incluIdx: number; qteIdx: number }> = {
-    'KIT-TIT-1': { incluIdx: colIdx('D'), qteIdx: colIdx('E') },
-    'KIT-TIT-2': { incluIdx: colIdx('F'), qteIdx: colIdx('G') },
-    'KIT-JAB-1': { incluIdx: colIdx('H'), qteIdx: colIdx('I') },
-    'KIT-JAB-2': { incluIdx: colIdx('J'), qteIdx: colIdx('K') },
-    'KIT-XTO': { incluIdx: colIdx('L'), qteIdx: colIdx('M') },
-    'KIT-LOC': { incluIdx: colIdx('N'), qteIdx: colIdx('O') },
-  };
+  // Every kit we expect to find a column pair for: each generic centrale's
+  // kits, plus XTO and Location's (still hardcoded refs -- excluded from
+  // the generic centrale list per client instruction, but their columns
+  // are found the same header-driven way).
+  const expectedKitRefs = [
+    ...centrals.flatMap((c) => c.kits.map((k) => k.ref)),
+    'KIT-XTO',
+    'KIT-LOC',
+  ];
 
-  const misplacedKitCols = KIT_CODES.filter((code) => {
-    const { incluIdx, qteIdx } = kitColumns[code];
-    const incluHeader = (headerRow[incluIdx] || '').toUpperCase();
-    const qteHeader = (headerRow[qteIdx] || '').toUpperCase();
-    return !incluHeader.includes(code) || !qteHeader.includes(code);
+  // Kit membership columns are found by scanning the header row for
+  // "inclu KIT-XXX" / "qte KIT-XXX" (or "quantite KIT-XXX"), matched as
+  // the first word(s) of the header text -- strict, distinct keywords, so
+  // "inclu" and "qte" can never be confused with each other, and nothing
+  // here ever looks at a row's data values to decide a column's role
+  // (that inference, not header-text matching itself, was the earlier bug).
+  const kitColumns: Record<string, { incluIdx?: number; qteIdx?: number }> = {};
+  headerRow.forEach((h: string, i: number) => {
+    const header = (h || '').trim();
+    if (!header) return;
+    const incluMatch = header.match(/^inclu[a-zé]*\s+(KIT-\S+)$/i);
+    if (incluMatch) {
+      const kitRef = incluMatch[1].toUpperCase();
+      kitColumns[kitRef] = { ...(kitColumns[kitRef] || {}), incluIdx: i };
+      return;
+    }
+    const qteMatch = header.match(/^(?:qte|quantit[ée])\s+(KIT-\S+)$/i);
+    if (qteMatch) {
+      const kitRef = qteMatch[1].toUpperCase();
+      kitColumns[kitRef] = { ...(kitColumns[kitRef] || {}), qteIdx: i };
+      return;
+    }
   });
-  if (misplacedKitCols.length > 0) {
-    throw new Error(`Produits_Alarme: colonnes de kit déplacées, vérifier ${misplacedKitCols.join(', ')} (attendues en D/E, F/G, H/I, J/K, L/M, N/O)`);
+
+  const missingKitCols = expectedKitRefs.filter((ref) => {
+    const cols = kitColumns[ref];
+    return !cols || cols.incluIdx === undefined || cols.qteIdx === undefined;
+  });
+  if (missingKitCols.length > 0) {
+    throw new Error(`Produits_Alarme: colonnes "inclu ${missingKitCols[0]}" / "QTE ${missingKitCols[0]}" introuvables (et pour: ${missingKitCols.join(', ')}) -- verifier le texte exact des en-tetes`);
   }
 
   const products: AlarmProduct[] = [];
   // XTO rows (location "Chantier") live in the same sheet but are priced and
-  // used completely differently from Titane/Jablotron (monthly, no central
-  // choice) -- kept in a separate array rather than mixed into `products`,
-  // which drives the Titane/Jablotron kit-selection cards.
+  // used completely differently from any centrale (monthly, no central
+  // choice) -- kept in a separate array rather than mixed into `products`.
   const xtoProducts: AlarmProduct[] = [];
-  const kits: Record<string, { ref: string; quantity: number }[]> = {
-    'KIT-TIT-1': [], 'KIT-TIT-2': [], 'KIT-JAB-1': [], 'KIT-JAB-2': [], 'KIT-XTO': [], 'KIT-LOC': [],
-  };
-  const installationPrices: { titane: number | null; jablotron: number | null } = { titane: null, jablotron: null };
+  const kits: Record<string, { ref: string; quantity: number }[]> = {};
+  expectedKitRefs.forEach((ref) => { kits[ref] = []; });
+  // Keyed by lowercased centrale name (e.g. "titane", "jablotron") --
+  // matches what the UI already reads (installationPrices.titane etc.)
+  // for the two existing centrales, and a new one slots in the same way.
+  const installationPrices: Record<string, number | null> = {};
+  centrals.forEach((c) => { installationPrices[c.name.toLowerCase()] = null; });
   let nextId = 600;
   let nextXtoId = 900;
 
@@ -422,28 +528,30 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
     const ficheRaw = idxOf['Fiche'] !== undefined ? (row[idxOf['Fiche']] || '').trim() : '';
     const fiche = ficheRaw ? extractDriveFileId(ficheRaw) : undefined;
 
+    const matchingCentral = centrals.find((c) => ref.startsWith(`${c.prefix}-`));
+
     if (ref.startsWith('XTO-')) {
-      // Unlike Titane/Jablotron rows, a blank price here is valid -- items
-      // that only exist as part of the kit (XTO-CON, XTO-MIS, XTO-SIG...)
-      // have no standalone sale price in the Sheet. Skipping them on NaN
+      // Unlike centrale rows, a blank price here is valid -- items that
+      // only exist as part of the kit (XTO-CON, XTO-MIS, XTO-SIG...) have
+      // no standalone sale price in the Sheet. Skipping them on NaN
       // silently dropped them from the kit display even though their
       // Inclu/QTE was correctly set (client-reported bug) -- default to 0
       // instead so every XTO row is captured.
       xtoProducts.push({ id: nextXtoId, name: nom, price: isNaN(price) ? 0 : price, ref, fiche });
       nextXtoId += 1;
-      // XTO rows also feed KIT-XTO the same way TIT-/JAB- rows feed their
-      // own kits, via the L/M Inclu/QTE pair, in the shared loop below.
-    } else if (!(ref.startsWith('TIT-') || ref.startsWith('JAB-'))) {
-      return; // unrelated row: skip
+      // XTO rows also feed KIT-XTO the same way centrale rows feed their
+      // own kits, via the shared kit-membership loop below.
+    } else if (!matchingCentral) {
+      return; // unrelated row (no known centrale prefix, not XTO-): skip
     }
 
-    // Installation (TIT-INS/JAB-INS) is not a selectable material line — its
-    // price feeds the separate "🔧 Installation" section instead (client
-    // request), same treatment as Visiophone's Installation et paramétrage.
-    if (ref === 'TIT-INS' || ref === 'JAB-INS') {
+    // Installation (e.g. TIT-INS/JAB-INS) is not a selectable material
+    // line -- its price feeds the separate "🔧 Installation" section
+    // instead (client request), same treatment as Visiophone's
+    // Installation et paramétrage.
+    if (matchingCentral && ref === `${matchingCentral.prefix}-INS`) {
       if (!isNaN(price)) {
-        if (ref === 'TIT-INS') installationPrices.titane = price;
-        else installationPrices.jablotron = price;
+        installationPrices[matchingCentral.name.toLowerCase()] = price;
       }
       return;
     }
@@ -453,7 +561,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
       nextId += 1;
     }
 
-    KIT_CODES.forEach((code) => {
+    expectedKitRefs.forEach((code) => {
       const { incluIdx, qteIdx } = kitColumns[code];
       const rawIncluValue = String(row[incluIdx!] ?? '').trim().toUpperCase();
       const included = ['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(rawIncluValue);
@@ -465,7 +573,7 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
   });
 
   if (products.length === 0) {
-    throw new Error('Produits_Alarme: aucune ligne Titane/Jablotron exploitable');
+    throw new Error('Produits_Alarme: aucune ligne de centrale exploitable');
   }
 
   const data = { products, xtoProducts, kits, installationPrices };
