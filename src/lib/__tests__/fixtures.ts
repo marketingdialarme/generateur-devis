@@ -20,6 +20,8 @@ export function alarmFixture(opts: {
   installationDiscount?: DiscountConfig;
   surveillanceType?: string;
   surveillancePrice?: number;
+  /** Adds one offered supplementary-material (installationLines) line. */
+  offeredSupplementary?: boolean;
 } = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
   const p = (ref: string, name: string, price: number): Product => ({ id: nextId(), ref, name, price } as unknown as Product);
@@ -38,6 +40,9 @@ export function alarmFixture(opts: {
     { id: nextId(), product: p('TIT-CHO', 'Détecteur de choc', 290), quantity: 1, offered: false },
     { id: nextId(), product: p('TIT-FUM', 'Détecteur de fumée', 190), quantity: 3, offered: false },
   ];
+  if (opts.offeredSupplementary) {
+    install.push({ id: nextId(), product: p('TIT-BAD', 'Badge x 4', 100), quantity: 1, offered: true });
+  }
   const services = {
     testCyclique: { selected: true, price: 0, offered: true },
     surveillance: {

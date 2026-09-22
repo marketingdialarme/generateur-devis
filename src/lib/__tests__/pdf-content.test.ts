@@ -107,6 +107,37 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
   });
 });
 
+describe('Alarm PDF — an offered supplementary-material item counts toward Remise, not Rabais partenariat', () => {
+  it('excludes the offered item from Rabais partenariat and adds it to the Remise display, net total unchanged', async () => {
+    const fx = alarmFixture({
+      offeredSupplementary: true,
+      installationDiscount: { type: 'fixed', value: 20 },
+    });
+    const pdf = await renderText(fx.options);
+    const totals = fx.totals;
+
+    // Net total (what's actually billed) must be unaffected by which
+    // summary line the offered item's value is displayed under -- it was
+    // already excluded from the billed subtotal by being offered.
+    const net =
+      totals.material.total +
+      totals.installation.total +
+      totals.adminFees.processing +
+      totals.adminFees.simCard;
+    expect(pdf).toContain(`${net.toFixed(2)} CHF`);
+
+    // Rabais partenariat shows only the kit de base's offered value (690+480+190+390+0=1750),
+    // not the offered Badge x 4 (100 CHF) from matériel supplémentaire.
+    expect(pdf).toContain('- 1750.00 CHF');
+    expect(pdf).not.toContain('- 1850.00 CHF');
+
+    // Remise shows the installation discount (20) PLUS the offered
+    // supplementary item's value (100) = 120, for display purposes only.
+    expect(pdf).toContain('Remise');
+    expect(pdf).toContain('- 120.00 CHF');
+  });
+});
+
 describe('Alarm PDF — surveillance block title follows the mode', () => {
   it('titles AUTOSURVEILLANCE on autosurveillance quotes', async () => {
     const pdf = await renderText(
