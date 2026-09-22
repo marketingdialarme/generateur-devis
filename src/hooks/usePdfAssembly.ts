@@ -64,7 +64,7 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
     
     setIsAssembling(true);
     setError(null);
-    setProgress('Starting PDF assembly...');
+    setProgress('Mise en page de votre devis en cours...');
     
     try {
       console.log('🔧 Starting PDF assembly...');
@@ -74,7 +74,7 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
         productsCount: products.length
       });
       
-      setProgress('Fetching base documents...');
+      setProgress('Récupération du document de base...');
       
       // Call the assembly function
       const result = await assemblePdf(
@@ -88,7 +88,7 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
         baseDocumentFileId
       );
       
-      setProgress('Assembly complete!');
+      setProgress('Mise en page terminée !');
       console.log('✅ PDF assembly completed:', result.info);
       
       return result;
