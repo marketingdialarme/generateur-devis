@@ -78,9 +78,8 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
     expect(pdf).toContain(`- ${combined.toFixed(2)} CHF`);
   });
 
-  it('prints the per-line discount note on the affected material and installation rows', () => {
-    expect(pdf).toContain('duction appliqu'); // "Réduction appliquée = ..." (é escaped in content stream)
-    expect(pdf).toContain('10%'); // material discount note, percent display
+  it('no longer prints a per-line discount note (superseded by orange row coloring)', () => {
+    expect(pdf).not.toContain('duction appliqu');
   });
 
   it('Total après rabais equals the on-screen net (réductions deducted)', () => {

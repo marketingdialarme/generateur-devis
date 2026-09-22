@@ -357,12 +357,19 @@ interface TableRow {
    *                   distinct fee/service line vs the catalog material.
    */
   kind?: 'material' | 'utility';
+  /** True when this row belongs to a section that has a Réduction
+   * applied (material or installation) -- colors the TOTAL column
+   * orange instead of black, so the client sees at a glance which
+   * lines are discounted without a per-product note (the discount is
+   * section-level, not tied to one specific product; client feedback). */
+  discounted?: boolean;
 }
 
 // Colors
 const C_YELLOW: [number, number, number] = [244, 230, 0];
 const C_YELLOW_LIGHT: [number, number, number] = [255, 248, 196]; // utility row bg
 const C_GREEN: [number, number, number] = [0, 140, 70];
+const C_ORANGE: [number, number, number] = [204, 102, 0];
 const C_GREY_ROW: [number, number, number] = [245, 245, 245];
 
 const LEFT = 40;
@@ -391,6 +398,8 @@ function createAlarmPDFSections(
 
   // ---- Build unified material table rows ----
   const rows: TableRow[] = [];
+  const materialDiscounted = alarmTotals.material.discount > 0;
+  const installationDiscounted = alarmTotals.installation.discount > 0;
 
   // KIT DE BASE items -- prefix only shown while the kit stays offered
   // (client feedback); once it isn't, these are just regular material
@@ -403,15 +412,13 @@ function createAlarmPDFSections(
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
+      discounted: materialDiscounted,
     });
   });
-  // Discount note on the last material row -- section-level discount (not
-  // tied to one specific product), shown where the material rows end.
-  if (alarmTotals.material.discount > 0 && rows.length > 0) {
-    rows[rows.length - 1].note = `Réduction appliquée = ${alarmTotals.material.discountDisplay}`;
-  }
 
-  // Supplementary materials (matériel divers)
+  // Supplementary materials (matériel divers) -- shares the same
+  // installationDiscount as the labor line below (one "Réduction" field
+  // covers this whole section on screen).
   (options.installationLines || []).forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
@@ -420,6 +427,7 @@ function createAlarmPDFSections(
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
+      discounted: installationDiscounted,
     });
   });
 
@@ -436,9 +444,7 @@ function createAlarmPDFSections(
       unitPrice: options.isRental ? 0 : mainInstallationTotal,
       offered: options.isRental,
       kind: 'utility',
-      note: alarmTotals.installation.discount > 0
-        ? `Réduction appliquée = ${alarmTotals.installation.discountDisplay}`
-        : undefined,
+      discounted: installationDiscounted,
     });
   }
 
@@ -595,12 +601,16 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     // unit price still shows for reference in P.U HT, but nothing is
     // actually billed for it, so the total should say so explicitly
     // rather than showing a number the client would then have to
-    // subtract out themselves (client feedback).
+    // subtract out themselves (client feedback). Discounted rows (part
+    // of a section with a Réduction applied) print in orange instead of
+    // black, so the client sees at a glance which lines the "Remise"
+    // total below covers -- the discount is section-level, not tied to
+    // one product, so a per-line note wasn't practical (client feedback).
     if (row.offered) {
       doc.setTextColor(...C_GREEN);
       doc.text('OFFERT', RIGHT, yPos + 9, { align: 'right' });
     } else {
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(...(row.discounted ? C_ORANGE : [0, 0, 0] as [number, number, number]));
       doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     }
     doc.setTextColor(0, 0, 0);
@@ -668,7 +678,7 @@ function drawSummary(
       yPos += 14;
     }
     for (const reduction of reductions) {
-      drawLabelValue(doc, reduction.label, `- ${reduction.amount.toFixed(2)} CHF`, yPos + 8, true, C_GREEN, COL_PU - 45);
+      drawLabelValue(doc, reduction.label, `- ${reduction.amount.toFixed(2)} CHF`, yPos + 8, true, C_ORANGE);
       yPos += 14;
     }
     drawLabelValue(doc, 'Total après rabais', `${netTotal.toFixed(2)} CHF`, yPos + 8);
