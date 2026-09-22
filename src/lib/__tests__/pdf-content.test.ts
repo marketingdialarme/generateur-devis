@@ -41,8 +41,8 @@ describe('Alarm PDF content (new design)', () => {
   it('shows the facilité-de-paiement block', () => {
     expect(pdf).toContain('Possibilit'); // "Possibilité de facilité de paiement..."
   });
-  it('NEVER prints the word OFFERT', () => {
-    expect(pdf).not.toContain('OFFERT');
+  it('prints OFFERT in the total column for offered rows, while still showing the unit price', () => {
+    expect(pdf).toContain('OFFERT');
   });
 });
 
@@ -70,17 +70,17 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
     pdf = await renderText(fx.options);
   });
 
-  it('prints the material réduction line with the percent display and amount', () => {
+  it('prints a single merged "Remise" summary line for the combined material + installation discount', () => {
     expect(totals.material.discount).toBeGreaterThan(0);
-    expect(pdf).toContain('duction mat'); // "Réduction matériel (10%)"
-    expect(pdf).toContain('10%'); // parens are backslash-escaped in the content stream
-    expect(pdf).toContain(`- ${totals.material.discount.toFixed(2)} CHF`);
+    expect(totals.installation.discount).toBe(100);
+    expect(pdf).toContain('Remise');
+    const combined = totals.material.discount + totals.installation.discount;
+    expect(pdf).toContain(`- ${combined.toFixed(2)} CHF`);
   });
 
-  it('prints the installation réduction line', () => {
-    expect(totals.installation.discount).toBe(100);
-    expect(pdf).toContain('duction installation');
-    expect(pdf).toContain('- 100.00 CHF');
+  it('prints the per-line discount note on the affected material and installation rows', () => {
+    expect(pdf).toContain('duction appliqu'); // "Réduction appliquée = ..." (é escaped in content stream)
+    expect(pdf).toContain('10%'); // material discount note, percent display
   });
 
   it('Total après rabais equals the on-screen net (réductions deducted)', () => {

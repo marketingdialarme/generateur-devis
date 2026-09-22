@@ -392,17 +392,24 @@ function createAlarmPDFSections(
   // ---- Build unified material table rows ----
   const rows: TableRow[] = [];
 
-  // KIT DE BASE items
+  // KIT DE BASE items -- prefix only shown while the kit stays offered
+  // (client feedback); once it isn't, these are just regular material
+  // lines like any other.
   options.materialLines.forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
     rows.push({
-      name: `KIT DE BASE - ${name}`,
+      name: line.offered ? `KIT DE BASE - ${name}` : name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
     });
   });
+  // Discount note on the last material row -- section-level discount (not
+  // tied to one specific product), shown where the material rows end.
+  if (alarmTotals.material.discount > 0 && rows.length > 0) {
+    rows[rows.length - 1].note = `Réduction appliquée = ${alarmTotals.material.discountDisplay}`;
+  }
 
   // Supplementary materials (matériel divers)
   (options.installationLines || []).forEach((line) => {
@@ -429,6 +436,9 @@ function createAlarmPDFSections(
       unitPrice: options.isRental ? 0 : mainInstallationTotal,
       offered: options.isRental,
       kind: 'utility',
+      note: alarmTotals.installation.discount > 0
+        ? `Réduction appliquée = ${alarmTotals.installation.discountDisplay}`
+        : undefined,
     });
   }
 
@@ -581,15 +591,18 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     // Zero-priced rows (maintenance, Alimentation) render a dash, matching the client reference
     const showDash = row.unitPrice === 0;
     doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
-    // Total column: green only when the row is offered (i.e. included in the
-    // rabais partenariat). Non-offered rows print in black so the client can
-    // distinguish what is actually being paid.
+    // Total column: "OFFERT" (in green) when the row is offered -- the
+    // unit price still shows for reference in P.U HT, but nothing is
+    // actually billed for it, so the total should say so explicitly
+    // rather than showing a number the client would then have to
+    // subtract out themselves (client feedback).
     if (row.offered) {
       doc.setTextColor(...C_GREEN);
+      doc.text('OFFERT', RIGHT, yPos + 9, { align: 'right' });
     } else {
       doc.setTextColor(0, 0, 0);
+      doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     }
-    doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
     doc.setTextColor(0, 0, 0);
     yPos += rowH;
   });
@@ -622,17 +635,13 @@ function sectionReductions(
   material: SectionTotals | undefined,
   installation: SectionTotals | undefined
 ): SummaryReduction[] {
-  const out: SummaryReduction[] = [];
-  // The parenthetical only adds information for percent discounts; a fixed
-  // discount's display ("100.00 CHF") would duplicate the amount column.
-  const suffix = (s: SectionTotals) => (s.discountDisplay.includes('%') ? ` (${s.discountDisplay})` : '');
-  if (material && material.discount > 0) {
-    out.push({ label: `Réduction matériel${suffix(material)}`, amount: material.discount });
-  }
-  if (installation && installation.discount > 0) {
-    out.push({ label: `Réduction installation${suffix(installation)}`, amount: installation.discount });
-  }
-  return out;
+  // Merged into a single "Remise" line (client feedback: "uniquement
+  // Remise", not separate "Réduction matériel"/"Réduction installation"
+  // labels) -- the per-line note on the affected product row (see
+  // rows.forEach below) still says which discount applies where.
+  const total = (material?.discount || 0) + (installation?.discount || 0);
+  if (total <= 0) return [];
+  return [{ label: 'Remise', amount: total }];
 }
 
 function reductionsTotal(reductions: SummaryReduction[]): number {

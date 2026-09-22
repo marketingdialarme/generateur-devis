@@ -1086,7 +1086,7 @@ export default function CreateDevisPage() {
 
   const isProcessing = isPdfGenerating || isAssembling || isSending;
   const currentProgress = isPdfGenerating 
-    ? 'Génération du PDF...' 
+    ? 'Mise en page de votre devis en cours...' 
     : isAssembling 
     ? assemblyProgress 
     : isSending 
@@ -2162,6 +2162,33 @@ export default function CreateDevisPage() {
           </div>
         )}
 
+        {/* Services Section */}
+        <ServicesSection
+          testCycliqueSelected={testCycliqueSelected}
+          testCycliquePrice={testCycliquePrice}
+          testCycliqueOffered={testCycliqueOffered}
+          onTestCycliqueSelectedChange={setTestCycliqueSelected}
+          onTestCycliquePriceChange={setTestCycliquePrice}
+          onTestCycliqueOfferedChange={setTestCycliqueOffered}
+          surveillanceType={surveillanceType}
+          surveillancePrice={surveillancePrice}
+          surveillanceOffered={surveillanceOffered}
+          onSurveillanceTypeChange={setSurveillanceType}
+          onSurveillancePriceChange={setSurveillancePrice}
+          onSurveillanceOfferedChange={setSurveillanceOffered}
+          centralType={selectedCentral}
+          rentalMode={alarmRentalMode}
+          simCardSelected={simcardSelected}
+          onSimCardSelectedChange={setSimcardSelected}
+          configValues={configValues}
+          surveillanceOptions={surveillanceOptions}
+          showChantierIntervention={alarmRentalMode && alarmRentalType === 'chantier'}
+          interventionQuantity={alarmInterventionQty}
+          interventionOffered={alarmInterventionOffered}
+          onInterventionQuantityChange={setAlarmInterventionQty}
+          onInterventionOfferedChange={setAlarmInterventionOffered}
+        />
+
         {/* Admin Fees */}
         <div className="quote-section">
           <h3>📄 Frais de dossier</h3>
@@ -2225,32 +2252,6 @@ export default function CreateDevisPage() {
             * Les frais de dossier se payent à l&apos;installation
           </p>
         </div>
-
-        {/* Services Section */}
-        <ServicesSection
-          testCycliqueSelected={testCycliqueSelected}
-          testCycliquePrice={testCycliquePrice}
-          testCycliqueOffered={testCycliqueOffered}
-          onTestCycliqueSelectedChange={setTestCycliqueSelected}
-          onTestCycliquePriceChange={setTestCycliquePrice}
-          onTestCycliqueOfferedChange={setTestCycliqueOffered}
-          surveillanceType={surveillanceType}
-          surveillancePrice={surveillancePrice}
-          surveillanceOffered={surveillanceOffered}
-          onSurveillanceTypeChange={setSurveillanceType}
-          onSurveillancePriceChange={setSurveillancePrice}
-          onSurveillanceOfferedChange={setSurveillanceOffered}
-          centralType={selectedCentral}
-          rentalMode={alarmRentalMode}
-          simCardSelected={simcardSelected}
-          configValues={configValues}
-          surveillanceOptions={surveillanceOptions}
-          showChantierIntervention={alarmRentalMode && alarmRentalType === 'chantier'}
-          interventionQuantity={alarmInterventionQty}
-          interventionOffered={alarmInterventionOffered}
-          onInterventionQuantityChange={setAlarmInterventionQty}
-          onInterventionOfferedChange={setAlarmInterventionOffered}
-        />
 
         {/* Options Section */}
         <OptionsSection

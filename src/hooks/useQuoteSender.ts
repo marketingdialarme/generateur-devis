@@ -137,7 +137,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
       totalPages: number;
     }
   ): Promise<SendQuoteResult> => {
-    setProgress('Processing and sending email...');
+    setProgress('Conversion de votre devis en PDF...');
     
     const response = await fetch('/api/send-quote-lightweight', {
       method: 'POST',
