@@ -26,7 +26,7 @@ interface ServicesSectionProps {
   onSurveillanceOfferedChange: (value: boolean) => void;
   
   // Central type for pricing
-  centralType: 'titane' | 'jablotron' | null;
+  centralType: string | null;
   rentalMode: boolean;
   simCardSelected: boolean; // For Titane autosurveillance pricing
 

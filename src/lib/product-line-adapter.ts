@@ -26,11 +26,21 @@ export function isCameraType(type: string | null | undefined): boolean {
  * substring — every Alarm product's ref now encodes its central directly,
  * since Titane and Jablotron are separate rows in Produits_Alarme.
  */
-export function detectCentralType(lines: ProductLineData[]): 'titane' | 'jablotron' | null {
+/**
+ * Auto-detects which centrale (by name, lowercased -- e.g. "titane") a set
+ * of material lines belongs to, from any of the known centrales' REF
+ * prefixes -- not hardcoded to Titane/Jablotron, so a new centrale added
+ * via the Sheet is detected here too without a code change.
+ */
+export function detectCentralType(
+  lines: ProductLineData[],
+  centrals: { prefix: string; name: string }[]
+): string | null {
   for (const line of lines) {
     const ref = (line.product as any)?.ref as string | undefined;
-    if (ref?.startsWith('JAB-')) return 'jablotron';
-    if (ref?.startsWith('TIT-')) return 'titane';
+    if (!ref) continue;
+    const match = centrals.find((c) => ref.startsWith(`${c.prefix}-`));
+    if (match) return match.name.toLowerCase();
   }
   return null;
 }

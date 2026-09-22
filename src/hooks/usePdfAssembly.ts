@@ -14,7 +14,7 @@ import { ProductFetchRef } from '@/lib/product-collector';
 interface AssemblePdfParams {
   pdfBlob: Blob;
   quoteType: 'alarme' | 'video' | 'fog' | 'visiophone';
-  centralType: 'titane' | 'jablotron' | null;
+  centralType: string | null;
   products: ProductFetchRef[];
   commercial: CommercialInfo;
   propertyType: string;
