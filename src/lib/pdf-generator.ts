@@ -11,7 +11,7 @@ import type { jsPDF } from 'jspdf';
 import type { AlarmTotals, CameraTotals, SectionTotals } from './calculations';
 import type { ProductLineData } from '@/components/ProductLine';
 import { TVA_RATE, ADMIN_FEES, UNINSTALL_PRICE, roundToFiveCents, calculateFacilityPayment } from './quote-generator';
-import { calculateRemoteAccessPrice, detectCentralType } from './product-line-adapter';
+import { calculateRemoteAccessPrice } from './product-line-adapter';
 import { getCommercialInfo } from './config';
 
 // ============================================
@@ -93,7 +93,7 @@ export interface PDFGenerationOptions {
 // HELPERS
 // ============================================
 
-function getLineUnitPrice(line: ProductLineData, selectedCentral: 'titane' | 'jablotron' | null): number {
+function getLineUnitPrice(line: ProductLineData): number {
   const product = line.product;
   if (!product) return 0;
 
@@ -357,7 +357,6 @@ function createAlarmPDFSections(
   yPos: number
 ): number {
   const alarmTotals = options.totals as AlarmTotals;
-  const centralType = detectCentralType(options.materialLines);
   const months = options.paymentMonths ?? 0;
 
   // ---- Build unified material table rows ----
@@ -370,7 +369,7 @@ function createAlarmPDFSections(
     rows.push({
       name: `KIT DE BASE - ${name}`,
       qty: line.quantity,
-      unitPrice: getLineUnitPrice(line, centralType),
+      unitPrice: getLineUnitPrice(line),
       offered: line.offered,
     });
   });
@@ -382,7 +381,7 @@ function createAlarmPDFSections(
     rows.push({
       name,
       qty: line.quantity,
-      unitPrice: getLineUnitPrice(line, centralType),
+      unitPrice: getLineUnitPrice(line),
       offered: line.offered,
     });
   });
@@ -390,7 +389,7 @@ function createAlarmPDFSections(
   // Main installation line ("Installation et paramétrage")
   const supplementaryTotal = (options.installationLines || []).reduce((sum, line) => {
     if (!line.product || line.offered) return sum;
-    return sum + getLineUnitPrice(line, centralType) * line.quantity;
+    return sum + getLineUnitPrice(line) * line.quantity;
   }, 0);
   const mainInstallationTotal = Math.max(0, alarmTotals.installation.totalBeforeDiscount - supplementaryTotal);
   if (mainInstallationTotal > 0 || options.isRental) {
@@ -778,7 +777,7 @@ function createCameraPDFSections(
     rows.push({
       name,
       qty: line.quantity,
-      unitPrice: getLineUnitPrice(line, null),
+      unitPrice: getLineUnitPrice(line),
       offered: line.offered,
     });
   });
@@ -795,7 +794,7 @@ function createCameraPDFSections(
     rows.push({
       name,
       qty: line.quantity,
-      unitPrice: getLineUnitPrice(line, null),
+      unitPrice: getLineUnitPrice(line),
       offered: options.isRental || line.offered,
       kind: 'utility',
     });
@@ -884,7 +883,7 @@ function linesToRows(lines: ProductLineData[] | undefined): TableRow[] {
     .map((l) => ({
       name: l.product!.isCustom && l.customName ? l.customName : l.product!.name,
       qty: l.quantity,
-      unitPrice: getLineUnitPrice(l, null),
+      unitPrice: getLineUnitPrice(l),
       offered: l.offered,
     }));
 }

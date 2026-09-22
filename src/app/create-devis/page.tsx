@@ -140,7 +140,7 @@ export default function CreateDevisPage() {
   // Kit modal state
   // Which central is highlighted in the inline Kit de base cards before any
   // kit has actually been applied yet (alarmMaterialLines is still empty).
-  const [preCentral, setPreCentral] = useState<'titane' | 'jablotron'>('titane');
+  const [preCentral, setPreCentral] = useState<string>('titane');
   // Which kit number (1 or 2) is currently applied, so the kit cards stay
   // visible and highlighted after selection instead of disappearing —
   // client feedback: don't replace the cards with the product-line list,
@@ -221,7 +221,7 @@ export default function CreateDevisPage() {
     });
   }, [alarmRentalMode, alarmRentalType, alarmCatalog, alarmLocationCentral]);
   const [alarmKits, setAlarmKits] = useState<Record<string, { ref: string; quantity: number }[]>>({});
-  const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<{ titane: number | null; jablotron: number | null }>({ titane: null, jablotron: null });
+  const [alarmInstallationPrices, setAlarmInstallationPrices] = useState<Record<string, number | null>>({});
   const [cameraCatalog, setCameraCatalog] = useState<CameraProduct[]>([]);
   const [cameraInstallationProducts, setCameraInstallationProducts] = useState<CameraProduct[]>([]);
   const [cameraCatalogError, setCameraCatalogError] = useState<string | null>(null);
@@ -265,21 +265,22 @@ export default function CreateDevisPage() {
   
   // Auto-detect selected central from product lines
   const selectedCentral = useMemo(() => {
-    return detectCentralType(alarmMaterialLines);
-  }, [alarmMaterialLines]);
+    return detectCentralType(alarmMaterialLines, alarmCentrals);
+  }, [alarmMaterialLines, alarmCentrals]);
   
   // Apply kit function
-  const applyKit = (centralType: 'titane' | 'jablotron', kitType: 'kit1' | 'kit2' | 'none') => {
-    const centralRef = centralType === 'jablotron' ? 'JAB-CEN' : 'TIT-CEN';
+  const applyKit = (centralType: string, kitType: 'kit1' | 'kit2' | 'none') => {
+    const central = alarmCentrals.find(c => c.name.toLowerCase() === centralType);
+    const centralRef = central ? `${central.prefix}-CEN` : '';
     const centralProduct = alarmCatalog.find(p => (p as any).ref === centralRef);
     setPreCentral(centralType);
 
-    // Installation (TIT-INS/JAB-INS) is not a material line — it feeds the
-    // separate "🔧 Installation" section's price instead (client request).
-    // Set whenever a kit or centrale is applied, same trigger as resetting
-    // the material lines, so it always matches the chosen central.
+    // Installation (e.g. TIT-INS/JAB-INS) is not a material line — it feeds
+    // the separate "🔧 Installation" section's price instead (client
+    // request). Set whenever a kit or centrale is applied, same trigger as
+    // resetting the material lines, so it always matches the chosen central.
     const installationPrice = alarmInstallationPrices[centralType];
-    if (installationPrice !== null) {
+    if (installationPrice !== null && installationPrice !== undefined) {
       setAlarmInstallationPrice(installationPrice);
     }
     
@@ -305,7 +306,10 @@ export default function CreateDevisPage() {
     // Sheet's "Inclu"/"QTE" columns for the matching kit, instead of a
     // hardcoded per-product list. Installation is excluded upstream (see
     // fetchAlarmProductsFromSheet) even if flagged included in the sheet.
-    const kitKey = `KIT-${centralType === 'jablotron' ? 'JAB' : 'TIT'}-${kitType === 'kit1' ? '1' : '2'}`;
+    // Kit refs come from the discovered centrale itself (its Sheet order,
+    // "Kit 1" then "Kit 2") rather than a hardcoded KIT-{TIT|JAB}-N string.
+    const kitIndex = kitType === 'kit1' ? 0 : 1;
+    const kitKey = central?.kits[kitIndex]?.ref || '';
     const kitItems = alarmKits[kitKey] || [];
 
     const newLines: ProductLineData[] = kitItems.map((item, index) => {
@@ -336,8 +340,16 @@ export default function CreateDevisPage() {
         const product = alarmCatalog.find(p => (p as any).ref === item.ref);
         return `${item.quantity} ${product?.name || item.ref}`;
       });
-  const titaneCentralProduct = alarmCatalog.find(p => (p as any).ref === 'TIT-CEN');
-  const jablotronCentralProduct = alarmCatalog.find(p => (p as any).ref === 'JAB-CEN');
+  // One "centrale" product (ref {PREFIX}-CEN) per discovered centrale --
+  // replaces the two hardcoded titaneCentralProduct/jablotronCentralProduct
+  // lookups, so a new centrale's card shows its own centrale product too.
+  const centralProductByName = useMemo(() => {
+    const map: Record<string, AlarmProduct | undefined> = {};
+    alarmCentrals.forEach(c => {
+      map[c.name.toLowerCase()] = alarmCatalog.find(p => (p as any).ref === `${c.prefix}-CEN`);
+    });
+    return map;
+  }, [alarmCentrals, alarmCatalog]);
 
   // Calculate alarm totals with default values
   const alarmTotals = useMemo(() => {
@@ -754,7 +766,7 @@ export default function CreateDevisPage() {
         setAlarmKits(result.data.kits || {});
         setXtoCatalog(result.data.xtoProducts || []);
         setAlarmCentrals(result.data.centrals || []);
-        setAlarmInstallationPrices(result.data.installationPrices || { titane: null, jablotron: null });
+        setAlarmInstallationPrices(result.data.installationPrices || {});
         setAlarmCatalogError(null);
       })
       .catch((error) => {
@@ -1366,11 +1378,15 @@ export default function CreateDevisPage() {
           
           {/* Kit de base — cartes en ligne, toujours visibles (ne disparaissent
               pas une fois un kit choisi, pour qu'on puisse voir/changer le
-              choix sans que la liste de matériel ne les remplace). */}
+              choix sans que la liste de matériel ne les remplace). Générées
+              depuis alarmCentrals (Kit_Base_Alarme) -- pas figées à
+              Titane/Jablotron, une nouvelle centrale ajoutée via le Sheet
+              apparaît ici automatiquement. */}
           <div style={{ marginBottom: 15 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                {(['titane', 'jablotron'] as const).map((central) => {
-                  const centralProduct = central === 'titane' ? titaneCentralProduct : jablotronCentralProduct;
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(alarmCentrals.length, 1)}, 1fr)`, gap: 8, marginBottom: 8 }}>
+                {alarmCentrals.map((c) => {
+                  const central = c.name.toLowerCase();
+                  const centralProduct = centralProductByName[central];
                   // Once a central is actually applied, reflect that; before
                   // anything's chosen, reflect only what's being previewed.
                   // Bug fix: previously "(selectedCentral || preCentral)" made
@@ -1395,14 +1411,15 @@ export default function CreateDevisPage() {
                         color: active ? '#fff' : '#9a9a9a',
                       }}
                     >
-                      {centralProduct ? centralProduct.name : (central === 'titane' ? 'Titane' : 'Jablotron')}
+                      {centralProduct ? centralProduct.name : c.name}
                     </div>
                   );
                 })}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['kit1', 'kit2'] as const).map((kitType, i) => {
-                  const kitKey = `KIT-${preCentral === 'jablotron' ? 'JAB' : 'TIT'}-${i + 1}`;
+                  const previewedCentral = alarmCentrals.find(c => c.name.toLowerCase() === preCentral);
+                  const kitKey = previewedCentral?.kits[i]?.ref || '';
                   // Only shows as selected when the previewed central is the
                   // one actually applied AND this is the kit number applied.
                   const active = selectedCentral === preCentral && selectedKitNumber === i + 1;
@@ -1503,11 +1520,12 @@ export default function CreateDevisPage() {
                         if (product.isCustom) return false;
                         // Application is an auto-added base-kit item: show it only on
                         // the line that already holds it, never as a manual option
-                        // (avoids duplicate 0 CHF rows).
-                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return (line.product as any)?.ref === ref;
+                        // (avoids duplicate 0 CHF rows). Generic over any centrale's
+                        // "-APP" ref, not just Titane/Jablotron's.
+                        if (ref?.endsWith('-APP')) return (line.product as any)?.ref === ref;
                         // If a central is selected, filter to that central's refs only
-                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
-                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
+                        const activeCentral = alarmCentrals.find(c => c.name.toLowerCase() === selectedCentral);
+                        if (activeCentral) return ref?.startsWith(`${activeCentral.prefix}-`) ?? true;
                         return true;
                       })
                       .map(product => (
@@ -1756,9 +1774,9 @@ export default function CreateDevisPage() {
                       .filter(product => {
                         const ref = (product as any).ref as string | undefined;
                         if (product.isCustom) return false;
-                        if (ref === 'TIT-APP' || ref === 'JAB-APP') return false; // Auto-kit item, not a manual option here
-                        if (selectedCentral === 'titane') return ref?.startsWith('TIT-') ?? true;
-                        if (selectedCentral === 'jablotron') return ref?.startsWith('JAB-') ?? true;
+                        if (ref?.endsWith('-APP')) return false; // Auto-kit item, not a manual option here
+                        const activeCentral = alarmCentrals.find(c => c.name.toLowerCase() === selectedCentral);
+                        if (activeCentral) return ref?.startsWith(`${activeCentral.prefix}-`) ?? true;
                         return true;
                       })
                       .map(product => (

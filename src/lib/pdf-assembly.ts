@@ -53,7 +53,7 @@ interface FetchedDocuments {
 export async function assemblePdf(
   pdfBlob: Blob,
   quoteType: 'alarme' | 'video' | 'fog' | 'visiophone',
-  centralType: 'titane' | 'jablotron' | null,
+  centralType: string | null,
   products: ProductFetchRef[],
   commercial: CommercialInfo,
   propertyType: string = 'TYP-LOC',
@@ -233,7 +233,7 @@ async function assembleSimplePdf(
  */
 async function assembleAlarmPdf(
   pdfBlob: Blob,
-  centralType: 'titane' | 'jablotron',
+  centralType: string,
   commercial: CommercialInfo,
   propertyType: string,
   addPoliceDoc: boolean = false

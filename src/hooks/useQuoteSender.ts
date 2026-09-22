@@ -16,7 +16,7 @@ interface SendQuoteParams {
   commercial: string;
   clientName: string;
   type: 'alarme' | 'video';
-  centralType?: 'titane' | 'jablotron';
+  centralType?: string;
   isXtoAlarm?: boolean;
   products: string[];
   assemblyInfo?: {
@@ -128,7 +128,7 @@ export function useQuoteSender(): UseQuoteSenderReturn {
     commercial: string,
     clientName: string,
     type: 'alarme' | 'video',
-    centralType: 'titane' | 'jablotron' | undefined,
+    centralType: string | undefined,
     isXtoAlarm: boolean | undefined,
     products: string[],
     assemblyInfo?: {
