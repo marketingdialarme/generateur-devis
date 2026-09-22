@@ -19,6 +19,10 @@ interface AssemblePdfParams {
   commercial: CommercialInfo;
   propertyType: string;
   addPoliceDoc?: boolean;
+  /** Alarme only: the specific kit's "dossier complet" Drive file ID
+   * (Kit_Base_Alarme's "ID Drive fiche technique" column) -- preferred
+   * over the old 2-value Titane/Jablotron config when provided. */
+  baseDocumentFileId?: string;
 }
 
 interface UsePdfAssemblyReturn {
@@ -54,7 +58,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
       products,
       commercial,
       propertyType,
-      addPoliceDoc
+      addPoliceDoc,
+      baseDocumentFileId
     } = params;
     
     setIsAssembling(true);
@@ -79,7 +84,8 @@ export function usePdfAssembly(): UsePdfAssemblyReturn {
         products,
         commercial,
         propertyType,
-        addPoliceDoc
+        addPoliceDoc,
+        baseDocumentFileId
       );
       
       setProgress('Assembly complete!');

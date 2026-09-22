@@ -57,7 +57,8 @@ export async function assemblePdf(
   products: ProductFetchRef[],
   commercial: CommercialInfo,
   propertyType: string = 'TYP-LOC',
-  addPoliceDoc: boolean = false
+  addPoliceDoc: boolean = false,
+  baseDocumentFileId?: string
 ): Promise<AssemblyResult> {
   console.log('🔧 Starting PDF assembly with pdf-lib...');
   console.log('📋 Assembly parameters:', {
@@ -69,7 +70,7 @@ export async function assemblePdf(
 
   try {
     if (quoteType === 'alarme') {
-      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType, addPoliceDoc);
+      return await assembleAlarmPdf(pdfBlob, centralType || 'titane', commercial, propertyType, addPoliceDoc, baseDocumentFileId);
     } else if (quoteType === 'video') {
       return await assembleVideoPdf(pdfBlob, products, commercial, propertyType);
     } else if (quoteType === 'fog') {
@@ -236,16 +237,23 @@ async function assembleAlarmPdf(
   centralType: string,
   commercial: CommercialInfo,
   propertyType: string,
-  addPoliceDoc: boolean = false
+  addPoliceDoc: boolean = false,
+  baseDocumentFileId?: string
 ): Promise<AssemblyResult> {
   console.log('🚨 Assembling alarm PDF with central type:', centralType);
   
   try {
-    // 1. Fetch base document
+    // 1. Fetch base document -- prefers the Sheet-provided per-kit "dossier
+    // complet" (Kit_Base_Alarme's "ID Drive fiche technique" column,
+    // supplied by the caller once a specific kit is known), so a new
+    // centrale's document just needs that column filled in, no code/env
+    // var change. Falls back to the old 2-value config for compatibility
+    // (e.g. "centrale seule" with no kit chosen, or an empty fiche cell).
     console.log('📥 Fetching base document...');
-    const baseDocumentId = centralType === 'jablotron'
-      ? config.google.drive.baseDocuments.alarmJablotron
-      : config.google.drive.baseDocuments.alarmTitane;
+    const baseDocumentId = baseDocumentFileId
+      || (centralType === 'jablotron'
+        ? config.google.drive.baseDocuments.alarmJablotron
+        : config.google.drive.baseDocuments.alarmTitane);
     
     const baseArrayBuffer = await fetchDocumentFromDrive(baseDocumentId);
     console.log('✅ Base document fetched:', baseArrayBuffer.byteLength, 'bytes');

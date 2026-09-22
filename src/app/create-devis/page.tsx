@@ -988,6 +988,13 @@ export default function CreateDevisPage() {
           phone: '06 XX XX XX XX',
           email: `${finalCommercial.toLowerCase().replace(/\s+/g, '.')}@dialarme.fr`
         };
+        // Alarme only: use the specific chosen kit's "dossier complet"
+        // (Kit_Base_Alarme's fiche column) as the PDF base document when
+        // one is available -- falls back to the old 2-value Titane/
+        // Jablotron config otherwise (e.g. "centrale seule", no kit chosen).
+        const baseDocumentFileId = isAlarm && selectedCentral && selectedKitNumber
+          ? alarmCentrals.find(c => c.name.toLowerCase() === selectedCentral)?.kits[selectedKitNumber - 1]?.fiche
+          : undefined;
         const assembled = await assemblePdf({
           pdfBlob: generatedPdf.blob,
           quoteType: isAlarm ? 'alarme' : isCamera ? 'video' : isFog ? 'fog' : 'visiophone',
@@ -999,7 +1006,8 @@ export default function CreateDevisPage() {
             email: validatedCommercialInfo.email
           },
           propertyType,
-          addPoliceDoc: false // Option retiree de l'UI (client feedback) -- toujours false desormais
+          addPoliceDoc: false, // Option retiree de l'UI (client feedback) -- toujours false desormais
+          baseDocumentFileId
         });
         finalBlob = assembled.blob;
         assemblyInfo = assembled.info;
