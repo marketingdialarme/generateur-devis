@@ -1383,6 +1383,10 @@ export default function CreateDevisPage() {
               Titane/Jablotron, une nouvelle centrale ajoutée via le Sheet
               apparaît ici automatiquement. */}
           <div style={{ marginBottom: 15 }}>
+              {/* TEMPORAIRE -- diagnostic, a retirer une fois le souci trouve */}
+              <div style={{ fontSize: 11, color: '#ff6b7a', marginBottom: 6, fontFamily: 'monospace' }}>
+                DEBUG alarmCentrals.length = {alarmCentrals.length} | noms = {alarmCentrals.map(c => c.name).join(', ') || '(vide)'}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(alarmCentrals.length, 1)}, 1fr)`, gap: 8, marginBottom: 8 }}>
                 {alarmCentrals.map((c) => {
                   const central = c.name.toLowerCase();
