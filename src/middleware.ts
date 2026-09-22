@@ -48,5 +48,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/create-devis/:path*'],
+  // TEMPORAIRE (branche de diagnostic uniquement, jamais sur main) --
+  // matcher vide pour debloquer le test sans passer par le lien magique,
+  // qui redirige vers l'origine d'une AUTRE preview.
+  matcher: [],
 };
