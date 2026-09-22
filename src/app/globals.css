@@ -716,6 +716,7 @@ background-color: #0a0a0a;
 .rental-toggle-container {
 display: inline-flex;
 align-items: center;
+gap: 10px;
 font-size: 13px;
 color: var(--dlm-text-muted);
 margin-bottom: 15px;
