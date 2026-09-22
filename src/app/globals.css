@@ -7,7 +7,7 @@
 
 :root {
   --dlm-bg: #0a0a0a;
-  --dlm-card: #ffffff;
+  --dlm-card: #fcfcfa;
   --dlm-card-alt: #f2f2f2;
   --dlm-border: #a6a6a6;
   --dlm-border-light: #a6a6a6;
@@ -23,7 +23,7 @@
   --dlm-text: #000000;
   --dlm-text-muted: #595959;
   --dlm-text-faint: #7a7a7a;
-  --dlm-text-inverse: #ffffff;
+  --dlm-text-inverse: #fcfcfa;
   --dlm-text-inverse-muted: #b3b3b3;
   --dlm-danger: #c22a2f;
   --dlm-success: #1e8a3c;
@@ -147,7 +147,7 @@ input[type="number"] {
    sur ordinateur et certains navigateurs Android, pas sur le picker natif
    iOS qui ignore ce style par conception du systeme. */
 select option {
-background: #ffffff;
+background: #fcfcfa;
 color: #000000;
 }
 
@@ -161,13 +161,13 @@ border: 1px solid var(--dlm-border);
 }
 
 .header {
-background: var(--dlm-card);
+background: var(--dlm-bg);
 border-bottom: 1px solid var(--dlm-border);
 padding: 20px 30px;
 display: flex;
 align-items: center;
 justify-content: space-between;
-color: var(--dlm-text);
+color: var(--dlm-text-inverse);
 }
 
 .logo {
@@ -192,7 +192,7 @@ font-size: 16px;
 .company-info h1 {
 font-size: 20px;
 margin-bottom: 2px;
-color: var(--dlm-text);
+color: var(--dlm-text-inverse);
 }
 
 .company-info p {
@@ -206,7 +206,7 @@ grid-template-columns: repeat(4, 1fr);
 gap: 8px;
 background: transparent;
 border-bottom: none;
-padding: 0 30px 20px;
+padding: 20px 30px 20px;
 }
 
 .nav-tab {
@@ -333,6 +333,7 @@ border: none;
 border-radius: 50%;
 width: 26px;
 height: 26px;
+padding: 0;
 cursor: pointer;
 font-size: 15px;
 display: flex;
@@ -475,8 +476,9 @@ border-color: var(--dlm-yellow);
 
 .payment-option.active {
 border-color: var(--dlm-yellow);
-background: var(--dlm-yellow-dim);
-color: var(--dlm-text);
+background: var(--dlm-yellow);
+color: #000000;
+font-weight: 600;
 }
 
 .checkbox-option {
@@ -495,7 +497,7 @@ width: 18px;
 height: 18px;
 border-radius: 4px;
 border: 1.5px solid var(--dlm-border-light);
-background: #ffffff;
+background: #fcfcfa;
 cursor: pointer;
 position: relative;
 flex: none;
@@ -605,8 +607,8 @@ border-top: 1px solid var(--dlm-border-light);
 }
 
 .monthly-payment {
-background: transparent;
-color: var(--dlm-text);
+background: var(--dlm-yellow);
+color: #000000;
 border: 1.5px solid var(--dlm-yellow);
 padding: 12px 15px;
 border-radius: 8px;

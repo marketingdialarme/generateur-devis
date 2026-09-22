@@ -1363,7 +1363,7 @@ export default function CreateDevisPage() {
                     fontWeight: 500,
                     fontSize: 14,
                     border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
-                    background: active ? '#fffd01' : '#ffffff',
+                    background: active ? '#fffd01' : '#fcfcfa',
                     color: '#000000',
                   }}
                 >
@@ -1429,7 +1429,7 @@ export default function CreateDevisPage() {
                         fontWeight: 500,
                         fontSize: 14,
                         border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
-                        background: active ? '#fffd01' : '#ffffff',
+                        background: active ? '#fffd01' : '#fcfcfa',
                         color: '#000000',
                       }}
                     >
@@ -1454,7 +1454,7 @@ export default function CreateDevisPage() {
                         padding: 12,
                         cursor: 'pointer',
                         border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
-                        background: active ? '#fffd01' : '#ffffff',
+                        background: active ? '#fffd01' : '#fcfcfa',
                         color: '#000000',
                       }}
                     >
@@ -1622,7 +1622,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setAlarmMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#ffffff', color: '#000000' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                     <input 
                       type="number"
@@ -1636,7 +1636,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#ffffff', color: '#000000' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                   </div>
                 )}
@@ -1863,7 +1863,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />
@@ -1885,7 +1885,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />
@@ -2058,7 +2058,7 @@ export default function CreateDevisPage() {
                       fontWeight: 500,
                       fontSize: 13,
                       border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
-                      background: active ? '#fffd01' : '#ffffff',
+                      background: active ? '#fffd01' : '#fcfcfa',
                       color: '#000000',
                     }}
                   >
@@ -2582,7 +2582,7 @@ export default function CreateDevisPage() {
                         newLines[index] = { ...line, customName: e.target.value };
                         setCameraMaterialLines(newLines);
                       }}
-                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#ffffff', color: '#000000' }}
+                      style={{ flex: 2, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                     <input 
                       type="number"
@@ -2596,7 +2596,7 @@ export default function CreateDevisPage() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="0.01"
-                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#ffffff', color: '#000000' }}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #a6a6a6', borderRadius: '6px', fontSize: '13px', background: '#fcfcfa', color: '#000000' }}
                     />
                   </div>
                 )}
@@ -3119,7 +3119,7 @@ export default function CreateDevisPage() {
                       border: '1px solid #a6a6a6',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#ffffff',
+                      background: '#fcfcfa',
                       color: '#000'
                     }}
                   />
@@ -3141,7 +3141,7 @@ export default function CreateDevisPage() {
                       border: '1px solid #a6a6a6',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#ffffff',
+                      background: '#fcfcfa',
                       color: '#000'
                     }}
                   />
@@ -3287,7 +3287,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />
@@ -3309,7 +3309,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />
@@ -3664,7 +3664,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />
@@ -3686,7 +3686,7 @@ export default function CreateDevisPage() {
                         border: '1px solid #a6a6a6',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fcfcfa',
                         color: '#000'
                       }}
                     />

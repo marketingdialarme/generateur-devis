@@ -36,7 +36,7 @@ export function LoadingSpinner({ message, show }: LoadingSpinnerProps) {
     >
       <div 
         style={{
-          background: '#ffffff',
+          background: '#fcfcfa',
           borderRadius: '16px',
           padding: '32px 48px',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
