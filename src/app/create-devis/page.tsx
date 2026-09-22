@@ -2374,7 +2374,7 @@ export default function CreateDevisPage() {
           </div>
         )}
         <div className="rental-toggle-container">
-          <span>Mode vente</span>
+          <span>Partenariat</span>
           <label className="toggle-switch">
             <input 
               type="checkbox" 
