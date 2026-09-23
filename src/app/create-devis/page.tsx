@@ -1039,22 +1039,31 @@ export default function CreateDevisPage() {
         // Step 5: Trigger automatic download
         console.log('🔄 Step 5: Triggering automatic PDF download...');
         try {
-          const pdfBytes = await finalBlob.arrayBuffer();
-          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          // iOS Safari (and mobile browsers generally) unreliably honor the
-          // <a download> attribute -- it often navigates to the blob URL in
-          // the SAME tab instead of downloading, replacing the app (client-
-          // reported: going "back" from there then requires logging in
-          // again). Opening in a new tab avoids ever leaving the app tab.
           const userAgent = navigator.userAgent;
           const isMobileOrIOS = /iPad|iPhone|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) && !(window as any).MSStream;
-          if (isMobileOrIOS) {
+
+          if (isMobileOrIOS && result.driveLink) {
+            // On mobile, open the real Drive link (already uploaded as part
+            // of sendQuote above) rather than a temporary in-memory blob URL.
+            // A blob URL only exists within this browser tab, so iOS can't
+            // offer a proper "share/save to Files" option for it (client-
+            // reported: couldn't send the PDF onward) -- a real Drive URL
+            // is a normal, shareable link, and also sidesteps the <a
+            // download> attribute being unreliable on iOS Safari (client-
+            // reported: previously replaced the app tab, forcing a
+            // re-login on "back").
+            window.open(result.driveLink, '_blank');
+          } else if (isMobileOrIOS) {
+            // Fallback if the Drive link isn't available for some reason.
+            const pdfBytes = await finalBlob.arrayBuffer();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
-            // Don't revoke immediately -- the new tab needs the blob URL to
-            // still be valid when it loads.
             setTimeout(() => URL.revokeObjectURL(url), 60000);
           } else {
+            const pdfBytes = await finalBlob.arrayBuffer();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
