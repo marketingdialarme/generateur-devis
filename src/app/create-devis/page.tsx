@@ -1042,13 +1042,27 @@ export default function CreateDevisPage() {
           const pdfBytes = await finalBlob.arrayBuffer();
           const blob = new Blob([pdfBytes], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          // iOS Safari (and mobile browsers generally) unreliably honor the
+          // <a download> attribute -- it often navigates to the blob URL in
+          // the SAME tab instead of downloading, replacing the app (client-
+          // reported: going "back" from there then requires logging in
+          // again). Opening in a new tab avoids ever leaving the app tab.
+          const userAgent = navigator.userAgent;
+          const isMobileOrIOS = /iPad|iPhone|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) && !(window as any).MSStream;
+          if (isMobileOrIOS) {
+            window.open(url, '_blank');
+            // Don't revoke immediately -- the new tab needs the blob URL to
+            // still be valid when it loads.
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          } else {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
           console.log('✅ PDF downloaded successfully');
         } catch (downloadError) {
           console.error('⚠️ Download failed (non-critical):', downloadError);
