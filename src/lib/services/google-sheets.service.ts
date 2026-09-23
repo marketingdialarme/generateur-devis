@@ -377,18 +377,23 @@ export async function fetchAlarmCentralsFromSheet(): Promise<AlarmCentral[]> {
   const rows = rowsByHeader(rawRows, ['REF', 'Nom', 'Groupe']);
 
   // KIT-{PREFIX}-{N} -- the numbered-kit shape every generic centrale's
-  // rows follow (KIT-TIT-1, KIT-JAB-2...). KIT-XTO / KIT-LOC don't match
-  // (no trailing -N), which is a second, independent signal alongside the
-  // Groupe check below that they're not part of this generic list.
+  // rows follow (KIT-TIT-1, KIT-JAB-2...). This is the ONLY signal used to
+  // decide whether a kit is part of the generic, selectable-centrale list.
+  // KIT-XTO / KIT-LOC (no trailing -N) don't match today, so they're
+  // naturally excluded -- but nothing here is keyed to their names. If XTO
+  // (or anything else) ever needs to become a regular, selectable centrale
+  // again, giving its Kit_Base_Alarme rows the numbered format (e.g.
+  // KIT-XTO-1 / KIT-XTO-2) is enough on its own; no code change needed
+  // (client concern: something retired from the app should be able to
+  // come back via the Sheet alone, same as adding anything new).
   const KIT_REF_PATTERN = /^KIT-([A-Z0-9]+)-\d+$/i;
-  const EXCLUDED_GROUPS = new Set(['xto', 'location']);
 
   const byPrefix = new Map<string, AlarmCentral>();
 
   for (const row of rows) {
     const ref = (row['REF'] || '').trim();
     const groupe = (row['Groupe'] || '').trim();
-    if (!ref || EXCLUDED_GROUPS.has(groupe.toLowerCase())) continue;
+    if (!ref) continue;
 
     const match = ref.match(KIT_REF_PATTERN);
     if (!match) continue; // not a numbered generic kit (e.g. KIT-XTO, KIT-LOC, or a typo) -- skip
