@@ -29,6 +29,20 @@ function LoginForm() {
     setStatus('sending');
     setErrorMessage(null);
 
+    try {
+      const checkResponse = await fetch(`/api/auth/authorized?email=${encodeURIComponent(email)}`);
+      const { authorized } = await checkResponse.json();
+      if (!authorized) {
+        setStatus('error');
+        setErrorMessage("Cette adresse n'est pas autorisée à accéder à l'application. Contactez votre responsable.");
+        return;
+      }
+    } catch {
+      setStatus('error');
+      setErrorMessage('Impossible de vérifier votre accès pour le moment, réessayez.');
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
