@@ -97,7 +97,7 @@ function LoginForm() {
             borderRadius: '8px',
             padding: '16px',
             fontSize: '14px',
-            color: '#fffd01'
+            color: '#000'
           }}>
             ✅ Un lien de connexion vient de vous être envoyé à <strong>{email}</strong>.
             Ouvrez-le depuis cette adresse pour vous connecter — il expire après un court délai.
