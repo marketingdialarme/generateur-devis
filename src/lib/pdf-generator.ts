@@ -20,7 +20,8 @@ import { getCommercialInfo } from './config';
 
 export interface QuoteInfo {
   clientName: string;
-  clientAddress?: string;
+  clientStreet?: string;
+  clientCity?: string;
   clientPhone?: string;
   clientEmail?: string;
   commercial: string;
@@ -33,7 +34,8 @@ export interface QuoteInfo {
 export interface PDFGenerationOptions {
   type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   clientName: string;
-  clientAddress?: string;
+  clientStreet?: string;
+  clientCity?: string;
   clientPhone?: string;
   clientEmail?: string;
   /** Free-text comment, shown on the PDF (all 4 categories) only when
@@ -190,7 +192,8 @@ export async function generateQuotePDF(
   // Create PDF header
   await createPDFHeader(doc, {
     clientName: options.clientName,
-    clientAddress: options.clientAddress,
+    clientStreet: options.clientStreet,
+    clientCity: options.clientCity,
     clientPhone: options.clientPhone,
     clientEmail: options.clientEmail,
     commercial: options.commercial,
@@ -332,21 +335,26 @@ async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.text("A l'attention de :", 40, 90);
   doc.setFont('helvetica', 'bold');
   doc.text(info.clientName, 40, 103);
-  // Address/phone/email -- each shown only if filled in on the form, in
-  // that order, tightly spaced under the (bold) client name.
+  // Rue / NPA Ville / mail / N° -- each shown only if filled in on the
+  // form, in that order, tightly spaced under the (bold) client name
+  // (client-requested order).
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   let clientDetailY = 114;
-  if (info.clientAddress) {
-    doc.text(info.clientAddress, 40, clientDetailY);
+  if (info.clientStreet) {
+    doc.text(info.clientStreet, 40, clientDetailY);
     clientDetailY += 11;
   }
-  if (info.clientPhone) {
-    doc.text(info.clientPhone, 40, clientDetailY);
+  if (info.clientCity) {
+    doc.text(info.clientCity, 40, clientDetailY);
     clientDetailY += 11;
   }
   if (info.clientEmail) {
     doc.text(info.clientEmail, 40, clientDetailY);
+    clientDetailY += 11;
+  }
+  if (info.clientPhone) {
+    doc.text(info.clientPhone, 40, clientDetailY);
     clientDetailY += 11;
   }
 
@@ -559,14 +567,19 @@ function createAlarmPDFSections(
       alarmTotals.adminFees.simCard,
       months
     );
-    yPos = ensureSpace(doc, yPos, 70);
-    yPos = drawFacilityBlock(
-      doc,
-      facilityHT,
-      months,
-      yPos,
-      `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
-    );
+    // Only show when there's actually something to finance -- a valid
+    // duration with a 0 CHF computed amount (e.g. no supplementary
+    // material) shouldn't display the block at all (director feedback).
+    if (facilityHT > 0) {
+      yPos = ensureSpace(doc, yPos, 70);
+      yPos = drawFacilityBlock(
+        doc,
+        facilityHT,
+        months,
+        yPos,
+        `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
+      );
+    }
   }
 
   // ---- Télésurveillance + Test Cyclique block ----
