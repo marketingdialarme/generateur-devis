@@ -562,8 +562,16 @@ export async function fetchAlarmProductsFromSheet(): Promise<{ products: AlarmPr
       return;
     }
 
-    if (!isNaN(price) && !ref.startsWith('XTO-')) {
-      products.push({ id: nextId, name: nom, price, ref, fiche });
+    if (!ref.startsWith('XTO-')) {
+      // Same lesson as the XTO fix above: a blank price (e.g. "Application",
+      // included free with no standalone sale price of its own) must not
+      // silently drop the product from the catalogue -- it's still a real,
+      // selectable line with a correctly-set Inclu/QTE, just priced at 0
+      // (client-reported: Application wasn't showing up in either the kit
+      // auto-fill or the "ajouter un produit" list). matchingCentral is
+      // guaranteed truthy here -- the branch above already returned for
+      // any non-XTO row without one.
+      products.push({ id: nextId, name: nom, price: isNaN(price) ? 0 : price, ref, fiche });
       nextId += 1;
     }
 
