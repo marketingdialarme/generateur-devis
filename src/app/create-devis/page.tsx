@@ -52,6 +52,7 @@ export default function CreateDevisPage() {
   // le formulaire pour l'instant.
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
+  const [comment, setComment] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [commercial, setCommercial] = useState('');
   // Set once the browser session resolves to a known conseiller (see the
@@ -128,6 +129,11 @@ export default function CreateDevisPage() {
   
   // Payment state
   const [alarmPaymentMonths, setAlarmPaymentMonths] = useState(48);
+  // Whether the user has manually changed "Facilité de paiement" separately
+  // from "Durée d'engagement" -- once true, changing the engagement
+  // duration no longer overrides the payment duration (client feedback:
+  // these are two different things, but should default to matching).
+  const [alarmPaymentMonthsManuallySet, setAlarmPaymentMonthsManuallySet] = useState(false);
   const [cameraPaymentMonths, setCameraPaymentMonths] = useState(48);
   
   // Rental mode state (local)
@@ -932,6 +938,7 @@ export default function CreateDevisPage() {
         clientAddress: clientAddress || undefined,
         clientPhone: clientPhone || undefined,
         clientEmail: clientEmail || undefined,
+        comment: comment || undefined,
         commercial: finalCommercial,
         isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
         materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
@@ -942,6 +949,7 @@ export default function CreateDevisPage() {
         simCardSelected: isAlarm ? simcardSelected : undefined,
         processingSelected: isAlarm ? processingSelected : undefined,
         paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
+        engagementMonths: isAlarm ? engagementMonths : undefined,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
@@ -1326,6 +1334,17 @@ export default function CreateDevisPage() {
                 placeholder="Rue, NPA, Ville"
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="comment-alarm">Commentaire</label>
+              <textarea
+                id="comment-alarm"
+                rows={2}
+                placeholder="Remarque affichée sur le devis (facultatif)"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
             <div className="form-group">
@@ -2288,20 +2307,33 @@ export default function CreateDevisPage() {
           onServiceClesChange={setServiceCles}
         />
 
-        {/* Durée d'engagement — pilote aussi le mode de paiement (client
-            feedback : un seul choix, plus de sélecteur séparé). Le prix
-            comptant reste toujours visible dans le récapitulatif, quelle
-            que soit la durée choisie ici. */}
+        {/* Durée d'engagement -- par défaut, garde aussi la facilité de
+            paiement synchronisée (comportement de base), mais un choix
+            manuel séparé de "Facilité de paiement" ci-dessous prend le pas
+            (client feedback : deux choses différentes, mais qui partent
+            de la même valeur par défaut). Le prix comptant reste toujours
+            visible dans le récapitulatif, quelle que soit la durée choisie
+            ici. */}
         {!alarmRentalMode && (
-          <PaymentSelector
-            selectedMonths={engagementMonths}
-            onSelect={(months) => {
-              setEngagementMonths(months);
-              setAlarmPaymentMonths(months);
-            }}
-            label="Durée d'engagement"
-            excludeComptant
-          />
+          <>
+            <PaymentSelector
+              selectedMonths={engagementMonths}
+              onSelect={(months) => {
+                setEngagementMonths(months);
+                if (!alarmPaymentMonthsManuallySet) setAlarmPaymentMonths(months);
+              }}
+              label="Durée d'engagement"
+              excludeComptant
+            />
+            <PaymentSelector
+              selectedMonths={alarmPaymentMonths}
+              onSelect={(months) => {
+                setAlarmPaymentMonths(months);
+                setAlarmPaymentMonthsManuallySet(true);
+              }}
+              label="Facilité de paiement"
+            />
+          </>
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
@@ -2454,6 +2486,17 @@ export default function CreateDevisPage() {
                 placeholder="Rue, NPA, Ville"
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="comment-camera">Commentaire</label>
+              <textarea
+                id="comment-camera"
+                rows={2}
+                placeholder="Remarque affichée sur le devis (facultatif)"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
             <div className="form-group">
@@ -3018,6 +3061,17 @@ export default function CreateDevisPage() {
                 onChange={(e) => setClientAddress(e.target.value)}
               />
             </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="comment-fog">Commentaire</label>
+              <textarea
+                id="comment-fog"
+                rows={2}
+                placeholder="Remarque affichée sur le devis (facultatif)"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+            </div>
             <div className="form-group">
               <label htmlFor="propertyType-fog">Type de bien</label>
               <CustomSelect 
@@ -3543,6 +3597,17 @@ export default function CreateDevisPage() {
                 placeholder="Rue, NPA, Ville"
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="comment-visio">Commentaire</label>
+              <textarea
+                id="comment-visio"
+                rows={2}
+                placeholder="Remarque affichée sur le devis (facultatif)"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
             <div className="form-group">

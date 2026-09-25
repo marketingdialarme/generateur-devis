@@ -239,3 +239,59 @@ describe('Visiophone PDF content', () => {
     expect(pdf).not.toContain('OFFERT');
   });
 });
+
+describe('Alarm PDF — comment block (director feedback)', () => {
+  it('shows the Commentaire block with its text when filled in', async () => {
+    const pdf = await renderText(alarmFixture({ comment: 'Client très pressé, prévoir un RDV rapide' }).options);
+    expect(pdf).toContain('Commentaire');
+    expect(pdf).toContain('pressé'); // exact word present, confirms the free text made it through
+  });
+
+  it('omits the Commentaire block entirely when left empty', async () => {
+    const pdf = await renderText(alarmFixture({ comment: '' }).options);
+    expect(pdf).not.toContain('Commentaire');
+  });
+});
+
+describe('Alarm PDF — facilité de paiement sentence and block order (director feedback)', () => {
+  it('uses the updated sentence mentioning installation and carte SIM', async () => {
+    const pdf = await renderText(alarmFixture().options);
+    expect(pdf).toContain('et installation hors frais de dossier et carte SIM');
+  });
+
+  it('places the facilité de paiement block before the surveillance block', async () => {
+    const pdf = await renderText(alarmFixture().options);
+    const facilityIndex = pdf.indexOf('et installation hors frais de dossier et carte SIM');
+    const surveillanceIndex = pdf.indexOf('SURVEILLANCE');
+    expect(facilityIndex).toBeGreaterThan(-1);
+    expect(surveillanceIndex).toBeGreaterThan(-1);
+    expect(facilityIndex).toBeLessThan(surveillanceIndex);
+  });
+
+  it('hides the facilité de paiement block when payment months is 0', async () => {
+    const pdf = await renderText(alarmFixture({ paymentMonths: 0 }).options);
+    expect(pdf).not.toContain('hors frais de dossier et carte SIM');
+  });
+});
+
+describe('Alarm PDF — durée d\'engagement vs facilité de paiement, decoupled (director feedback)', () => {
+  it('uses engagementMonths for the surveillance contract duration and paymentMonths for the facility duration, independently', async () => {
+    const pdf = await renderText(alarmFixture({ engagementMonths: 36, paymentMonths: 48 }).options);
+    expect(pdf).toContain('contractuelle de 36 mois'); // surveillance block
+    expect(pdf).toContain('sur 48 mois'); // facilité de paiement block
+  });
+
+  it('falls back to paymentMonths for the surveillance duration when engagementMonths is not provided', async () => {
+    const pdf = await renderText(alarmFixture({ paymentMonths: 24, engagementMonths: undefined }).options);
+    expect(pdf).toContain('contractuelle de 24 mois');
+  });
+});
+
+describe('Alarm PDF — italic note under Interventions gratuites (director feedback)', () => {
+  it('prints the clarifying note when Interventions gratuites is selected (fixture default)', async () => {
+    const pdf = await renderText(alarmFixture().options);
+    expect(pdf).toContain('Interventions gratuites');
+    expect(pdf).toContain('175.- HT');
+    expect(pdf).toContain('livraison de cl');
+  });
+});
