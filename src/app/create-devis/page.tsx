@@ -52,7 +52,9 @@ export default function CreateDevisPage() {
   // le formulaire pour l'instant.
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
-  const [clientAddress, setClientAddress] = useState('');
+  const [comment, setComment] = useState('');
+  const [clientStreet, setClientStreet] = useState('');
+  const [clientCity, setClientCity] = useState(''); // "NPA et Ville"
   const [commercial, setCommercial] = useState('');
   // Set once the browser session resolves to a known conseiller (see the
   // pre-fill effect below) -- when true, the Commercial field is hidden
@@ -128,6 +130,11 @@ export default function CreateDevisPage() {
   
   // Payment state
   const [alarmPaymentMonths, setAlarmPaymentMonths] = useState(48);
+  // Whether the user has manually changed "Facilité de paiement" separately
+  // from "Durée d'engagement" -- once true, changing the engagement
+  // duration no longer overrides the payment duration (client feedback:
+  // these are two different things, but should default to matching).
+  const [alarmPaymentMonthsManuallySet, setAlarmPaymentMonthsManuallySet] = useState(false);
   const [cameraPaymentMonths, setCameraPaymentMonths] = useState(48);
   
   // Rental mode state (local)
@@ -341,11 +348,10 @@ export default function CreateDevisPage() {
   // preview cards in the "Sélectionner un kit de base" modal, straight from
   // the Sheet's kit contents — replaces hardcoded descriptions that used to
   // drift from reality (client feedback: kit contents must match the sheet
-  // exactly). Centrale and Application are omitted, matching the wording
-  // convention the old hardcoded text already used.
+  // exactly, including Application -- it's a real, visible line on the
+  // PDF, so it should show here too for consistency).
   const kitSummaryLines = (kitKey: string): string[] =>
     (alarmKits[kitKey] || [])
-      .filter(item => !item.ref.endsWith('-APP'))
       .map(item => {
         const product = alarmCatalog.find(p => (p as any).ref === item.ref);
         return `${item.quantity} ${product?.name || item.ref}`;
@@ -929,9 +935,11 @@ export default function CreateDevisPage() {
       const generatedPdf = await generatePDF({
         type: currentTab,
         clientName: finalClientName,
-        clientAddress: clientAddress || undefined,
+        clientStreet: clientStreet || undefined,
+        clientCity: clientCity || undefined,
         clientPhone: clientPhone || undefined,
         clientEmail: clientEmail || undefined,
+        comment: comment || undefined,
         commercial: finalCommercial,
         isRental: isAlarm ? alarmRentalMode : isCamera ? cameraRentalMode : false,
         materialLines: isAlarm ? alarmMaterialLines : isCamera ? cameraMaterialLines : isFog ? fogLines : visiophoLines,
@@ -942,6 +950,7 @@ export default function CreateDevisPage() {
         simCardSelected: isAlarm ? simcardSelected : undefined,
         processingSelected: isAlarm ? processingSelected : undefined,
         paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
+        engagementMonths: isAlarm ? engagementMonths : undefined,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
@@ -1319,13 +1328,23 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="clientAddress-alarm">Adresse</label>
+              <label htmlFor="clientStreet-alarm">Rue</label>
               <input
                 type="text"
-                id="clientAddress-alarm"
-                placeholder="Rue, NPA, Ville"
-                value={clientAddress}
-                onChange={(e) => setClientAddress(e.target.value)}
+                id="clientStreet-alarm"
+                placeholder="Rue et numéro"
+                value={clientStreet}
+                onChange={(e) => setClientStreet(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientCity-alarm">NPA et Ville</label>
+              <input
+                type="text"
+                id="clientCity-alarm"
+                placeholder="1000 Lausanne"
+                value={clientCity}
+                onChange={(e) => setClientCity(e.target.value)}
               />
             </div>
             <div className="form-group">
@@ -2292,20 +2311,33 @@ export default function CreateDevisPage() {
           onServiceClesChange={setServiceCles}
         />
 
-        {/* Durée d'engagement — pilote aussi le mode de paiement (client
-            feedback : un seul choix, plus de sélecteur séparé). Le prix
-            comptant reste toujours visible dans le récapitulatif, quelle
-            que soit la durée choisie ici. */}
+        {/* Durée d'engagement -- par défaut, garde aussi la facilité de
+            paiement synchronisée (comportement de base), mais un choix
+            manuel séparé de "Facilité de paiement" ci-dessous prend le pas
+            (client feedback : deux choses différentes, mais qui partent
+            de la même valeur par défaut). Le prix comptant reste toujours
+            visible dans le récapitulatif, quelle que soit la durée choisie
+            ici. */}
         {!alarmRentalMode && (
-          <PaymentSelector
-            selectedMonths={engagementMonths}
-            onSelect={(months) => {
-              setEngagementMonths(months);
-              setAlarmPaymentMonths(months);
-            }}
-            label="Durée d'engagement"
-            excludeComptant
-          />
+          <>
+            <PaymentSelector
+              selectedMonths={engagementMonths}
+              onSelect={(months) => {
+                setEngagementMonths(months);
+                if (!alarmPaymentMonthsManuallySet) setAlarmPaymentMonths(months);
+              }}
+              label="💍 Durée d'engagement"
+              excludeComptant
+            />
+            <PaymentSelector
+              selectedMonths={alarmPaymentMonths}
+              onSelect={(months) => {
+                setAlarmPaymentMonths(months);
+                setAlarmPaymentMonthsManuallySet(true);
+              }}
+              label="Facilité de paiement"
+            />
+          </>
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
@@ -2327,6 +2359,19 @@ export default function CreateDevisPage() {
             </div>
           </div>
                 )}
+
+        {/* Commentaire */}
+        <div className="quote-section">
+          <h3>💬 Commentaire</h3>
+          <textarea
+            id="comment-alarm"
+            rows={3}
+            placeholder="Ex : Tirage de câble par le client"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
 
         {/* Summary */}
         <div className="quote-summary">
@@ -2451,13 +2496,23 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="clientAddress-camera">Adresse</label>
+              <label htmlFor="clientStreet-camera">Rue</label>
               <input
                 type="text"
-                id="clientAddress-camera"
-                placeholder="Rue, NPA, Ville"
-                value={clientAddress}
-                onChange={(e) => setClientAddress(e.target.value)}
+                id="clientStreet-camera"
+                placeholder="Rue et numéro"
+                value={clientStreet}
+                onChange={(e) => setClientStreet(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientCity-camera">NPA et Ville</label>
+              <input
+                type="text"
+                id="clientCity-camera"
+                placeholder="1000 Lausanne"
+                value={clientCity}
+                onChange={(e) => setClientCity(e.target.value)}
               />
             </div>
             <div className="form-group">
@@ -2880,7 +2935,7 @@ export default function CreateDevisPage() {
           <PaymentSelector
             selectedMonths={cameraPaymentMonths}
             onSelect={setCameraPaymentMonths}
-            label="Durée d'engagement"
+            label="💍 Durée d'engagement"
             excludeComptant={true}
           />
         )}
@@ -2904,6 +2959,19 @@ export default function CreateDevisPage() {
             </div>
           </div>
         )}
+
+        {/* Commentaire */}
+        <div className="quote-section">
+          <h3>💬 Commentaire</h3>
+          <textarea
+            id="comment-camera"
+            rows={3}
+            placeholder="Ex : Tirage de câble par le client"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
 
         {/* Summary */}
         <div className="quote-summary">
@@ -3013,13 +3081,23 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="clientAddress-fog">Adresse</label>
+              <label htmlFor="clientStreet-fog">Rue</label>
               <input
                 type="text"
-                id="clientAddress-fog"
-                placeholder="Rue, NPA, Ville"
-                value={clientAddress}
-                onChange={(e) => setClientAddress(e.target.value)}
+                id="clientStreet-fog"
+                placeholder="Rue et numéro"
+                value={clientStreet}
+                onChange={(e) => setClientStreet(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientCity-fog">NPA et Ville</label>
+              <input
+                type="text"
+                id="clientCity-fog"
+                placeholder="1000 Lausanne"
+                value={clientCity}
+                onChange={(e) => setClientCity(e.target.value)}
               />
             </div>
             <div className="form-group">
@@ -3436,9 +3514,22 @@ export default function CreateDevisPage() {
         <PaymentSelector
           selectedMonths={fogPaymentMonths}
           onSelect={setFogPaymentMonths}
-          label="Durée d'engagement"
+          label="💍 Durée d'engagement"
           excludeComptant={true}
         />
+
+        {/* Commentaire */}
+        <div className="quote-section">
+          <h3>💬 Commentaire</h3>
+          <textarea
+            id="comment-fog"
+            rows={3}
+            placeholder="Ex : Tirage de câble par le client"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
 
         {/* Summary — construit sur le meme modele qu'Alarme/Cameras */}
         <div className="quote-summary">
@@ -3540,13 +3631,23 @@ export default function CreateDevisPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="clientAddress-visio">Adresse</label>
+              <label htmlFor="clientStreet-visio">Rue</label>
               <input
                 type="text"
-                id="clientAddress-visio"
-                placeholder="Rue, NPA, Ville"
-                value={clientAddress}
-                onChange={(e) => setClientAddress(e.target.value)}
+                id="clientStreet-visio"
+                placeholder="Rue et numéro"
+                value={clientStreet}
+                onChange={(e) => setClientStreet(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="clientCity-visio">NPA et Ville</label>
+              <input
+                type="text"
+                id="clientCity-visio"
+                placeholder="1000 Lausanne"
+                value={clientCity}
+                onChange={(e) => setClientCity(e.target.value)}
               />
             </div>
             <div className="form-group">
@@ -3754,9 +3855,22 @@ export default function CreateDevisPage() {
         <PaymentSelector
           selectedMonths={visiophoPaymentMonths}
           onSelect={setVisiophoPaymentMonths}
-          label="Durée d'engagement"
+          label="💍 Durée d'engagement"
           excludeComptant={true}
         />
+
+        {/* Commentaire */}
+        <div className="quote-section">
+          <h3>💬 Commentaire</h3>
+          <textarea
+            id="comment-visio"
+            rows={3}
+            placeholder="Ex : Tirage de câble par le client"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
 
         {/* Summary — construit sur le meme modele qu'Alarme/Cameras/Fog */}
         <div className="quote-summary">

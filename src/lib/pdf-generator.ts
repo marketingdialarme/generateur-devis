@@ -20,7 +20,8 @@ import { getCommercialInfo } from './config';
 
 export interface QuoteInfo {
   clientName: string;
-  clientAddress?: string;
+  clientStreet?: string;
+  clientCity?: string;
   clientPhone?: string;
   clientEmail?: string;
   commercial: string;
@@ -33,9 +34,13 @@ export interface QuoteInfo {
 export interface PDFGenerationOptions {
   type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   clientName: string;
-  clientAddress?: string;
+  clientStreet?: string;
+  clientCity?: string;
   clientPhone?: string;
   clientEmail?: string;
+  /** Free-text comment, shown on the PDF (all 4 categories) only when
+   * filled in. */
+  comment?: string;
   commercial: string;
   isRental: boolean;
   materialLines: ProductLineData[];
@@ -81,6 +86,12 @@ export interface PDFGenerationOptions {
   /** Alarm: whether "Frais de dossier" is included (controls whether its row is shown). Defaults to true. */
   processingSelected?: boolean;
   paymentMonths?: number;
+  /** Alarm: surveillance contract duration, independent from paymentMonths
+   * (client feedback: durée d'engagement and facilité de paiement default
+   * to the same value but can be set separately). Falls back to
+   * paymentMonths when not provided, so callers that don't distinguish
+   * the two keep their previous behavior. */
+  engagementMonths?: number;
   /**
    * Optional overrides to keep quote number consistent across:
    * - PDF header
@@ -181,7 +192,8 @@ export async function generateQuotePDF(
   // Create PDF header
   await createPDFHeader(doc, {
     clientName: options.clientName,
-    clientAddress: options.clientAddress,
+    clientStreet: options.clientStreet,
+    clientCity: options.clientCity,
     clientPhone: options.clientPhone,
     clientEmail: options.clientEmail,
     commercial: options.commercial,
@@ -212,10 +224,36 @@ export async function generateQuotePDF(
     yPos = createVisioPDFSections(doc, options, yPos);
   }
 
+  // Comment block -- shared across all 4 categories, shown only when
+  // filled in (director feedback).
+  if (options.comment && options.comment.trim()) {
+    yPos = drawCommentBlock(doc, options.comment.trim(), yPos);
+  }
+
   // Create footer
   createPDFFooter(doc, options.clientName);
 
   return doc.output('blob');
+}
+
+function drawCommentBlock(doc: jsPDF, comment: string, yPos: number): number {
+  const maxWidth = RIGHT - LEFT - 12;
+  const lines = doc.splitTextToSize(comment, maxWidth) as string[];
+  const boxH = 22 + lines.length * 11;
+  yPos = ensureSpace(doc, yPos + 6, boxH + 10);
+
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, 4, boxH, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Commentaire', LEFT + 12, yPos + 14);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  lines.forEach((line, i) => {
+    doc.text(line, LEFT + 12, yPos + 26 + i * 11);
+  });
+  return yPos + boxH + 4;
 }
 
 // ============================================
@@ -297,21 +335,26 @@ async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.text("A l'attention de :", 40, 90);
   doc.setFont('helvetica', 'bold');
   doc.text(info.clientName, 40, 103);
-  // Address/phone/email -- each shown only if filled in on the form, in
-  // that order, tightly spaced under the (bold) client name.
+  // Rue / NPA Ville / mail / N° -- each shown only if filled in on the
+  // form, in that order, tightly spaced under the (bold) client name
+  // (client-requested order).
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   let clientDetailY = 114;
-  if (info.clientAddress) {
-    doc.text(info.clientAddress, 40, clientDetailY);
+  if (info.clientStreet) {
+    doc.text(info.clientStreet, 40, clientDetailY);
     clientDetailY += 11;
   }
-  if (info.clientPhone) {
-    doc.text(info.clientPhone, 40, clientDetailY);
+  if (info.clientCity) {
+    doc.text(info.clientCity, 40, clientDetailY);
     clientDetailY += 11;
   }
   if (info.clientEmail) {
     doc.text(info.clientEmail, 40, clientDetailY);
+    clientDetailY += 11;
+  }
+  if (info.clientPhone) {
+    doc.text(info.clientPhone, 40, clientDetailY);
     clientDetailY += 11;
   }
 
@@ -377,6 +420,7 @@ const C_YELLOW_LIGHT: [number, number, number] = [255, 248, 196]; // utility row
 const C_GREEN: [number, number, number] = [0, 140, 70];
 const C_ORANGE: [number, number, number] = [204, 102, 0];
 const C_GREY_ROW: [number, number, number] = [245, 245, 245];
+const C_GREY_TEXT: [number, number, number] = [89, 89, 89];
 
 const LEFT = 40;
 const RIGHT = 555; // 40 + 515
@@ -401,6 +445,7 @@ function createAlarmPDFSections(
 ): number {
   const alarmTotals = options.totals as AlarmTotals;
   const months = options.paymentMonths ?? 0;
+  const engagementMonths = options.engagementMonths ?? months;
 
   // ---- Build unified material table rows ----
   const rows: TableRow[] = [];
@@ -512,19 +557,7 @@ function createAlarmPDFSections(
   yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
   yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos, reductions);
 
-  // ---- Télésurveillance + Test Cyclique block ----
-  if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
-    yPos = ensureSpace(doc, yPos, 75);
-    yPos = drawSurveillanceBlock(doc, options.services, months, yPos);
-  }
-
-  // ---- Options block ----
-  if (options.options) {
-    yPos = ensureSpace(doc, yPos, 60);
-    yPos = drawOptionsBlock(doc, options.options, yPos);
-  }
-
-  // ---- Facilité de paiement block ----
+  // ---- Facilité de paiement block (moved before surveillance, director feedback) ----
   if (!options.isRental && months > 0) {
     // Sheet formula: ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
     // "Total après rabais" is the summary's net figure, réductions included.
@@ -534,8 +567,31 @@ function createAlarmPDFSections(
       alarmTotals.adminFees.simCard,
       months
     );
-    yPos = ensureSpace(doc, yPos, 70);
-    yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+    // Only show when there's actually something to finance -- a valid
+    // duration with a 0 CHF computed amount (e.g. no supplementary
+    // material) shouldn't display the block at all (director feedback).
+    if (facilityHT > 0) {
+      yPos = ensureSpace(doc, yPos, 70);
+      yPos = drawFacilityBlock(
+        doc,
+        facilityHT,
+        months,
+        yPos,
+        `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
+      );
+    }
+  }
+
+  // ---- Télésurveillance + Test Cyclique block ----
+  if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
+    yPos = ensureSpace(doc, yPos, 75);
+    yPos = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
+  }
+
+  // ---- Options block ----
+  if (options.options) {
+    yPos = ensureSpace(doc, yPos, 60);
+    yPos = drawOptionsBlock(doc, options.options, yPos);
   }
 
   // Uninstall notice for rental mode
@@ -774,16 +830,22 @@ function drawSurveillanceBlock(
   drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
   yPos += boxH + 4;
 
-  // Mensualité text (amount = surveillance HT, duration = payment months)
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
-  doc.text(
-    `La mensualité de CHF ${surveillanceHT.toFixed(0)}.- HT est fixée et non indexable pendant la durée contractuelle de ${months > 0 ? months : 48} mois.`,
-    LEFT,
-    yPos + 8
-  );
-  return yPos + 16;
+  // Mensualité text (amount = surveillance HT, duration = payment months) --
+  // only when there's actually a monthly amount to speak of (client
+  // feedback: "CHF 0.- HT" made no sense when surveillance is offered or
+  // not selected but the block still renders for test cyclique).
+  if (surveillanceHT > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text(
+      `La mensualité de CHF ${surveillanceHT.toFixed(0)}.- HT est fixée et non indexable pendant la durée contractuelle de ${months > 0 ? months : 48} mois.`,
+      LEFT,
+      yPos + 8
+    );
+    yPos += 16;
+  }
+  return yPos;
 }
 
 function drawOptionsBlock(
@@ -791,22 +853,45 @@ function drawOptionsBlock(
   options: NonNullable<PDFGenerationOptions['options']>,
   yPos: number
 ): number {
-  const items: string[] = [];
-  if (options.interventionsGratuites) items.push('Interventions gratuites & illimitées des agents');
+  const maxWidth = RIGHT - LEFT - 12;
+  const items: { text: string; noteLines?: string[] }[] = [];
+  if (options.interventionsGratuites) {
+    // Director feedback: a note right below this specific item, in italic,
+    // clarifying what "gratuites & illimitées" does NOT cover.
+    const noteLines = doc.splitTextToSize(
+      "Toutes les interventions ne résultant pas d'un problème de sécurité ne sont pas incluses (Ex : livraison de clés, ouverture sur demande, oubli de code d'alarme...) et seront facturées CHF 175.- HT.",
+      maxWidth
+    ) as string[];
+    items.push({ text: 'Interventions gratuites & illimitées des agents', noteLines });
+  }
   if (options.interventionsAnnee)
-    items.push(`${options.interventionsQty || 1} intervention(s) par année des agents`);
-  if (options.serviceCles) items.push('Service des clés inclus');
+    items.push({ text: `${options.interventionsQty || 1} intervention(s) par année des agents` });
+  if (options.serviceCles) items.push({ text: 'Service des clés inclus' });
   if (items.length === 0) return yPos;
 
   yPos += 6;
-  const boxH = items.length * 12 + 8;
+  const lineH = 12;
+  const noteLineH = 10;
+  const boxH = items.reduce((h, it) => h + lineH + (it.noteLines?.length || 0) * noteLineH, 8);
   doc.setFillColor(100, 100, 100);
   doc.rect(LEFT, yPos, 4, boxH, 'F');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
-  items.forEach((it, i) => {
-    doc.text(it, LEFT + 12, yPos + 12 + i * 12);
+  let y = yPos + 12;
+  items.forEach((it) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text(it.text, LEFT + 12, y);
+    y += lineH;
+    if (it.noteLines) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C_GREY_TEXT);
+      it.noteLines.forEach((line) => {
+        doc.text(line, LEFT + 12, y);
+        y += noteLineH;
+      });
+      doc.setTextColor(0, 0, 0);
+    }
   });
   return yPos + boxH + 4;
 }

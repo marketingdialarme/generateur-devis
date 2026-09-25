@@ -22,6 +22,9 @@ export function alarmFixture(opts: {
   surveillancePrice?: number;
   /** Adds one offered supplementary-material (installationLines) line. */
   offeredSupplementary?: boolean;
+  comment?: string;
+  paymentMonths?: number;
+  engagementMonths?: number;
 } = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
   const p = (ref: string, name: string, price: number): Product => ({ id: nextId(), ref, name, price } as unknown as Product);
@@ -75,7 +78,9 @@ export function alarmFixture(opts: {
     simCardSelected,
     services,
     options: { interventionsGratuites: true, interventionsAnnee: false, serviceCles: true },
-    paymentMonths: 48,
+    paymentMonths: opts.paymentMonths ?? 48,
+    engagementMonths: opts.engagementMonths,
+    comment: opts.comment,
   };
   return { material, install, totals, options };
 }
