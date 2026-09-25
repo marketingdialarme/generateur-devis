@@ -1567,11 +1567,15 @@ export default function CreateDevisPage() {
                         const ref = (product as any).ref as string | undefined;
                         // Hide "Autre" from regular list
                         if (product.isCustom) return false;
-                        // Application is an auto-added base-kit item: show it only on
-                        // the line that already holds it, never as a manual option
-                        // (avoids duplicate 0 CHF rows). Generic over any centrale's
-                        // "-APP" ref, not just Titane/Jablotron's.
-                        if (ref?.endsWith('-APP')) return (line.product as any)?.ref === ref;
+                        // Application is an auto-added base-kit item, but should
+                        // still be manually selectable (e.g. centrale seule, no
+                        // kit applied) -- just not duplicated across two lines.
+                        // Generic over any centrale's "-APP" ref, not just
+                        // Titane/Jablotron's.
+                        if (ref?.endsWith('-APP')) {
+                          if ((line.product as any)?.ref === ref) return true;
+                          return !alarmMaterialLines.some(l => l.id !== line.id && (l.product as any)?.ref === ref);
+                        }
                         // If a central is selected, filter to that central's refs only
                         const activeCentral = alarmCentrals.find(c => c.name.toLowerCase() === selectedCentral);
                         if (activeCentral) return ref?.startsWith(`${activeCentral.prefix}-`) ?? true;
