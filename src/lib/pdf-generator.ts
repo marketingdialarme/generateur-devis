@@ -830,16 +830,22 @@ function drawSurveillanceBlock(
   drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
   yPos += boxH + 4;
 
-  // Mensualité text (amount = surveillance HT, duration = payment months)
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
-  doc.text(
-    `La mensualité de CHF ${surveillanceHT.toFixed(0)}.- HT est fixée et non indexable pendant la durée contractuelle de ${months > 0 ? months : 48} mois.`,
-    LEFT,
-    yPos + 8
-  );
-  return yPos + 16;
+  // Mensualité text (amount = surveillance HT, duration = payment months) --
+  // only when there's actually a monthly amount to speak of (client
+  // feedback: "CHF 0.- HT" made no sense when surveillance is offered or
+  // not selected but the block still renders for test cyclique).
+  if (surveillanceHT > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text(
+      `La mensualité de CHF ${surveillanceHT.toFixed(0)}.- HT est fixée et non indexable pendant la durée contractuelle de ${months > 0 ? months : 48} mois.`,
+      LEFT,
+      yPos + 8
+    );
+    yPos += 16;
+  }
+  return yPos;
 }
 
 function drawOptionsBlock(

@@ -348,11 +348,10 @@ export default function CreateDevisPage() {
   // preview cards in the "Sélectionner un kit de base" modal, straight from
   // the Sheet's kit contents — replaces hardcoded descriptions that used to
   // drift from reality (client feedback: kit contents must match the sheet
-  // exactly). Centrale and Application are omitted, matching the wording
-  // convention the old hardcoded text already used.
+  // exactly, including Application -- it's a real, visible line on the
+  // PDF, so it should show here too for consistency).
   const kitSummaryLines = (kitKey: string): string[] =>
     (alarmKits[kitKey] || [])
-      .filter(item => !item.ref.endsWith('-APP'))
       .map(item => {
         const product = alarmCatalog.find(p => (p as any).ref === item.ref);
         return `${item.quantity} ${product?.name || item.ref}`;
