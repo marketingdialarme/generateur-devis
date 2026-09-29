@@ -136,6 +136,11 @@ export default function CreateDevisPage() {
   // these are two different things, but should default to matching).
   const [alarmPaymentMonthsManuallySet, setAlarmPaymentMonthsManuallySet] = useState(false);
   const [cameraPaymentMonths, setCameraPaymentMonths] = useState(48);
+  // Facilité de paiement, decoupled from Durée d'engagement (client
+  // feedback: same as Alarme, wanted for every category). Defaults to
+  // following the engagement duration until manually changed.
+  const [cameraFacilityMonths, setCameraFacilityMonths] = useState(48);
+  const [cameraFacilityMonthsManuallySet, setCameraFacilityMonthsManuallySet] = useState(false);
   
   // Rental mode state (local)
   const [alarmRentalMode, setAlarmRentalMode] = useState(false);
@@ -266,6 +271,8 @@ export default function CreateDevisPage() {
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
   const [fogSimCardSelected, setFogSimCardSelected] = useState(true); // Whether SIM card is selected
   const [fogPaymentMonths, setFogPaymentMonths] = useState(48);
+  const [fogFacilityMonths, setFogFacilityMonths] = useState(48);
+  const [fogFacilityMonthsManuallySet, setFogFacilityMonthsManuallySet] = useState(false);
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
@@ -279,6 +286,18 @@ export default function CreateDevisPage() {
   const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
+  const [visiophoFacilityMonths, setVisiophoFacilityMonths] = useState(48);
+  const [visiophoFacilityMonthsManuallySet, setVisiophoFacilityMonthsManuallySet] = useState(false);
+  // "Autres" tab (was "Visiophone") now offers a choice of catalog --
+  // Visiophone (existing) or Contrôle d'accès (new, client request: a
+  // director asked for an access-control quote with no category for it).
+  // Same Sheet shape as Visiophone (Nom/PRIX/Fiche/Inclut kit de base),
+  // read via its own fetch/cache/route mirroring Visiophone's exactly.
+  const [autresSubType, setAutresSubType] = useState<'visiophone' | 'controle-acces'>('visiophone');
+  const [controleAccesCatalog, setControleAccesCatalog] = useState<VisiophoProduct[]>([]);
+  const [controleAccesDefaultKit, setControleAccesDefaultKit] = useState<{ name: string; quantity: number }[]>([]);
+  const [controleAccesCatalogError, setControleAccesCatalogError] = useState<string | null>(null);
+  const [controleAccesInstallationPrice, setControleAccesInstallationPrice] = useState(690);
   
   // Auto-detect selected central from product lines
   const selectedCentral = useMemo(() => {
@@ -533,14 +552,19 @@ export default function CreateDevisPage() {
   // order, not fixed — see fetchVisiophoneProductsFromSheet. Depends on
   // visiophoneCatalog so this still finds the right products once the live
   // fetch replaces the static fallback the state started from.
-  // Initialize Visiophone kit de base on mount -- now driven by the Sheet's
-  // "Inclut kit de base"/"Quantite kit de base" columns (visiophoDefaultKit,
-  // keyed by exact Nom since there's no REF column here), not a hardcoded
-  // fuzzy name match (client feedback: easier to adjust from the Sheet).
+  // Initialize Visiophone/Contrôle d'accès kit de base on mount or on
+  // switching sub-type -- driven by the Sheet's "Inclut kit de
+  // base"/"Quantite kit de base" columns (keyed by exact Nom since there's
+  // no REF column here), not a hardcoded fuzzy name match (client
+  // feedback: easier to adjust from the Sheet).
+  const activeAutresCatalog = autresSubType === 'controle-acces' ? controleAccesCatalog : visiophoneCatalog;
+  const activeAutresDefaultKit = autresSubType === 'controle-acces' ? controleAccesDefaultKit : visiophoDefaultKit;
+  const activeAutresInstallationPrice = autresSubType === 'controle-acces' ? controleAccesInstallationPrice : visiophoInstallationPrice;
+  const activeAutresCatalogError = autresSubType === 'controle-acces' ? controleAccesCatalogError : visiophoneCatalogError;
   useEffect(() => {
-    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0 && visiophoDefaultKit.length > 0) {
-      const newLines: ProductLineData[] = visiophoDefaultKit.map((item, index) => {
-        const product = visiophoneCatalog.find(p => p.name === item.name);
+    if (visiophoLines.length === 0 && activeAutresCatalog.length > 0 && activeAutresDefaultKit.length > 0) {
+      const newLines: ProductLineData[] = activeAutresDefaultKit.map((item, index) => {
+        const product = activeAutresCatalog.find(p => p.name === item.name);
         return {
           id: Date.now() + index,
           product: product || null,
@@ -551,7 +575,7 @@ export default function CreateDevisPage() {
       
       setVisiophoLines(newLines);
     }
-  }, [visiophoneCatalog, visiophoDefaultKit]);
+  }, [activeAutresCatalog, activeAutresDefaultKit, visiophoLines.length]);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -645,8 +669,8 @@ export default function CreateDevisPage() {
     const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
 
     let monthly: { totalHT: number; totalTTC: number } | undefined;
-    if (visiophoPaymentMonths > 0) {
-      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, 0, 0, visiophoPaymentMonths));
+    if (visiophoFacilityMonths > 0) {
+      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, 0, 0, visiophoFacilityMonths));
       monthly = { totalHT: monthlyHT, totalTTC: roundToFiveCents(monthlyHT * (1 + TVA_RATE)) };
     }
 
@@ -654,7 +678,7 @@ export default function CreateDevisPage() {
   }, [
     visiophoLines,
     visiophoInstallationPrice,
-    visiophoPaymentMonths
+    visiophoFacilityMonths
   ]);
       
   const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
@@ -738,6 +762,31 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
         setVisiophoneCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Visiophone'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/controle-acces')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Contrôle d\'accès vide ou invalide');
+        }
+        setControleAccesCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setControleAccesCatalogError(null);
+        if (typeof result.data.installationPrice === 'number') {
+          setControleAccesInstallationPrice(result.data.installationPrice);
+        }
+        setControleAccesDefaultKit(result.data.defaultKit || []);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Contrôle d\'accès catalog from Google Sheet:', error);
+        setControleAccesCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Contrôle d\'accès'
         );
       });
   }, []);
@@ -949,9 +998,9 @@ export default function CreateDevisPage() {
         totals,
         simCardSelected: isAlarm ? simcardSelected : undefined,
         processingSelected: isAlarm ? processingSelected : undefined,
-        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
-        engagementMonths: isAlarm ? engagementMonths : undefined,
-        quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
+        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraFacilityMonths : isFog ? fogFacilityMonths : visiophoFacilityMonths,
+        engagementMonths: isAlarm ? engagementMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
+        quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? (autresSubType === 'controle-acces' ? 'CTRLACCES' : 'VISIO') : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
           processingFee: fogProcessingFee,
@@ -1259,7 +1308,7 @@ export default function CreateDevisPage() {
           onClick={() => setCurrentTab('visiophone')}
         >
           <DoorOpen size={28} strokeWidth={1.75} />
-          <span>Visiophone</span>
+          <span>Autres</span>
         </button>
       </div>
 
@@ -2409,7 +2458,7 @@ export default function CreateDevisPage() {
           {((!alarmRentalMode && alarmPaymentMonths > 0) || alarmRentalMode) && alarmTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualité: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois{!alarmRentalMode ? ` pendant ${alarmPaymentMonths} mois` : ''}
+                Mensualité: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois{!alarmRentalMode ? ` pendant ${alarmPaymentMonths} mois` : ''}
               </strong>
             </div>
           )}
@@ -2928,16 +2977,30 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Durée d'engagement / mode de paiement — un seul choix (comme pour
-            l'Alarme). Ici les deux utilisaient deja le meme etat
-            (cameraPaymentMonths), il suffisait de retirer le select redondant. */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). Facilite de paiement suit la duree d'engagement
+            par defaut, modifiable independamment ensuite. */}
         {!cameraRentalMode && (
-          <PaymentSelector
-            selectedMonths={cameraPaymentMonths}
-            onSelect={setCameraPaymentMonths}
-            label="💍 Durée d'engagement"
-            excludeComptant={true}
-          />
+          <>
+            <PaymentSelector
+              selectedMonths={cameraPaymentMonths}
+              onSelect={(months) => {
+                setCameraPaymentMonths(months);
+                if (!cameraFacilityMonthsManuallySet) setCameraFacilityMonths(months);
+              }}
+              label="💍 Durée d'engagement"
+              excludeComptant={true}
+            />
+            <PaymentSelector
+              selectedMonths={cameraFacilityMonths}
+              onSelect={(months) => {
+                setCameraFacilityMonths(months);
+                setCameraFacilityMonthsManuallySet(true);
+              }}
+              label="Facilité de paiement"
+            />
+          </>
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
@@ -3007,7 +3070,7 @@ export default function CreateDevisPage() {
           {!cameraRentalMode && cameraPaymentMonths > 0 && cameraTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
+                Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
               </strong>
                   </div>
                 )}
@@ -3509,13 +3572,25 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Durée d'engagement / mode de paiement — meme etat deja partage,
-            select brut redondant retire (comme Cameras). */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). */}
         <PaymentSelector
           selectedMonths={fogPaymentMonths}
-          onSelect={setFogPaymentMonths}
+          onSelect={(months) => {
+            setFogPaymentMonths(months);
+            if (!fogFacilityMonthsManuallySet) setFogFacilityMonths(months);
+          }}
           label="💍 Durée d'engagement"
           excludeComptant={true}
+        />
+        <PaymentSelector
+          selectedMonths={fogFacilityMonths}
+          onSelect={(months) => {
+            setFogFacilityMonths(months);
+            setFogFacilityMonthsManuallySet(true);
+          }}
+          label="Facilité de paiement"
         />
 
         {/* Commentaire */}
@@ -3557,7 +3632,7 @@ export default function CreateDevisPage() {
           {fogPaymentMonths > 0 && fogTotals.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {fogTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {fogPaymentMonths} mois
+                Mensualités: {fogTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {fogPaymentMonths} mois
               </strong>
             </div>
           )}
@@ -3579,13 +3654,55 @@ export default function CreateDevisPage() {
         </div>
       </div>
 
-      {/* TAB VISIOPHONE */}
+      {/* TAB VISIOPHONE/AUTRES */}
       <div 
         id="visiophone-tab" 
         className="tab-content"
         style={{ display: currentTab === 'visiophone' ? 'block' : 'none' }}
       >
-        {visiophoneCatalogError && (
+        {/* Sub-type choice: "Autres" (was "Visiophone") now covers two
+            catalogs -- Visiophone (existing) and Contrôle d'accès (client
+            request: a director needed an access-control quote with no
+            category for it). Switching clears the material lines so
+            products from the previous catalog don't linger. */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
+            {([
+              { key: 'visiophone' as const, label: 'Visiophone' },
+              { key: 'controle-acces' as const, label: "Contrôle d'accès" },
+            ]).map((opt) => {
+              const active = autresSubType === opt.key;
+              return (
+                <div
+                  key={opt.key}
+                  onClick={() => {
+                    if (autresSubType !== opt.key) {
+                      setAutresSubType(opt.key);
+                      setVisiophoLines([]);
+                      setVisiophoInstallationPrice(
+                        opt.key === 'controle-acces' ? controleAccesInstallationPrice : visiophoInstallationPrice
+                      );
+                    }
+                  }}
+                  style={{
+                    textAlign: 'center',
+                    padding: '12px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                    background: active ? '#fffd01' : '#fcfcfa',
+                    color: '#000000',
+                  }}
+                >
+                  {opt.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {activeAutresCatalogError && (
           <div style={{
             background: '#f8d7da',
             color: '#721c24',
@@ -3594,7 +3711,7 @@ export default function CreateDevisPage() {
             borderRadius: '8px',
             border: '1px solid #f5c6cb'
           }}>
-            ❌ Impossible de charger les produits Visiophone depuis Google Sheets : {visiophoneCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+            ❌ Impossible de charger les produits {autresSubType === 'controle-acces' ? "Contrôle d'accès" : 'Visiophone'} depuis Google Sheets : {activeAutresCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
           </div>
         )}
         <div className="form-section">
@@ -3679,10 +3796,12 @@ export default function CreateDevisPage() {
 
         {/* Kit de base — contenu par defaut (Interphone + Ecran), + reste
             possible ici (client feedback : pas besoin d'une section
-            Materiel supplementaire separee pour cette categorie). */}
+            Materiel supplementaire separee pour cette categorie). Titre
+            "Materiel" plutot que "Kit de base" (client feedback, onglet
+            Autres specifiquement). */}
         <div className="quote-section">
           <h3>
-            🛡️ Kit de base
+            🛡️ Matériel
             <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <button 
                 className="add-product-btn" 
@@ -3712,7 +3831,7 @@ export default function CreateDevisPage() {
                       
                       // Custom product creation sentinel
                       if (productName === '__create_custom__') {
-                        const template = visiophoneCatalog.find(p => p.id === 99); // Autre
+                        const template = activeAutresCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...visiophoLines];
                         newLines[index] = { 
                           ...line, 
@@ -3725,7 +3844,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = visiophoneCatalog.find(p => p.name === productName);
+                      const product = activeAutresCatalog.find(p => p.name === productName);
                       const newLines = [...visiophoLines];
                       newLines[index] = { ...line, product: product || null };
                       setVisiophoLines(newLines);
@@ -3733,7 +3852,7 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {visiophoneCatalog
+                    {activeAutresCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.name} value={product.name}>
@@ -3833,6 +3952,37 @@ export default function CreateDevisPage() {
         {/* Installation */}
         <div className="quote-section">
           <h3>🔧 Installation et paramétrage</h3>
+          {/* Quick-select matching Caméras' installation pricing (client
+              feedback: same 1/2 journée / journée choice for Visiophone
+              and Contrôle d'accès). Sets the price below, which stays
+              editable for a custom case. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 12 }}>
+            {([
+              { price: 690, label: '1/2 journée — 690 CHF' },
+              { price: 1290, label: 'Journée — 1290 CHF' },
+            ]).map((opt) => {
+              const active = visiophoInstallationPrice === opt.price;
+              return (
+                <div
+                  key={opt.price}
+                  onClick={() => setVisiophoInstallationPrice(opt.price)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '10px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 13,
+                    border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                    background: active ? '#fffd01' : '#fcfcfa',
+                    color: '#000000',
+                  }}
+                >
+                  {opt.label}
+                </div>
+              );
+            })}
+          </div>
           <div className="product-line">
             <div>Installation et paramétrage</div>
             <input 
@@ -3850,13 +4000,25 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Durée d'engagement / mode de paiement — meme etat deja partage
-            (visiophoPaymentMonths), select redondant retire. */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). */}
         <PaymentSelector
           selectedMonths={visiophoPaymentMonths}
-          onSelect={setVisiophoPaymentMonths}
+          onSelect={(months) => {
+            setVisiophoPaymentMonths(months);
+            if (!visiophoFacilityMonthsManuallySet) setVisiophoFacilityMonths(months);
+          }}
           label="💍 Durée d'engagement"
           excludeComptant={true}
+        />
+        <PaymentSelector
+          selectedMonths={visiophoFacilityMonths}
+          onSelect={(months) => {
+            setVisiophoFacilityMonths(months);
+            setVisiophoFacilityMonthsManuallySet(true);
+          }}
+          label="Facilité de paiement"
         />
 
         {/* Commentaire */}
@@ -3891,10 +4053,10 @@ export default function CreateDevisPage() {
             <span>TOTAL TTC</span>
             <span>{visiophoTotals.totalTTC.toFixed(2)} CHF</span>
           </div>
-          {visiophoPaymentMonths > 0 && visiophoTotals.monthly && (
+          {visiophoFacilityMonths > 0 && visiophoTotals.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoPaymentMonths} mois
+                Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoFacilityMonths} mois
               </strong>
             </div>
           )}

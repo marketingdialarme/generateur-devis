@@ -26,6 +26,7 @@ const CONSEILLER_RANGE = 'Conseillers!A2:D';
 // header text instead of a fixed index, so it stays correct regardless of
 // column order.
 const VISIOPHONE_RANGE = 'Produits_Visiophone!A1:Z';
+const CONTROLE_ACCES_RANGE = 'Produits_Controle_Acces!A1:Z';
 const FOG_RANGE = 'Produits_Générateur_de_brouillard!A1:Z';
 const ALARM_RANGE = 'Produits_Alarme!A1:Z';
 const KIT_BASE_ALARME_RANGE = 'Kit_Base_Alarme!A1:F';
@@ -35,6 +36,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cache: { data: Record<string, CommercialInfo>; fetchedAt: number } | null = null;
 let visiophoneCache: { data: { products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }; fetchedAt: number } | null = null;
+let controleAccesCache: { data: { products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }; fetchedAt: number } | null = null;
 let fogCache: { data: { products: FogProduct[]; defaultKit: { ref: string; quantity: number }[] }; fetchedAt: number } | null = null;
 let alarmCache: { data: { products: AlarmProduct[]; xtoProducts: AlarmProduct[]; kits: Record<string, { ref: string; quantity: number }[]>; installationPrices: Record<string, number | null> }; fetchedAt: number } | null = null;
 let cameraCache: { data: { products: CameraProduct[]; installationProducts: CameraProduct[] }; fetchedAt: number } | null = null;
@@ -165,6 +167,69 @@ export async function fetchCommercialsFromSheet(): Promise<Record<string, Commer
 
   cache = { data: commercials, fetchedAt: Date.now() };
   return commercials;
+}
+
+/**
+ * Fetch the "Produits_Controle_Acces" tab -- same structure and reasoning
+ * as fetchVisiophoneProductsFromSheet below (client decision: the
+ * "Visiophone" tab became "Autres", offering a choice between Visiophone
+ * and Contrôle d'accès catalogs; the latter mirrors Visiophone's Sheet
+ * shape exactly so this is a near-identical copy of that function).
+ */
+export async function fetchControleAccesProductsFromSheet(): Promise<{ products: VisiophoProduct[]; installationPrice: number | null; defaultKit: { name: string; quantity: number }[] }> {
+  if (controleAccesCache && Date.now() - controleAccesCache.fetchedAt < CACHE_TTL_MS) {
+    return controleAccesCache.data;
+  }
+
+  if (!SPREADSHEET_ID) {
+    throw new Error('GOOGLE_SHEETS_ID is not configured');
+  }
+
+  const sheets = await getSheetsClient();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: CONTROLE_ACCES_RANGE,
+  });
+
+  const rawRows = response.data.values || [];
+  const rows = rowsByHeader(rawRows, ['Nom', 'PRIX']);
+
+  const products: VisiophoProduct[] = [];
+  let installationPrice: number | null = null;
+  const defaultKit: { name: string; quantity: number }[] = [];
+  let nextId = 400;
+
+  for (const row of rows) {
+    const nom = row['Nom'];
+    if (!nom) continue;
+
+    const price = parseFloat(row['PRIX']);
+    if (isNaN(price)) continue;
+
+    if (nom.includes('Installation')) {
+      installationPrice = price;
+      continue;
+    }
+
+    const fiche = row['Fiche'] ? extractDriveFileId(row['Fiche']) : undefined;
+    products.push({ id: nextId, name: nom.trim(), price, fiche });
+    nextId += 1;
+
+    const inclu = String(row['Inclut kit de base'] ?? '').trim().toUpperCase();
+    if (['1', 'TRUE', 'VRAI', 'OUI', 'YES', 'X'].includes(inclu)) {
+      const qty = parseInt(row['Quantite kit de base'] || '1', 10) || 1;
+      defaultKit.push({ name: nom.trim(), quantity: qty });
+    }
+  }
+
+  if (products.length === 0) {
+    throw new Error('Produits_Controle_Acces returned no usable rows');
+  }
+
+  const data = { products, installationPrice, defaultKit };
+  controleAccesCache = { data, fetchedAt: Date.now() };
+  return data;
 }
 
 /**
