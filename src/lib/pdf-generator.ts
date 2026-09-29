@@ -563,7 +563,7 @@ function createAlarmPDFSections(
       offered: options.isRental,
       kind: 'utility',
     };
-    yPos = drawItemTable(doc, [instRow], yPos);
+    yPos = drawItemTable(doc, [instRow], yPos, false);
     const instTotalBefore = instRow.unitPrice * instRow.qty;
     instNetAfterRabais = instRow.offered ? 0 : instTotalBefore;
     const instRabais = instRow.offered ? instTotalBefore : 0;
@@ -573,6 +573,10 @@ function createAlarmPDFSections(
 
   // ============================================================
   // SECTION 3 — FRAIS DE DOSSIER (frais de dossier, carte SIM, maintenance)
+  // Data computed here (needed for the facility calculation below), but
+  // rendered further down -- the facility block now sits right after
+  // Installation (client feedback), so its calculation (which needs the
+  // admin fees) must run first without drawing anything yet.
   // ============================================================
   const adminRows: TableRow[] = [];
   if (options.processingSelected !== false) {
@@ -603,25 +607,16 @@ function createAlarmPDFSections(
     offered: true,
     kind: 'utility',
   });
-
-  let adminNetAfterRabais = 0;
-  if (adminRows.length > 0) {
-    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
-    yPos = drawItemTable(doc, adminRows, yPos);
-    const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
-    adminNetAfterRabais = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-    const adminRabais = adminRows.reduce((s, r) => s + (r.offered ? r.unitPrice * r.qty : 0), 0);
-    yPos = ensureSpace(doc, yPos, 70);
-    yPos = drawSummary(doc, adminTotalBefore, adminRabais, adminNetAfterRabais, yPos, []);
-  }
+  const adminNetAfterRabais = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
 
   // ============================================================
   // Facilité de paiement -- shown whenever a payment duration is chosen
   // (not "Comptant") in the Facilité de paiement selector itself; that
   // choice is now the only trigger, no separate toggle (client feedback).
-  // Uses the combined net of the three sections above, reconstructing
-  // what the old single combined total would have been, so the Sheet's
-  // financing formula stays exact:
+  // Positioned right after Installation (client feedback). Uses the
+  // combined net of Matériel + Installation + Frais de dossier,
+  // reconstructing what the old single combined total would have been,
+  // so the Sheet's financing formula stays exact:
   // ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
   // ============================================================
   let facilityHT = 0;
@@ -645,26 +640,23 @@ function createAlarmPDFSections(
     }
   }
 
+  // ---- Render SECTION 3 (Frais de dossier) ----
+  if (adminRows.length > 0) {
+    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
+    yPos = drawItemTable(doc, adminRows, yPos, false);
+    const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+    const adminRabais = adminRows.reduce((s, r) => s + (r.offered ? r.unitPrice * r.qty : 0), 0);
+    yPos = ensureSpace(doc, yPos, 70);
+    yPos = drawSummary(doc, adminTotalBefore, adminRabais, adminNetAfterRabais, yPos, []);
+  }
+
   // ============================================================
   // SECTION 4 — ABONNEMENT DE SURVEILLANCE
   // ============================================================
-  let surveillanceTTC = 0;
   if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
     yPos = drawSectionTitle(doc, '4. ABONNEMENT DE SURVEILLANCE', yPos, 58);
     const result = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
     yPos = result.yPos;
-    surveillanceTTC = result.ttc;
-  }
-
-  // ============================================================
-  // RÉCAP DES MENSUALITÉS -- what the client actually pays each month,
-  // in one place (director feedback).
-  // ============================================================
-  const facilityTva = roundToFiveCents(facilityHT * TVA_RATE);
-  const facilityTTC = roundToFiveCents(facilityHT + facilityTva);
-  if (facilityTTC > 0 || surveillanceTTC > 0) {
-    yPos = ensureSpace(doc, yPos, 55);
-    yPos = drawMonthlyRecap(doc, facilityTTC, surveillanceTTC, yPos);
   }
 
   // ---- Options block ----
@@ -679,26 +671,6 @@ function createAlarmPDFSections(
   }
 
   return yPos;
-}
-
-function drawMonthlyRecap(doc: jsPDF, facilityTTC: number, surveillanceTTC: number, yPos: number): number {
-  yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(0, 0, 0);
-  if (facilityTTC > 0) {
-    drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 7, false, [0, 0, 0], LEFT);
-    yPos += 11;
-  }
-  if (surveillanceTTC > 0) {
-    drawLabelValue(doc, 'Abonnement de surveillance', `${surveillanceTTC.toFixed(2)} CHF/mois`, yPos + 7, false, [0, 0, 0], LEFT);
-    yPos += 11;
-  }
-  const total = facilityTTC + surveillanceTTC;
-  doc.setFillColor(...C_YELLOW);
-  doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 14, 'F');
-  drawLabelValue(doc, 'Total mensuel TTC', `${total.toFixed(2)} CHF/mois`, yPos + 8, true, [0, 0, 0], LEFT);
-  return yPos + 18;
 }
 
 // Right-aligned label/value pair helper. `labelX` lets long labels (e.g.
@@ -722,7 +694,7 @@ function drawLabelValue(
   doc.setTextColor(0, 0, 0);
 }
 
-function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
+function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number, showHeader: boolean = true): number {
   const drawHeader = (y: number): number => {
     // No yellow fill (client feedback: less yellow) -- a thin bottom
     // border is enough to separate the header from the rows below.
@@ -739,13 +711,13 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     return y + 13;
   };
 
-  yPos = drawHeader(yPos);
+  if (showHeader) yPos = drawHeader(yPos);
   const rowH = 11;
   rows.forEach((row, i) => {
     // Page break before a row would collide with the footer; re-draw the column header
     if (yPos + rowH > MAX_Y) {
       doc.addPage();
-      yPos = drawHeader(TOP_Y);
+      yPos = showHeader ? drawHeader(TOP_Y) : TOP_Y;
     }
     // Each section now has its own black titled bar (see drawSectionTitle),
     // so utility rows (installation, frais de dossier, carte SIM...) no
@@ -1222,7 +1194,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
       offered: false,
       kind: 'utility',
     };
-    yPos = drawItemTable(doc, [instRow], yPos);
+    yPos = drawItemTable(doc, [instRow], yPos, false);
     instNet = instRow.unitPrice;
     yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, instNet, 0, instNet, yPos);
@@ -1255,7 +1227,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   let adminNet = 0;
   if (adminRows.length > 0) {
     yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
-    yPos = drawItemTable(doc, adminRows, yPos);
+    yPos = drawItemTable(doc, adminRows, yPos, false);
     const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     adminNet = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
     yPos = ensureSpace(doc, yPos, 70);
@@ -1324,7 +1296,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
       offered: false,
       kind: 'utility',
     };
-    yPos = drawItemTable(doc, [instRow], yPos);
+    yPos = drawItemTable(doc, [instRow], yPos, false);
     instNet = instRow.unitPrice;
     yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, instNet, 0, instNet, yPos);
