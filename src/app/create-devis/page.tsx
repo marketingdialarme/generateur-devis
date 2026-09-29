@@ -279,6 +279,16 @@ export default function CreateDevisPage() {
   const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
+  // "Autres" tab (was "Visiophone") now offers a choice of catalog --
+  // Visiophone (existing) or Contrôle d'accès (new, client request: a
+  // director asked for an access-control quote with no category for it).
+  // Same Sheet shape as Visiophone (Nom/PRIX/Fiche/Inclut kit de base),
+  // read via its own fetch/cache/route mirroring Visiophone's exactly.
+  const [autresSubType, setAutresSubType] = useState<'visiophone' | 'controle-acces'>('visiophone');
+  const [controleAccesCatalog, setControleAccesCatalog] = useState<VisiophoProduct[]>([]);
+  const [controleAccesDefaultKit, setControleAccesDefaultKit] = useState<{ name: string; quantity: number }[]>([]);
+  const [controleAccesCatalogError, setControleAccesCatalogError] = useState<string | null>(null);
+  const [controleAccesInstallationPrice, setControleAccesInstallationPrice] = useState(690);
   
   // Auto-detect selected central from product lines
   const selectedCentral = useMemo(() => {
@@ -533,14 +543,19 @@ export default function CreateDevisPage() {
   // order, not fixed — see fetchVisiophoneProductsFromSheet. Depends on
   // visiophoneCatalog so this still finds the right products once the live
   // fetch replaces the static fallback the state started from.
-  // Initialize Visiophone kit de base on mount -- now driven by the Sheet's
-  // "Inclut kit de base"/"Quantite kit de base" columns (visiophoDefaultKit,
-  // keyed by exact Nom since there's no REF column here), not a hardcoded
-  // fuzzy name match (client feedback: easier to adjust from the Sheet).
+  // Initialize Visiophone/Contrôle d'accès kit de base on mount or on
+  // switching sub-type -- driven by the Sheet's "Inclut kit de
+  // base"/"Quantite kit de base" columns (keyed by exact Nom since there's
+  // no REF column here), not a hardcoded fuzzy name match (client
+  // feedback: easier to adjust from the Sheet).
+  const activeAutresCatalog = autresSubType === 'controle-acces' ? controleAccesCatalog : visiophoneCatalog;
+  const activeAutresDefaultKit = autresSubType === 'controle-acces' ? controleAccesDefaultKit : visiophoDefaultKit;
+  const activeAutresInstallationPrice = autresSubType === 'controle-acces' ? controleAccesInstallationPrice : visiophoInstallationPrice;
+  const activeAutresCatalogError = autresSubType === 'controle-acces' ? controleAccesCatalogError : visiophoneCatalogError;
   useEffect(() => {
-    if (visiophoLines.length === 0 && visiophoneCatalog.length > 0 && visiophoDefaultKit.length > 0) {
-      const newLines: ProductLineData[] = visiophoDefaultKit.map((item, index) => {
-        const product = visiophoneCatalog.find(p => p.name === item.name);
+    if (visiophoLines.length === 0 && activeAutresCatalog.length > 0 && activeAutresDefaultKit.length > 0) {
+      const newLines: ProductLineData[] = activeAutresDefaultKit.map((item, index) => {
+        const product = activeAutresCatalog.find(p => p.name === item.name);
         return {
           id: Date.now() + index,
           product: product || null,
@@ -551,7 +566,7 @@ export default function CreateDevisPage() {
       
       setVisiophoLines(newLines);
     }
-  }, [visiophoneCatalog, visiophoDefaultKit]);
+  }, [activeAutresCatalog, activeAutresDefaultKit, visiophoLines.length]);
   
   // Calculate camera totals with default values
   const cameraTotals = useMemo(() => {
@@ -738,6 +753,31 @@ export default function CreateDevisPage() {
         console.error('❌ Failed to load Visiophone catalog from Google Sheet:', error);
         setVisiophoneCatalogError(
           error instanceof Error ? error.message : 'Échec du chargement des produits Visiophone'
+        );
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/products/controle-acces')
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success || !Array.isArray(result.data?.products) || result.data.products.length === 0) {
+          throw new Error(result.error || 'Catalogue Contrôle d\'accès vide ou invalide');
+        }
+        setControleAccesCatalog([
+          ...result.data.products,
+          { id: 99, name: 'Autre', price: 0, isCustom: true },
+        ]);
+        setControleAccesCatalogError(null);
+        if (typeof result.data.installationPrice === 'number') {
+          setControleAccesInstallationPrice(result.data.installationPrice);
+        }
+        setControleAccesDefaultKit(result.data.defaultKit || []);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Contrôle d\'accès catalog from Google Sheet:', error);
+        setControleAccesCatalogError(
+          error instanceof Error ? error.message : 'Échec du chargement des produits Contrôle d\'accès'
         );
       });
   }, []);
@@ -951,7 +991,7 @@ export default function CreateDevisPage() {
         processingSelected: isAlarm ? processingSelected : undefined,
         paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
         engagementMonths: isAlarm ? engagementMonths : undefined,
-        quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
+        quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? (autresSubType === 'controle-acces' ? 'CTRLACCES' : 'VISIO') : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
           processingFee: fogProcessingFee,
@@ -1259,7 +1299,7 @@ export default function CreateDevisPage() {
           onClick={() => setCurrentTab('visiophone')}
         >
           <DoorOpen size={28} strokeWidth={1.75} />
-          <span>Visiophone</span>
+          <span>Autres</span>
         </button>
       </div>
 
@@ -3579,13 +3619,55 @@ export default function CreateDevisPage() {
         </div>
       </div>
 
-      {/* TAB VISIOPHONE */}
+      {/* TAB VISIOPHONE/AUTRES */}
       <div 
         id="visiophone-tab" 
         className="tab-content"
         style={{ display: currentTab === 'visiophone' ? 'block' : 'none' }}
       >
-        {visiophoneCatalogError && (
+        {/* Sub-type choice: "Autres" (was "Visiophone") now covers two
+            catalogs -- Visiophone (existing) and Contrôle d'accès (client
+            request: a director needed an access-control quote with no
+            category for it). Switching clears the material lines so
+            products from the previous catalog don't linger. */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
+            {([
+              { key: 'visiophone' as const, label: 'Visiophone' },
+              { key: 'controle-acces' as const, label: "Contrôle d'accès" },
+            ]).map((opt) => {
+              const active = autresSubType === opt.key;
+              return (
+                <div
+                  key={opt.key}
+                  onClick={() => {
+                    if (autresSubType !== opt.key) {
+                      setAutresSubType(opt.key);
+                      setVisiophoLines([]);
+                      setVisiophoInstallationPrice(
+                        opt.key === 'controle-acces' ? controleAccesInstallationPrice : visiophoInstallationPrice
+                      );
+                    }
+                  }}
+                  style={{
+                    textAlign: 'center',
+                    padding: '12px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                    background: active ? '#fffd01' : '#fcfcfa',
+                    color: '#000000',
+                  }}
+                >
+                  {opt.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {activeAutresCatalogError && (
           <div style={{
             background: '#f8d7da',
             color: '#721c24',
@@ -3594,7 +3676,7 @@ export default function CreateDevisPage() {
             borderRadius: '8px',
             border: '1px solid #f5c6cb'
           }}>
-            ❌ Impossible de charger les produits Visiophone depuis Google Sheets : {visiophoneCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
+            ❌ Impossible de charger les produits {autresSubType === 'controle-acces' ? "Contrôle d'accès" : 'Visiophone'} depuis Google Sheets : {activeAutresCatalogError}. Réessayez ou contactez le support avant de continuer ce devis.
           </div>
         )}
         <div className="form-section">
@@ -3712,7 +3794,7 @@ export default function CreateDevisPage() {
                       
                       // Custom product creation sentinel
                       if (productName === '__create_custom__') {
-                        const template = visiophoneCatalog.find(p => p.id === 99); // Autre
+                        const template = activeAutresCatalog.find(p => p.id === 99); // Autre
                         const newLines = [...visiophoLines];
                         newLines[index] = { 
                           ...line, 
@@ -3725,7 +3807,7 @@ export default function CreateDevisPage() {
                         return;
                       }
                       
-                      const product = visiophoneCatalog.find(p => p.name === productName);
+                      const product = activeAutresCatalog.find(p => p.name === productName);
                       const newLines = [...visiophoLines];
                       newLines[index] = { ...line, product: product || null };
                       setVisiophoLines(newLines);
@@ -3733,7 +3815,7 @@ export default function CreateDevisPage() {
                   >
                     <option value="">Sélectionner un produit</option>
                     <option value="__create_custom__">➕ Créer un produit (nom & prix libres)</option>
-                    {visiophoneCatalog
+                    {activeAutresCatalog
                       .filter(product => !product.isCustom) // Hide "Autre" from regular list
                       .map(product => (
                         <option key={product.name} value={product.name}>
