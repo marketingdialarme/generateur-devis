@@ -3917,6 +3917,37 @@ export default function CreateDevisPage() {
         {/* Installation */}
         <div className="quote-section">
           <h3>🔧 Installation et paramétrage</h3>
+          {/* Quick-select matching Caméras' installation pricing (client
+              feedback: same 1/2 journée / journée choice for Visiophone
+              and Contrôle d'accès). Sets the price below, which stays
+              editable for a custom case. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 12 }}>
+            {([
+              { price: 690, label: '1/2 journée — 690 CHF' },
+              { price: 1290, label: 'Journée — 1290 CHF' },
+            ]).map((opt) => {
+              const active = visiophoInstallationPrice === opt.price;
+              return (
+                <div
+                  key={opt.price}
+                  onClick={() => setVisiophoInstallationPrice(opt.price)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '10px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: 13,
+                    border: `1px solid ${active ? '#fffd01' : '#a6a6a6'}`,
+                    background: active ? '#fffd01' : '#fcfcfa',
+                    color: '#000000',
+                  }}
+                >
+                  {opt.label}
+                </div>
+              );
+            })}
+          </div>
           <div className="product-line">
             <div>Installation et paramétrage</div>
             <input 
