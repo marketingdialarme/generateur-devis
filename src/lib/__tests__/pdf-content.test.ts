@@ -20,7 +20,7 @@ async function renderText(options: Parameters<typeof generateQuotePDF>[0]): Prom
 describe('Alarm PDF content (new design)', () => {
   let pdf = '';
   beforeAll(async () => {
-    pdf = await renderText(alarmFixture().options);
+    pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
   });
 
   it('uses DIA-TELES quote number', () => expect(pdf).toContain('DIA-TELES-'));
@@ -65,6 +65,7 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
       extraMaterial: true,
       materialDiscount: { type: 'percent', value: 10 },
       installationDiscount: { type: 'fixed', value: 100 },
+      showPaymentFacility: true,
     });
     totals = fx.totals;
     pdf = await renderText(fx.options);
@@ -80,15 +81,6 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
 
   it('no longer prints a per-line discount note (superseded by orange row coloring)', () => {
     expect(pdf).not.toContain('duction appliqu');
-  });
-
-  it('Total après rabais equals the on-screen net (réductions deducted)', () => {
-    const net =
-      totals.material.total +
-      totals.installation.total +
-      totals.adminFees.processing +
-      totals.adminFees.simCard;
-    expect(pdf).toContain(`${net.toFixed(2)} CHF`);
   });
 
   it('facilité de paiement is computed on the discounted base', () => {
@@ -114,17 +106,6 @@ describe('Alarm PDF — an offered supplementary-material item counts toward Rem
       installationDiscount: { type: 'fixed', value: 20 },
     });
     const pdf = await renderText(fx.options);
-    const totals = fx.totals;
-
-    // Net total (what's actually billed) must be unaffected by which
-    // summary line the offered item's value is displayed under -- it was
-    // already excluded from the billed subtotal by being offered.
-    const net =
-      totals.material.total +
-      totals.installation.total +
-      totals.adminFees.processing +
-      totals.adminFees.simCard;
-    expect(pdf).toContain(`${net.toFixed(2)} CHF`);
 
     // Rabais partenariat shows only the kit de base's offered value (690+480+190+390+0=1750),
     // not the offered Badge x 4 (100 CHF) from matériel supplémentaire.
@@ -209,16 +190,16 @@ describe('XTO kit lines (client sheet, Alarme tab)', () => {
 });
 
 describe('Camera PDF content', () => {
-  it('uses DIA-VID + vision à distance block, no OFFERT', async () => {
+  it('uses DIA-VID + vision à distance récap line, no OFFERT', async () => {
     const pdf = await renderText(cameraFixture().options);
     expect(pdf).toContain('DIA-VID-');
-    expect(pdf).toContain('VISION'); // "VISION À DISTANCE"
+    expect(pdf).toContain('Vision'); // "Vision à distance" récap line
     expect(pdf).not.toContain('OFFERT');
   });
-  it('now shows the facilité-de-paiement block too (previously missing on Caméras) — short label, Caméras only', async () => {
-    const pdf = await renderText(cameraFixture().options);
-    expect(pdf).toContain('Facilit'); // "Facilité de paiement sur 48 mois"
-    expect(pdf).not.toContain('Possibilit'); // long default label stays off Caméras
+  it('now shows the facilité-de-paiement line too (previously missing on Caméras) when enabled — short label, Caméras only', async () => {
+    const pdf = await renderText(cameraFixture({ showPaymentFacility: true }).options);
+    expect(pdf).toContain('Facilit'); // "Facilité de paiement" récap line
+    expect(pdf).not.toContain('Possibilit'); // long Alarme-style sentence stays off Caméras
   });
 });
 
@@ -255,12 +236,12 @@ describe('Alarm PDF — comment block (director feedback)', () => {
 
 describe('Alarm PDF — facilité de paiement sentence and block order (director feedback)', () => {
   it('uses the updated sentence mentioning installation and carte SIM', async () => {
-    const pdf = await renderText(alarmFixture().options);
+    const pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
     expect(pdf).toContain('et installation hors frais de dossier et carte SIM');
   });
 
   it('places the facilité de paiement block before the surveillance block', async () => {
-    const pdf = await renderText(alarmFixture().options);
+    const pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
     const facilityIndex = pdf.indexOf('et installation hors frais de dossier et carte SIM');
     const surveillanceIndex = pdf.indexOf('SURVEILLANCE');
     expect(facilityIndex).toBeGreaterThan(-1);

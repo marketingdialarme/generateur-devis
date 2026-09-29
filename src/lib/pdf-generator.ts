@@ -29,6 +29,11 @@ export interface QuoteInfo {
   date: string;
   type: 'alarm' | 'camera' | 'fog' | 'visiophone';
   isRental: boolean;
+  /** Alarm only: whether the kit de base material is fully offered --
+   * decides "Offre Partenariat" vs "Offre vente de matériel" (director
+   * feedback: the title shouldn't claim a partnership offer when the
+   * client is actually just buying the material). */
+  kitOffered?: boolean;
 }
 
 export interface PDFGenerationOptions {
@@ -41,6 +46,11 @@ export interface PDFGenerationOptions {
   /** Free-text comment, shown on the PDF (all 4 categories) only when
    * filled in. */
   comment?: string;
+  /** Alarm: whether to show the "Facilité de paiement" line at all --
+   * defaults to false. Director feedback: it shouldn't appear
+   * systematically just because a payment duration is set; the
+   * conseiller must explicitly choose to reveal it on the quote. */
+  showPaymentFacility?: boolean;
   commercial: string;
   isRental: boolean;
   materialLines: ProductLineData[];
@@ -189,6 +199,13 @@ export async function generateQuotePDF(
   const quoteNumber = options.quoteNumberOverride ?? generateQuoteNumber(prefix, now);
   const date = options.dateOverride ?? now.toLocaleDateString('fr-CH');
 
+  // Alarm only: is the kit de base (all material lines with a product)
+  // fully offered? Decides the title below (director feedback).
+  const kitOffered =
+    options.type === 'alarm' &&
+    options.materialLines.length > 0 &&
+    options.materialLines.every((l) => !l.product || l.offered);
+
   // Create PDF header
   await createPDFHeader(doc, {
     clientName: options.clientName,
@@ -200,7 +217,8 @@ export async function generateQuotePDF(
     quoteNumber,
     date,
     type: options.type,
-    isRental: options.isRental
+    isRental: options.isRental,
+    kitOffered
   });
 
   let yPos = 165;
@@ -363,7 +381,11 @@ async function createPDFHeader(doc: jsPDF, info: QuoteInfo): Promise<void> {
   doc.setFontSize(15);
   const title = info.isRental
     ? (info.type === 'camera' ? 'Offre Location Vidéosurveillance' : 'Offre Location Alarme')
-    : 'Offre Partenariat';
+    : info.type === 'camera'
+      ? 'OFFRE MATERIEL DE SECURITE' // director feedback: never "Partenariat" for Caméra
+      : info.type === 'alarm'
+        ? (info.kitOffered ? 'Offre Partenariat' : 'Offre vente de matériel') // director feedback
+        : 'Offre Partenariat';
   doc.text(title, 300, 90);
 
   // Quote meta
@@ -438,6 +460,24 @@ function ensureSpace(doc: jsPDF, yPos: number, needed: number): number {
   return yPos;
 }
 
+// Section title bar (yellow, bold) -- visually separates the new sectioned
+// layout (Matériel / Installation / Frais de dossier / Abonnement) so each
+// section's own subtotal reads as clearly scoped to what's above it, not
+// buried in one grand total (director feedback: too many big combined
+// numbers in one place worried clients; splitting into sections also lets
+// a conseiller offer just one section without touching the rest).
+function drawSectionTitle(doc: jsPDF, title: string, yPos: number): number {
+  yPos = ensureSpace(doc, yPos, 30);
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos, RIGHT - LEFT, 18, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(title, LEFT + 6, yPos + 13);
+  doc.setTextColor(0, 0, 0);
+  return yPos + 24;
+}
+
 function createAlarmPDFSections(
   doc: jsPDF,
   options: PDFGenerationOptions,
@@ -447,8 +487,12 @@ function createAlarmPDFSections(
   const months = options.paymentMonths ?? 0;
   const engagementMonths = options.engagementMonths ?? months;
 
-  // ---- Build unified material table rows ----
-  const rows: TableRow[] = [];
+  // ============================================================
+  // SECTION 1 — MATÉRIEL (Kit de base + matériel supplémentaire)
+  // ============================================================
+  yPos = drawSectionTitle(doc, '1. MATÉRIEL (Kit de base + matériel supplémentaire)', yPos);
+
+  const materialRows: TableRow[] = [];
   const materialDiscounted = alarmTotals.material.discount > 0;
   const installationDiscounted = alarmTotals.installation.discount > 0;
 
@@ -458,7 +502,7 @@ function createAlarmPDFSections(
   options.materialLines.forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
-    rows.push({
+    materialRows.push({
       name: line.offered ? `KIT DE BASE - ${name}` : name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
@@ -468,15 +512,15 @@ function createAlarmPDFSections(
   });
 
   // Supplementary materials (matériel divers) -- shares the same
-  // installationDiscount as the labor line below (one "Réduction" field
-  // covers this whole section on screen). rabaisEligible: false -- an
-  // offered supplementary item isn't part of the "Rabais partenariat"
+  // installationDiscount as the labor line used to (now Section 2 has no
+  // discount mechanism of its own -- see there). rabaisEligible: false --
+  // an offered supplementary item isn't part of the "Rabais partenariat"
   // (that's specifically the kit de base partnership offer); its value
   // counts toward "Remise" instead (client feedback).
   (options.installationLines || []).forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
-    rows.push({
+    materialRows.push({
       name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
@@ -486,29 +530,54 @@ function createAlarmPDFSections(
     });
   });
 
-  // Main installation line ("Installation et paramétrage") -- never marked
-  // discounted: installationDiscount (see above) only ever applies to the
-  // supplementary material subtotal, not this labor line, which has no
-  // discount mechanism of its own (client-reported bug: was showing
-  // orange even when only the material portion had a discount).
+  yPos = drawItemTable(doc, materialRows, yPos);
+
+  const matTotalBeforeRabais = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const matTotalAfterRabais = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  const matRabais = materialRows.reduce((s, r) => s + (r.offered && r.rabaisEligible !== false ? r.unitPrice * r.qty : 0), 0);
+  const matOfferedSupplementaryValue = materialRows.reduce((s, r) => s + (r.offered && r.rabaisEligible === false ? r.unitPrice * r.qty : 0), 0);
+  const matReductions = sectionReductions(alarmTotals.material, alarmTotals.installation, matOfferedSupplementaryValue);
+  const matNetAfterReductions = Math.max(0, matTotalAfterRabais - reductionsTotal(matReductions));
+  yPos = ensureSpace(doc, yPos, 110 + matReductions.length * 14);
+  yPos = drawSummary(doc, matTotalBeforeRabais, matRabais, matTotalAfterRabais, yPos, matReductions);
+
+  // ============================================================
+  // SECTION 2 — INSTALLATION
+  // ============================================================
+  // Never marked discounted/reduced: the discount above (installation
+  // Sheet field) only ever applies to the supplementary material
+  // subtotal (Section 1), not this labor line, which has no discount
+  // mechanism of its own (client-reported bug, fixed earlier: was
+  // showing orange even when only the material portion had a discount).
   const supplementaryTotal = (options.installationLines || []).reduce((sum, line) => {
     if (!line.product || line.offered) return sum;
     return sum + getLineUnitPrice(line) * line.quantity;
   }, 0);
   const mainInstallationTotal = Math.max(0, alarmTotals.installation.totalBeforeDiscount - supplementaryTotal);
+  let instNetAfterRabais = 0;
   if (mainInstallationTotal > 0 || options.isRental) {
-    rows.push({
+    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
       unitPrice: options.isRental ? 0 : mainInstallationTotal,
       offered: options.isRental,
       kind: 'utility',
-    });
+    };
+    yPos = drawItemTable(doc, [instRow], yPos);
+    const instTotalBefore = instRow.unitPrice * instRow.qty;
+    instNetAfterRabais = instRow.offered ? 0 : instTotalBefore;
+    const instRabais = instRow.offered ? instTotalBefore : 0;
+    yPos = ensureSpace(doc, yPos, 90);
+    yPos = drawSummary(doc, instTotalBefore, instRabais, instNetAfterRabais, yPos, []);
   }
 
-  // Frais de dossier + Carte SIM (admin) — listed only when selected, payable at install
+  // ============================================================
+  // SECTION 3 — FRAIS DE DOSSIER (frais de dossier, carte SIM, maintenance)
+  // ============================================================
+  const adminRows: TableRow[] = [];
   if (options.processingSelected !== false) {
-    rows.push({
+    adminRows.push({
       name: 'Frais de dossier',
       qty: 1,
       unitPrice: ADMIN_FEES.processingFee,
@@ -518,7 +587,7 @@ function createAlarmPDFSections(
     });
   }
   if (options.simCardSelected) {
-    rows.push({
+    adminRows.push({
       name: 'Carte SIM*',
       qty: 1,
       unitPrice: ADMIN_FEES.simCard,
@@ -527,9 +596,8 @@ function createAlarmPDFSections(
       kind: 'utility',
     });
   }
-
   // Maintenance (always offered/included)
-  rows.push({
+  adminRows.push({
     name: `Maintenance et garantie sur ${months > 0 ? months : 48} mois`,
     qty: 1,
     unitPrice: 0,
@@ -537,40 +605,35 @@ function createAlarmPDFSections(
     kind: 'utility',
   });
 
-  // ---- Render table ----
-  yPos = drawItemTable(doc, rows, yPos);
+  let adminNetAfterRabais = 0;
+  if (adminRows.length > 0) {
+    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
+    yPos = drawItemTable(doc, adminRows, yPos);
+    const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+    adminNetAfterRabais = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+    const adminRabais = adminRows.reduce((s, r) => s + (r.offered ? r.unitPrice * r.qty : 0), 0);
+    yPos = ensureSpace(doc, yPos, 90);
+    yPos = drawSummary(doc, adminTotalBefore, adminRabais, adminNetAfterRabais, yPos, []);
+  }
 
-  // ---- Summary box (Total HT / Rabais / Réductions / Après rabais / TVA / TTC) ----
-  const totalBeforeRabais = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
-  const totalAfterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  // "Rabais partenariat" only counts offered rows that are rabais-eligible
-  // (kit de base, and other offered utility lines) -- an offered
-  // supplementary-material row (rabaisEligible: false) isn't part of the
-  // partnership kit offer, so its value is added to "Remise" instead,
-  // just below (client feedback).
-  const rabais = rows.reduce((s, r) => s + (r.offered && r.rabaisEligible !== false ? r.unitPrice * r.qty : 0), 0);
-  const offeredSupplementaryValue = rows.reduce((s, r) => s + (r.offered && r.rabaisEligible === false ? r.unitPrice * r.qty : 0), 0);
-  // Percent/fixed réductions live only in the totals object — the rows display
-  // pre-discount prices, so they cannot be derived from the table.
-  const reductions = sectionReductions(alarmTotals.material, alarmTotals.installation, offeredSupplementaryValue);
-  const netAfterReductions = Math.max(0, totalAfterRabais - reductionsTotal(reductions));
-  yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
-  yPos = drawSummary(doc, totalBeforeRabais, rabais, totalAfterRabais, yPos, reductions);
-
-  // ---- Facilité de paiement block (moved before surveillance, director feedback) ----
+  // ============================================================
+  // Facilité de paiement -- shown only when the conseiller explicitly
+  // enables it (director feedback: shouldn't appear systematically just
+  // because a payment duration is set). Uses the combined net of the
+  // three sections above, reconstructing what the old single combined
+  // total would have been, so the Sheet's financing formula stays exact:
+  // ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
+  // ============================================================
+  let facilityHT = 0;
   if (!options.isRental && months > 0) {
-    // Sheet formula: ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
-    // "Total après rabais" is the summary's net figure, réductions included.
-    const facilityHT = calculateFacilityPayment(
-      netAfterReductions,
+    const combinedNetForFacility = matNetAfterReductions + instNetAfterRabais + adminNetAfterRabais;
+    facilityHT = calculateFacilityPayment(
+      combinedNetForFacility,
       alarmTotals.adminFees.processing,
       alarmTotals.adminFees.simCard,
       months
     );
-    // Only show when there's actually something to finance -- a valid
-    // duration with a 0 CHF computed amount (e.g. no supplementary
-    // material) shouldn't display the block at all (director feedback).
-    if (facilityHT > 0) {
+    if (options.showPaymentFacility && facilityHT > 0) {
       yPos = ensureSpace(doc, yPos, 70);
       yPos = drawFacilityBlock(
         doc,
@@ -579,13 +642,32 @@ function createAlarmPDFSections(
         yPos,
         `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
       );
+    } else {
+      facilityHT = 0; // not shown -> excluded from the récap below too
     }
   }
 
-  // ---- Télésurveillance + Test Cyclique block ----
+  // ============================================================
+  // SECTION 4 — ABONNEMENT DE SURVEILLANCE
+  // ============================================================
+  let surveillanceTTC = 0;
   if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
+    yPos = drawSectionTitle(doc, '4. ABONNEMENT DE SURVEILLANCE', yPos);
     yPos = ensureSpace(doc, yPos, 75);
-    yPos = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
+    const result = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
+    yPos = result.yPos;
+    surveillanceTTC = result.ttc;
+  }
+
+  // ============================================================
+  // RÉCAP DES MENSUALITÉS -- what the client actually pays each month,
+  // in one place (director feedback).
+  // ============================================================
+  const facilityTva = roundToFiveCents(facilityHT * TVA_RATE);
+  const facilityTTC = roundToFiveCents(facilityHT + facilityTva);
+  if (facilityTTC > 0 || surveillanceTTC > 0) {
+    yPos = ensureSpace(doc, yPos, 70);
+    yPos = drawMonthlyRecap(doc, facilityTTC, surveillanceTTC, yPos);
   }
 
   // ---- Options block ----
@@ -600,6 +682,26 @@ function createAlarmPDFSections(
   }
 
   return yPos;
+}
+
+function drawMonthlyRecap(doc: jsPDF, facilityTTC: number, surveillanceTTC: number, yPos: number): number {
+  yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  if (facilityTTC > 0) {
+    drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
+    yPos += 14;
+  }
+  if (surveillanceTTC > 0) {
+    drawLabelValue(doc, 'Abonnement de surveillance', `${surveillanceTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
+    yPos += 14;
+  }
+  const total = facilityTTC + surveillanceTTC;
+  doc.setFillColor(...C_YELLOW);
+  doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
+  drawLabelValue(doc, 'Total mensuel TTC', `${total.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+  return yPos + 22;
 }
 
 // Right-aligned label/value pair helper. `labelX` lets long labels (e.g.
@@ -788,7 +890,7 @@ function drawSurveillanceBlock(
   services: NonNullable<PDFGenerationOptions['services']>,
   months: number,
   yPos: number
-): number {
+): { yPos: number; ttc: number } {
   yPos += 6;
   const surveillanceHT =
     (services.surveillance?.offered ? 0 : (services.surveillance?.price || 0)) +
@@ -845,7 +947,7 @@ function drawSurveillanceBlock(
     );
     yPos += 16;
   }
-  return yPos;
+  return { yPos, ttc };
 }
 
 function drawOptionsBlock(
@@ -934,29 +1036,44 @@ function createCameraPDFSections(
   const cameraTotals = options.totals as CameraTotals;
   const months = options.paymentMonths ?? 0;
 
-  // ---- Unified material + installation table ----
-  const rows: TableRow[] = [];
+  // ============================================================
+  // SECTION 1 — MATÉRIEL
+  // ============================================================
+  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  const materialRows: TableRow[] = [];
   options.materialLines.forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
-    rows.push({
+    materialRows.push({
       name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
       offered: line.offered,
     });
   });
+  yPos = drawItemTable(doc, materialRows, yPos);
+  const matTotalBefore = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const matAfterRabais = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  const matRabais = matTotalBefore - matAfterRabais;
+  const matReductions = sectionReductions(cameraTotals.material, undefined);
+  const matNetAfterReductions = Math.max(0, matAfterRabais - reductionsTotal(matReductions));
+  yPos = ensureSpace(doc, yPos, 110 + matReductions.length * 14);
+  yPos = drawSummary(doc, matTotalBefore, matRabais, matAfterRabais, yPos, matReductions);
 
-  // Installation -- built from the actual selected product line(s) (INS-1,
-  // INS-DEMI-J, INS-J, INS-4G...), same pattern as the material loop above
-  // and as Alarm already does elsewhere in this file. Previously guessed a
-  // label from installationQty alone, which could show "Installation 1/2
-  // journée" even when "Installation - 1 caméra" (INS-1) was what was
-  // actually chosen (client-reported bug).
+  // ============================================================
+  // SECTION 2 — INSTALLATION
+  // ============================================================
+  // Built from the actual selected product line(s) (INS-1, INS-DEMI-J,
+  // INS-J, INS-4G...), same pattern as the material loop above. Previously
+  // guessed a label from installationQty alone, which could show
+  // "Installation 1/2 journée" even when "Installation - 1 caméra" (INS-1)
+  // was what was actually chosen (client-reported bug, unrelated to this
+  // section split).
+  const instRows: TableRow[] = [];
   (options.installationLines || []).forEach((line) => {
     if (!line.product) return;
     const name = line.product.isCustom && line.customName ? line.customName : line.product.name;
-    rows.push({
+    instRows.push({
       name,
       qty: line.quantity,
       unitPrice: getLineUnitPrice(line),
@@ -964,10 +1081,10 @@ function createCameraPDFSections(
       kind: 'utility',
     });
   });
-  if (options.isRental && !(options.installationLines || []).some(l => l.product)) {
+  if (options.isRental && instRows.length === 0) {
     // Rental mode with nothing manually selected: still show a placeholder
     // installation line (included in the package) as before.
-    rows.push({
+    instRows.push({
       name: 'Installation, paramétrages, tests, mise en service & formation',
       qty: 1,
       unitPrice: 0,
@@ -975,45 +1092,20 @@ function createCameraPDFSections(
       kind: 'utility',
     });
   }
-
-  yPos = drawItemTable(doc, rows, yPos);
-
-  // ---- Summary ----
-  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
-  const afterRabais = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  const rabais = totalBefore - afterRabais;
-  const reductions = sectionReductions(cameraTotals.material, cameraTotals.installation);
-  yPos = ensureSpace(doc, yPos, 110 + reductions.length * 14);
-  yPos = drawSummary(doc, totalBefore, rabais, afterRabais, yPos, reductions);
-
-  // ---- Vision à distance (monthly) ----
-  if (!options.isRental && options.remoteAccess) {
-    const remoteAccessPrice = calculateRemoteAccessPrice(options.materialLines);
-    yPos = ensureSpace(doc, yPos, 60);
-    yPos = drawMonthlyBlock(
-      doc,
-      'VISION À DISTANCE',
-      remoteAccessPrice,
-      `Mensualité fixée et non indexable pendant la durée contractuelle de ${months} mois.`,
-      yPos
-    );
+  let instNetAfterRabais = 0;
+  if (instRows.length > 0) {
+    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    yPos = drawItemTable(doc, instRows, yPos);
+    const instTotalBefore = instRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+    instNetAfterRabais = instRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+    const instRabais = instTotalBefore - instNetAfterRabais;
+    const instReductions = sectionReductions(undefined, cameraTotals.installation);
+    yPos = ensureSpace(doc, yPos, 110 + instReductions.length * 14);
+    yPos = drawSummary(doc, instTotalBefore, instRabais, instNetAfterRabais, yPos, instReductions);
   }
 
-  // ---- Facilité de paiement — same formula as Alarme/Fog/Visiophone, no frais
-  // de dossier or carte SIM on Caméras so both are passed as 0. Shorter label
-  // on Caméras specifically (client request) — other categories keep the
-  // default text via drawFacilityBlock's fallback. ----
-  if (!options.isRental && months > 0) {
-    const netAfterReductions = Math.max(0, afterRabais - reductionsTotal(reductions));
-    const facilityHT = calculateFacilityPayment(netAfterReductions, 0, 0, months);
-    if (facilityHT > 0) {
-      yPos = ensureSpace(doc, yPos, 70);
-      yPos = drawFacilityBlock(doc, facilityHT, months, yPos, `Facilité de paiement sur ${months} mois`);
-    }
-  }
-
-  // ---- Maintenance et garantie — own block after Vision à distance, with a line break ----
-  yPos += 14; // extra vertical breathing room between vision and maintenance
+  // ---- Maintenance et garantie — own block, unchanged ----
+  yPos += 14;
   yPos = ensureSpace(doc, yPos, 38);
   doc.setFillColor(...C_YELLOW);
   doc.rect(LEFT, yPos, 4, 30, 'F');
@@ -1027,6 +1119,47 @@ function createCameraPDFSections(
   doc.text("Compris dans l'offre — assistance, déplacements, pièces, main d'œuvre", LEFT + 12, yPos + 26);
   doc.setTextColor(0, 0, 0);
   yPos += 38;
+
+  // ============================================================
+  // RÉCAP DES MENSUALITÉS -- Vision à distance + Facilité de paiement
+  // (director feedback: same sectioned/récap approach as Alarme).
+  // Facilité de paiement only when explicitly enabled by the conseiller.
+  // ============================================================
+  let remoteAccessTTC = 0;
+  if (!options.isRental && options.remoteAccess) {
+    const remoteAccessPrice = calculateRemoteAccessPrice(options.materialLines);
+    const rTva = roundToFiveCents(remoteAccessPrice * TVA_RATE);
+    remoteAccessTTC = roundToFiveCents(remoteAccessPrice + rTva);
+  }
+  let facilityTTC = 0;
+  if (!options.isRental && months > 0 && options.showPaymentFacility) {
+    const combinedNet = matNetAfterReductions + instNetAfterRabais;
+    const facilityHT = calculateFacilityPayment(combinedNet, 0, 0, months);
+    if (facilityHT > 0) {
+      const fTva = roundToFiveCents(facilityHT * TVA_RATE);
+      facilityTTC = roundToFiveCents(facilityHT + fTva);
+    }
+  }
+  if (remoteAccessTTC > 0 || facilityTTC > 0) {
+    yPos = ensureSpace(doc, yPos, 70);
+    yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    if (remoteAccessTTC > 0) {
+      drawLabelValue(doc, 'Vision à distance', `${remoteAccessTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
+      yPos += 14;
+    }
+    if (facilityTTC > 0) {
+      drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
+      yPos += 14;
+    }
+    const total = remoteAccessTTC + facilityTTC;
+    doc.setFillColor(...C_YELLOW);
+    doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
+    drawLabelValue(doc, 'Total mensuel TTC', `${total.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+    yPos += 22;
+  }
 
   // ---- Warning when no modem & no remote access ----
   if (!options.isRental && !options.remoteAccess) {
@@ -1060,22 +1193,46 @@ function linesToRows(lines: ProductLineData[] | undefined): TableRow[] {
 function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
   const fees = options.feesConfig || {};
   const months = options.paymentMonths ?? 0;
-  const rows: TableRow[] = [
+
+  // ============================================================
+  // SECTION 1 — MATÉRIEL (+ matériel supplémentaire)
+  // ============================================================
+  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  const materialRows: TableRow[] = [
     ...linesToRows(options.materialLines),
     ...linesToRows(options.installationLines), // matériel supplémentaire
   ];
+  yPos = drawItemTable(doc, materialRows, yPos);
+  const matTotalBefore = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const matAfter = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  yPos = ensureSpace(doc, yPos, 90);
+  yPos = drawSummary(doc, matTotalBefore, matTotalBefore - matAfter, matAfter, yPos);
 
+  // ============================================================
+  // SECTION 2 — INSTALLATION
+  // ============================================================
+  let instNet = 0;
   if ((fees.installationPrice ?? 0) > 0) {
-    rows.push({
+    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
       unitPrice: fees.installationPrice!,
       offered: false,
       kind: 'utility',
-    });
+    };
+    yPos = drawItemTable(doc, [instRow], yPos);
+    instNet = instRow.unitPrice;
+    yPos = ensureSpace(doc, yPos, 90);
+    yPos = drawSummary(doc, instNet, 0, instNet, yPos);
   }
+
+  // ============================================================
+  // SECTION 3 — FRAIS DE DOSSIER
+  // ============================================================
+  const adminRows: TableRow[] = [];
   if (fees.processingSelected !== false) {
-    rows.push({
+    adminRows.push({
       name: 'Frais de dossier',
       qty: 1,
       unitPrice: fees.processingFee ?? 0,
@@ -1085,7 +1242,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
     });
   }
   if (fees.simCardSelected) {
-    rows.push({
+    adminRows.push({
       name: 'Carte SIM*',
       qty: 1,
       unitPrice: fees.simCard ?? 0,
@@ -1094,23 +1251,38 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
       kind: 'utility',
     });
   }
+  let adminNet = 0;
+  if (adminRows.length > 0) {
+    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
+    yPos = drawItemTable(doc, adminRows, yPos);
+    const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+    adminNet = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+    yPos = ensureSpace(doc, yPos, 90);
+    yPos = drawSummary(doc, adminTotalBefore, adminTotalBefore - adminNet, adminNet, yPos);
+  }
 
-  yPos = drawItemTable(doc, rows, yPos);
-  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
-  const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  yPos = ensureSpace(doc, yPos, 110);
-  yPos = drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
-
-  // Facilité de paiement — fog quotes can be financed over `months` like alarm/camera.
-  // Excludes the admin frais de dossier (already paid up-front at install).
-  if (!options.isRental && months > 0) {
+  // ============================================================
+  // RÉCAP DES MENSUALITÉS — Facilité de paiement only when enabled
+  // (director feedback: shouldn't appear systematically).
+  // ============================================================
+  if (!options.isRental && months > 0 && options.showPaymentFacility) {
     const processingInQuote = fees.processingSelected !== false && !fees.processingOffered
       ? (fees.processingFee ?? 0) : 0;
     const simCardInQuote = fees.simCardSelected && !fees.simCardOffered ? (fees.simCard ?? 0) : 0;
-    const facilityHT = calculateFacilityPayment(after, processingInQuote, simCardInQuote, months);
+    const combinedNet = matAfter + instNet + adminNet;
+    const facilityHT = calculateFacilityPayment(combinedNet, processingInQuote, simCardInQuote, months);
     if (facilityHT > 0) {
+      const tva = roundToFiveCents(facilityHT * TVA_RATE);
+      const ttc = roundToFiveCents(facilityHT + tva);
       yPos = ensureSpace(doc, yPos, 70);
-      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+      yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFillColor(...C_YELLOW);
+      doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
+      drawLabelValue(doc, 'Facilité de paiement', `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+      yPos += 22;
     }
   }
   return yPos;
@@ -1123,32 +1295,60 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
 function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: number): number {
   const fees = options.feesConfig || {};
   const months = options.paymentMonths ?? 0;
-  const rows: TableRow[] = [
+
+  // ============================================================
+  // SECTION 1 — MATÉRIEL (+ matériel supplémentaire)
+  // ============================================================
+  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  const materialRows: TableRow[] = [
     ...linesToRows(options.materialLines),
     ...linesToRows(options.installationLines), // matériel supplémentaire
   ];
+  yPos = drawItemTable(doc, materialRows, yPos);
+  const matTotalBefore = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
+  const matAfter = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
+  yPos = ensureSpace(doc, yPos, 90);
+  yPos = drawSummary(doc, matTotalBefore, matTotalBefore - matAfter, matAfter, yPos);
+
+  // ============================================================
+  // SECTION 2 — INSTALLATION
+  // ============================================================
+  let instNet = 0;
   if ((fees.installationPrice ?? 0) > 0) {
-    rows.push({
+    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
       unitPrice: fees.installationPrice!,
       offered: false,
       kind: 'utility',
-    });
+    };
+    yPos = drawItemTable(doc, [instRow], yPos);
+    instNet = instRow.unitPrice;
+    yPos = ensureSpace(doc, yPos, 90);
+    yPos = drawSummary(doc, instNet, 0, instNet, yPos);
   }
-  yPos = drawItemTable(doc, rows, yPos);
-  const totalBefore = rows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
-  const after = rows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  yPos = ensureSpace(doc, yPos, 110);
-  yPos = drawSummary(doc, totalBefore, totalBefore - after, after, yPos);
 
-  // Facilité de paiement — visiophone quotes mirror alarm/camera behaviour.
-  // No frais de dossier on visiophone, so pass 0 for admin lines.
-  if (!options.isRental && months > 0) {
-    const facilityHT = calculateFacilityPayment(after, 0, 0, months);
+  // ============================================================
+  // RÉCAP DES MENSUALITÉS — Facilité de paiement only when enabled
+  // (director feedback: shouldn't appear systematically). No frais de
+  // dossier on visiophone, so pass 0 for admin lines.
+  // ============================================================
+  if (!options.isRental && months > 0 && options.showPaymentFacility) {
+    const combinedNet = matAfter + instNet;
+    const facilityHT = calculateFacilityPayment(combinedNet, 0, 0, months);
     if (facilityHT > 0) {
+      const tva = roundToFiveCents(facilityHT * TVA_RATE);
+      const ttc = roundToFiveCents(facilityHT + tva);
       yPos = ensureSpace(doc, yPos, 70);
-      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
+      yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFillColor(...C_YELLOW);
+      doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
+      drawLabelValue(doc, 'Facilité de paiement', `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+      yPos += 22;
     }
   }
   return yPos;

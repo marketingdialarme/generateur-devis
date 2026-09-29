@@ -135,6 +135,10 @@ export default function CreateDevisPage() {
   // duration no longer overrides the payment duration (client feedback:
   // these are two different things, but should default to matching).
   const [alarmPaymentMonthsManuallySet, setAlarmPaymentMonthsManuallySet] = useState(false);
+  // Whether "Facilité de paiement" appears on the PDF at all -- off by
+  // default (director feedback: shouldn't appear systematically just
+  // because a payment duration is set).
+  const [showPaymentFacility, setShowPaymentFacility] = useState(false);
   const [cameraPaymentMonths, setCameraPaymentMonths] = useState(48);
   
   // Rental mode state (local)
@@ -951,6 +955,7 @@ export default function CreateDevisPage() {
         processingSelected: isAlarm ? processingSelected : undefined,
         paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
         engagementMonths: isAlarm ? engagementMonths : undefined,
+        showPaymentFacility: isAlarm ? showPaymentFacility : undefined,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? 'VISIO' : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
@@ -2337,6 +2342,18 @@ export default function CreateDevisPage() {
               }}
               label="Facilité de paiement"
             />
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <div className="checkbox-option" style={{ margin: 0 }}>
+                <input
+                  type="checkbox"
+                  id="showPaymentFacility"
+                  checked={showPaymentFacility}
+                  onChange={(e) => setShowPaymentFacility(e.target.checked)}
+                  className="offered-checkbox"
+                />
+                <label htmlFor="showPaymentFacility" style={{ margin: 0 }}>Afficher la facilité de paiement sur le devis</label>
+              </div>
+            </div>
           </>
         )}
 
