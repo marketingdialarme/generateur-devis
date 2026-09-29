@@ -136,6 +136,11 @@ export default function CreateDevisPage() {
   // these are two different things, but should default to matching).
   const [alarmPaymentMonthsManuallySet, setAlarmPaymentMonthsManuallySet] = useState(false);
   const [cameraPaymentMonths, setCameraPaymentMonths] = useState(48);
+  // Facilité de paiement, decoupled from Durée d'engagement (client
+  // feedback: same as Alarme, wanted for every category). Defaults to
+  // following the engagement duration until manually changed.
+  const [cameraFacilityMonths, setCameraFacilityMonths] = useState(48);
+  const [cameraFacilityMonthsManuallySet, setCameraFacilityMonthsManuallySet] = useState(false);
   
   // Rental mode state (local)
   const [alarmRentalMode, setAlarmRentalMode] = useState(false);
@@ -266,6 +271,8 @@ export default function CreateDevisPage() {
   const [fogSimCardOffered, setFogSimCardOffered] = useState(false);
   const [fogSimCardSelected, setFogSimCardSelected] = useState(true); // Whether SIM card is selected
   const [fogPaymentMonths, setFogPaymentMonths] = useState(48);
+  const [fogFacilityMonths, setFogFacilityMonths] = useState(48);
+  const [fogFacilityMonthsManuallySet, setFogFacilityMonthsManuallySet] = useState(false);
   
   // Visiophone state
   const [visiophoLines, setVisiophoLines] = useState<ProductLineData[]>([]);
@@ -279,6 +286,8 @@ export default function CreateDevisPage() {
   const [visiophoneCatalogError, setVisiophoneCatalogError] = useState<string | null>(null);
   const [visiophoInstallationPrice, setVisiophoInstallationPrice] = useState(690);
   const [visiophoPaymentMonths, setVisiophoPaymentMonths] = useState(48);
+  const [visiophoFacilityMonths, setVisiophoFacilityMonths] = useState(48);
+  const [visiophoFacilityMonthsManuallySet, setVisiophoFacilityMonthsManuallySet] = useState(false);
   // "Autres" tab (was "Visiophone") now offers a choice of catalog --
   // Visiophone (existing) or Contrôle d'accès (new, client request: a
   // director asked for an access-control quote with no category for it).
@@ -660,8 +669,8 @@ export default function CreateDevisPage() {
     const totalTTC = roundToFiveCents(totalHT * (1 + TVA_RATE));
 
     let monthly: { totalHT: number; totalTTC: number } | undefined;
-    if (visiophoPaymentMonths > 0) {
-      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, 0, 0, visiophoPaymentMonths));
+    if (visiophoFacilityMonths > 0) {
+      const monthlyHT = roundToFiveCents(calculateFacilityPayment(totalHT, 0, 0, visiophoFacilityMonths));
       monthly = { totalHT: monthlyHT, totalTTC: roundToFiveCents(monthlyHT * (1 + TVA_RATE)) };
     }
 
@@ -669,7 +678,7 @@ export default function CreateDevisPage() {
   }, [
     visiophoLines,
     visiophoInstallationPrice,
-    visiophoPaymentMonths
+    visiophoFacilityMonths
   ]);
       
   const { generatePDF, isGenerating: isPdfGenerating, error: pdfError } = usePdfGenerator();
@@ -989,8 +998,8 @@ export default function CreateDevisPage() {
         totals,
         simCardSelected: isAlarm ? simcardSelected : undefined,
         processingSelected: isAlarm ? processingSelected : undefined,
-        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
-        engagementMonths: isAlarm ? engagementMonths : undefined,
+        paymentMonths: isAlarm ? alarmPaymentMonths : isCamera ? cameraFacilityMonths : isFog ? fogFacilityMonths : visiophoFacilityMonths,
+        engagementMonths: isAlarm ? engagementMonths : isCamera ? cameraPaymentMonths : isFog ? fogPaymentMonths : visiophoPaymentMonths,
         quoteNumberPrefixOverride: isFog ? 'GB' : isVisio ? (autresSubType === 'controle-acces' ? 'CTRLACCES' : 'VISIO') : undefined,
         feesConfig: isFog ? {
           installationPrice: fogInstallationPrice,
@@ -2968,16 +2977,30 @@ export default function CreateDevisPage() {
           </div>
         )}
 
-        {/* Durée d'engagement / mode de paiement — un seul choix (comme pour
-            l'Alarme). Ici les deux utilisaient deja le meme etat
-            (cameraPaymentMonths), il suffisait de retirer le select redondant. */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). Facilite de paiement suit la duree d'engagement
+            par defaut, modifiable independamment ensuite. */}
         {!cameraRentalMode && (
-          <PaymentSelector
-            selectedMonths={cameraPaymentMonths}
-            onSelect={setCameraPaymentMonths}
-            label="💍 Durée d'engagement"
-            excludeComptant={true}
-          />
+          <>
+            <PaymentSelector
+              selectedMonths={cameraPaymentMonths}
+              onSelect={(months) => {
+                setCameraPaymentMonths(months);
+                if (!cameraFacilityMonthsManuallySet) setCameraFacilityMonths(months);
+              }}
+              label="💍 Durée d'engagement"
+              excludeComptant={true}
+            />
+            <PaymentSelector
+              selectedMonths={cameraFacilityMonths}
+              onSelect={(months) => {
+                setCameraFacilityMonths(months);
+                setCameraFacilityMonthsManuallySet(true);
+              }}
+              label="Facilité de paiement"
+            />
+          </>
         )}
 
         {/* Uninstall Note (Rental Mode Only) - Display only, not included in totals */}
@@ -3549,13 +3572,25 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Durée d'engagement / mode de paiement — meme etat deja partage,
-            select brut redondant retire (comme Cameras). */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). */}
         <PaymentSelector
           selectedMonths={fogPaymentMonths}
-          onSelect={setFogPaymentMonths}
+          onSelect={(months) => {
+            setFogPaymentMonths(months);
+            if (!fogFacilityMonthsManuallySet) setFogFacilityMonths(months);
+          }}
           label="💍 Durée d'engagement"
           excludeComptant={true}
+        />
+        <PaymentSelector
+          selectedMonths={fogFacilityMonths}
+          onSelect={(months) => {
+            setFogFacilityMonths(months);
+            setFogFacilityMonthsManuallySet(true);
+          }}
+          label="Facilité de paiement"
         />
 
         {/* Commentaire */}
@@ -3965,13 +4000,25 @@ export default function CreateDevisPage() {
           </div>
         </div>
 
-        {/* Durée d'engagement / mode de paiement — meme etat deja partage
-            (visiophoPaymentMonths), select redondant retire. */}
+        {/* Durée d'engagement / Facilité de paiement -- decouplees (client
+            feedback : meme comportement que l'Alarme pour toutes les
+            categories). */}
         <PaymentSelector
           selectedMonths={visiophoPaymentMonths}
-          onSelect={setVisiophoPaymentMonths}
+          onSelect={(months) => {
+            setVisiophoPaymentMonths(months);
+            if (!visiophoFacilityMonthsManuallySet) setVisiophoFacilityMonths(months);
+          }}
           label="💍 Durée d'engagement"
           excludeComptant={true}
+        />
+        <PaymentSelector
+          selectedMonths={visiophoFacilityMonths}
+          onSelect={(months) => {
+            setVisiophoFacilityMonths(months);
+            setVisiophoFacilityMonthsManuallySet(true);
+          }}
+          label="Facilité de paiement"
         />
 
         {/* Commentaire */}
@@ -4006,10 +4053,10 @@ export default function CreateDevisPage() {
             <span>TOTAL TTC</span>
             <span>{visiophoTotals.totalTTC.toFixed(2)} CHF</span>
           </div>
-          {visiophoPaymentMonths > 0 && visiophoTotals.monthly && (
+          {visiophoFacilityMonths > 0 && visiophoTotals.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoPaymentMonths} mois
+                💳 Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoFacilityMonths} mois
               </strong>
             </div>
           )}

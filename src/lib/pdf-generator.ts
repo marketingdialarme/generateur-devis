@@ -1031,6 +1031,7 @@ function createCameraPDFSections(
 ): number {
   const cameraTotals = options.totals as CameraTotals;
   const months = options.paymentMonths ?? 0;
+  const engagementMonths = options.engagementMonths ?? months;
 
   // ============================================================
   // SECTION 1 — MATÉRIEL
@@ -1108,7 +1109,7 @@ function createCameraPDFSections(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  doc.text(`MAINTENANCE ET GARANTIE SUR ${months > 0 ? months : 48} MOIS`, LEFT + 12, yPos + 14);
+  doc.text(`MAINTENANCE ET GARANTIE SUR ${engagementMonths > 0 ? engagementMonths : 48} MOIS`, LEFT + 12, yPos + 14);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
