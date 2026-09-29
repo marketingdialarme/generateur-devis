@@ -25,7 +25,6 @@ export function alarmFixture(opts: {
   comment?: string;
   paymentMonths?: number;
   engagementMonths?: number;
-  showPaymentFacility?: boolean;
 } = {}) {
   const simCardSelected = opts.simCardSelected ?? true;
   const p = (ref: string, name: string, price: number): Product => ({ id: nextId(), ref, name, price } as unknown as Product);
@@ -80,14 +79,13 @@ export function alarmFixture(opts: {
     services,
     options: { interventionsGratuites: true, interventionsAnnee: false, serviceCles: true },
     paymentMonths: opts.paymentMonths ?? 48,
-    showPaymentFacility: opts.showPaymentFacility ?? false,
     engagementMonths: opts.engagementMonths,
     comment: opts.comment,
   };
   return { material, install, totals, options };
 }
 
-export function cameraFixture(opts: { showPaymentFacility?: boolean } = {}) {
+export function cameraFixture() {
   const c = (ref: string, name: string, price: number, type: string, is4G = false): Product =>
     ({ id: nextId(), ref, name, price, type, is4G } as unknown as Product);
   const material: ProductLineData[] = [
@@ -116,7 +114,6 @@ export function cameraFixture(opts: { showPaymentFacility?: boolean } = {}) {
     installationQty: 2,
     remoteAccess: true,
     paymentMonths: 48,
-    showPaymentFacility: opts.showPaymentFacility ?? false,
   };
   return { material, totals, options };
 }

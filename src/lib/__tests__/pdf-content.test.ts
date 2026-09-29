@@ -20,7 +20,7 @@ async function renderText(options: Parameters<typeof generateQuotePDF>[0]): Prom
 describe('Alarm PDF content (new design)', () => {
   let pdf = '';
   beforeAll(async () => {
-    pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
+    pdf = await renderText(alarmFixture().options);
   });
 
   it('uses DIA-TELES quote number', () => expect(pdf).toContain('DIA-TELES-'));
@@ -65,7 +65,6 @@ describe('Alarm PDF — percent/fixed réductions reach the summary (Aug 2026 re
       extraMaterial: true,
       materialDiscount: { type: 'percent', value: 10 },
       installationDiscount: { type: 'fixed', value: 100 },
-      showPaymentFacility: true,
     });
     totals = fx.totals;
     pdf = await renderText(fx.options);
@@ -197,7 +196,7 @@ describe('Camera PDF content', () => {
     expect(pdf).not.toContain('OFFERT');
   });
   it('now shows the facilité-de-paiement line too (previously missing on Caméras) when enabled — short label, Caméras only', async () => {
-    const pdf = await renderText(cameraFixture({ showPaymentFacility: true }).options);
+    const pdf = await renderText(cameraFixture().options);
     expect(pdf).toContain('Facilit'); // "Facilité de paiement" récap line
     expect(pdf).not.toContain('Possibilit'); // long Alarme-style sentence stays off Caméras
   });
@@ -236,12 +235,12 @@ describe('Alarm PDF — comment block (director feedback)', () => {
 
 describe('Alarm PDF — facilité de paiement sentence and block order (director feedback)', () => {
   it('uses the updated sentence mentioning installation and carte SIM', async () => {
-    const pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
+    const pdf = await renderText(alarmFixture().options);
     expect(pdf).toContain('et installation hors frais de dossier et carte SIM');
   });
 
   it('places the facilité de paiement block before the surveillance block', async () => {
-    const pdf = await renderText(alarmFixture({ showPaymentFacility: true }).options);
+    const pdf = await renderText(alarmFixture().options);
     const facilityIndex = pdf.indexOf('et installation hors frais de dossier et carte SIM');
     const surveillanceIndex = pdf.indexOf('SURVEILLANCE');
     expect(facilityIndex).toBeGreaterThan(-1);

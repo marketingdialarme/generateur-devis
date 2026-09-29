@@ -46,11 +46,6 @@ export interface PDFGenerationOptions {
   /** Free-text comment, shown on the PDF (all 4 categories) only when
    * filled in. */
   comment?: string;
-  /** Alarm: whether to show the "Facilité de paiement" line at all --
-   * defaults to false. Director feedback: it shouldn't appear
-   * systematically just because a payment duration is set; the
-   * conseiller must explicitly choose to reveal it on the quote. */
-  showPaymentFacility?: boolean;
   commercial: string;
   isRental: boolean;
   materialLines: ProductLineData[];
@@ -466,15 +461,15 @@ function ensureSpace(doc: jsPDF, yPos: number, needed: number): number {
 // numbers in one place worried clients; splitting into sections also lets
 // a conseiller offer just one section without touching the rest).
 function drawSectionTitle(doc: jsPDF, title: string, yPos: number): number {
-  yPos = ensureSpace(doc, yPos, 30);
+  yPos = ensureSpace(doc, yPos, 24);
   doc.setFillColor(0, 0, 0);
-  doc.rect(LEFT, yPos, RIGHT - LEFT, 18, 'F');
+  doc.rect(LEFT, yPos, RIGHT - LEFT, 14, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(8.5);
   doc.setTextColor(...C_YELLOW);
-  doc.text(title, LEFT + 6, yPos + 13);
+  doc.text(title, LEFT + 6, yPos + 10);
   doc.setTextColor(0, 0, 0);
-  return yPos + 24;
+  return yPos + 18;
 }
 
 function createAlarmPDFSections(
@@ -616,11 +611,12 @@ function createAlarmPDFSections(
   }
 
   // ============================================================
-  // Facilité de paiement -- shown only when the conseiller explicitly
-  // enables it (director feedback: shouldn't appear systematically just
-  // because a payment duration is set). Uses the combined net of the
-  // three sections above, reconstructing what the old single combined
-  // total would have been, so the Sheet's financing formula stays exact:
+  // Facilité de paiement -- shown whenever a payment duration is chosen
+  // (not "Comptant") in the Facilité de paiement selector itself; that
+  // choice is now the only trigger, no separate toggle (client feedback).
+  // Uses the combined net of the three sections above, reconstructing
+  // what the old single combined total would have been, so the Sheet's
+  // financing formula stays exact:
   // ((Total après rabais - frais de dossier - carte SIM) * coef) / months.
   // ============================================================
   let facilityHT = 0;
@@ -632,7 +628,7 @@ function createAlarmPDFSections(
       alarmTotals.adminFees.simCard,
       months
     );
-    if (options.showPaymentFacility && facilityHT > 0) {
+    if (facilityHT > 0) {
       yPos = ensureSpace(doc, yPos, 70);
       yPos = drawFacilityBlock(
         doc,
@@ -641,8 +637,6 @@ function createAlarmPDFSections(
         yPos,
         `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
       );
-    } else {
-      facilityHT = 0; // not shown -> excluded from the récap below too
     }
   }
 
@@ -726,20 +720,23 @@ function drawLabelValue(
 
 function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
   const drawHeader = (y: number): number => {
-    doc.setFillColor(...C_YELLOW);
-    doc.rect(LEFT, y, RIGHT - LEFT, 16, 'F');
+    // No yellow fill (client feedback: less yellow) -- a thin bottom
+    // border is enough to separate the header from the rows below.
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.5);
+    doc.line(LEFT, y + 12, RIGHT, y + 12);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(0, 0, 0);
-    doc.text('Désignation du matériel', LEFT + 6, y + 11);
-    doc.text('Qté', COL_QTY, y + 11);
-    doc.text('P.U HT', COL_PU, y + 11);
-    doc.text('TOTAL H.T.', RIGHT, y + 11, { align: 'right' });
-    return y + 16;
+    doc.text('Désignation du matériel', LEFT + 6, y + 9);
+    doc.text('Qté', COL_QTY, y + 9);
+    doc.text('P.U HT', COL_PU, y + 9);
+    doc.text('TOTAL H.T.', RIGHT, y + 9, { align: 'right' });
+    return y + 13;
   };
 
   yPos = drawHeader(yPos);
-  const rowH = 14;
+  const rowH = 11;
   rows.forEach((row, i) => {
     // Page break before a row would collide with the footer; re-draw the column header
     if (yPos + rowH > MAX_Y) {
@@ -756,23 +753,23 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     }
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     // Name (+ optional note in grey italic)
-    doc.text(row.name, LEFT + 6, yPos + 9);
+    doc.text(row.name, LEFT + 6, yPos + 8);
     if (row.note) {
       const nameW = doc.getTextWidth(row.name);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(6);
       doc.setTextColor(120, 120, 120);
-      doc.text(row.note, LEFT + 6 + nameW + 4, yPos + 9);
-      doc.setFontSize(7.5);
+      doc.text(row.note, LEFT + 6 + nameW + 4, yPos + 8);
+      doc.setFontSize(7);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
     }
-    doc.text(String(row.qty), COL_QTY, yPos + 9);
+    doc.text(String(row.qty), COL_QTY, yPos + 8);
     // Zero-priced rows (maintenance, Alimentation) render a dash, matching the client reference
     const showDash = row.unitPrice === 0;
-    doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 9);
+    doc.text(showDash ? '-' : `${row.unitPrice.toFixed(0)} CHF`, COL_PU, yPos + 8);
     // Total column: "OFFERT" (in green) when the row is offered -- the
     // unit price still shows for reference in P.U HT, but nothing is
     // actually billed for it, so the total should say so explicitly
@@ -784,10 +781,10 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     // one product, so a per-line note wasn't practical (client feedback).
     if (row.offered) {
       doc.setTextColor(...(row.rabaisEligible === false ? C_ORANGE : C_GREEN));
-      doc.text('OFFERT', RIGHT, yPos + 9, { align: 'right' });
+      doc.text('OFFERT', RIGHT, yPos + 8, { align: 'right' });
     } else {
       doc.setTextColor(...(row.discounted ? C_ORANGE : [0, 0, 0] as [number, number, number]));
-      doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 9, { align: 'right' });
+      doc.text(showDash ? '-' : `${(row.unitPrice * row.qty).toFixed(0)} CHF`, RIGHT, yPos + 8, { align: 'right' });
     }
     doc.setTextColor(0, 0, 0);
     yPos += rowH;
@@ -1131,7 +1128,7 @@ function createCameraPDFSections(
     remoteAccessTTC = roundToFiveCents(remoteAccessPrice + rTva);
   }
   let facilityTTC = 0;
-  if (!options.isRental && months > 0 && options.showPaymentFacility) {
+  if (!options.isRental && months > 0) {
     const combinedNet = matNetAfterReductions + instNetAfterRabais;
     const facilityHT = calculateFacilityPayment(combinedNet, 0, 0, months);
     if (facilityHT > 0) {
@@ -1264,7 +1261,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   // RÉCAP DES MENSUALITÉS — Facilité de paiement only when enabled
   // (director feedback: shouldn't appear systematically).
   // ============================================================
-  if (!options.isRental && months > 0 && options.showPaymentFacility) {
+  if (!options.isRental && months > 0) {
     const processingInQuote = fees.processingSelected !== false && !fees.processingOffered
       ? (fees.processingFee ?? 0) : 0;
     const simCardInQuote = fees.simCardSelected && !fees.simCardOffered ? (fees.simCard ?? 0) : 0;
@@ -1333,7 +1330,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
   // (director feedback: shouldn't appear systematically). No frais de
   // dossier on visiophone, so pass 0 for admin lines.
   // ============================================================
-  if (!options.isRental && months > 0 && options.showPaymentFacility) {
+  if (!options.isRental && months > 0) {
     const combinedNet = matAfter + instNet;
     const facilityHT = calculateFacilityPayment(combinedNet, 0, 0, months);
     if (facilityHT > 0) {
