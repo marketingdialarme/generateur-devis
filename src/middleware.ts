@@ -80,5 +80,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/create-devis/:path*'],
+  // TEMPORAIRE (branche de test uniquement, jamais sur main).
+  matcher: [],
 };
