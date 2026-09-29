@@ -489,7 +489,7 @@ function createAlarmPDFSections(
   // ============================================================
   // SECTION 1 — MATÉRIEL (Kit de base + matériel supplémentaire)
   // ============================================================
-  yPos = drawSectionTitle(doc, '1. MATÉRIEL (Kit de base + matériel supplémentaire)', yPos);
+  yPos = drawSectionTitle(doc, 'MATÉRIEL (Kit de base + matériel supplémentaire)', yPos);
 
   const materialRows: TableRow[] = [];
   const materialDiscounted = alarmTotals.material.discount > 0;
@@ -555,7 +555,7 @@ function createAlarmPDFSections(
   const mainInstallationTotal = Math.max(0, alarmTotals.installation.totalBeforeDiscount - supplementaryTotal);
   let instNetAfterRabais = 0;
   if (mainInstallationTotal > 0 || options.isRental) {
-    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    yPos = drawSectionTitle(doc, 'INSTALLATION', yPos);
     const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
@@ -642,7 +642,7 @@ function createAlarmPDFSections(
 
   // ---- Render SECTION 3 (Frais de dossier) ----
   if (adminRows.length > 0) {
-    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
+    yPos = drawSectionTitle(doc, 'FRAIS DE DOSSIER', yPos);
     yPos = drawItemTable(doc, adminRows, yPos, false);
     const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     const adminRabais = adminRows.reduce((s, r) => s + (r.offered ? r.unitPrice * r.qty : 0), 0);
@@ -654,7 +654,7 @@ function createAlarmPDFSections(
   // SECTION 4 — ABONNEMENT DE SURVEILLANCE
   // ============================================================
   if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
-    yPos = drawSectionTitle(doc, '4. ABONNEMENT DE SURVEILLANCE', yPos, 58);
+    yPos = drawSectionTitle(doc, 'ABONNEMENT DE SURVEILLANCE', yPos, 58);
     const result = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
     yPos = result.yPos;
   }
@@ -1012,7 +1012,7 @@ function createCameraPDFSections(
   // ============================================================
   // SECTION 1 — MATÉRIEL
   // ============================================================
-  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  yPos = drawSectionTitle(doc, 'MATÉRIEL', yPos);
   const materialRows: TableRow[] = [];
   options.materialLines.forEach((line) => {
     if (!line.product) return;
@@ -1067,7 +1067,7 @@ function createCameraPDFSections(
   }
   let instNetAfterRabais = 0;
   if (instRows.length > 0) {
-    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    yPos = drawSectionTitle(doc, 'INSTALLATION', yPos);
     yPos = drawItemTable(doc, instRows, yPos);
     const instTotalBefore = instRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     instNetAfterRabais = instRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
@@ -1124,7 +1124,7 @@ function createCameraPDFSections(
       yPos += 14;
     }
     if (facilityTTC > 0) {
-      drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
+      drawLabelValue(doc, `Facilité de paiement (${months} mois)`, `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
       yPos += 14;
     }
     const total = remoteAccessTTC + facilityTTC;
@@ -1170,7 +1170,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   // ============================================================
   // SECTION 1 — MATÉRIEL (+ matériel supplémentaire)
   // ============================================================
-  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  yPos = drawSectionTitle(doc, 'MATÉRIEL', yPos);
   const materialRows: TableRow[] = [
     ...linesToRows(options.materialLines),
     ...linesToRows(options.installationLines), // matériel supplémentaire
@@ -1186,7 +1186,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   // ============================================================
   let instNet = 0;
   if ((fees.installationPrice ?? 0) > 0) {
-    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    yPos = drawSectionTitle(doc, 'INSTALLATION', yPos);
     const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
@@ -1226,7 +1226,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   }
   let adminNet = 0;
   if (adminRows.length > 0) {
-    yPos = drawSectionTitle(doc, '3. FRAIS DE DOSSIER', yPos);
+    yPos = drawSectionTitle(doc, 'FRAIS DE DOSSIER', yPos);
     yPos = drawItemTable(doc, adminRows, yPos, false);
     const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     adminNet = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
@@ -1254,7 +1254,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
       doc.setTextColor(0, 0, 0);
       doc.setFillColor(...C_YELLOW);
       doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
-      drawLabelValue(doc, 'Facilité de paiement', `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+      drawLabelValue(doc, `Facilité de paiement (${months} mois)`, `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
       yPos += 22;
     }
   }
@@ -1272,7 +1272,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
   // ============================================================
   // SECTION 1 — MATÉRIEL (+ matériel supplémentaire)
   // ============================================================
-  yPos = drawSectionTitle(doc, '1. MATÉRIEL', yPos);
+  yPos = drawSectionTitle(doc, 'MATÉRIEL', yPos);
   const materialRows: TableRow[] = [
     ...linesToRows(options.materialLines),
     ...linesToRows(options.installationLines), // matériel supplémentaire
@@ -1288,7 +1288,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
   // ============================================================
   let instNet = 0;
   if ((fees.installationPrice ?? 0) > 0) {
-    yPos = drawSectionTitle(doc, '2. INSTALLATION', yPos);
+    yPos = drawSectionTitle(doc, 'INSTALLATION', yPos);
     const instRow: TableRow = {
       name: 'Installation et paramétrage',
       qty: 1,
@@ -1320,7 +1320,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
       doc.setTextColor(0, 0, 0);
       doc.setFillColor(...C_YELLOW);
       doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
-      drawLabelValue(doc, 'Facilité de paiement', `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
+      drawLabelValue(doc, `Facilité de paiement (${months} mois)`, `${ttc.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
       yPos += 22;
     }
   }
