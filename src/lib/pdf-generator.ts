@@ -438,7 +438,6 @@ interface TableRow {
 
 // Colors
 const C_YELLOW: [number, number, number] = [244, 230, 0];
-const C_YELLOW_LIGHT: [number, number, number] = [255, 248, 196]; // utility row bg
 const C_GREEN: [number, number, number] = [0, 140, 70];
 const C_ORANGE: [number, number, number] = [204, 102, 0];
 const C_GREY_ROW: [number, number, number] = [245, 245, 245];
@@ -468,11 +467,11 @@ function ensureSpace(doc: jsPDF, yPos: number, needed: number): number {
 // a conseiller offer just one section without touching the rest).
 function drawSectionTitle(doc: jsPDF, title: string, yPos: number): number {
   yPos = ensureSpace(doc, yPos, 30);
-  doc.setFillColor(...C_YELLOW);
+  doc.setFillColor(0, 0, 0);
   doc.rect(LEFT, yPos, RIGHT - LEFT, 18, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...C_YELLOW);
   doc.text(title, LEFT + 6, yPos + 13);
   doc.setTextColor(0, 0, 0);
   return yPos + 24;
@@ -747,11 +746,11 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
       doc.addPage();
       yPos = drawHeader(TOP_Y);
     }
-    // Row background priority: utility (light yellow) overrides grey-stripe.
-    if (row.kind === 'utility') {
-      doc.setFillColor(...C_YELLOW_LIGHT);
-      doc.rect(LEFT, yPos, RIGHT - LEFT, rowH, 'F');
-    } else if (i % 2 === 1) {
+    // Each section now has its own black titled bar (see drawSectionTitle),
+    // so utility rows (installation, frais de dossier, carte SIM...) no
+    // longer need their own yellow tint to stand out -- just the normal
+    // alternating stripe, like any other row (client feedback: less yellow).
+    if (i % 2 === 1) {
       doc.setFillColor(...C_GREY_ROW);
       doc.rect(LEFT, yPos, RIGHT - LEFT, rowH, 'F');
     }
