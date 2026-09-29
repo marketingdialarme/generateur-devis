@@ -39,7 +39,7 @@ describe('Alarm PDF content (new design)', () => {
     expect(pdf).toContain('129');
   });
   it('shows the facilité-de-paiement block', () => {
-    expect(pdf).toContain('Possibilit'); // "Possibilité de facilité de paiement..."
+    expect(pdf).toContain('Facilité de paiement'); // bordered-table label
   });
   it('prints OFFERT in the total column for offered rows, while still showing the unit price', () => {
     expect(pdf).toContain('OFFERT');
@@ -233,15 +233,10 @@ describe('Alarm PDF — comment block (director feedback)', () => {
   });
 });
 
-describe('Alarm PDF — facilité de paiement sentence and block order (director feedback)', () => {
-  it('uses the updated sentence mentioning installation and carte SIM', async () => {
-    const pdf = await renderText(alarmFixture().options);
-    expect(pdf).toContain('et installation hors frais de dossier et carte SIM');
-  });
-
+describe('Alarm PDF — facilité de paiement block order (director feedback)', () => {
   it('places the facilité de paiement block before the surveillance block', async () => {
     const pdf = await renderText(alarmFixture().options);
-    const facilityIndex = pdf.indexOf('et installation hors frais de dossier et carte SIM');
+    const facilityIndex = pdf.indexOf('Facilité de paiement');
     const surveillanceIndex = pdf.indexOf('SURVEILLANCE');
     expect(facilityIndex).toBeGreaterThan(-1);
     expect(surveillanceIndex).toBeGreaterThan(-1);
@@ -250,7 +245,7 @@ describe('Alarm PDF — facilité de paiement sentence and block order (director
 
   it('hides the facilité de paiement block when payment months is 0', async () => {
     const pdf = await renderText(alarmFixture({ paymentMonths: 0 }).options);
-    expect(pdf).not.toContain('hors frais de dossier et carte SIM');
+    expect(pdf).not.toContain('Facilité de paiement');
   });
 });
 

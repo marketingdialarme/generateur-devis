@@ -629,14 +629,8 @@ function createAlarmPDFSections(
       months
     );
     if (facilityHT > 0) {
-      yPos = ensureSpace(doc, yPos, 55);
-      yPos = drawFacilityBlock(
-        doc,
-        facilityHT,
-        months,
-        yPos,
-        `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire et installation hors frais de dossier et carte SIM`
-      );
+      yPos = ensureSpace(doc, yPos, 40);
+      yPos = drawFacilityBlock(doc, facilityHT, months, yPos);
     }
   }
 
@@ -974,26 +968,44 @@ function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos:
   yPos += 3;
   const tva = roundToFiveCents(facilityHT * TVA_RATE);
   const ttc = roundToFiveCents(facilityHT + tva);
-  const boxH = 36;
-  doc.setFillColor(...C_YELLOW);
-  doc.rect(LEFT, yPos, 4, boxH, 'F');
 
-  doc.setFont('helvetica', 'bold');
+  // Bordered table: label column (italic, spans both rows) + 3 numeric
+  // columns (Mensualité H.T / T.V.A / Total T.T.C), matching the client's
+  // reference template -- replaces the old yellow-bar + long sentence
+  // (client feedback: short duration label instead).
+  const colLabelW = 200;
+  const numColW = (RIGHT - LEFT - colLabelW) / 3;
+  const rowH = 15;
+  const tableH = rowH * 2;
+
+  doc.setDrawColor(160, 160, 160);
+  doc.setLineWidth(0.5);
+  doc.rect(LEFT, yPos, RIGHT - LEFT, tableH);
+  doc.line(LEFT + colLabelW, yPos, LEFT + colLabelW, yPos + tableH);
+  doc.line(LEFT + colLabelW + numColW, yPos, LEFT + colLabelW + numColW, yPos + tableH);
+  doc.line(LEFT + colLabelW + numColW * 2, yPos, LEFT + colLabelW + numColW * 2, yPos + tableH);
+  doc.line(LEFT + colLabelW, yPos + rowH, RIGHT, yPos + rowH);
+
+  doc.setFont('helvetica', 'italic');
   doc.setFontSize(8.5);
   doc.setTextColor(0, 0, 0);
-  const wrapped = doc.splitTextToSize(
-    label ?? `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire hors frais de dossier`,
-    300
-  );
-  doc.text(wrapped, LEFT + 12, yPos + 13);
+  doc.text(label ?? `Facilité de paiement ${months} mois`, LEFT + 8, yPos + tableH / 2 + 3);
 
-  drawLabelValue(doc, 'Total HT', `${facilityHT.toFixed(2)} CHF`, yPos + 9);
-  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 19);
-  doc.setFillColor(...C_YELLOW);
-  doc.rect(COL_PU - 10, yPos + 23, RIGHT - (COL_PU - 10), 12, 'F');
-  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 31, true);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Mensualité H.T', LEFT + colLabelW + numColW / 2, yPos + 10, { align: 'center' });
+  doc.text('T.V.A 8,1%', LEFT + colLabelW + numColW * 1.5, yPos + 10, { align: 'center' });
+  doc.text('Total T.T.C', LEFT + colLabelW + numColW * 2.5, yPos + 10, { align: 'center' });
 
-  return yPos + boxH + 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(`${facilityHT.toFixed(2)} CHF`, LEFT + colLabelW + numColW / 2, yPos + rowH + 10, { align: 'center' });
+  doc.text(`${tva.toFixed(2)} CHF`, LEFT + colLabelW + numColW * 1.5, yPos + rowH + 10, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${ttc.toFixed(2)} CHF`, LEFT + colLabelW + numColW * 2.5, yPos + rowH + 10, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+
+  return yPos + tableH + 4;
 }
 
 // ============================================
