@@ -2458,7 +2458,7 @@ export default function CreateDevisPage() {
           {((!alarmRentalMode && alarmPaymentMonths > 0) || alarmRentalMode) && alarmTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualité: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois{!alarmRentalMode ? ` pendant ${alarmPaymentMonths} mois` : ''}
+                Mensualité: {(alarmTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois{!alarmRentalMode ? ` pendant ${alarmPaymentMonths} mois` : ''}
               </strong>
             </div>
           )}
@@ -3070,7 +3070,7 @@ export default function CreateDevisPage() {
           {!cameraRentalMode && cameraPaymentMonths > 0 && cameraTotals?.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
+                Mensualités: {(cameraTotals.monthly.totalTTC || 0).toFixed(2)} CHF/mois pendant {cameraPaymentMonths} mois
               </strong>
                   </div>
                 )}
@@ -3632,7 +3632,7 @@ export default function CreateDevisPage() {
           {fogPaymentMonths > 0 && fogTotals.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {fogTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {fogPaymentMonths} mois
+                Mensualités: {fogTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {fogPaymentMonths} mois
               </strong>
             </div>
           )}
@@ -4056,7 +4056,7 @@ export default function CreateDevisPage() {
           {visiophoFacilityMonths > 0 && visiophoTotals.monthly && (
             <div className="monthly-payment">
               <strong style={{ fontSize: '16px' }}>
-                💳 Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoFacilityMonths} mois
+                Mensualités: {visiophoTotals.monthly.totalTTC.toFixed(2)} CHF/mois pendant {visiophoFacilityMonths} mois
               </strong>
             </div>
           )}

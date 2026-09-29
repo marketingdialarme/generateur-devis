@@ -252,21 +252,21 @@ export async function generateQuotePDF(
 function drawCommentBlock(doc: jsPDF, comment: string, yPos: number): number {
   const maxWidth = RIGHT - LEFT - 12;
   const lines = doc.splitTextToSize(comment, maxWidth) as string[];
-  const boxH = 22 + lines.length * 11;
-  yPos = ensureSpace(doc, yPos + 6, boxH + 10);
+  const boxH = 18 + lines.length * 9;
+  yPos = ensureSpace(doc, yPos + 3, boxH + 8);
 
   doc.setFillColor(...C_YELLOW);
   doc.rect(LEFT, yPos, 4, boxH, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(0, 0, 0);
-  doc.text('Commentaire', LEFT + 12, yPos + 14);
+  doc.text('Commentaire', LEFT + 12, yPos + 12);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   lines.forEach((line, i) => {
-    doc.text(line, LEFT + 12, yPos + 26 + i * 11);
+    doc.text(line, LEFT + 12, yPos + 22 + i * 9);
   });
-  return yPos + boxH + 4;
+  return yPos + boxH + 3;
 }
 
 // ============================================
@@ -460,8 +460,13 @@ function ensureSpace(doc: jsPDF, yPos: number, needed: number): number {
 // buried in one grand total (director feedback: too many big combined
 // numbers in one place worried clients; splitting into sections also lets
 // a conseiller offer just one section without touching the rest).
-function drawSectionTitle(doc: jsPDF, title: string, yPos: number): number {
-  yPos = ensureSpace(doc, yPos, 24);
+// minContentHeight: space reserved for at least a first line of content
+// below the title, so the title bar itself never gets stranded alone at
+// the bottom of a page with its content pushed to the next one (a real
+// layout bug found when tightening the PDF's density: the title fit by
+// itself, then the very next ensureSpace check forced a page break).
+function drawSectionTitle(doc: jsPDF, title: string, yPos: number, minContentHeight: number = 40): number {
+  yPos = ensureSpace(doc, yPos, 18 + minContentHeight);
   doc.setFillColor(0, 0, 0);
   doc.rect(LEFT, yPos, RIGHT - LEFT, 14, 'F');
   doc.setFont('helvetica', 'bold');
@@ -469,7 +474,7 @@ function drawSectionTitle(doc: jsPDF, title: string, yPos: number): number {
   doc.setTextColor(...C_YELLOW);
   doc.text(title, LEFT + 6, yPos + 10);
   doc.setTextColor(0, 0, 0);
-  return yPos + 18;
+  return yPos + 16;
 }
 
 function createAlarmPDFSections(
@@ -532,7 +537,7 @@ function createAlarmPDFSections(
   const matOfferedSupplementaryValue = materialRows.reduce((s, r) => s + (r.offered && r.rabaisEligible === false ? r.unitPrice * r.qty : 0), 0);
   const matReductions = sectionReductions(alarmTotals.material, alarmTotals.installation, matOfferedSupplementaryValue);
   const matNetAfterReductions = Math.max(0, matTotalAfterRabais - reductionsTotal(matReductions));
-  yPos = ensureSpace(doc, yPos, 110 + matReductions.length * 14);
+  yPos = ensureSpace(doc, yPos, 85 + matReductions.length * 11);
   yPos = drawSummary(doc, matTotalBeforeRabais, matRabais, matTotalAfterRabais, yPos, matReductions);
 
   // ============================================================
@@ -562,7 +567,7 @@ function createAlarmPDFSections(
     const instTotalBefore = instRow.unitPrice * instRow.qty;
     instNetAfterRabais = instRow.offered ? 0 : instTotalBefore;
     const instRabais = instRow.offered ? instTotalBefore : 0;
-    yPos = ensureSpace(doc, yPos, 90);
+    yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, instTotalBefore, instRabais, instNetAfterRabais, yPos, []);
   }
 
@@ -606,7 +611,7 @@ function createAlarmPDFSections(
     const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     adminNetAfterRabais = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
     const adminRabais = adminRows.reduce((s, r) => s + (r.offered ? r.unitPrice * r.qty : 0), 0);
-    yPos = ensureSpace(doc, yPos, 90);
+    yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, adminTotalBefore, adminRabais, adminNetAfterRabais, yPos, []);
   }
 
@@ -629,7 +634,7 @@ function createAlarmPDFSections(
       months
     );
     if (facilityHT > 0) {
-      yPos = ensureSpace(doc, yPos, 70);
+      yPos = ensureSpace(doc, yPos, 55);
       yPos = drawFacilityBlock(
         doc,
         facilityHT,
@@ -645,8 +650,7 @@ function createAlarmPDFSections(
   // ============================================================
   let surveillanceTTC = 0;
   if (options.services?.surveillance?.type || options.services?.testCyclique?.selected) {
-    yPos = drawSectionTitle(doc, '4. ABONNEMENT DE SURVEILLANCE', yPos);
-    yPos = ensureSpace(doc, yPos, 75);
+    yPos = drawSectionTitle(doc, '4. ABONNEMENT DE SURVEILLANCE', yPos, 58);
     const result = drawSurveillanceBlock(doc, options.services, engagementMonths, yPos);
     yPos = result.yPos;
     surveillanceTTC = result.ttc;
@@ -659,13 +663,13 @@ function createAlarmPDFSections(
   const facilityTva = roundToFiveCents(facilityHT * TVA_RATE);
   const facilityTTC = roundToFiveCents(facilityHT + facilityTva);
   if (facilityTTC > 0 || surveillanceTTC > 0) {
-    yPos = ensureSpace(doc, yPos, 70);
+    yPos = ensureSpace(doc, yPos, 55);
     yPos = drawMonthlyRecap(doc, facilityTTC, surveillanceTTC, yPos);
   }
 
   // ---- Options block ----
   if (options.options) {
-    yPos = ensureSpace(doc, yPos, 60);
+    yPos = ensureSpace(doc, yPos, 48);
     yPos = drawOptionsBlock(doc, options.options, yPos);
   }
 
@@ -680,21 +684,21 @@ function createAlarmPDFSections(
 function drawMonthlyRecap(doc: jsPDF, facilityTTC: number, surveillanceTTC: number, yPos: number): number {
   yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(0, 0, 0);
   if (facilityTTC > 0) {
-    drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
-    yPos += 14;
+    drawLabelValue(doc, 'Facilité de paiement', `${facilityTTC.toFixed(2)} CHF/mois`, yPos + 7, false, [0, 0, 0], LEFT);
+    yPos += 11;
   }
   if (surveillanceTTC > 0) {
-    drawLabelValue(doc, 'Abonnement de surveillance', `${surveillanceTTC.toFixed(2)} CHF/mois`, yPos + 8, false, [0, 0, 0], LEFT);
-    yPos += 14;
+    drawLabelValue(doc, 'Abonnement de surveillance', `${surveillanceTTC.toFixed(2)} CHF/mois`, yPos + 7, false, [0, 0, 0], LEFT);
+    yPos += 11;
   }
   const total = facilityTTC + surveillanceTTC;
   doc.setFillColor(...C_YELLOW);
-  doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 16, 'F');
-  drawLabelValue(doc, 'Total mensuel TTC', `${total.toFixed(2)} CHF/mois`, yPos + 9, true, [0, 0, 0], LEFT);
-  return yPos + 22;
+  doc.rect(LEFT, yPos - 2, RIGHT - LEFT, 14, 'F');
+  drawLabelValue(doc, 'Total mensuel TTC', `${total.toFixed(2)} CHF/mois`, yPos + 8, true, [0, 0, 0], LEFT);
+  return yPos + 18;
 }
 
 // Right-aligned label/value pair helper. `labelX` lets long labels (e.g.
@@ -801,7 +805,7 @@ function drawItemTable(doc: jsPDF, rows: TableRow[], yPos: number): number {
     yPos += 10;
   }
 
-  return yPos + 6;
+  return yPos + 3;
 }
 
 /**
@@ -855,30 +859,30 @@ function drawSummary(
   const ttc = roundToFiveCents(netTotal + tva);
 
   if (rabais > 0 || reductions.length > 0) {
-    drawLabelValue(doc, 'Total HT', `${totalHT.toFixed(2)} CHF`, yPos + 8);
-    yPos += 14;
+    drawLabelValue(doc, 'Total HT', `${totalHT.toFixed(2)} CHF`, yPos + 7);
+    yPos += 11;
     if (rabais > 0) {
-      drawLabelValue(doc, 'Rabais partenariat', `- ${rabais.toFixed(2)} CHF`, yPos + 8, true, C_GREEN);
-      yPos += 14;
+      drawLabelValue(doc, 'Rabais partenariat', `- ${rabais.toFixed(2)} CHF`, yPos + 7, true, C_GREEN);
+      yPos += 11;
     }
     for (const reduction of reductions) {
       const shown = reduction.displayAmount ?? reduction.amount;
-      drawLabelValue(doc, reduction.label, `- ${shown.toFixed(2)} CHF`, yPos + 8, true, C_ORANGE);
-      yPos += 14;
+      drawLabelValue(doc, reduction.label, `- ${shown.toFixed(2)} CHF`, yPos + 7, true, C_ORANGE);
+      yPos += 11;
     }
-    drawLabelValue(doc, 'Total après rabais', `${netTotal.toFixed(2)} CHF`, yPos + 8);
-    yPos += 14;
+    drawLabelValue(doc, 'Total après rabais', `${netTotal.toFixed(2)} CHF`, yPos + 7);
+    yPos += 11;
   } else {
-    drawLabelValue(doc, 'Total HT', `${netTotal.toFixed(2)} CHF`, yPos + 8);
-    yPos += 14;
+    drawLabelValue(doc, 'Total HT', `${netTotal.toFixed(2)} CHF`, yPos + 7);
+    yPos += 11;
   }
-  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 8);
-  yPos += 16;
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 7);
+  yPos += 13;
   // Total TTC highlighted yellow
   doc.setFillColor(...C_YELLOW);
-  doc.rect(COL_PU - 10, yPos - 2, RIGHT - (COL_PU - 10), 16, 'F');
-  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 9, true);
-  return yPos + 22;
+  doc.rect(COL_PU - 10, yPos - 2, RIGHT - (COL_PU - 10), 14, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 8, true);
+  return yPos + 18;
 }
 
 function drawSurveillanceBlock(
@@ -887,7 +891,7 @@ function drawSurveillanceBlock(
   months: number,
   yPos: number
 ): { yPos: number; ttc: number } {
-  yPos += 6;
+  yPos += 3;
   const surveillanceHT =
     (services.surveillance?.offered ? 0 : (services.surveillance?.price || 0)) +
     (services.testCyclique?.selected && !services.testCyclique?.offered
@@ -896,13 +900,13 @@ function drawSurveillanceBlock(
   const tva = roundToFiveCents(surveillanceHT * TVA_RATE);
   const ttc = roundToFiveCents(surveillanceHT + tva);
 
-  const boxH = 44;
+  const boxH = 36;
   // Yellow left accent
   doc.setFillColor(...C_YELLOW);
   doc.rect(LEFT, yPos, 4, boxH, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   // Title adapts to what's actually present, rather than assuming both
   // surveillance and test cyclique are always selected together (client
@@ -914,19 +918,19 @@ function drawSurveillanceBlock(
     ? (services.surveillance.type.toUpperCase().includes('AUTO') ? 'AUTOSURVEILLANCE' : 'TÉLÉSURVEILLANCE')
     : '';
   const title = [surveillanceLabel, hasTestCyclique ? 'TEST CYCLIQUE' : ''].filter(Boolean).join(' + ');
-  doc.text(title, LEFT + 12, yPos + 16);
+  doc.text(title, LEFT + 12, yPos + 13);
   if (surveillanceLabel) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 30);
+    doc.setFontSize(7.5);
+    doc.text('Raccordement 24H/24 - 7J/7', LEFT + 12, yPos + 24);
   }
 
-  drawLabelValue(doc, 'Total HT', `${surveillanceHT.toFixed(2)} CHF`, yPos + 10);
-  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
+  drawLabelValue(doc, 'Total HT', `${surveillanceHT.toFixed(2)} CHF`, yPos + 9);
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 19);
   doc.setFillColor(...C_YELLOW);
-  doc.rect(COL_PU - 10, yPos + 28, RIGHT - (COL_PU - 10), 14, 'F');
-  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
-  yPos += boxH + 4;
+  doc.rect(COL_PU - 10, yPos + 23, RIGHT - (COL_PU - 10), 12, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 31, true);
+  yPos += boxH + 3;
 
   // Mensualité text (amount = surveillance HT, duration = payment months) --
   // only when there's actually a monthly amount to speak of (client
@@ -967,22 +971,22 @@ function drawOptionsBlock(
   if (options.serviceCles) items.push({ text: 'Service des clés inclus' });
   if (items.length === 0) return yPos;
 
-  yPos += 6;
-  const lineH = 12;
-  const noteLineH = 10;
-  const boxH = items.reduce((h, it) => h + lineH + (it.noteLines?.length || 0) * noteLineH, 8);
+  yPos += 3;
+  const lineH = 10;
+  const noteLineH = 9;
+  const boxH = items.reduce((h, it) => h + lineH + (it.noteLines?.length || 0) * noteLineH, 6);
   doc.setFillColor(100, 100, 100);
   doc.rect(LEFT, yPos, 4, boxH, 'F');
-  let y = yPos + 12;
+  let y = yPos + 10;
   items.forEach((it) => {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(0, 0, 0);
     doc.text(it.text, LEFT + 12, y);
     y += lineH;
     if (it.noteLines) {
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(...C_GREY_TEXT);
       it.noteLines.forEach((line) => {
         doc.text(line, LEFT + 12, y);
@@ -995,29 +999,29 @@ function drawOptionsBlock(
 }
 
 function drawFacilityBlock(doc: jsPDF, facilityHT: number, months: number, yPos: number, label?: string): number {
-  yPos += 6;
+  yPos += 3;
   const tva = roundToFiveCents(facilityHT * TVA_RATE);
   const ttc = roundToFiveCents(facilityHT + tva);
-  const boxH = 44;
+  const boxH = 36;
   doc.setFillColor(...C_YELLOW);
   doc.rect(LEFT, yPos, 4, boxH, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(0, 0, 0);
   const wrapped = doc.splitTextToSize(
     label ?? `Possibilité de facilité de paiement sur ${months} mois pour le matériel supplémentaire hors frais de dossier`,
     300
   );
-  doc.text(wrapped, LEFT + 12, yPos + 16);
+  doc.text(wrapped, LEFT + 12, yPos + 13);
 
-  drawLabelValue(doc, 'Total HT', `${facilityHT.toFixed(2)} CHF`, yPos + 10);
-  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 22);
+  drawLabelValue(doc, 'Total HT', `${facilityHT.toFixed(2)} CHF`, yPos + 9);
+  drawLabelValue(doc, 'TVA 8,1%', `${tva.toFixed(2)} CHF`, yPos + 19);
   doc.setFillColor(...C_YELLOW);
-  doc.rect(COL_PU - 10, yPos + 28, RIGHT - (COL_PU - 10), 14, 'F');
-  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 38, true);
+  doc.rect(COL_PU - 10, yPos + 23, RIGHT - (COL_PU - 10), 12, 'F');
+  drawLabelValue(doc, 'Total TTC', `${ttc.toFixed(2)} CHF`, yPos + 31, true);
 
-  return yPos + boxH + 6;
+  return yPos + boxH + 4;
 }
 
 // ============================================
@@ -1054,7 +1058,7 @@ function createCameraPDFSections(
   const matRabais = matTotalBefore - matAfterRabais;
   const matReductions = sectionReductions(cameraTotals.material, undefined);
   const matNetAfterReductions = Math.max(0, matAfterRabais - reductionsTotal(matReductions));
-  yPos = ensureSpace(doc, yPos, 110 + matReductions.length * 14);
+  yPos = ensureSpace(doc, yPos, 85 + matReductions.length * 11);
   yPos = drawSummary(doc, matTotalBefore, matRabais, matAfterRabais, yPos, matReductions);
 
   // ============================================================
@@ -1097,7 +1101,7 @@ function createCameraPDFSections(
     instNetAfterRabais = instRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
     const instRabais = instTotalBefore - instNetAfterRabais;
     const instReductions = sectionReductions(undefined, cameraTotals.installation);
-    yPos = ensureSpace(doc, yPos, 110 + instReductions.length * 14);
+    yPos = ensureSpace(doc, yPos, 85 + instReductions.length * 11);
     yPos = drawSummary(doc, instTotalBefore, instRabais, instNetAfterRabais, yPos, instReductions);
   }
 
@@ -1138,7 +1142,7 @@ function createCameraPDFSections(
     }
   }
   if (remoteAccessTTC > 0 || facilityTTC > 0) {
-    yPos = ensureSpace(doc, yPos, 70);
+    yPos = ensureSpace(doc, yPos, 55);
     yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
@@ -1202,7 +1206,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
   yPos = drawItemTable(doc, materialRows, yPos);
   const matTotalBefore = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const matAfter = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  yPos = ensureSpace(doc, yPos, 90);
+  yPos = ensureSpace(doc, yPos, 70);
   yPos = drawSummary(doc, matTotalBefore, matTotalBefore - matAfter, matAfter, yPos);
 
   // ============================================================
@@ -1220,7 +1224,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
     };
     yPos = drawItemTable(doc, [instRow], yPos);
     instNet = instRow.unitPrice;
-    yPos = ensureSpace(doc, yPos, 90);
+    yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, instNet, 0, instNet, yPos);
   }
 
@@ -1254,7 +1258,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
     yPos = drawItemTable(doc, adminRows, yPos);
     const adminTotalBefore = adminRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
     adminNet = adminRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-    yPos = ensureSpace(doc, yPos, 90);
+    yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, adminTotalBefore, adminTotalBefore - adminNet, adminNet, yPos);
   }
 
@@ -1271,7 +1275,7 @@ function createFogPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos: n
     if (facilityHT > 0) {
       const tva = roundToFiveCents(facilityHT * TVA_RATE);
       const ttc = roundToFiveCents(facilityHT + tva);
-      yPos = ensureSpace(doc, yPos, 70);
+      yPos = ensureSpace(doc, yPos, 55);
       yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -1304,7 +1308,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
   yPos = drawItemTable(doc, materialRows, yPos);
   const matTotalBefore = materialRows.reduce((s, r) => s + r.unitPrice * r.qty, 0);
   const matAfter = materialRows.reduce((s, r) => s + (r.offered ? 0 : r.unitPrice * r.qty), 0);
-  yPos = ensureSpace(doc, yPos, 90);
+  yPos = ensureSpace(doc, yPos, 70);
   yPos = drawSummary(doc, matTotalBefore, matTotalBefore - matAfter, matAfter, yPos);
 
   // ============================================================
@@ -1322,7 +1326,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
     };
     yPos = drawItemTable(doc, [instRow], yPos);
     instNet = instRow.unitPrice;
-    yPos = ensureSpace(doc, yPos, 90);
+    yPos = ensureSpace(doc, yPos, 70);
     yPos = drawSummary(doc, instNet, 0, instNet, yPos);
   }
 
@@ -1337,7 +1341,7 @@ function createVisioPDFSections(doc: jsPDF, options: PDFGenerationOptions, yPos:
     if (facilityHT > 0) {
       const tva = roundToFiveCents(facilityHT * TVA_RATE);
       const ttc = roundToFiveCents(facilityHT + tva);
-      yPos = ensureSpace(doc, yPos, 70);
+      yPos = ensureSpace(doc, yPos, 55);
       yPos = drawSectionTitle(doc, 'RÉCAP DES MENSUALITÉS', yPos);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
