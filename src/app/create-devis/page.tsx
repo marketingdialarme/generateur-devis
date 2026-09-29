@@ -3761,10 +3761,12 @@ export default function CreateDevisPage() {
 
         {/* Kit de base — contenu par defaut (Interphone + Ecran), + reste
             possible ici (client feedback : pas besoin d'une section
-            Materiel supplementaire separee pour cette categorie). */}
+            Materiel supplementaire separee pour cette categorie). Titre
+            "Materiel" plutot que "Kit de base" (client feedback, onglet
+            Autres specifiquement). */}
         <div className="quote-section">
           <h3>
-            🛡️ Kit de base
+            🛡️ Matériel
             <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <button 
                 className="add-product-btn" 
