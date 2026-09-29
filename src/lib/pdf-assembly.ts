@@ -194,9 +194,10 @@ async function assembleSimplePdf(
     const [p] = await pdfDoc.copyPages(basePdf, [i]);
     pdfDoc.addPage(p);
   }
-  // Generated quote page
-  const [qp] = await pdfDoc.copyPages(quotePdf, [0]);
-  pdfDoc.addPage(qp);
+  // Generated quote page(s) -- copies every page, not just the first
+  // (same fix as assembleAlarmPdf: previously dropped page 2+ silently).
+  const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
+  quotePages.forEach((p) => pdfDoc.addPage(p));
   // Optional property-type document
   await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
   // Remaining base pages
@@ -278,10 +279,14 @@ async function assembleAlarmPdf(
     }
     console.log('✅ Base document pages 1-5 added');
     
-    // 6. INSERT generated quote as NEW page 6
-    const [quotePage] = await pdfDoc.copyPages(quotePdf, [0]);
-    pdfDoc.addPage(quotePage);
-    console.log('✅ Generated quote inserted as page 6');
+    // 6. INSERT generated quote as NEW page(s) starting at page 6 -- copies
+    // every page of the generated quote, not just the first. Previously
+    // only copied page [0], silently dropping page 2+ once a quote grew
+    // past one page (client-reported: PDF cut off / page 2 missing from
+    // the final assembled document).
+    const quotePages = await pdfDoc.copyPages(quotePdf, quotePdf.getPageIndices());
+    quotePages.forEach((p) => pdfDoc.addPage(p));
+    console.log(`✅ Generated quote inserted (${quotePageCount} page(s)) starting at page 6`);
 
     // 6b. Append property-type specific document (if configured)
     await addPropertyTypeDocumentIfConfigured(pdfDoc, propertyType);
